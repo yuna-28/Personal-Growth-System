@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>格蘭朵魔法森林</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --tc:#3A2E5A;--tc2:#7B6A9A;--tc3:#A898C8;
+  --g1:rgba(255,255,255,0.55);--gb:rgba(255,255,255,0.72);
+  --gs:0 8px 32px rgba(100,80,200,0.13),0 2px 8px rgba(100,80,200,0.08),inset 0 1.5px 0 rgba(255,255,255,0.92);
+  --gs2:0 16px 48px rgba(80,60,180,0.16),0 4px 16px rgba(80,60,180,0.1),inset 0 2px 0 rgba(255,255,255,0.95);
+  --nm:4px 4px 10px rgba(150,130,220,0.18),-2px -2px 7px rgba(255,255,255,0.92),inset 0 1px 0 rgba(255,255,255,1);
+  --nm-in:inset 3px 3px 8px rgba(150,130,220,0.15),inset -2px -2px 6px rgba(255,255,255,0.9);
+}
+body{font-family:'Quicksand',sans-serif;background:linear-gradient(170deg,#D4EEFF 0%,#E8F5FF 30%,#F0EAF8 60%,#E0F5EE 100%);min-height:100vh;}
+.wrap{max-width:390px;margin:0 auto;}
+.bg{min-height:100vh;padding:0 0 80px;position:relative;overflow:hidden;}
+.top-bar{padding:14px 1rem 10px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:10;}
+.top-date{font-family:'Baloo 2',sans-serif;font-size:15px;font-weight:800;color:var(--tc);}
+.top-date-sub{font-size:11px;color:var(--tc3);margin-top:1px;}
+.streak-pill{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.7);border:1.5px solid rgba(255,200,80,0.5);border-radius:999px;padding:4px 12px;box-shadow:0 2px 8px rgba(200,150,60,0.12),inset 0 1px 0 rgba(255,255,255,0.9);}
+.streak-num{font-family:'Baloo 2',sans-serif;font-size:16px;font-weight:800;color:#D4750A;}
+.streak-lbl{font-size:11px;color:var(--tc2);font-weight:600;}
+.sync-badge{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--tc3);padding:0 0.9rem;margin-bottom:4px;}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:#9FE1CB;animation:syncPulse 2s ease-in-out infinite;}
+.sync-dot.syncing{background:#FAC775;animation:syncPulse 0.5s ease-in-out infinite;}
+.sync-dot.error{background:#F09595;animation:none;}
+.bot-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:390px;z-index:100;background:rgba(255,255,255,0.75);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1.5px solid rgba(255,255,255,0.85);box-shadow:0 -4px 20px rgba(100,80,200,0.1);display:flex;}
+.nav-btn{flex:1;padding:10px 0 8px;border:none;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:'Quicksand',sans-serif;font-size:10px;font-weight:600;color:var(--tc3);transition:color .15s;}
+.nav-btn.active{color:#7B6FE8;}
+.nav-btn img{width:22px;height:22px;opacity:.6;transition:opacity .15s;}
+.nav-btn.active img{opacity:1;}
+.page{padding:0 0.9rem;display:none;}
+.page.active{display:block;}
+.gcard{background:var(--g1);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border:1.5px solid var(--gb);border-radius:24px;box-shadow:var(--gs);padding:1.1rem 1.15rem;margin-bottom:13px;position:relative;overflow:hidden;}
+.gcard::before{content:'';position:absolute;top:0;left:0;right:0;height:1.5px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.95),transparent);border-radius:24px 24px 0 0;}
+.gcard-scene{background:rgba(240,248,255,0.5);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border:1.5px solid rgba(255,255,255,0.8);border-radius:26px;box-shadow:var(--gs2);padding:1rem;margin-bottom:13px;position:relative;overflow:hidden;}
+.gcard-scene::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent 10%,rgba(255,255,255,1) 50%,transparent 90%);border-radius:26px 26px 0 0;}
+.gcard-nb{background:rgba(255,252,235,0.65);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1.5px solid rgba(255,230,140,0.5);border-radius:22px;box-shadow:0 8px 28px rgba(200,150,60,0.1),inset 0 2px 0 rgba(255,255,255,0.95);padding:1.1rem 1.15rem;margin-bottom:13px;}
+.scene-stage{position:relative;height:235px;z-index:1;}
+.sky-bg{position:absolute;inset:0;border-radius:18px;background:linear-gradient(180deg,#87CEEB 0%,#B8E4F9 45%,#C8EED8 75%,#A8D8A8 100%);}
+.ground-el{position:absolute;bottom:0;left:0;right:0;height:45px;background:linear-gradient(180deg,#7EC87E,#5BA85B);border-radius:50% 50% 0 0/30% 30% 0 0;}
+.ground-el::before{content:'';position:absolute;top:0;left:0;right:0;height:8px;background:linear-gradient(180deg,#90D890,#7EC87E);border-radius:50% 50% 0 0/80% 80% 0 0;}
+.meadow-flowers{position:absolute;bottom:32px;left:0;right:0;display:flex;justify-content:space-around;padding:0 10px;pointer-events:none;}
+.floor-flowers{position:absolute;bottom:38px;left:4px;right:4px;display:flex;flex-wrap:wrap;gap:2px;pointer-events:none;}
+.sticky-note{position:absolute;right:8px;top:8px;z-index:4;background:rgba(255,250,200,0.95);border:1.5px solid rgba(255,220,80,0.6);border-radius:12px;padding:8px 10px;min-width:108px;max-width:148px;box-shadow:3px 4px 14px rgba(180,140,40,0.18),inset 0 1px 0 rgba(255,255,255,0.9);font-size:11px;color:var(--tc);transform:rotate(2deg);}
+.sticky-note::before{content:'';position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:24px;height:10px;background:rgba(255,200,60,0.7);border-radius:4px 4px 0 0;}
+.sticky-header{font-weight:700;font-size:11px;color:var(--tc2);margin-bottom:4px;display:flex;align-items:center;gap:3px;}
+.neo-chip{display:flex;align-items:center;gap:7px;padding:9px 11px;background:linear-gradient(145deg,rgba(255,255,255,0.92),rgba(235,230,255,0.65));border:1.5px solid rgba(255,255,255,0.85);border-radius:15px;box-shadow:var(--nm);cursor:pointer;font-size:13px;font-weight:600;color:var(--tc);transition:all .18s;user-select:none;position:relative;overflow:hidden;}
+.neo-chip:hover{box-shadow:5px 5px 13px rgba(150,130,220,0.22),-3px -3px 9px rgba(255,255,255,0.95);}
+.neo-chip.on{background:linear-gradient(145deg,rgba(93,202,165,0.45),rgba(159,225,203,0.55));border-color:rgba(93,202,165,0.7);box-shadow:var(--nm-in);}
+.liq-btn{width:100%;padding:13px;border:none;border-radius:18px;cursor:pointer;font-family:'Baloo 2',sans-serif;font-size:16px;font-weight:800;background:linear-gradient(135deg,#8B7FE8 0%,#B89AF5 40%,#5DCAA5 100%);color:#fff;box-shadow:0 6px 24px rgba(123,111,232,0.4),inset 0 1.5px 0 rgba(255,255,255,0.35);display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;transition:transform .15s;position:relative;overflow:hidden;}
+.liq-btn::before{content:'';position:absolute;top:0;left:0;right:0;height:50%;background:linear-gradient(180deg,rgba(255,255,255,0.2),transparent);border-radius:18px 18px 0 0;}
+.liq-btn:hover{transform:translateY(-2px);}
+.liq-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.ghost-btn{width:100%;padding:10px;border-radius:15px;cursor:pointer;font-family:'Quicksand',sans-serif;font-size:13px;font-weight:600;color:var(--tc2);background:rgba(255,255,255,0.45);border:1.5px solid rgba(255,255,255,0.75);box-shadow:3px 3px 8px rgba(150,130,220,0.12),-1px -1px 5px rgba(255,255,255,0.9);display:flex;align-items:center;justify-content:center;gap:6px;}
+.diary-section{margin-bottom:12px;}
+.diary-label{font-size:13px;font-weight:700;color:var(--tc);margin-bottom:5px;display:flex;align-items:center;gap:5px;}
+.diary-ta{width:100%;min-height:52px;resize:vertical;background:rgba(255,255,255,0.5);border:1.5px solid rgba(255,255,255,0.7);border-radius:12px;padding:8px 11px;font-family:'Quicksand',sans-serif;font-size:13px;color:var(--tc);line-height:1.7;outline:none;box-shadow:var(--nm-in);}
+.diary-ta:focus{border-color:rgba(159,225,203,0.7);}
+.tdl-row-wrap{display:flex;gap:6px;margin-bottom:7px;align-items:center;}
+.tdl-in{background:rgba(255,255,255,0.5);border:1.5px solid rgba(255,255,255,0.75);border-radius:11px;padding:7px 9px;font-family:'Quicksand',sans-serif;font-size:13px;color:var(--tc);outline:none;box-shadow:var(--nm-in);}
+.tdl-confirm-btn{background:rgba(255,255,255,0.55);border:1.5px solid rgba(255,255,255,0.8);border-radius:9px;cursor:pointer;padding:5px 8px;font-size:13px;box-shadow:2px 2px 6px rgba(150,130,220,0.12),-1px -1px 4px rgba(255,255,255,0.9);flex-shrink:0;transition:all .15s;color:var(--tc3);}
+.tdl-confirm-btn.confirmed{background:rgba(93,202,165,0.35);border-color:rgba(93,202,165,0.7);color:#3A8A6A;}
+.tdl-del-btn{background:rgba(255,255,255,0.45);border:1.5px solid rgba(255,255,255,0.7);border-radius:9px;cursor:pointer;padding:5px 8px;font-size:13px;color:var(--tc3);flex-shrink:0;}
+.tdl-row-wrap.confirmed-row .tdl-in{color:#3A8A6A;font-weight:600;}
+.exp-seg{width:22px;height:9px;border-radius:5px;transition:all .3s;}
+.exp-seg.on{background:linear-gradient(90deg,#9FE1CB,#5DCAA5);box-shadow:0 0 8px rgba(93,202,165,0.5);}
+.exp-seg.pulse{animation:segPulse 1.4s ease-in-out infinite;}
+.exp-seg.off{background:rgba(255,255,255,0.45);}
+.level-pill{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.7);border:1.5px solid rgba(255,255,255,0.9);border-radius:999px;padding:3px 14px;font-family:'Baloo 2',sans-serif;font-size:13px;font-weight:700;color:var(--tc);box-shadow:0 2px 10px rgba(150,130,220,0.15),inset 0 1px 0 rgba(255,255,255,1);}
+.sec-hd{font-family:'Baloo 2',sans-serif;font-size:14px;font-weight:800;color:var(--tc);margin-bottom:11px;display:flex;align-items:center;gap:7px;}
+.week-card{background:rgba(255,255,255,0.5);backdrop-filter:blur(16px);border:1.5px solid rgba(255,255,255,0.75);border-radius:18px;box-shadow:var(--gs);padding:.9rem 1rem;margin-bottom:10px;}
+.week-day-hd{font-family:'Baloo 2',sans-serif;font-size:13px;font-weight:800;color:var(--tc);margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;}
+.habit-dots{display:flex;gap:4px;flex-wrap:wrap;}
+.habit-dot{width:24px;height:24px;border-radius:8px;display:flex;align-items:center;justify-content:center;}
+.habit-dot.done{background:rgba(93,202,165,0.25);box-shadow:var(--nm-in);}
+.habit-dot.miss{background:rgba(200,196,247,0.2);}
+.week-diary-preview{font-size:11px;color:var(--tc2);margin-top:6px;line-height:1.5;background:rgba(255,255,255,0.4);border-radius:10px;padding:6px 8px;}
+.week-exp-badge{background:linear-gradient(135deg,rgba(159,225,203,0.4),rgba(93,202,165,0.3));border:1.5px solid rgba(93,202,165,0.5);border-radius:999px;padding:2px 10px;font-family:'Baloo 2',sans-serif;font-size:12px;font-weight:700;color:#2A7A5A;}
+.empty-week{text-align:center;padding:2rem 1rem;color:var(--tc3);font-size:13px;}
+.burst-overlay{position:fixed;inset:0;pointer-events:none;z-index:9999;}
+.burst-p{position:absolute;border-radius:50%;animation:burstFly 1.2s ease-out forwards;}
+.burst-e{position:absolute;font-size:22px;animation:burstEmoji 1.4s ease-out forwards;}
+.chip-ring{position:absolute;inset:-2px;border-radius:17px;border:2px solid rgba(93,202,165,0.9);animation:chipRing .5s ease-out forwards;}
+.exp-pop-el{position:fixed;pointer-events:none;font-family:'Baloo 2',sans-serif;font-size:14px;font-weight:800;color:#7B6FE8;animation:expPop .9s ease-out forwards;z-index:9998;}
+@keyframes burstFly{0%{transform:translate(0,0) scale(0);opacity:1}100%{transform:translate(var(--tx),var(--ty)) scale(1);opacity:0}}
+@keyframes burstEmoji{0%{transform:translate(0,0) scale(0) rotate(0);opacity:1}60%{opacity:1}100%{transform:translate(var(--tx),var(--ty)) scale(1) rotate(var(--tr));opacity:0}}
+@keyframes chipRing{0%{border-color:rgba(93,202,165,0.9);transform:scale(1)}100%{border-color:transparent;transform:scale(1.15);opacity:0}}
+@keyframes expPop{0%{opacity:1;transform:translateY(0) scale(1)}50%{transform:translateY(-20px) scale(1.1)}100%{opacity:0;transform:translateY(-45px) scale(.9)}}
+@keyframes floatX{0%,100%{transform:translateX(0)}50%{transform:translateX(12px)}}
+@keyframes bobY{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes sway{0%,100%{transform:translateX(-50%) rotate(0)}50%{transform:translateX(-50%) rotate(1.5deg)}}
+@keyframes sparkle{0%,100%{transform:scale(1) rotate(0)}50%{transform:scale(1.3) rotate(180deg)}}
+@keyframes twinkle{0%,100%{opacity:.15}50%{opacity:.85}}
+@keyframes flowerSway{0%,100%{transform:rotate(-3deg) translateY(0)}50%{transform:rotate(3deg) translateY(-3px)}}
+@keyframes segPulse{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes pBreathe{0%,100%{transform:scale(1,1)}50%{transform:scale(1.02,.96)}}
+@keyframes pSleep{0%,100%{transform:rotate(85deg)}50%{transform:rotate(85deg) scale(1.03)}}
+@keyframes pPlay{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(7deg)}}
+@keyframes pDance{0%,100%{transform:scaleX(1) rotate(-4deg)}50%{transform:scaleX(1.18) scaleY(.88) rotate(4deg)}}
+@keyframes pBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-11px)}}
+@keyframes pShake{0%,100%{transform:rotate(-11deg)}50%{transform:rotate(11deg)}}
+@keyframes pWater{0%,100%{transform:rotate(0)}50%{transform:rotate(9deg)}}
+@keyframes syncPulse{0%,100%{opacity:1}50%{opacity:.4}}
+</style>
+</head>
+<body>
+<div class="wrap"><div class="bg">
+<div id="burst-overlay" class="burst-overlay" style="display:none;"></div>
+
+<div class="top-bar">
+  <div>
+    <div class="top-date" id="top-date-main"></div>
+    <div class="top-date-sub" id="top-date-sub"></div>
+  </div>
+  <div class="streak-pill">
+    <img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f525_3d.png" width="18" height="18" onerror="this.outerHTML='🔥'"/>
+    <span class="streak-num" id="streak-num">0</span>
+    <span class="streak-lbl">天連續</span>
+  </div>
+</div>
+<div class="sync-badge"><div class="sync-dot" id="sync-dot"></div><span id="sync-label">已同步</span></div>
+
+<!-- HOME PAGE -->
+<div class="page active" id="page-home">
+<div class="gcard-scene">
+  <div style="position:relative;z-index:1;text-align:center;margin-bottom:6px;">
+    <span class="level-pill"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f333_3d.png" width="15" height="15"/> 格蘭朵樹 <span id="lv">Lv.1</span></span>
+  </div>
+  <div id="exprow" style="display:flex;justify-content:center;gap:4px;margin:6px 0 2px;position:relative;z-index:1;"></div>
+  <div id="explbl" style="text-align:center;font-size:11px;color:var(--tc3);margin-bottom:6px;position:relative;z-index:1;"></div>
+  <div class="scene-stage" id="scene-stage">
+    <div class="sky-bg"></div>
+    <div style="position:absolute;top:0;left:0;right:0;pointer-events:none;z-index:1;">
+      <span style="position:absolute;top:8px;left:10px;animation:floatX 5s ease-in-out infinite;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/2601_3d.png" width="38" height="38" onerror="this.outerHTML='☁️'"/></span>
+      <span style="position:absolute;top:22px;left:82px;animation:floatX 7s ease-in-out infinite 1s;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/2601_3d.png" width="22" height="22"/></span>
+      <span style="position:absolute;top:6px;right:14px;animation:floatX 6s ease-in-out infinite .5s;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/2601_3d.png" width="32" height="32"/></span>
+      <span style="position:absolute;top:30px;right:72px;animation:floatX 8s ease-in-out infinite 2s;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/2601_3d.png" width="17" height="17"/></span>
+      <span style="position:absolute;top:12px;left:52%;animation:twinkle 2s ease-in-out infinite;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/2728_3d.png" width="12" height="12" style="animation:sparkle 2s ease-in-out infinite"/></span>
+    </div>
+    <div class="ground-el"></div>
+    <div class="meadow-flowers">
+      <span style="animation:flowerSway 2s ease-in-out infinite"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f337_3d.png" width="17" height="17"/></span>
+      <span style="animation:flowerSway 2.3s ease-in-out infinite .3s"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f33c_3d.png" width="17" height="17"/></span>
+      <span style="animation:flowerSway 1.9s ease-in-out infinite .6s"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f33b_3d.png" width="17" height="17"/></span>
+      <span style="animation:flowerSway 2.2s ease-in-out infinite .2s"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f338_3d.png" width="17" height="17"/></span>
+      <span style="animation:flowerSway 2.5s ease-in-out infinite .5s"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f337_3d.png" width="17" height="17"/></span>
+      <span style="animation:flowerSway 2.1s ease-in-out infinite .1s"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f490_3d.png" width="17" height="17"/></span>
+    </div>
+    <div class="floor-flowers" id="flower-layer"></div>
+    <div id="sticky-note" class="sticky-note" style="display:none;">
+      <div class="sticky-header"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4dd_3d.png" width="12" height="12"/> 今日 TDL</div>
+      <div id="sticky-date" style="font-size:10px;color:var(--tc3);margin-bottom:3px;"></div>
+      <div id="sticky-items"></div>
+    </div>
+    <div id="tree-wrap" style="position:absolute;left:50%;bottom:38px;transform:translateX(-50%);animation:sway 3s ease-in-out infinite;z-index:2;width:175px;height:175px;">
+      <img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f333_3d.png" width="175" height="175"/>
+      <div id="fruit-layer" style="position:absolute;top:0;left:0;width:175px;height:175px;pointer-events:none;"></div>
+    </div>
+    <div id="seedling-zone" style="position:absolute;left:12px;bottom:42px;display:flex;gap:4px;align-items:flex-end;z-index:3;"></div>
+    <div id="puppy" style="position:absolute;left:50px;bottom:40px;cursor:pointer;touch-action:none;z-index:5;">
+      <div id="pfx-zzz" style="position:absolute;top:-24px;right:-12px;display:none;animation:bobY 1.8s ease-in-out infinite;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4a4_3d.png" width="19" height="19"/></div>
+      <div id="pfx-sweat" style="position:absolute;top:-4px;right:-10px;display:none;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4a6_3d.png" width="16" height="16"/></div>
+      <div id="pfx-note1" style="position:absolute;top:-20px;left:-24px;display:none;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f3b5_3d.png" width="20" height="20"/></div>
+      <div id="pfx-note2" style="position:absolute;top:-14px;right:-24px;display:none;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f3b6_3d.png" width="18" height="18"/></div>
+      <div id="pfx-happy" style="position:absolute;top:-24px;left:50%;transform:translateX(-50%);display:none;gap:3px;">
+        <img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f338_3d.png" width="17" height="17" style="animation:bobY 1s ease-in-out infinite"/>
+        <img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/2728_3d.png" width="15" height="15" style="animation:sparkle 1.2s ease-in-out infinite"/>
+        <img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f33c_3d.png" width="17" height="17" style="animation:bobY 1s ease-in-out infinite .3s"/>
+      </div>
+      <div id="pfx-ball" style="position:absolute;bottom:4px;left:-32px;display:none;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f3c0_3d.png" width="26" height="26"/></div>
+      <div id="pfx-water" style="position:absolute;top:-10px;right:-40px;display:none;">
+        <img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1faa3_3d.png" width="27" height="27"/>
+        <div style="position:absolute;top:26px;left:5px;animation:bobY .9s ease-in-out infinite;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4a7_3d.png" width="12" height="12"/></div>
+      </div>
+      <img id="puppy-img" src="https://cdn.jsdelivr.net/gh/yuna-28/Personal-Growth-System@main/puppy.png" width="57" height="57" style="display:block;animation:pBreathe 2.2s ease-in-out infinite;" onerror="this.outerHTML='<span style=font-size:44px>🐶</span>'"/>
+    </div>
+  </div>
+  <p style="text-align:center;font-size:11px;color:var(--tc3);margin-top:6px;position:relative;z-index:1;">點小狗切換狀態 · 可拖曳</p>
+</div>
+
+<div class="gcard">
+  <div class="sec-hd"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1fa84_3d.png" width="19" height="19"/> 今天做了什麼</div>
+  <div id="habits" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;"></div>
+</div>
+
+<div class="gcard-nb">
+  <div id="today-date" style="font-size:11px;color:var(--tc3);margin-bottom:6px;"></div>
+  <div class="sec-hd"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4d6_3d.png" width="19" height="19"/> 今日小記</div>
+  <div class="diary-section">
+    <div class="diary-label"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f31f_3d.png" width="15" height="15"/> Highlights <span style="font-size:11px;font-weight:500;color:var(--tc3);">亮點事件</span></div>
+    <textarea class="diary-ta" id="d-hl" placeholder="今天最讓你閃亮的事..."></textarea>
+  </div>
+  <div class="diary-section">
+    <div class="diary-label"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4d6_3d.png" width="15" height="15"/> Reflection <span style="font-size:11px;font-weight:500;color:var(--tc3);">反思與學習</span></div>
+    <textarea class="diary-ta" id="d-rf" placeholder="今天學到什麼或想到什麼..."></textarea>
+  </div>
+  <div class="diary-section" style="margin-bottom:0;">
+    <div class="diary-label"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f97a_3d.png" width="15" height="15" onerror="this.outerHTML='🥹'"/> Gratitude <span style="font-size:11px;font-weight:500;color:var(--tc3);">感恩的人事物</span></div>
+    <textarea class="diary-ta" id="d-gr" placeholder="今天想感謝誰或什麼..."></textarea>
+  </div>
+</div>
+
+<div class="gcard">
+  <div class="sec-hd"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f319_3d.png" width="19" height="19"/> 明天 TDL</div>
+  <div id="tdl-rows"></div>
+  <button id="tdl-add" style="background:none;border:1.5px dashed rgba(160,140,220,0.35);border-radius:11px;padding:7px 12px;font-family:'Quicksand',sans-serif;font-size:12px;color:var(--tc3);cursor:pointer;width:100%;text-align:center;margin-top:2px;">＋ 新增</button>
+</div>
+
+<button class="liq-btn" id="plant-btn"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/2728_3d.png" width="17" height="17"/> 種下今天</button>
+<button class="ghost-btn" id="copy-btn"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4cb_3d.png" width="15" height="15"/> 複製今日紀錄給 Claude</button>
+</div>
+
+<!-- WEEK PAGE -->
+<div class="page" id="page-week">
+  <div class="gcard" style="margin-top:4px;">
+    <div class="sec-hd"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4c5_3d.png" width="19" height="19"/> 本週回顧</div>
+    <div id="week-summary" style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:80px;background:rgba(255,255,255,0.5);border-radius:14px;padding:10px;text-align:center;box-shadow:var(--nm-in);">
+        <div style="font-family:'Baloo 2',sans-serif;font-size:22px;font-weight:800;color:#7B6FE8;" id="wk-days">0</div>
+        <div style="font-size:11px;color:var(--tc3);">已記錄天數</div>
+      </div>
+      <div style="flex:1;min-width:80px;background:rgba(255,255,255,0.5);border-radius:14px;padding:10px;text-align:center;box-shadow:var(--nm-in);">
+        <div style="font-family:'Baloo 2',sans-serif;font-size:22px;font-weight:800;color:#5DCAA5;" id="wk-exp">0</div>
+        <div style="font-size:11px;color:var(--tc3);">本週 EXP</div>
+      </div>
+      <div style="flex:1;min-width:80px;background:rgba(255,255,255,0.5);border-radius:14px;padding:10px;text-align:center;box-shadow:var(--nm-in);">
+        <div style="font-family:'Baloo 2',sans-serif;font-size:22px;font-weight:800;color:#D4750A;" id="wk-habits">0</div>
+        <div style="font-size:11px;color:var(--tc3);">習慣完成數</div>
+      </div>
+    </div>
+  </div>
+  <div id="week-entries"></div>
+</div>
+
+</div>
+
+<nav class="bot-nav">
+  <button class="nav-btn active" data-page="home" id="nav-home">
+    <img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f333_3d.png" onerror="this.outerHTML='🌳'"/>
+    <span>今天</span>
+  </button>
+  <button class="nav-btn" data-page="week" id="nav-week">
+    <img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4c5_3d.png" onerror="this.outerHTML='📅'"/>
+    <span>週回顧</span>
+  </button>
+</nav>
+</div></div>
+
+<script>
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyzRxOHHB4Bbfsl2FGAkT4kDWK4yXAWz8-cA0R80GwXTnXV95PyFdxtPqb_1SRQHB8W/exec';
+const CDN='https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/';
+const fi=(c,s=20)=>`<img src="${CDN}${c}_3d.png" width="${s}" height="${s}" style="display:inline-block;vertical-align:middle;" onerror="this.style.display='none'"/>`;
+const HABITS=[
+  {k:'wakeup',l:'早起',c:'1f305',c2:null,fc:'1f33c'},
+  {k:'sleep',l:'早睡',c:'1f319',c2:null,fc:'1f319'},
+  {k:'en',l:'英文',c:'1f1ec-1f1e7',c2:'1f4da',fc:'1f338'},
+  {k:'ja',l:'日文',c:'1f1ef-1f1f5',c2:'1f4d5',fc:'1f3f5'},
+  {k:'create',l:'創作',c:'1f3a8',c2:null,fc:'1f33b'},
+  {k:'dance',l:'跳舞',c:'1f483',c2:null,fc:'1f490'},
+  {k:'code',l:'Coding',c:'1f4bb',c2:null,fc:'1f52e'},
+  {k:'guitar',l:'吉他',c:'1fa95',c2:null,fc:'1f337'},
+];
+const BURST_E=['🌸','✨','🌟','💫','🌈','🎉','🌺','💐','⭐','🎊'];
+const STATES=['stand','sleep','play','water','dance','happy','walk','circle'];
+const SK='grandol_final_v1';
+
+function today(){return new Date().toISOString().slice(0,10);}
+function ld(){try{const r=localStorage.getItem(SK);if(r)return JSON.parse(r);}catch(e){}return{exp:0,flowers:[],apples:[],bigApples:0,goldFruits:0,seedlings:0,trees:1,streak:0,lastStreak:'',checked:{},diary:{hl:'',rf:'',gr:''},lastPlant:'',tomorrowTDL:[],todayTDL:[],entries:[]};}
+function sv(s){try{localStorage.setItem(SK,JSON.stringify(s));}catch(e){}}
+let S=ld();
+if(typeof S.diary==='string'||!S.diary)S.diary={hl:'',rf:'',gr:''};
+if(!S.entries)S.entries=[];
+if(S.lastPlant!==today()){S.checked={};S.diary={hl:'',rf:'',gr:''};S.todayTDL=S.tomorrowTDL||[];S.tomorrowTDL=[];}
+
+// SYNC STATUS
+function setSyncStatus(state,msg){
+  const dot=document.getElementById('sync-dot');
+  const lbl=document.getElementById('sync-label');
+  dot.className='sync-dot'+(state==='syncing'?' syncing':state==='error'?' error':'');
+  lbl.textContent=msg;
+}
+
+// SYNC TO GOOGLE SHEET
+async function syncToSheet(payload){
+  setSyncStatus('syncing','同步中...');
+  try{
+    await fetch(GAS_URL+'?action=save',{
+      method:'POST',
+      body:JSON.stringify(payload),
+      headers:{'Content-Type':'application/json'}
+    });
+    setSyncStatus('ok','已同步 ✓');
+  }catch(e){
+    setSyncStatus('error','同步失敗，資料已存在本機');
+  }
+}
+
+// LOAD FROM SHEET on startup
+async function loadFromSheet(){
+  setSyncStatus('syncing','載入雲端資料...');
+  try{
+    const res=await fetch(GAS_URL+'?action=getAll');
+    const json=await res.json();
+    if(json.ok&&json.data&&json.data.length){
+      // merge sheet entries into local
+      json.data.forEach(row=>{
+        if(!row.date)return;
+        const existing=S.entries.findIndex(e=>e.date===row.date);
+        const entry={
+          date:row.date,
+          checked:JSON.parse(row.checked||'[]'),
+          diary:{hl:row.hl||'',rf:row.rf||'',gr:row.gr||''},
+          tdl:JSON.parse(row.tdl||'[]'),
+          exp:+row.exp||0,
+          streak:+row.streak||0
+        };
+        if(existing>=0)S.entries[existing]=entry;
+        else S.entries.push(entry);
+      });
+      // restore latest state
+      if(json.data.length){
+        const last=json.data[json.data.length-1];
+        if(+last.exp>S.exp){S.exp=+last.exp||0;}
+        if(+last.streak>S.streak){S.streak=+last.streak||0;}
+      }
+      sv(S);
+      renderExpBar();renderFlowers();renderFruits();renderTopDate();
+    }
+    setSyncStatus('ok','已同步 ✓');
+  }catch(e){
+    setSyncStatus('error','無法連線，使用本機資料');
+  }
+}
+
+// TOP DATE
+function renderTopDate(){
+  const d=new Date();
+  const wd=['日','一','二','三','四','五','六'];
+  document.getElementById('top-date-main').textContent=`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+  document.getElementById('top-date-sub').textContent=`週${wd[d.getDay()]}`;
+  document.getElementById('streak-num').textContent=S.streak||0;
+  document.getElementById('today-date').textContent=`${d.getMonth()+1}月${d.getDate()}日 週${wd[d.getDay()]}`;
+}
+
+// EXP BAR
+function renderExpBar(){
+  const f=Math.round((S.exp%70)/70*7);
+  document.getElementById('exprow').innerHTML=Array.from({length:7},(_,i)=>`<div class="exp-seg ${i<f?(i===f-1?'on pulse':'on'):'off'}"></div>`).join('');
+  document.getElementById('explbl').textContent=`${S.exp} EXP · 今日 ${Object.keys(S.checked).length}/8`;
+  document.getElementById('lv').textContent=`Lv.${Math.floor(S.exp/70)+1}`;
+}
+
+// FLOWERS
+function renderFlowers(){
+  document.getElementById('flower-layer').innerHTML=S.flowers.slice(-18).map((f,i)=>`<span style="animation:bobY ${1.8+(i%4)*.15}s ease-in-out infinite ${(i*.1)%1.5}s">${fi(f,15)}</span>`).join('');
+}
+
+// FRUITS
+function renderFruits(){
+  const pos=[{t:'18px',l:'24px'},{t:'8px',l:'90px'},{t:'12px',l:'130px'},{t:'52px',l:'14px'},{t:'48px',l:'78px'},{t:'44px',l:'138px'},{t:'92px',l:'58px'}];
+  document.getElementById('fruit-layer').innerHTML=
+    S.apples.slice(0,7).map((a,i)=>{const p=pos[i]||{t:'60px',l:'70px'};return`<span style="position:absolute;top:${p.t};left:${p.l};animation:bobY ${1.8+i*.2}s ease-in-out infinite ${i*.1}s">${fi(a==='big'?'1f34f':'1f34e',22)}</span>`;}).join('')+
+    (S.goldFruits>0?`<span style="position:absolute;top:28px;left:65px;animation:sparkle 2s ease-in-out infinite">${fi('2b50',26)}</span>`:'');
+  document.getElementById('seedling-zone').innerHTML=
+    Array.from({length:Math.min(S.seedlings,2)},()=>`<span style="animation:bobY 2s ease-in-out infinite">${fi('1f331',26)}</span>`).join('')+
+    Array.from({length:S.trees-1},()=>`<img src="${CDN}1f333_3d.png" width="55" height="55"/>`).join('');
+}
+
+// STICKY NOTE
+function renderStickyNote(){
+  const note=document.getElementById('sticky-note');
+  const items=S.todayTDL||[];
+  if(!items.length){note.style.display='none';return;}
+  note.style.display='block';
+  const d=new Date();
+  document.getElementById('sticky-date').textContent=`${d.getMonth()+1}/${d.getDate()}`;
+  document.getElementById('sticky-items').innerHTML=items.map(r=>`<div style="display:flex;gap:3px;margin-bottom:2px;font-size:11px;line-height:1.3;">${fi('2b50',9)}<span>${r.theme?`<b>${r.theme}：</b>`:''}${r.task||''}</span></div>`).join('');
+}
+
+// BURST
+function triggerBurst(el){
+  const o=document.getElementById('burst-overlay');o.style.display='block';o.innerHTML='';
+  const rect=el.getBoundingClientRect(),cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
+  const cols=['#9FE1CB','#C8C4F7','#F4C0D1','#FAC775','#5DCAA5','#B89AF5'];
+  for(let i=0;i<22;i++){const a=Math.random()*Math.PI*2,d=80+Math.random()*180,p=document.createElement('div');p.className='burst-p';const sz=6+Math.random()*10;p.style.cssText=`left:${cx}px;top:${cy}px;width:${sz}px;height:${sz}px;background:${cols[Math.floor(Math.random()*cols.length)]};--tx:${Math.cos(a)*d}px;--ty:${Math.sin(a)*d}px;animation-delay:${Math.random()*.15}s;`;o.appendChild(p);}
+  for(let i=0;i<12;i++){const a=Math.random()*Math.PI*2,d=60+Math.random()*160,em=document.createElement('div');em.className='burst-e';em.textContent=BURST_E[Math.floor(Math.random()*BURST_E.length)];em.style.cssText=`left:${cx-11}px;top:${cy-11}px;--tx:${Math.cos(a)*d}px;--ty:${Math.sin(a)*d}px;--tr:${(Math.random()-.5)*360}deg;animation-delay:${Math.random()*.2}s;`;o.appendChild(em);}
+  setTimeout(()=>{o.style.display='none';o.innerHTML='';},1500);
+}
+function showExpPop(el,text){
+  const rect=el.getBoundingClientRect(),pop=document.createElement('div');pop.className='exp-pop-el';pop.textContent=text;pop.style.cssText=`left:${rect.left+rect.width/2-36}px;top:${rect.top-10}px;`;document.body.appendChild(pop);setTimeout(()=>pop.remove(),950);
+}
+
+// HABITS
+function renderHabits(){
+  document.getElementById('habits').innerHTML=HABITS.map(h=>`
+    <div class="neo-chip${S.checked[h.k]?' on':''}" data-k="${h.k}" style="position:relative;">
+      ${fi(h.c,20)}${h.c2?fi(h.c2,16):''}
+      <span>${h.l}</span>
+      ${S.checked[h.k]?`<span style="margin-left:auto;">${fi('2705',16)}</span>`:''}
+    </div>`).join('');
+  document.querySelectorAll('.neo-chip').forEach(c=>c.addEventListener('click',()=>{
+    if(S.checked[c.dataset.k])return;
+    const h=HABITS.find(x=>x.k===c.dataset.k);
+    S.checked[c.dataset.k]=true;S.exp+=10;S.flowers.push(h.fc);sv(S);
+    triggerBurst(c);
+    const ring=document.createElement('div');ring.className='chip-ring';c.appendChild(ring);setTimeout(()=>ring.remove(),500);
+    showExpPop(c,'+10 EXP ✨');
+    renderHabits();renderFlowers();renderExpBar();
+  }));
+}
+
+// TDL
+let tdlRows=S.tomorrowTDL.length?S.tomorrowTDL.map(r=>({...r,confirmed:r.confirmed||false})):[{theme:'',task:'',confirmed:false},{theme:'',task:'',confirmed:false},{theme:'',task:'',confirmed:false}];
+function renderTDL(){
+  document.getElementById('tdl-rows').innerHTML=tdlRows.map((r,i)=>`
+    <div class="tdl-row-wrap${r.confirmed?' confirmed-row':''}">
+      <input class="tdl-in" placeholder="主題" value="${r.theme||''}" data-i="${i}" data-f="theme" style="width:75px;flex-shrink:0;"/>
+      <input class="tdl-in" placeholder="明日目標" value="${r.task||''}" data-i="${i}" data-f="task" style="flex:1;"/>
+      <button class="tdl-confirm-btn${r.confirmed?' confirmed':''}" data-i="${i}" title="確認加入明天">${r.confirmed?fi('2b50',13):'✓'}</button>
+      <button class="tdl-del-btn" data-i="${i}" title="刪除">✕</button>
+    </div>`).join('');
+  document.querySelectorAll('#tdl-rows input').forEach(el=>el.addEventListener('input',()=>{tdlRows[+el.dataset.i][el.dataset.f]=el.value;}));
+  document.querySelectorAll('.tdl-confirm-btn').forEach(b=>b.addEventListener('click',()=>{tdlRows[+b.dataset.i].confirmed=!tdlRows[+b.dataset.i].confirmed;renderTDL();}));
+  document.querySelectorAll('.tdl-del-btn').forEach(b=>b.addEventListener('click',()=>{tdlRows.splice(+b.dataset.i,1);renderTDL();}));
+}
+document.getElementById('tdl-add').addEventListener('click',()=>{tdlRows.push({theme:'',task:'',confirmed:false});renderTDL();});
+
+// DIARY
+['hl','rf','gr'].forEach(k=>{const el=document.getElementById('d-'+k);el.value=S.diary[k]||'';el.addEventListener('input',()=>{S.diary[k]=el.value;sv(S);});});
+
+// PLANT
+document.getElementById('plant-btn').addEventListener('click',async()=>{
+  if(S.lastPlant===today()){alert('今天已經種過了 🌱');return;}
+  const d=S.diary;
+  if(!d.hl&&!d.rf&&!d.gr){alert('今日小記還是空的，先寫一點再種下今天 📖');return;}
+  const confirmed=tdlRows.filter(r=>(r.theme||r.task)&&r.confirmed);
+  const all=tdlRows.filter(r=>r.theme||r.task);
+  const toSave=confirmed.length?confirmed:all;
+  if(!toSave.length){alert('明天 TDL 還沒填 🌙');return;}
+  const yesterday=new Date(Date.now()-864e5).toISOString().slice(0,10);
+  S.streak=(S.lastStreak===yesterday||S.lastStreak===today())?S.streak+1:1;
+  S.lastStreak=today();
+  S.tomorrowTDL=toSave.map(r=>({theme:r.theme,task:r.task}));
+  S.lastPlant=today();S.apples.push('small');S.exp+=20;
+  while(S.apples.filter(a=>a==='small').length>=7){const i=S.apples.findIndex(a=>a==='small');S.apples.splice(i,7);S.bigApples++;}
+  while(S.bigApples>=4){S.bigApples-=4;S.goldFruits++;}
+  while(S.goldFruits>=3){S.goldFruits-=3;S.seedlings++;}
+  while(S.seedlings>=2){S.seedlings-=2;S.trees++;}
+  S.entries.push({date:today(),checked:[...Object.keys(S.checked)],diary:{...d},exp:S.exp,streak:S.streak,tdl:S.tomorrowTDL});
+  sv(S);renderFruits();renderExpBar();renderTopDate();
+  const btn=document.getElementById('plant-btn');btn.innerHTML=`${fi('1f389',17)} 今天種下了！`;btn.disabled=true;
+  triggerBurst(btn);showExpPop(btn,'+20 EXP 🌱');
+  // SYNC TO SHEET
+  await syncToSheet({
+    date:today(),
+    checked:Object.keys(S.checked),
+    hl:d.hl,rf:d.rf,gr:d.gr,
+    tdl:S.tomorrowTDL,
+    exp:S.exp,
+    streak:S.streak
+  });
+});
+
+// COPY
+document.getElementById('copy-btn').addEventListener('click',()=>{
+  const d=S.diary,c=HABITS.filter(h=>S.checked[h.k]).map(h=>h.l);
+  const t=(S.tomorrowTDL||[]).map(r=>`${r.theme?r.theme+'：':''}${r.task}`).join('\n');
+  navigator.clipboard.writeText(`${today()} 紀錄\n做了：${c.join('、')||'無'}\n\n🌟 Highlights：${d.hl||'無'}\n📖 Reflection：${d.rf||'無'}\n🥹 Gratitude：${d.gr||'無'}\n\n明天TDL：\n${t||'無'}`).then(()=>{
+    const b=document.getElementById('copy-btn');b.innerHTML=`${fi('2705',15)} 已複製！`;
+    setTimeout(()=>{b.innerHTML=`${fi('1f4cb',15)} 複製今日紀錄給 Claude`;},2000);
+  });
+});
+
+// WEEKLY
+function renderWeekly(){
+  const entries=S.entries||[];
+  const now=new Date();
+  const wd=['日','一','二','三','四','五','六'];
+  const week=Array.from({length:7},(_,i)=>{const d=new Date(now);d.setDate(d.getDate()-i);return d.toISOString().slice(0,10);}).reverse();
+  const weekEntries=week.map(d=>({date:d,entry:entries.find(e=>e.date===d)||null}));
+  let totalDays=0,totalHabits=0,totalExp=0;
+  weekEntries.forEach(w=>{if(w.entry){totalDays++;totalHabits+=w.entry.checked?.length||0;totalExp+=w.entry.checked?.length*10+20||0;}});
+  document.getElementById('wk-days').textContent=totalDays;
+  document.getElementById('wk-exp').textContent=totalExp;
+  document.getElementById('wk-habits').textContent=totalHabits;
+  const container=document.getElementById('week-entries');
+  if(totalDays===0){container.innerHTML=`<div class="empty-week">${fi('1f331',32)}<br/><br/>本週還沒有紀錄<br/>今天就開始種下第一天吧</div>`;return;}
+  container.innerHTML=weekEntries.map(w=>{
+    const d=new Date(w.date+'T00:00:00');
+    const dayName=`${d.getMonth()+1}/${d.getDate()} 週${wd[d.getDay()]}`;
+    const isToday=w.date===today();
+    if(!w.entry)return`<div class="week-card" style="opacity:.45;"><div class="week-day-hd"><span>${dayName}</span><span style="font-size:11px;color:var(--tc3);">無紀錄</span></div></div>`;
+    const checkedKeys=w.entry.checked||[];
+    const dots=HABITS.map(h=>`<div class="habit-dot ${checkedKeys.includes(h.k)?'done':'miss'}" title="${h.l}">${fi(h.c,14)}</div>`).join('');
+    const diary=w.entry.diary||{};
+    const diaryText=[diary.hl,diary.rf,diary.gr].filter(Boolean).join(' · ');
+    return`<div class="week-card" style="${isToday?'border-color:rgba(123,111,232,0.4);':''}">
+      <div class="week-day-hd">
+        <span>${dayName}${isToday?` ${fi('2b50',13)}`:''}  </span>
+        <span class="week-exp-badge">+${checkedKeys.length*10+20} EXP</span>
+      </div>
+      <div class="habit-dots">${dots}</div>
+      ${diaryText?`<div class="week-diary-preview">${diaryText.slice(0,80)}${diaryText.length>80?'...':''}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// NAV
+document.querySelectorAll('.nav-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('page-'+btn.dataset.page).classList.add('active');
+    if(btn.dataset.page==='week')renderWeekly();
+  });
+});
+
+// PUPPY
+(function(){
+  const wrap=document.getElementById('puppy'),stage=document.getElementById('scene-stage');
+  let cur=0,drag=false,moved=false,sx,sy,ol,ot,walkT=null,ang=0,circT=null;
+  const animMap={stand:'pBreathe 2.2s ease-in-out infinite',sleep:'pSleep 3s ease-in-out infinite',play:'pPlay .6s ease-in-out infinite',water:'pWater 1s ease-in-out infinite',dance:'pDance .5s ease-in-out infinite',happy:'pBounce .5s ease-in-out infinite',walk:'pBreathe .8s ease-in-out infinite',circle:'pBreathe .8s ease-in-out infinite',drag:'pShake .2s ease-in-out infinite'};
+  function sc(c){
+    document.getElementById('puppy-img').style.animation=animMap[c]||animMap.stand;
+    ['zzz','sweat','note1','note2','ball','water'].forEach(id=>document.getElementById('pfx-'+id).style.display='none');
+    document.getElementById('pfx-happy').style.display='none';
+    if(c==='sleep')document.getElementById('pfx-zzz').style.display='block';
+    if(c==='drag')document.getElementById('pfx-sweat').style.display='block';
+    if(c==='dance'){document.getElementById('pfx-note1').style.display='block';document.getElementById('pfx-note2').style.display='block';}
+    if(c==='happy')document.getElementById('pfx-happy').style.display='flex';
+    if(c==='play')document.getElementById('pfx-ball').style.display='block';
+    if(c==='water')document.getElementById('pfx-water').style.display='block';
+  }
+  function stop(){clearInterval(walkT);clearInterval(circT);walkT=circT=null;}
+  function go(i){stop();cur=i%STATES.length;const s=STATES[cur];sc(s);
+    if(s==='walk'){walkT=setInterval(()=>{if(drag)return;wrap.style.cssText+=`;transition:left 1.4s ease,top 1.4s ease;left:${18+Math.random()*(stage.clientWidth-100)}px;top:${18+Math.random()*(stage.clientHeight-75)}px;bottom:auto;`;},1700);}
+    if(s==='circle'){wrap.style.transition='none';circT=setInterval(()=>{if(drag)return;ang+=.1;wrap.style.left=(stage.clientWidth/2+Math.cos(ang)*90-28)+'px';wrap.style.top=(stage.clientHeight-85+Math.sin(ang)*40-28)+'px';wrap.style.bottom='auto';},60);}
+  }
+  function xy(e){return e.touches?{x:e.touches[0].clientX,y:e.touches[0].clientY}:{x:e.clientX,y:e.clientY};}
+  wrap.addEventListener('mousedown',e=>{drag=true;moved=false;const p=xy(e),r=wrap.getBoundingClientRect(),sr=stage.getBoundingClientRect();sx=p.x;sy=p.y;ol=r.left-sr.left;ot=r.top-sr.top;wrap.style.transition='none';sc('drag');e.preventDefault();});
+  wrap.addEventListener('touchstart',e=>{drag=true;moved=false;const p=xy(e),r=wrap.getBoundingClientRect(),sr=stage.getBoundingClientRect();sx=p.x;sy=p.y;ol=r.left-sr.left;ot=r.top-sr.top;wrap.style.transition='none';sc('drag');e.preventDefault();},{passive:false});
+  window.addEventListener('mousemove',e=>{if(!drag)return;const p=xy(e),dx=p.x-sx,dy=p.y-sy;if(Math.abs(dx)>4||Math.abs(dy)>4)moved=true;wrap.style.left=(ol+dx)+'px';wrap.style.top=(ot+dy)+'px';wrap.style.bottom='auto';});
+  window.addEventListener('touchmove',e=>{if(!drag)return;const p=xy(e),dx=p.x-sx,dy=p.y-sy;if(Math.abs(dx)>4||Math.abs(dy)>4)moved=true;wrap.style.left=(ol+dx)+'px';wrap.style.top=(ot+dy)+'px';wrap.style.bottom='auto';},{passive:false});
+  window.addEventListener('mouseup',()=>{if(!drag)return;drag=false;if(!moved)go(cur+1);else{sc(STATES[cur]);if(STATES[cur]==='walk'||STATES[cur]==='circle')go(cur);}});
+  window.addEventListener('touchend',()=>{if(!drag)return;drag=false;if(!moved)go(cur+1);else{sc(STATES[cur]);if(STATES[cur]==='walk'||STATES[cur]==='circle')go(cur);}});
+  go(0);
+})();
+
+// INIT
+renderTopDate();renderHabits();renderExpBar();renderFlowers();renderFruits();renderStickyNote();renderTDL();
+if(S.lastPlant===today()){const b=document.getElementById('plant-btn');b.innerHTML=`${fi('1f389',17)} 今天種下了！`;b.disabled=true;}
+loadFromSheet();
+</script>
+</body>
+</html>
