@@ -1,0 +1,141 @@
+// ═══════════════════════════════════════════════════════
+// 格蘭朵魔法森林 GAS v2.2（配合 PWA 版 index.html，新增 notifications 欄）
+// ═══════════════════════════════════════════════════════
+// 【安裝步驟】
+// 1. 打開你的 Google Sheet（ID: ***REMOVED***）
+// 2. 確認有兩個分頁（沒有的話手動建立，名字要一模一樣）：
+//    ① entries — 第1列標題（11欄）：
+//       date | checked | hl | rf | gr | quote | tdl | exp | streak | tdlTotal | tdlDone
+//    ② state — 第1列標題（18欄）：
+//       flowers | apples | bigApples | goldFruits | seedlings | trees |
+//       achievements | quotes | calNotes | myPeople | treasures |
+//       lastPlant | lastStreak | streak | exp | gardenPos | supportCategories | notifications
+//    ※ 從 v2.1 升級：只要在 state 分頁第1列最後面（supportCategories 後面）
+//      補上一欄標題 notifications 就好，其他欄位跟舊資料都不用動
+// 3. 擴充功能 → Apps Script → 全選刪掉舊程式碼 → 貼上這份 → 儲存
+// 4. 部署 → 管理部署 → 編輯（鉛筆）→ 版本選「新版本」→ 部署
+//    （用「編輯現有部署」網址不會變；如果選「新增部署」網址會變，
+//      要把新網址取代 index.html 裡的 GAS_URL）
+// 5. 權限確認：執行身分=我、存取權=所有人
+// ═══════════════════════════════════════════════════════
+
+const SHEET_ID = '***REMOVED***';
+
+const ENTRY_COLS = ['date','checked','hl','rf','gr','quote','tdl','exp','streak','tdlTotal','tdlDone'];
+const STATE_COLS = ['flowers','apples','bigApples','goldFruits','seedlings','trees',
+                    'achievements','quotes','calNotes','myPeople','treasures',
+                    'lastPlant','lastStreak','streak','exp','gardenPos','supportCategories',
+                    'notifications'];
+
+function getSheet(name){
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  let sh = ss.getSheetByName(name);
+  if(!sh){
+    sh = ss.insertSheet(name);
+    if(name==='entries') sh.appendRow(ENTRY_COLS);
+    if(name==='state')   sh.appendRow(STATE_COLS);
+  }
+  return sh;
+}
+
+function json(obj){
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ── GET ──────────────────────────────────────────────
+function doGet(e){
+  const action = (e.parameter.action||'').trim();
+  try{
+    if(action==='getEntries') return json({ok:true,data:getEntries_()});
+    if(action==='getState')   return json({ok:true,data:getState_()});
+    return json({ok:false,error:'unknown action: '+action});
+  }catch(err){
+    return json({ok:false,error:String(err)});
+  }
+}
+
+function getEntries_(){
+  const sh = getSheet('entries');
+  const values = sh.getDataRange().getValues();
+  if(values.length<2) return [];
+  const header = values[0].map(String);
+  return values.slice(1).map(row=>{
+    const o = {};
+    header.forEach((h,i)=>{
+      let v = row[i];
+      if(h==='date' && v instanceof Date){
+        v = Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+      }
+      o[h] = v;
+    });
+    return o;
+  }).filter(o=>o.date);
+}
+
+function getState_(){
+  const sh = getSheet('state');
+  const values = sh.getDataRange().getValues();
+  if(values.length<2) return {};
+  const header = values[0].map(String);
+  const row = values[1];
+  const o = {};
+  header.forEach((h,i)=>{ o[h] = row[i]; });
+  return o;
+}
+
+// ── POST ─────────────────────────────────────────────
+function doPost(e){
+  const action = (e.parameter.action||'').trim();
+  try{
+    const payload = JSON.parse(e.postData.contents||'{}');
+    if(action==='saveEntry') return json({ok:saveEntry_(payload)});
+    if(action==='saveState') return json({ok:saveState_(payload)});
+    return json({ok:false,error:'unknown action: '+action});
+  }catch(err){
+    return json({ok:false,error:String(err)});
+  }
+}
+
+function saveEntry_(p){
+  const sh = getSheet('entries');
+  const values = sh.getDataRange().getValues();
+  const header = values[0].map(String);
+  const dateCol = header.indexOf('date');
+  const dateStr = String(p.date).slice(0,10);
+
+  const rowData = header.map(h=>{
+    let v = p[h];
+    if(v===undefined||v===null) v = '';
+    if(typeof v==='object') v = JSON.stringify(v);
+    return v;
+  });
+
+  // 找同日期列 → 覆蓋；沒有 → 新增
+  for(let r=1; r<values.length; r++){
+    let cell = values[r][dateCol];
+    if(cell instanceof Date){
+      cell = Utilities.formatDate(cell, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+    }
+    if(String(cell).slice(0,10)===dateStr){
+      sh.getRange(r+1,1,1,rowData.length).setValues([rowData]);
+      return true;
+    }
+  }
+  sh.appendRow(rowData);
+  return true;
+}
+
+function saveState_(p){
+  const sh = getSheet('state');
+  const values = sh.getDataRange().getValues();
+  const header = values[0].map(String);
+  const rowData = header.map(h=>{
+    let v = p[h];
+    if(v===undefined||v===null) v = '';
+    if(typeof v==='object') v = JSON.stringify(v);
+    return v;
+  });
+  sh.getRange(2,1,1,rowData.length).setValues([rowData]);
+  return true;
+}

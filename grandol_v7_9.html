@@ -4,30 +4,18 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
 <title>格蘭朵魔法森林</title>
-<link rel="manifest" href="manifest.json"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
-<meta name="apple-mobile-web-app-title" content="格蘭朵"/>
-<link rel="apple-touch-icon" href="puppy_icon.png"/>
-<link rel="icon" type="image/png" href="puppy_icon.png"/>
-<meta name="theme-color" content="#8B7FE8"/>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
   --tc:#3A2E5A;--tc2:#7B6A9A;--tc3:#A898C8;
-  --g1:rgba(255,255,255,.45);--gb:rgba(255,255,255,.72);
+  --g1:rgba(255,255,255,.55);--gb:rgba(255,255,255,.72);
   --gs:0 8px 32px rgba(100,80,200,.13),0 2px 8px rgba(100,80,200,.08),inset 0 1.5px 0 rgba(255,255,255,.92);
   --gs2:0 16px 48px rgba(80,60,180,.16),inset 0 2px 0 rgba(255,255,255,.95);
   --nm:4px 4px 10px rgba(150,130,220,.18),-2px -2px 7px rgba(255,255,255,.92),inset 0 1px 0 rgba(255,255,255,1);
   --nm-in:inset 3px 3px 8px rgba(150,130,220,.15),inset -2px -2px 6px rgba(255,255,255,.9);
 }
-body{font-family:'Quicksand',sans-serif;background:#D4EEFF;min-height:100vh;}
-/* 固定背景圖：iOS Safari 不支援 background-attachment:fixed，用 ::before 固定層模擬視差 */
-body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('background_web.png');background-size:cover;background-position:center;background-repeat:no-repeat;}
-@media(max-width:768px){body::before{background-image:url('background.png');}}
-@media(display-mode:standalone){body::before{background-image:url('background.png');}}
+body{font-family:'Quicksand',sans-serif;background:linear-gradient(170deg,#D4EEFF 0%,#E8F5FF 30%,#F0EAF8 60%,#E0F5EE 100%);min-height:100vh;}
 .wrap{max-width:860px;margin:0 auto;}
 .bg{min-height:100vh;padding:0 0 90px;}
 
@@ -56,10 +44,10 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
 .page.active{display:block;}
 
 /* GLASS CARDS */
-.gcard{background:var(--g1);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1.5px solid var(--gb);border-radius:24px;box-shadow:var(--gs);padding:1.1rem 1.15rem;margin-bottom:13px;position:relative;overflow:hidden;}
+.gcard{background:var(--g1);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border:1.5px solid var(--gb);border-radius:24px;box-shadow:var(--gs);padding:1.1rem 1.15rem;margin-bottom:13px;position:relative;overflow:hidden;}
 .gcard::before{content:'';position:absolute;top:0;left:0;right:0;height:1.5px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.95),transparent);}
-.gcard-scene{background:rgba(240,248,255,.40);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border:1.5px solid rgba(255,255,255,.8);border-radius:26px;box-shadow:var(--gs2);padding:1rem;margin-bottom:13px;position:relative;overflow:hidden;}
-.gcard-nb{background:rgba(255,252,235,.50);backdrop-filter:blur(18px);border:1.5px solid rgba(255,230,140,.5);border-radius:22px;box-shadow:0 8px 28px rgba(200,150,60,.1),inset 0 2px 0 rgba(255,255,255,.95);padding:1.1rem 1.15rem;margin-bottom:13px;}
+.gcard-scene{background:rgba(240,248,255,.5);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border:1.5px solid rgba(255,255,255,.8);border-radius:26px;box-shadow:var(--gs2);padding:1rem;margin-bottom:13px;position:relative;overflow:hidden;}
+.gcard-nb{background:rgba(255,252,235,.65);backdrop-filter:blur(18px);border:1.5px solid rgba(255,230,140,.5);border-radius:22px;box-shadow:0 8px 28px rgba(200,150,60,.1),inset 0 2px 0 rgba(255,255,255,.95);padding:1.1rem 1.15rem;margin-bottom:13px;}
 .sec-hd{font-family:'Baloo 2',sans-serif;font-size:14px;font-weight:800;color:var(--tc);margin-bottom:11px;display:flex;align-items:center;gap:7px;}
 
 /* RWD ROWS */
@@ -332,32 +320,9 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
 @keyframes pRead{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(3deg) translateY(-2px)}}
 @keyframes pCry{0%,100%{transform:rotate(-3deg) scale(1,.98)}25%{transform:rotate(3deg) scale(.98,1)}50%{transform:rotate(-3deg) scale(1,.97)}75%{transform:rotate(3deg) scale(.99,1)}}
 @keyframes syncPulse{0%,100%{opacity:1}50%{opacity:.4}}
-
-/* ── PWA SPLASH（只在 standalone 模式顯示） ── */
-#pwa-splash{display:none;position:fixed;inset:0;z-index:99999;background:#D4EEFF url('background.png') center/cover no-repeat;flex-direction:column;align-items:center;justify-content:center;gap:14px;opacity:1;transition:opacity .5s;}
-#pwa-splash img{width:110px;height:110px;border-radius:26px;box-shadow:0 10px 40px rgba(80,60,180,.35);}
-#pwa-splash .splash-name{font-family:'Baloo 2',sans-serif;font-size:18px;font-weight:800;color:var(--tc);text-shadow:0 1px 6px rgba(255,255,255,.8);}
-@media(display-mode:standalone){#pwa-splash{display:flex;}}
-
-/* ── SETTINGS ── */
-.set-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(200,196,247,.25);font-size:13px;color:var(--tc);}
-.set-row:last-child{border-bottom:none;}
-.tgl{position:relative;display:inline-block;width:44px;height:25px;flex-shrink:0;}
-.tgl input{opacity:0;width:0;height:0;position:absolute;}
-.tgl .knob{position:absolute;inset:0;border-radius:999px;background:rgba(200,196,247,.45);transition:background .2s;cursor:pointer;display:block;}
-.tgl .knob::before{content:'';position:absolute;top:3px;left:3px;width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.2);transition:transform .2s;}
-.tgl input:checked+.knob{background:linear-gradient(135deg,#8B7FE8,#5DCAA5);}
-.tgl input:checked+.knob::before{transform:translateX(19px);}
-.time-in{background:rgba(255,255,255,.55);border:1.5px solid rgba(255,255,255,.8);border-radius:9px;padding:4px 7px;font-family:'Quicksand',sans-serif;font-size:12px;color:var(--tc);outline:none;}
-.day-chip{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.5);border:1.5px solid rgba(255,255,255,.8);font-size:11px;font-weight:700;color:var(--tc3);cursor:pointer;user-select:none;}
-.day-chip.on{background:rgba(93,202,165,.4);border-color:rgba(93,202,165,.7);color:#2A7A5A;}
-
-/* ── 導覽列 7 顆按鈕：小螢幕縮字 ── */
-@media(max-width:420px){.nav-btn{font-size:9px;padding:8px 0 6px;gap:1px;}.nav-btn img{width:19px;height:19px;}}
 </style>
 </head>
 <body>
-<div id="pwa-splash"><img src="puppy_icon.png" alt="格蘭朵"/><div class="splash-name">格蘭朵魔法森林</div></div>
 <div class="wrap"><div class="bg">
 <div id="burst-overlay" class="burst-overlay" style="display:none;"></div>
 <button class="support-quick-btn" id="support-quick-btn" title="需要支持的時候">🫂</button>
@@ -647,67 +612,10 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
   <div class="sec-hd">🏆 成就牆</div>
   <div class="achievement-grid" id="achievement-grid"></div>
 </div>
-
-</div>
-
-
-<!-- ══════ SETTINGS ══════ -->
-<div class="page" id="page-settings">
-<div class="gcard" style="margin-top:4px;">
-  <div class="sec-hd">🔔 每日提醒通知</div>
-  <div class="set-row" style="border-bottom:1.5px solid rgba(200,196,247,.4);">
-    <span style="flex:1;font-weight:700;">啟用通知</span>
-    <label class="tgl"><input type="checkbox" id="notif-master"/><span class="knob"></span></label>
-  </div>
-  <p id="notif-perm-hint" style="font-size:11px;color:var(--tc3);line-height:1.7;margin:8px 0 4px;"></p>
-  <div id="notif-presets"></div>
-  <div style="font-size:12px;font-weight:700;color:var(--tc2);margin:14px 0 4px;">自訂提醒</div>
-  <div id="notif-custom-list"></div>
-  <div id="notif-custom-form" style="display:none;margin-top:8px;">
-    <div style="font-size:11px;color:var(--tc2);margin-bottom:4px;">選一個 icon</div>
-    <div class="emoji-picker" id="notif-emoji-picker"></div>
-    <input class="tdl-in" id="notif-new-name" placeholder="提醒主題（例如：喝水）" style="width:100%;margin-bottom:7px;"/>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-      <span style="font-size:12px;color:var(--tc2);">時間</span>
-      <input type="time" class="time-in" id="notif-new-time" value="12:00"/>
-    </div>
-    <div style="font-size:11px;color:var(--tc2);margin-bottom:5px;">頻率（都不選＝每天）</div>
-    <div id="notif-new-days" style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;"></div>
-    <div style="display:flex;gap:8px;">
-      <button class="mini-btn" id="notif-custom-save" style="flex:1;">新增提醒</button>
-      <button class="mini-btn" id="notif-custom-cancel" style="flex:1;background:rgba(200,196,247,.4);color:var(--tc2);">取消</button>
-    </div>
-  </div>
-  <button id="notif-custom-add" style="background:none;border:1.5px dashed rgba(160,140,220,.35);border-radius:11px;padding:8px;font-family:'Quicksand',sans-serif;font-size:12px;color:var(--tc3);cursor:pointer;width:100%;text-align:center;margin-top:8px;">＋ 新增自訂提醒</button>
-  <p style="font-size:11px;color:var(--tc3);line-height:1.7;margin-top:10px;">📱 iPhone 需 iOS 16.4 以上，且要先用 Safari 把格蘭朵「加入主畫面」安裝成 APP，從主畫面開啟才能使用通知。提醒在 APP 開著（或掛在背景）時最可靠，完全關閉太久系統可能不會觸發。</p>
-</div>
-
-<div class="gcard">
-  <div class="sec-hd">📊 帳號與資料</div>
-  <div style="font-size:12px;font-weight:700;color:var(--tc2);margin-bottom:4px;">Google Sheet ID（唯讀）</div>
-  <input class="tdl-in" id="set-sheet-id" readonly style="width:100%;margin-bottom:10px;opacity:.7;font-size:11px;"/>
-  <div style="font-size:12px;font-weight:700;color:var(--tc2);margin-bottom:4px;">GAS 網址（換部署時可在這裡修改）</div>
-  <textarea class="diary-ta" id="set-gas-url" style="min-height:64px;font-size:11px;margin-bottom:8px;word-break:break-all;"></textarea>
-  <div style="display:flex;gap:8px;margin-bottom:12px;">
-    <button class="mini-btn" id="set-gas-save" style="flex:1;">儲存網址</button>
-    <button class="mini-btn" id="set-gas-reset" style="flex:1;background:rgba(200,196,247,.4);color:var(--tc2);">還原預設</button>
-  </div>
-  <div class="set-row"><span style="flex:1;">最後同步時間</span><span id="set-last-sync" style="color:var(--tc2);font-size:12px;">—</span></div>
-  <button class="ghost-btn" id="set-sync-now" style="margin-top:10px;">🔄 立即同步</button>
-</div>
-
 <div class="gcard" style="border-color:rgba(240,150,150,.4);">
   <div class="sec-hd">🧹 清除測試資料</div>
   <p style="font-size:12px;color:var(--tc3);line-height:1.7;margin-bottom:10px;">會清除<b>這台裝置</b>上的所有本機資料（花朵、果實、EXP、紀錄等）。<br/>⚠️ 注意：Google Sheet 上已同步的資料<b>不會</b>被刪除，而且重新載入後會自動同步回來。要「完全歸零」的話，請在清除之後，順便去 Google Sheet 把 <b>entries 分頁的資料列</b>（保留標題列）和 <b>state 分頁的第2列</b>一起刪掉。<br/>（此按鈕為測試期間使用，正式版會移除）</p>
   <button id="reset-data-btn" style="width:100%;padding:10px;border:1.5px solid rgba(240,120,120,.5);border-radius:13px;background:rgba(255,235,235,.7);color:#C05050;font-family:'Baloo 2',sans-serif;font-weight:700;font-size:13px;cursor:pointer;">清除本機測試資料</button>
-</div>
-
-<div class="gcard">
-  <div class="sec-hd">🌱 關於</div>
-  <div style="font-size:13px;color:var(--tc);line-height:1.9;">
-    <div>版本：v7.9（PWA）</div>
-    <div style="color:var(--tc2);">格蘭朵不是目標管理工具，是妳正在成為自己的見證者 🌱</div>
-  </div>
 </div>
 </div>
 
@@ -720,13 +628,10 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
   <button class="nav-btn" data-page="garden"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f338_3d.png" onerror="this.outerHTML='🌸'"/><span>內心花園</span></button>
   <button class="nav-btn" data-page="support"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1fac2_3d.png" onerror="this.outerHTML='🫂'"/><span>支持</span></button>
   <button class="nav-btn" data-page="info"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/2728_3d.png" onerror="this.outerHTML='✨'"/><span>說明</span></button>
-  <button class="nav-btn" data-page="settings"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/2699_3d.png" onerror="this.outerHTML='⚙️'"/><span>設定</span></button>
 </div></nav>
 
 <script>
-const DEFAULT_GAS_URL='https://script.google.com/macros/s/AKfycbw_gbuZtYiZjBusfWTNHPlOB20PMJLcb700u6pd5MIqoX7pCOAnthTjxym66nHTOK8G/exec';
-let GAS_URL=localStorage.getItem('grandol_gas_url')||DEFAULT_GAS_URL;
-const SHEET_ID='***REMOVED***';
+const GAS_URL='https://script.google.com/macros/s/AKfycbw_gbuZtYiZjBusfWTNHPlOB20PMJLcb700u6pd5MIqoX7pCOAnthTjxym66nHTOK8G/exec';
 const CDN='https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/';
 const fi=(c,s=20)=>`<img src="${CDN}${c}_3d.png" width="${s}" height="${s}" style="display:inline-block;vertical-align:middle;" onerror="this.style.display='none'"/>`;
 const SK='grandol_v7';
@@ -783,7 +688,7 @@ function defaults(){
   return{exp:0,flowers:[],apples:[],bigApples:0,goldFruits:0,seedlings:0,trees:1,
     streak:0,lastStreak:'',checked:{},diary:{hl:'',rf:'',gr:'',quote:''},
     lastPlant:'',tomorrowTDL:[],todayTDL:[],tdlDone:{},entries:[],
-    achievements:[],quotes:[],calNotes:{},myPeople:[],treasures:[],gardenPos:{},notePos:null,notifications:null};
+    achievements:[],quotes:[],calNotes:{},myPeople:[],treasures:[],gardenPos:{},notePos:null};
 }
 function ld(){
   try{const r=localStorage.getItem(SK);if(r){const s=JSON.parse(r);return Object.assign(defaults(),s);}}catch(e){}
@@ -806,11 +711,6 @@ function setSync(state,msg){
   const dot=document.getElementById('sync-dot'),lbl=document.getElementById('sync-label');
   dot.className='sync-dot'+(state==='syncing'?' syncing':state==='error'?' error':'');
   lbl.textContent=msg;
-  if(state==='ok'){
-    try{localStorage.setItem('grandol_last_sync',String(Date.now()));}catch(e){}
-    const el=document.getElementById('set-last-sync');
-    if(el&&typeof lastSyncText==='function')el.textContent=lastSyncText();
-  }
 }
 async function gasPost(action,payload){
   return fetch(GAS_URL+'?action='+action,{method:'POST',body:JSON.stringify(payload),headers:{'Content-Type':'text/plain'}});
@@ -833,8 +733,7 @@ async function syncState(){
       treasures:JSON.stringify(S.treasures),lastPlant:S.lastPlant,lastStreak:S.lastStreak,
       streak:S.streak,exp:S.exp,
       gardenPos:JSON.stringify(S.gardenPos||{}),
-      supportCategories:JSON.stringify(S.supportCategories||[]),
-      notifications:JSON.stringify(S.notifications||{})
+      supportCategories:JSON.stringify(S.supportCategories||[])
     });
     setSync('ok','已同步 ✓');
   }catch(e){setSync('error','同步失敗，資料在本機');}
@@ -865,7 +764,6 @@ async function loadCloud(){
       if(+d.exp>S.exp)S.exp=+d.exp;
       if(d.gardenPos)S.gardenPos=parseJ(d.gardenPos,S.gardenPos||{});
       if(d.supportCategories)S.supportCategories=parseJ(d.supportCategories,S.supportCategories||[]);
-      if(d.notifications){const nf=parseJ(d.notifications,null);if(nf&&nf.presets)S.notifications=nf;}
     }
     if(en.ok&&Array.isArray(en.data)){
       en.data.forEach(row=>{
@@ -2039,7 +1937,6 @@ document.querySelectorAll('.nav-btn').forEach(btn=>{
     if(p==='garden')renderGarden();
     if(p==='support')renderSupportPage();
     if(p==='info')renderAchievements();
-    if(p==='settings')renderSettings();
   });
 });
 
@@ -2059,203 +1956,6 @@ renderAll();
 initStickyDrag();
 initPuppy(document.getElementById('puppy'),document.getElementById('scene-stage'),60);
 loadCloud();
-</script>
-<script>
-// ═══ PWA + 設定頁（v7.9 PWA 升級新增，不動原有邏輯） ═══
-
-// ── Service Worker 註冊 ──
-if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});
-}
-// ── Splash 淡出（只在 standalone 顯示，其他模式本來就 display:none） ──
-setTimeout(()=>{const s=document.getElementById('pwa-splash');if(s){s.style.opacity='0';setTimeout(()=>s.remove(),500);}},900);
-
-// ── 通知設定 ──────────────────────────────────────────
-const NOTIF_PRESET_DEFS=[
-  {id:'wake',icon:'🌅',label:'早起打卡提醒',time:'07:00',body:'新的一天開始了，記得打卡早起 ✨'},
-  {id:'diary',icon:'📝',label:'填寫今日小記',time:'21:00',body:'今天過得怎麼樣？來寫一點小記吧'},
-  {id:'plant',icon:'🌙',label:'種下今天提醒',time:'22:00',body:'睡前記得「種下今天」🌱'},
-  {id:'sleep',icon:'💤',label:'準備早睡提醒',time:'23:00',body:'該放下手機準備睡覺囉，晚安'}
-];
-const NOTIF_EMOJIS=['⏰','🌅','📝','🌙','💤','💧','🏃','📖','🎨','🧘','💊','☀️','🍎','✨','🐶','🎸'];
-function ensureNotifDefaults(){
-  if(!S.notifications||!Array.isArray(S.notifications.presets)){
-    S.notifications={enabled:false,presets:NOTIF_PRESET_DEFS.map(p=>({id:p.id,icon:p.icon,label:p.label,time:p.time,on:true})),custom:[]};
-    sv(S);
-  }
-  if(!Array.isArray(S.notifications.custom))S.notifications.custom=[];
-}
-async function showNotif(title,body){
-  try{
-    const reg=await navigator.serviceWorker.getRegistration();
-    if(reg&&reg.showNotification){reg.showNotification(title,{body:body,icon:'puppy_icon.png',badge:'puppy_icon.png'});return;}
-  }catch(e){}
-  try{new Notification(title,{body:body,icon:'puppy_icon.png'});}catch(e){}
-}
-function checkNotifications(){
-  const n=S.notifications;
-  if(!n||!n.enabled)return;
-  if(!('Notification' in window)||Notification.permission!=='granted')return;
-  const now=new Date();
-  const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
-  let fired={};
-  try{fired=JSON.parse(localStorage.getItem('grandol_notif_fired')||'{}');}catch(e){}
-  if(fired.date!==today())fired={date:today(),ids:{}};
-  const items=[];
-  n.presets.forEach(p=>{
-    if(!p.on)return;
-    const def=NOTIF_PRESET_DEFS.find(d=>d.id===p.id)||{};
-    items.push({id:p.id,icon:p.icon,label:p.label,time:p.time,body:def.body||''});
-  });
-  n.custom.forEach(c=>items.push({id:c.id,icon:c.icon,label:c.label,time:c.time,days:c.days,body:'該做「'+c.label+'」囉！'}));
-  items.forEach(it=>{
-    if(it.time!==hm)return;
-    if(it.days&&it.days.length&&!it.days.includes(now.getDay()))return;
-    if(fired.ids[it.id])return;
-    fired.ids[it.id]=true;
-    showNotif(it.icon+' '+it.label,it.body||'格蘭朵魔法森林');
-  });
-  try{localStorage.setItem('grandol_notif_fired',JSON.stringify(fired));}catch(e){}
-}
-ensureNotifDefaults();
-setInterval(checkNotifications,20000);
-checkNotifications();
-
-// ── 設定頁 render ─────────────────────────────────────
-function lastSyncText(){
-  const t=+localStorage.getItem('grandol_last_sync')||0;
-  if(!t)return'尚未同步';
-  const d=new Date(t);
-  return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-}
-function notifPermHint(){
-  if(!('Notification' in window))return'⚠️ 這個瀏覽器不支援通知。iPhone 請先用 Safari 把格蘭朵「加入主畫面」，從主畫面圖示開啟才有通知功能（需 iOS 16.4+）。';
-  if(Notification.permission==='denied')return'⚠️ 通知權限被拒絕了，請到瀏覽器／系統設定重新允許通知。';
-  if(Notification.permission==='granted')return'✅ 已取得通知權限。';
-  return'打開上方開關時會請求通知權限。';
-}
-function renderNotifLists(){
-  const n=S.notifications;
-  const pbox=document.getElementById('notif-presets');
-  pbox.innerHTML=n.presets.map((p,i)=>`
-    <div class="set-row">
-      <label class="tgl"><input type="checkbox" class="preset-tgl" data-i="${i}" ${p.on?'checked':''}/><span class="knob"></span></label>
-      <span style="flex:1;">${p.icon} ${p.label}</span>
-      <input type="time" class="time-in preset-time" data-i="${i}" value="${p.time}"/>
-    </div>`).join('');
-  pbox.querySelectorAll('.preset-tgl').forEach(el=>el.addEventListener('change',()=>{
-    n.presets[+el.dataset.i].on=el.checked;sv(S);syncStateDebounced();
-  }));
-  pbox.querySelectorAll('.preset-time').forEach(el=>el.addEventListener('change',()=>{
-    if(el.value){n.presets[+el.dataset.i].time=el.value;sv(S);syncStateDebounced();}
-  }));
-  const cbox=document.getElementById('notif-custom-list');
-  cbox.innerHTML=n.custom.length?n.custom.map((c,i)=>{
-    const freq=(c.days&&c.days.length)?c.days.slice().sort().map(d=>'週'+wdArr[d]).join('、'):'每天';
-    return`<div class="set-row">
-      <span style="flex:1;">${c.icon} ${c.label}</span>
-      <span style="font-size:11px;color:var(--tc3);flex-shrink:0;">${freq} ${c.time}</span>
-      <button class="card-del notif-custom-del" data-i="${i}">✕</button>
-    </div>`;
-  }).join(''):`<div style="font-size:12px;color:var(--tc3);padding:4px 0;">還沒有自訂提醒</div>`;
-  cbox.querySelectorAll('.notif-custom-del').forEach(b=>b.addEventListener('click',()=>{
-    if(!confirm('刪除這個提醒？'))return;
-    n.custom.splice(+b.dataset.i,1);sv(S);syncStateDebounced();renderNotifLists();
-  }));
-}
-function renderSettings(){
-  ensureNotifDefaults();
-  document.getElementById('notif-master').checked=!!S.notifications.enabled;
-  document.getElementById('notif-perm-hint').textContent=notifPermHint();
-  renderNotifLists();
-  document.getElementById('set-sheet-id').value=SHEET_ID;
-  document.getElementById('set-gas-url').value=GAS_URL;
-  document.getElementById('set-last-sync').textContent=lastSyncText();
-}
-
-// ── 通知：總開關 ──
-document.getElementById('notif-master').addEventListener('change',async e=>{
-  ensureNotifDefaults();
-  if(e.target.checked){
-    if(!('Notification' in window)){alert('這個瀏覽器不支援通知功能 🥲\niPhone 請先「加入主畫面」安裝後再開啟（需 iOS 16.4+）');e.target.checked=false;return;}
-    let perm=Notification.permission;
-    if(perm==='default')perm=await Notification.requestPermission();
-    if(perm!=='granted'){alert('沒有取得通知權限，請到瀏覽器／系統設定開啟後再試');e.target.checked=false;document.getElementById('notif-perm-hint').textContent=notifPermHint();return;}
-    S.notifications.enabled=true;
-  }else{
-    S.notifications.enabled=false;
-  }
-  sv(S);syncStateDebounced();
-  document.getElementById('notif-perm-hint').textContent=notifPermHint();
-});
-
-// ── 通知：自訂提醒表單 ──
-let selNotifEmoji=NOTIF_EMOJIS[0];
-(function initNotifForm(){
-  const picker=document.getElementById('notif-emoji-picker');
-  picker.innerHTML=NOTIF_EMOJIS.map(e=>`<div class="emoji-opt${e===selNotifEmoji?' sel':''}" data-e="${e}" style="font-size:22px;">${e}</div>`).join('');
-  picker.querySelectorAll('.emoji-opt').forEach(o=>o.addEventListener('click',()=>{
-    selNotifEmoji=o.dataset.e;
-    picker.querySelectorAll('.emoji-opt').forEach(x=>x.classList.remove('sel'));
-    o.classList.add('sel');
-  }));
-  const daysBox=document.getElementById('notif-new-days');
-  daysBox.innerHTML=[1,2,3,4,5,6,0].map(d=>`<div class="day-chip" data-d="${d}">${wdArr[d]}</div>`).join('');
-  daysBox.querySelectorAll('.day-chip').forEach(ch=>ch.addEventListener('click',()=>ch.classList.toggle('on')));
-})();
-document.getElementById('notif-custom-add').addEventListener('click',()=>{
-  document.getElementById('notif-custom-form').style.display='block';
-  document.getElementById('notif-custom-add').style.display='none';
-});
-document.getElementById('notif-custom-cancel').addEventListener('click',()=>{
-  document.getElementById('notif-custom-form').style.display='none';
-  document.getElementById('notif-custom-add').style.display='block';
-});
-document.getElementById('notif-custom-save').addEventListener('click',()=>{
-  const label=document.getElementById('notif-new-name').value.trim();
-  const time=document.getElementById('notif-new-time').value;
-  if(!label){alert('先填提醒主題喔');return;}
-  if(!time){alert('先選時間喔');return;}
-  const days=[...document.querySelectorAll('#notif-new-days .day-chip.on')].map(ch=>+ch.dataset.d);
-  ensureNotifDefaults();
-  S.notifications.custom.push({id:'c'+Date.now(),icon:selNotifEmoji,label:label,time:time,days:days});
-  sv(S);syncStateDebounced();
-  document.getElementById('notif-new-name').value='';
-  document.querySelectorAll('#notif-new-days .day-chip.on').forEach(ch=>ch.classList.remove('on'));
-  document.getElementById('notif-custom-form').style.display='none';
-  document.getElementById('notif-custom-add').style.display='block';
-  renderNotifLists();
-});
-
-// ── 帳號與資料 ──
-document.getElementById('set-gas-save').addEventListener('click',()=>{
-  const v=document.getElementById('set-gas-url').value.trim();
-  if(!v||v===DEFAULT_GAS_URL){
-    localStorage.removeItem('grandol_gas_url');GAS_URL=DEFAULT_GAS_URL;
-  }else if(!/^https:\/\/script\.google\.com\//.test(v)){
-    alert('這不像 GAS 網址喔（要以 https://script.google.com/ 開頭）');return;
-  }else{
-    localStorage.setItem('grandol_gas_url',v);GAS_URL=v;
-  }
-  document.getElementById('set-gas-url').value=GAS_URL;
-  alert('已儲存，馬上用新網址重新同步 ✨');
-  loadCloud();
-});
-document.getElementById('set-gas-reset').addEventListener('click',()=>{
-  localStorage.removeItem('grandol_gas_url');GAS_URL=DEFAULT_GAS_URL;
-  document.getElementById('set-gas-url').value=GAS_URL;
-  loadCloud();
-});
-document.getElementById('set-sync-now').addEventListener('click',async()=>{
-  const b=document.getElementById('set-sync-now');
-  b.textContent='🔄 同步中...';b.disabled=true;
-  try{await syncState();await loadCloud();}catch(e){}
-  document.getElementById('set-last-sync').textContent=lastSyncText();
-  b.textContent='✅ 同步完成';b.disabled=false;
-  setTimeout(()=>{b.textContent='🔄 立即同步';},2000);
-});
-
-renderSettings();
 </script>
 </body>
 </html>
