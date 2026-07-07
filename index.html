@@ -84,7 +84,6 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
 .sky-bg{position:absolute;inset:0;background:linear-gradient(180deg,#87CEEB 0%,#B8E4F9 45%,#C8EED8 75%,#A8D8A8 100%);}
 .ground-el{position:absolute;bottom:0;left:0;right:0;height:48px;background:linear-gradient(180deg,#7EC87E,#5BA85B);border-radius:50% 50% 0 0/30% 30% 0 0;}
 .ground-el::before{content:'';position:absolute;top:0;left:0;right:0;height:8px;background:linear-gradient(180deg,#90D890,#7EC87E);border-radius:50% 50% 0 0/80% 80% 0 0;}
-.meadow-flowers{position:absolute;bottom:34px;left:0;right:0;display:flex;justify-content:space-around;padding:0 10px;pointer-events:none;z-index:2;}
 .floor-flowers{position:absolute;inset:0;pointer-events:none;z-index:3;}
 .floor-flower-item{position:absolute;cursor:grab;touch-action:none;pointer-events:all;z-index:3;}
 .floor-flower-item:active{cursor:grabbing;}
@@ -352,15 +351,13 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
 .day-chip{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.5);border:1.5px solid rgba(255,255,255,.8);font-size:11px;font-weight:700;color:var(--tc3);cursor:pointer;user-select:none;}
 .day-chip.on{background:rgba(93,202,165,.4);border-color:rgba(93,202,165,.7);color:#2A7A5A;}
 
-/* ── 導覽列 7 顆按鈕：小螢幕縮字 ── */
-@media(max-width:420px){.nav-btn{font-size:9px;padding:8px 0 6px;gap:1px;}.nav-btn img{width:19px;height:19px;}}
 </style>
 </head>
 <body>
 <div id="pwa-splash"><img src="puppy_icon.png" alt="格蘭朵"/><div class="splash-name">格蘭朵魔法森林</div></div>
 <div class="wrap"><div class="bg">
 <div id="burst-overlay" class="burst-overlay" style="display:none;"></div>
-<button class="support-quick-btn" id="support-quick-btn" title="需要支持的時候">🫂</button>
+<button class="support-quick-btn" id="settings-quick-btn" title="設定">⚙️</button>
 <div id="levelup-overlay" class="levelup-overlay" style="display:none;"><div class="levelup-card"><div style="font-size:32px;margin-bottom:8px;">🎉✨🌟</div><div style="font-family:'Baloo 2',sans-serif;font-size:64px;font-weight:800;color:#fff;" id="levelup-num">2</div><div style="font-family:'Baloo 2',sans-serif;font-size:18px;font-weight:700;color:rgba(255,255,255,.9);">格蘭朵樹升級了！</div></div></div>
 <div id="achieve-popup" class="achieve-popup" style="display:none;"><div style="font-size:36px;margin-bottom:4px;" id="achieve-icon">🏆</div><div style="font-family:'Baloo 2',sans-serif;font-size:15px;font-weight:800;color:#5A3800;" id="achieve-name"></div><div style="font-size:12px;color:#7A5000;margin-top:2px;" id="achieve-desc"></div></div>
 
@@ -406,17 +403,10 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
           <span style="position:absolute;top:12px;left:52%;animation:twinkle 2s ease-in-out infinite;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/2728_3d.png" width="12" height="12"/></span>
         </div>
         <div class="ground-el"></div>
-        <div class="meadow-flowers">
-          <span style="animation:flowerSway 2s ease-in-out infinite"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f337_3d.png" width="17" height="17"/></span>
-          <span style="animation:flowerSway 2.3s ease-in-out infinite .3s"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f33c_3d.png" width="17" height="17"/></span>
-          <span style="animation:flowerSway 1.9s ease-in-out infinite .6s"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f33b_3d.png" width="17" height="17"/></span>
-          <span style="animation:flowerSway 2.2s ease-in-out infinite .2s"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f338_3d.png" width="17" height="17"/></span>
-          <span style="animation:flowerSway 2.5s ease-in-out infinite .5s"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f490_3d.png" width="17" height="17"/></span>
-        </div>
         <div class="floor-flowers" id="flower-layer"></div>
-        <div id="tree-wrap" style="position:absolute;left:50%;bottom:16px;transform:translateX(-50%);animation:sway 3s ease-in-out infinite;z-index:1;width:220px;height:220px;">
-          <img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f333_3d.png" width="220" height="220"/>
-          <div id="fruit-layer" style="position:absolute;top:0;left:0;width:220px;height:220px;pointer-events:none;"></div>
+        <div id="tree-wrap" style="position:absolute;left:50%;bottom:12px;transform:translateX(-50%);animation:sway 3s ease-in-out infinite;z-index:1;width:280px;height:280px;">
+          <img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f333_3d.png" width="280" height="280"/>
+          <div id="fruit-layer" style="position:absolute;top:0;left:0;width:280px;height:280px;pointer-events:none;"></div>
         </div>
         <div id="seedling-zone" style="position:absolute;left:12px;bottom:44px;display:flex;gap:4px;align-items:flex-end;z-index:3;"></div>
         <div class="sticky-note" id="sticky-note">
@@ -588,7 +578,10 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
     <div class="emoji-picker" id="person-emoji-picker"></div>
     <input class="tdl-in" id="person-name" placeholder="名字" style="width:100%;margin-bottom:7px;"/>
     <input class="tdl-in" id="person-note" placeholder="一句話（TA 對妳的意義）" style="width:100%;margin-bottom:7px;"/>
-    <input class="tdl-in" id="person-img" placeholder="圖片網址（選填，會取代 emoji）" style="width:100%;margin-bottom:8px;"/>
+    <input type="file" id="person-file" accept="image/*" style="display:none;"/>
+    <button type="button" class="mini-btn" id="person-upload-btn" style="width:100%;margin-bottom:7px;background:rgba(159,225,203,.55);color:#2A7A5A;">📷 上傳圖片</button>
+    <img id="person-upload-preview" style="display:none;width:64px;height:64px;object-fit:cover;border-radius:12px;margin-bottom:7px;"/>
+    <input class="tdl-in" id="person-img" placeholder="或貼上圖片網址（選填，會取代 emoji）" style="width:100%;margin-bottom:8px;"/>
     <div style="display:flex;gap:8px;">
       <button class="mini-btn" id="person-save" style="flex:1;">加入</button>
       <button class="mini-btn" id="person-cancel" style="flex:1;background:rgba(200,196,247,.4);color:var(--tc2);">取消</button>
@@ -609,7 +602,10 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
     <input class="tdl-in" id="treasure-emoji" placeholder="代表 emoji（如 🎸 🏡 ☕）" style="width:100%;margin-bottom:7px;"/>
     <input class="tdl-in" id="treasure-title" placeholder="標題" style="width:100%;margin-bottom:7px;"/>
     <input class="tdl-in" id="treasure-desc" placeholder="描述（為什麼重要）" style="width:100%;margin-bottom:7px;"/>
-    <input class="tdl-in" id="treasure-img" placeholder="圖片網址（選填）" style="width:100%;margin-bottom:8px;"/>
+    <input type="file" id="treasure-file" accept="image/*" style="display:none;"/>
+    <button type="button" class="mini-btn" id="treasure-upload-btn" style="width:100%;margin-bottom:7px;background:rgba(159,225,203,.55);color:#2A7A5A;">📷 上傳圖片</button>
+    <img id="treasure-upload-preview" style="display:none;width:64px;height:64px;object-fit:cover;border-radius:12px;margin-bottom:7px;"/>
+    <input class="tdl-in" id="treasure-img" placeholder="或貼上圖片網址（選填）" style="width:100%;margin-bottom:8px;"/>
     <div style="display:flex;gap:8px;">
       <button class="mini-btn" id="treasure-save" style="flex:1;">收藏</button>
       <button class="mini-btn" id="treasure-cancel" style="flex:1;background:rgba(200,196,247,.4);color:var(--tc2);">取消</button>
@@ -682,7 +678,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
   <p style="font-size:11px;color:var(--tc3);line-height:1.7;margin-top:10px;">📱 iPhone 需 iOS 16.4 以上，且要先用 Safari 把格蘭朵「加入主畫面」安裝成 APP，從主畫面開啟才能使用通知。提醒在 APP 開著（或掛在背景）時最可靠，完全關閉太久系統可能不會觸發。</p>
 </div>
 
-<div class="gcard">
+<div class="gcard" id="set-account-card" style="display:none;">
   <div class="sec-hd">📊 帳號與資料</div>
   <div style="font-size:12px;font-weight:700;color:var(--tc2);margin-bottom:4px;">Google Sheet ID（唯讀）</div>
   <input class="tdl-in" id="set-sheet-id" readonly style="width:100%;margin-bottom:10px;opacity:.7;font-size:11px;"/>
@@ -720,7 +716,6 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
   <button class="nav-btn" data-page="garden"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f338_3d.png" onerror="this.outerHTML='🌸'"/><span>內心花園</span></button>
   <button class="nav-btn" data-page="support"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1fac2_3d.png" onerror="this.outerHTML='🫂'"/><span>支持</span></button>
   <button class="nav-btn" data-page="info"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/2728_3d.png" onerror="this.outerHTML='✨'"/><span>說明</span></button>
-  <button class="nav-btn" data-page="settings"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/2699_3d.png" onerror="this.outerHTML='⚙️'"/><span>設定</span></button>
 </div></nav>
 
 <script>
@@ -967,7 +962,7 @@ function makeDraggable(el,stage,onEnd){
     const p=xy(e),dx=p.x-sx,dy=p.y-sy;
     if(Math.abs(dx)>4||Math.abs(dy)>4)moved=true;
     let nl=ol+dx,nt=ot+dy;
-    nl=Math.max(0,Math.min(stage.scrollWidth-el.offsetWidth,nl));
+    nl=Math.max(0,Math.min(stage.clientWidth-el.offsetWidth,nl));
     nt=Math.max(0,Math.min(stage.clientHeight-el.offsetHeight,nt));
     el.style.left=nl+'px';el.style.top=nt+'px';el.style.bottom='auto';el.style.right='auto';
   };
@@ -1002,15 +997,19 @@ function renderExpBar(){
 // ── FLOWERS (unlimited, absolute, draggable, persistent) ──
 function migrateFlowers(){
   S.flowers=S.flowers.map((f,i)=>{
-    if(typeof f==='string')return{f:f,x:6+(i*47)%86,y:(i*13)%36};
+    if(typeof f==='string')return{f:f,x:6+(i*47)%86,y:(i*13)%36,d:today()};
     return f;
   });
+  S.flowers.forEach(f=>{if(!f.d)f.d=today();});
 }
 function renderFlowers(){
   const layer=document.getElementById('flower-layer');
   const stage=document.getElementById('scene-stage');
   layer.innerHTML='';
+  // 效能：只顯示最近30天長出的花（舊資料仍保留，不會刪除）
+  const fcd=new Date();fcd.setDate(fcd.getDate()-30);const fcut=fmtLocal(fcd);
   S.flowers.forEach((fl,i)=>{
+    if(fl.d&&fl.d<fcut)return;
     const el=document.createElement('span');
     el.className='floor-flower-item';
     el.style.left=fl.x+'%';
@@ -1029,7 +1028,7 @@ function renderFlowers(){
 }
 function addFlower(fc){
   const x=4+Math.random()*88,y=Math.random()*40;
-  S.flowers.push({f:fc,x:x,y:y});
+  S.flowers.push({f:fc,x:x,y:y,d:today()});
 }
 function removeFlower(fc){
   for(let i=S.flowers.length-1;i>=0;i--){
@@ -1039,11 +1038,11 @@ function removeFlower(fc){
 
 // ── FRUITS ────────────────────────────────────────────
 function renderFruits(){
-  // 樹220px:樹冠約x45~175 y40~150,全部位置限制在樹冠內
-  const pos=[{t:'52px',l:'72px'},{t:'46px',l:'122px'},{t:'84px',l:'50px'},{t:'90px',l:'96px'},{t:'86px',l:'146px'},{t:'122px',l:'72px'},{t:'126px',l:'124px'}];
-  let html=S.apples.slice(0,7).map((a,i)=>{const p=pos[i]||{t:'90px',l:'96px'};return`<span style="position:absolute;top:${p.t};left:${p.l};animation:bobY ${1.8+i*.2}s ease-in-out infinite ${i*.1}s">${fi('1f34e',24)}</span>`;}).join('');
-  html+=Array.from({length:Math.min(S.bigApples,4)},(_,i)=>`<span style="position:absolute;top:${58+i*26}px;left:${138-i*22}px;animation:bobY 2s ease-in-out infinite ${i*.2}s">${fi('1f34f',30)}</span>`).join('');
-  html+=Array.from({length:Math.min(S.goldFruits,3)},(_,i)=>`<span style="position:absolute;top:${64+i*28}px;left:${64+i*34}px;animation:sparkle 2.4s ease-in-out infinite ${i*.3}s">${fi('2b50',28)}</span>`).join('');
+  // 樹280px:樹冠約x57~223 y51~191,全部位置限制在樹冠內
+  const pos=[{t:'66px',l:'92px'},{t:'59px',l:'155px'},{t:'107px',l:'64px'},{t:'115px',l:'122px'},{t:'109px',l:'186px'},{t:'155px',l:'92px'},{t:'160px',l:'158px'}];
+  let html=S.apples.slice(0,7).map((a,i)=>{const p=pos[i]||{t:'115px',l:'122px'};return`<span style="position:absolute;top:${p.t};left:${p.l};animation:bobY ${1.8+i*.2}s ease-in-out infinite ${i*.1}s">${fi('1f34e',30)}</span>`;}).join('');
+  html+=Array.from({length:Math.min(S.bigApples,4)},(_,i)=>`<span style="position:absolute;top:${74+i*33}px;left:${176-i*28}px;animation:bobY 2s ease-in-out infinite ${i*.2}s">${fi('1f34f',38)}</span>`).join('');
+  html+=Array.from({length:Math.min(S.goldFruits,3)},(_,i)=>`<span style="position:absolute;top:${81+i*36}px;left:${81+i*43}px;animation:sparkle 2.4s ease-in-out infinite ${i*.3}s">${fi('2b50',36)}</span>`).join('');
   document.getElementById('fruit-layer').innerHTML=html;
   document.getElementById('seedling-zone').innerHTML=
     Array.from({length:Math.min(S.seedlings,2)},()=>`<span style="animation:bobY 2s ease-in-out infinite">${fi('1f331',28)}</span>`).join('')+
@@ -1081,11 +1080,22 @@ function renderStickyNote(){
       });
     });
   }
-  if(S.notePos){note.style.left=S.notePos.x+'px';note.style.top=S.notePos.y+'px';note.style.right='auto';}
+  box.style.maxHeight=items.length>5?'118px':'';
+  box.style.overflowY=items.length>5?'auto':'';
+  if(S.notePos){
+    const stage=document.getElementById('scene-stage');
+    note.style.left=S.notePos.x+'px';note.style.top=S.notePos.y+'px';note.style.right='auto';
+    const maxX=Math.max(0,stage.clientWidth-note.offsetWidth),maxY=Math.max(0,stage.clientHeight-note.offsetHeight);
+    const cx=Math.max(0,Math.min(maxX,S.notePos.x)),cy=Math.max(0,Math.min(maxY,S.notePos.y));
+    if(cx!==S.notePos.x||cy!==S.notePos.y){S.notePos={x:cx,y:cy};note.style.left=cx+'px';note.style.top=cy+'px';sv(S);}
+  }
 }
 function initStickyDrag(){
   const note=document.getElementById('sticky-note');
   const stage=document.getElementById('scene-stage');
+  const box=document.getElementById('sticky-items');
+  box.addEventListener('touchstart',e=>{if(box.scrollHeight>box.clientHeight)e.stopPropagation();},{passive:true});
+  box.addEventListener('mousedown',e=>{if(box.scrollHeight>box.clientHeight)e.stopPropagation();});
   makeDraggable(note,stage,(moved,left,top)=>{
     if(!moved)return;
     S.notePos={x:left,y:top};sv(S);
@@ -1681,8 +1691,11 @@ document.getElementById('support-cat-save').addEventListener('click',()=>{
   document.getElementById('add-support-cat-btn').style.display='block';
   renderSupportPage();
 });
-document.getElementById('support-quick-btn').addEventListener('click',()=>{
-  document.querySelector('.nav-btn[data-page="support"]').click();
+document.getElementById('settings-quick-btn').addEventListener('click',()=>{
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-settings').classList.add('active');
+  renderSettings();
 });
 
 // ── RESET TEST DATA ───────────────────────────────────
@@ -1779,8 +1792,7 @@ function gdStaticsHTML(){
   <div class="gd-static" style="top:36px;left:718px;">${fi('1f56f',28)}</div>
   <!-- 牆上畫框 -->
   <div class="gd-static" style="top:40px;left:180px;width:70px;height:62px;background:#FFF8F0;border:6px solid #C8A070;border-radius:6px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(120,80,40,.25);">${fi('1f3a8',34)}</div>
-  <!-- 地球儀 + 吉他 -->
-  <div class="gd-static" style="bottom:60px;left:540px;">${fi('1f310',40)}</div>
+  <!-- 吉他 -->
   <div class="gd-static" style="bottom:56px;left:820px;transform:rotate(12deg);">${fi('1fa95',52)}</div>
   <!-- 木圍籬 -->
   <div class="gd-static" style="bottom:52px;left:0;right:0;height:56px;">
@@ -1963,7 +1975,7 @@ function renderTreasureList(){
       <span class="treasure-type ${t.type}">${t.type==='person'?'🫂 人':'🎁 物'}</span>
       <button class="card-del" data-i="${i}" style="float:right;">✕</button>
       ${t.img?`<img class="treasure-img" src="${t.img}" onerror="this.style.display='none'"/>`:''}
-      <div class="treasure-title">${t.emoji||'💎'} ${t.title||''}</div>
+      <div class="treasure-title">${t.img?'':(t.emoji||'💎')+' '}${t.title||''}</div>
       <div class="treasure-desc">${t.desc||''}</div>
     </div>`).join('');
   document.querySelectorAll('#treasure-list .card-del').forEach(b=>b.addEventListener('click',()=>{
@@ -2057,7 +2069,7 @@ function renderAll(){
 migrateFlowers();
 renderAll();
 initStickyDrag();
-initPuppy(document.getElementById('puppy'),document.getElementById('scene-stage'),60);
+initPuppy(document.getElementById('puppy'),document.getElementById('scene-stage'),90);
 loadCloud();
 </script>
 <script>
@@ -2253,6 +2265,66 @@ document.getElementById('set-sync-now').addEventListener('click',async()=>{
   document.getElementById('set-last-sync').textContent=lastSyncText();
   b.textContent='✅ 同步完成';b.disabled=false;
   setTimeout(()=>{b.textContent='🔄 立即同步';},2000);
+});
+
+// ── 圖片上傳（Google Drive via GAS） ──────────────────
+function compressImage(file,maxDim,quality){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    img.onload=()=>{
+      let w=img.width,h=img.height;
+      if(w>maxDim||h>maxDim){const r=Math.min(maxDim/w,maxDim/h);w=Math.round(w*r);h=Math.round(h*r);}
+      const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      URL.revokeObjectURL(img.src);
+      resolve(cv.toDataURL('image/jpeg',quality));
+    };
+    img.onerror=reject;
+    img.src=URL.createObjectURL(file);
+  });
+}
+async function uploadImageToGAS(file){
+  const dataUrl=await compressImage(file,800,0.8);
+  const res=await gasPost('uploadImage',{
+    data:dataUrl.split(',')[1],
+    filename:((file.name||'image').replace(/\.[^.]+$/,'')||'image')+'.jpg',
+    mimeType:'image/jpeg'
+  });
+  const j=await res.json();
+  if(!j.ok||!j.url)throw new Error(j.error||'upload failed');
+  return j.url;
+}
+function bindUpload(fileId,btnId,previewId,urlInputId){
+  const fileEl=document.getElementById(fileId),btn=document.getElementById(btnId),
+        prev=document.getElementById(previewId),urlIn=document.getElementById(urlInputId);
+  btn.addEventListener('click',()=>fileEl.click());
+  fileEl.addEventListener('change',async()=>{
+    const f=fileEl.files&&fileEl.files[0];
+    if(!f)return;
+    btn.disabled=true;btn.textContent='⏳ 上傳中...';
+    try{
+      const url=await uploadImageToGAS(f);
+      urlIn.value=url;
+      prev.src=url;prev.style.display='block';
+      btn.textContent='✅ 已上傳！';
+      setTimeout(()=>{btn.textContent='📷 重新上傳';btn.disabled=false;},1800);
+    }catch(e){
+      btn.textContent='📷 上傳圖片';btn.disabled=false;
+      alert('上傳失敗 🥲\n可能是 GAS 還沒更新到支援上傳的版本，或部署新版本時還沒授權 Google Drive 權限。\n請先更新 GAS 並重新部署（部署時 Google 會跳授權視窗，點允許即可）。');
+    }
+    fileEl.value='';
+  });
+}
+bindUpload('person-file','person-upload-btn','person-upload-preview','person-img');
+bindUpload('treasure-file','treasure-upload-btn','treasure-upload-preview','treasure-img');
+// 重開表單時清掉上一次的預覽圖
+document.getElementById('add-person-btn').addEventListener('click',()=>{
+  const p=document.getElementById('person-upload-preview');p.style.display='none';p.removeAttribute('src');
+  document.getElementById('person-upload-btn').textContent='📷 上傳圖片';
+});
+document.getElementById('add-treasure-btn').addEventListener('click',()=>{
+  const p=document.getElementById('treasure-upload-preview');p.style.display='none';p.removeAttribute('src');
+  document.getElementById('treasure-upload-btn').textContent='📷 上傳圖片';
 });
 
 renderSettings();

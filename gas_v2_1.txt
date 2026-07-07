@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════
-// 格蘭朵魔法森林 GAS v2.2（配合 PWA 版 index.html，新增 notifications 欄）
+// 格蘭朵魔法森林 GAS v2.3（新增 notifications 欄 + 圖片上傳到 Drive）
 // ═══════════════════════════════════════════════════════
 // 【安裝步驟】
 // 1. 打開你的 Google Sheet（ID: ***REMOVED***）
@@ -17,6 +17,12 @@
 //    （用「編輯現有部署」網址不會變；如果選「新增部署」網址會變，
 //      要把新網址取代 index.html 裡的 GAS_URL）
 // 5. 權限確認：執行身分=我、存取權=所有人
+// 6. 【圖片上傳功能】這版需要 Google Drive 權限：
+//    部署新版本（或在編輯器手動執行一次 getDriveFolder_）時，
+//    Google 會跳出授權視窗 → 選妳的帳號 → 點「允許」。
+//    授權是在「這裡」完成的，APP 端不會跳授權視窗；
+//    授權一次之後就永遠不用再授權。
+//    上傳的圖片會存在 Drive 根目錄的「格蘭朵圖片庫」資料夾。
 // ═══════════════════════════════════════════════════════
 
 const SHEET_ID = '***REMOVED***';
@@ -91,6 +97,7 @@ function doPost(e){
     const payload = JSON.parse(e.postData.contents||'{}');
     if(action==='saveEntry') return json({ok:saveEntry_(payload)});
     if(action==='saveState') return json({ok:saveState_(payload)});
+    if(action==='uploadImage') return json({ok:true,url:uploadImageToDrive_(payload)});
     return json({ok:false,error:'unknown action: '+action});
   }catch(err){
     return json({ok:false,error:String(err)});
@@ -138,4 +145,27 @@ function saveState_(p){
   });
   sh.getRange(2,1,1,rowData.length).setValues([rowData]);
   return true;
+}
+
+// ── 圖片上傳到 Google Drive ──────────────────────────
+// p.data = base64 圖片資料（不含 data:xxx;base64, 前綴）
+// p.filename = 檔案名稱、p.mimeType = image/jpeg 等
+// 回傳 thumbnail 直連網址（在 <img> 裡最穩定能顯示的格式）
+function uploadImageToDrive_(p){
+  if(!p || !p.data) throw new Error('no image data');
+  const folder = getDriveFolder_();
+  const blob = Utilities.newBlob(
+    Utilities.base64Decode(p.data),
+    p.mimeType || 'image/jpeg',
+    p.filename || ('grandol_' + Date.now() + '.jpg')
+  );
+  const file = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return 'https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w800';
+}
+
+function getDriveFolder_(){
+  const folderName = '格蘭朵圖片庫';
+  const folders = DriveApp.getFoldersByName(folderName);
+  return folders.hasNext() ? folders.next() : DriveApp.createFolder(folderName);
 }
