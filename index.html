@@ -259,6 +259,9 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
 .gd-sprite:hover .sprite-label{display:block;}
 .gold-ring img.main{filter:drop-shadow(0 0 7px rgba(255,200,60,.9));}
 .quote-cloud{position:absolute;top:14px;left:20px;background:rgba(255,255,255,.9);border:1.5px solid rgba(255,255,255,.95);border-radius:18px;padding:8px 16px;font-size:12px;color:var(--tc);font-style:italic;max-width:250px;box-shadow:0 4px 16px rgba(150,130,220,.2);z-index:8;animation:bobY 3.4s ease-in-out infinite;}
+.quote-cloud{cursor:grab;}
+.quote-cloud:active{cursor:grabbing;}
+.quote-cloud .qc-text{max-height:3em;overflow-y:auto;line-height:1.5;-webkit-overflow-scrolling:touch;}
 .quote-cloud::after{content:'';position:absolute;bottom:-9px;left:36px;border:5px solid transparent;border-top-color:rgba(255,255,255,.9);}
 
 /* PEOPLE / TREASURE mgmt */
@@ -267,6 +270,8 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
 .person-emoji img{width:32px;height:32px;border-radius:50%;object-fit:cover;}
 .person-info{flex:1;}
 .person-name{font-size:13px;font-weight:700;color:var(--tc);}
+.card-edit{background:none;border:none;cursor:pointer;color:var(--tc3);font-size:14px;flex-shrink:0;}
+.person-card.pgrid .card-edit,.treasure-card.tgrid .card-edit{position:absolute;top:4px;right:32px;}
 .person-note{font-size:11px;color:var(--tc2);}
 .card-del{background:none;border:none;cursor:pointer;color:var(--tc3);font-size:16px;}
 .emoji-picker{display:flex;flex-wrap:wrap;gap:8px;padding:10px;background:rgba(255,255,255,.7);border-radius:14px;margin:8px 0;}
@@ -344,8 +349,20 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
 /* ── 支持系統資源書 ── */
 .book-item{display:flex;flex-direction:column;align-items:center;width:46%;pointer-events:auto;cursor:pointer;}
 .book-item .bi-icon{font-size:32px;line-height:1.1;}
-.book-item img.bi-img{width:38px;height:38px;object-fit:cover;border-radius:10px;border:2px solid rgba(255,255,255,.9);box-shadow:0 2px 8px rgba(120,90,60,.25);}
-.book-item .bi-title{font-size:9px;color:#6B5A3A;max-width:100%;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}
+.book-item img.bi-img{width:52px;height:52px;object-fit:cover;border-radius:10px;border:2px solid rgba(255,255,255,.9);box-shadow:0 2px 8px rgba(120,90,60,.25);}
+.book-item .bi-title{font-size:11px;color:#6B5A3A;max-width:100%;text-align:center;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:3px;}
+.book-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:10;width:30px;height:30px;border-radius:50%;border:1.5px solid rgba(255,255,255,.9);background:rgba(255,255,255,.8);cursor:pointer;font-size:15px;color:#8A7048;display:none;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(120,90,40,.2);}
+.book-arrow.left{left:6px;}
+.book-arrow.right{right:6px;}
+.book-item{transition:transform .12s;}
+/* 載入骨架 */
+#load-skeleton{position:fixed;inset:0;z-index:9995;transition:opacity .4s;background:linear-gradient(170deg,#D4EEFF,#F0EAF8);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;}
+#load-skeleton .sk-puppy{width:88px;height:88px;border-radius:24px;animation:skPulse 1.3s ease-in-out infinite;}
+#load-skeleton .sk-bar{width:min(72%,300px);height:16px;border-radius:8px;background:linear-gradient(90deg,rgba(200,196,247,.3) 25%,rgba(200,196,247,.55) 50%,rgba(200,196,247,.3) 75%);background-size:200% 100%;animation:skShimmer 1.3s linear infinite;}
+#load-skeleton .sk-bar.short{width:min(48%,200px);}
+#load-skeleton .sk-txt{font-family:'Baloo 2',sans-serif;font-size:13px;font-weight:700;color:var(--tc2);}
+@keyframes skShimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+@keyframes skPulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.06);opacity:.8;}}
 .res-chip{display:inline-flex;align-items:center;gap:4px;padding:6px 10px;background:rgba(255,255,255,.5);border:1.5px solid rgba(255,255,255,.8);border-radius:999px;cursor:pointer;font-size:12px;font-weight:600;color:var(--tc);}
 .res-chip.on{background:rgba(93,202,165,.35);border-color:rgba(93,202,165,.7);color:#2A7A5A;}
 
@@ -367,11 +384,11 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
 .view-toggle{display:inline-flex;background:rgba(255,255,255,.55);border:1.5px solid rgba(255,255,255,.85);border-radius:10px;overflow:hidden;}
 .vt-opt{padding:3px 10px;font-size:13px;color:var(--tc3);cursor:pointer;user-select:none;}
 .vt-opt.on{background:linear-gradient(135deg,rgba(139,127,232,.4),rgba(93,202,165,.35));color:var(--tc);}
-.people-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+.people-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px;}
 .person-card.pgrid{flex-direction:column;text-align:center;position:relative;gap:4px;margin-bottom:0;padding:14px 8px 10px;}
 .person-card.pgrid .card-del{position:absolute;top:4px;right:8px;}
 .person-card.pgrid .person-emoji img{width:44px;height:44px;}
-.treasure-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+.treasure-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px;}
 .treasure-card.tgrid{position:relative;padding:10px;margin-bottom:0;}
 .treasure-card.tgrid .card-del{position:absolute;top:6px;right:8px;z-index:2;}
 .tg-img{width:100%;height:84px;object-fit:cover;border-radius:10px;margin-bottom:6px;display:block;}
@@ -389,6 +406,13 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
 </head>
 <body>
 <div id="pwa-splash"><img src="puppy_icon.png" alt="格蘭朵"/><div class="splash-name">格蘭朵魔法森林</div></div>
+<div id="load-skeleton">
+  <img class="sk-puppy" src="puppy_icon.png" onerror="this.style.display='none'"/>
+  <div class="sk-bar"></div>
+  <div class="sk-bar short"></div>
+  <div class="sk-bar"></div>
+  <div class="sk-txt">載入中... 🌱</div>
+</div>
 <div class="wrap"><div class="bg">
 <div id="burst-overlay" class="burst-overlay" style="display:none;"></div>
 <button class="support-quick-btn" id="settings-quick-btn" title="設定" style="background:none;border:none;box-shadow:none;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/2699_3d.png" width="42" height="42" style="filter:drop-shadow(0 3px 8px rgba(80,60,140,.4));" onerror="this.outerHTML='⚙️'"/></button>
@@ -421,6 +445,10 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
   </div>
 </div>
 
+<div id="lightbox" style="display:none;position:fixed;inset:0;z-index:10005;background:rgba(20,10,40,.9);flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px;cursor:zoom-out;">
+  <img id="lightbox-img" style="max-width:94%;max-height:82%;object-fit:contain;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.5);"/>
+  <div id="lightbox-cap" style="color:#fff;font-size:14px;text-align:center;max-width:90%;"></div>
+</div>
 <div class="top-bar">
   <button class="date-btn" id="cal-popup-btn">
     <div class="top-date" id="top-date-main"></div>
@@ -583,12 +611,12 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
 <div class="page" id="page-support">
 <div class="gcard-scene" style="margin-top:4px;">
   <div class="sec-hd" style="position:relative;z-index:1;">📖 我的資源書</div>
-  <div id="book-stage" style="position:relative;height:280px;border-radius:18px;overflow:hidden;background:linear-gradient(180deg,#EAD9C4 0%,#DFC3A0 55%,#CBA97F 100%);">
+  <div id="book-stage" style="position:relative;height:380px;border-radius:18px;overflow:hidden;background:linear-gradient(180deg,#EAD9C4 0%,#DFC3A0 55%,#CBA97F 100%);">
     <div style="position:absolute;top:10px;left:14px;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/2615_3d.png" width="30" height="30" onerror="this.outerHTML='☕'"/></div>
     <div style="position:absolute;top:8px;right:16px;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1fab4_3d.png" width="32" height="32" onerror="this.outerHTML='🪴'"/></div>
     <div style="position:absolute;bottom:8px;right:12px;transform:rotate(-16deg);"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/270f_3d.png" width="26" height="26" onerror="this.outerHTML='✏️'"/></div>
     <div style="position:absolute;bottom:12px;left:12px;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4a1_3d.png" width="28" height="28" onerror="this.outerHTML='💡'"/></div>
-    <div style="position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);width:min(90%,560px);height:206px;filter:drop-shadow(0 8px 18px rgba(110,80,40,.3));display:flex;">
+    <div style="position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);width:min(94%,600px);height:300px;filter:drop-shadow(0 8px 18px rgba(110,80,40,.3));display:flex;">
       <div style="flex:1;background:linear-gradient(105deg,#FFFDF5 55%,#F2E8D2 100%);border-radius:14px 3px 3px 14px;border:1px solid #E4D6B8;position:relative;overflow:hidden;">
         <div style="position:absolute;inset:0;background:repeating-linear-gradient(180deg,transparent 0 26px,rgba(180,160,120,.14) 26px 27px);"></div>
         <div id="book-page-l" style="position:absolute;inset:14px 8px 10px 14px;display:flex;flex-wrap:wrap;align-content:flex-start;justify-content:space-around;row-gap:8px;"></div>
@@ -599,6 +627,8 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
         <div id="book-page-r" style="position:absolute;inset:14px 14px 10px 8px;display:flex;flex-wrap:wrap;align-content:flex-start;justify-content:space-around;row-gap:8px;"></div>
       </div>
     </div>
+    <button id="book-prev" class="book-arrow left">‹</button>
+    <button id="book-next" class="book-arrow right">›</button>
     <div id="book-empty" style="position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);font-size:12px;color:#A08858;display:none;white-space:nowrap;">書頁還是空的，從下面收進資源吧 ✨</div>
     <div id="book-more" style="position:absolute;bottom:6px;left:50%;transform:translateX(-50%);font-size:10px;color:#8A7048;display:none;"></div>
   </div>
@@ -721,6 +751,10 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
 <!-- ══════ INFO ══════ -->
 <div class="page" id="page-info">
 <div class="gcard" style="margin-top:4px;">
+  <div class="sec-hd">🏆 成就牆</div>
+  <div class="achievement-grid" id="achievement-grid"></div>
+</div>
+<div class="gcard">
   <div class="sec-hd">🌳 格蘭朵機制說明</div>
   <div style="font-size:13px;color:var(--tc);line-height:1.8;">
     <p style="margin-bottom:10px;"><b>格蘭朵不是目標管理工具，是妳正在成為自己的見證者 🌱</b><br/>活在當下、不設截止日期，數字只記錄妳已經做了多少。</p>
@@ -732,10 +766,6 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
     <p style="margin-bottom:10px;"><b>連續天數 🔥</b><br/>每天種下就+1天，中斷歸零。</p>
     <p><b>內心花園 🏡</b><br/>妳的身份、妳的人、妳擁有的一切、妳收藏的話——都住在那個溫馨的小屋裡。</p>
   </div>
-</div>
-<div class="gcard">
-  <div class="sec-hd">🏆 成就牆</div>
-  <div class="achievement-grid" id="achievement-grid"></div>
 </div>
 
 </div>
@@ -786,6 +816,12 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
   <button class="ghost-btn" id="set-sync-now" style="margin-top:10px;">🔄 立即同步</button>
 </div>
 
+<div class="gcard">
+  <div class="sec-hd">📄 匯出備份</div>
+  <p style="font-size:12px;color:var(--tc3);line-height:1.7;margin-bottom:10px;">把所有日記、習慣、TDL、金句整理成一份文字檔下載到裝置，離線也能自己保存一份。</p>
+  <button class="ghost-btn" id="export-txt-btn" style="margin-bottom:0;">📄 匯出全部紀錄成文字檔</button>
+</div>
+
 <div class="gcard" style="border-color:rgba(240,150,150,.4);">
   <div class="sec-hd">🧹 清除測試資料</div>
   <p style="font-size:12px;color:var(--tc3);line-height:1.7;margin-bottom:10px;">會清除<b>這台裝置</b>上的所有本機資料（花朵、果實、EXP、紀錄等）。<br/>⚠️ 注意：Google Sheet 上已同步的資料<b>不會</b>被刪除，而且重新載入後會自動同步回來。要「完全歸零」請直接用下面第二顆深紅色按鈕，會連 Google Sheet 一起清空。<br/>（兩種清除都不會刪掉 Google Drive「格蘭朵圖片庫」裡的圖片檔，要刪請自己去 Drive 刪）</p>
@@ -810,7 +846,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
   <button class="nav-btn" data-page="month"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4c6_3d.png" onerror="this.outerHTML='📆'"/><span>月回顧</span></button>
   <button class="nav-btn" data-page="garden"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f338_3d.png" onerror="this.outerHTML='🌸'"/><span>內心花園</span></button>
   <button class="nav-btn" data-page="support"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1fac2_3d.png" onerror="this.outerHTML='🫂'"/><span>支持</span></button>
-  <button class="nav-btn" data-page="info"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/2728_3d.png" onerror="this.outerHTML='✨'"/><span>說明</span></button>
+  <button class="nav-btn" data-page="info"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f3c6_3d.png" onerror="this.outerHTML='🏆'"/><span>成就</span></button>
 </div></nav>
 
 <script>
@@ -992,8 +1028,8 @@ async function loadCloud(){
       if(!(S.todayPhotos||[]).length&&Array.isArray(te.photos))S.todayPhotos=te.photos.slice();
     }
     sv(S);renderAll();
-    setSync('ok','已同步 ✓');
-  }catch(e){setSync('error','無法連線，使用本機資料');}
+    setSync('ok','已同步 ✓');if(typeof hideLoadSkeleton==='function')hideLoadSkeleton();
+  }catch(e){setSync('error','無法連線，使用本機資料');if(typeof hideLoadSkeleton==='function')hideLoadSkeleton();}
 }
 
 // ── FX ────────────────────────────────────────────────
@@ -1223,7 +1259,7 @@ function renderHabits(){
   const isT=ctxIsToday();
   const e=isT?null:S.entries.find(x=>x.date===viewDate);
   const checkedMap=isT?S.checked:(()=>{const m={};((e&&e.checked)||[]).forEach(k=>m[k]=true);return m;})();
-  const locked=isT&&S.lastPlant===today();
+  const locked=false; // 種下後仍可編輯（今天與過去日期都可改）
   document.getElementById('habits').innerHTML=HABITS.map(h=>`
     <div class="neo-chip${checkedMap[h.k]?' on':''}${locked?' locked':''}" data-k="${h.k}" style="position:relative;">
       ${fi(h.c,20)}<span>${h.l}</span>
@@ -1253,7 +1289,6 @@ function renderHabits(){
       syncEntryDebounced();syncStateDebounced();
       return;
     }
-    if(S.lastPlant===today()){showIdPhrase('今天已經種下了，明天再繼續 🌙');return;}
     const h=HABITS.find(x=>x.k===c.dataset.k);
     const oldExp=S.exp;
     if(S.checked[h.k]){
@@ -1268,6 +1303,8 @@ function renderHabits(){
       showExpPop(c,'+10 EXP');
       setTimeout(()=>showIdPhrase(h.phrase),600);
     }
+    // 種下後編輯：同步更新當天紀錄
+    if(S.lastPlant===today()){const en=S.entries.find(x=>x.date===today());if(en){en.checked=Object.keys(S.checked);en.exp=S.exp;syncEntryDebounced();}}
     sv(S);checkLevelUp(oldExp,S.exp);
     renderHabits();renderFlowers();renderExpBar();checkAchievements();syncStateDebounced();
   }));
@@ -1340,7 +1377,7 @@ document.getElementById('plant-btn').addEventListener('click',async()=>{
   checkLevelUp(oldExp,S.exp);checkAchievements();
 
   const btn=document.getElementById('plant-btn');
-  btn.innerHTML=`${fi('1f389',17)} 今天種下了！`;btn.disabled=true;
+  renderPlantBtn();
   triggerBurst(btn);if(!replant)showExpPop(btn,'+20 EXP 🌱');
 
   await syncEntry({date:today(),checked:Object.keys(S.checked),hl:d.hl,rf:d.rf,gr:d.gr,quote:d.quote||'',tdl:S.tomorrowTDL,exp:S.exp,streak:S.streak,tdlTotal:entry.tdlTotal,tdlDone:entry.tdlDone,photos:S.todayPhotos||[]});
@@ -1841,6 +1878,7 @@ function puppyHTML(size){
   <div class="pfx pfx-boba" style="position:absolute;top:-6px;right:-26px;display:none;animation:bobY 1.4s ease-in-out infinite;">${fi('1f9cb',24)}</div>
   <div class="pfx pfx-tea" style="position:absolute;top:2px;right:-26px;display:none;animation:bobY 2.2s ease-in-out infinite;">${fi('1f375',22)}</div>
   <div class="pfx pfx-cry" style="position:absolute;top:-24px;left:50%;transform:translateX(-50%);display:none;">${fi('1f62d',22)}</div>
+  <div class="pfx pfx-bed" style="position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);display:none;"><span style="font-size:${Math.round(size*0.63)}px;">🛏️</span></div>
   <img class="main puppy-img" src="https://cdn.jsdelivr.net/gh/yuna-28/Personal-Growth-System@main/puppy.png" width="${size}" height="${size}" style="display:block;animation:pBreathe 2.2s ease-in-out infinite;" onerror="this.outerHTML='<span style=font-size:${Math.round(size*0.8)}px>🐶</span>'"/>`;
 }
 function initPuppy(wrap,stage,size){
@@ -1848,7 +1886,7 @@ function initPuppy(wrap,stage,size){
   const img=wrap.querySelector('.puppy-img');
   let cur=0,walkT=null,circT=null,ang=0,dragging=false;
   const animMap={stand:'pBreathe 2.2s ease-in-out infinite',sleep:'pSleep 3s ease-in-out infinite',play:'pPlay .6s ease-in-out infinite',water:'pWater 1s ease-in-out infinite',dance:'pDance .5s ease-in-out infinite',happy:'pBounce .5s ease-in-out infinite',walk:'pBreathe .8s ease-in-out infinite',circle:'pBreathe .8s ease-in-out infinite',read:'pRead 2.4s ease-in-out infinite',boba:'bobY 1.4s ease-in-out infinite',tea:'pBreathe 2.4s ease-in-out infinite',cry:'pCry .7s ease-in-out infinite',drag:'pShake .2s ease-in-out infinite'};
-  const fxMap={sleep:['zzz'],drag:['sweat'],dance:['note1','note2'],happy:['happy'],play:['ball'],water:['water'],read:['read'],boba:['boba'],tea:['tea'],cry:['cry']};
+  const fxMap={sleep:['zzz','bed'],drag:['sweat'],dance:['note1','note2'],happy:['happy'],play:['ball'],water:['water'],read:['read'],boba:['boba'],tea:['tea'],cry:['cry']};
   function sc(c){
     const im=wrap.querySelector('.puppy-img');
     if(im)im.style.animation=animMap[c]||animMap.stand;
@@ -1980,8 +2018,6 @@ function gdStaticsHTML(){
   <div class="gd-static" style="top:36px;left:718px;">${fi('1f56f',28)}</div>
   <!-- 牆上畫框 -->
   <div class="gd-static" style="top:40px;left:180px;width:70px;height:62px;background:#FFF8F0;border:6px solid #C8A070;border-radius:6px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(120,80,40,.25);">${fi('1f3a8',34)}</div>
-  <!-- 吉他 -->
-  <div class="gd-static" style="bottom:56px;left:820px;transform:rotate(12deg);">${fi('1fa95',52)}</div>
   <!-- 木圍籬 -->
   <div class="gd-static" style="bottom:52px;left:0;right:0;height:56px;">
     <div style="position:absolute;bottom:34px;left:0;right:0;height:8px;background:linear-gradient(180deg,#C89A66,#B08858);border-radius:4px;"></div>
@@ -2006,11 +2042,17 @@ function renderGarden(){
   const dyn=document.getElementById('gd-dynamics');
   dyn.innerHTML='';
 
-  // quote cloud
+  // quote cloud（限2行可滑動、泡泡可拖移）
   const cloud=document.getElementById('garden-quote');
   if(S.quotes.length){
-    cloud.textContent=`"${S.quotes[Math.floor(Math.random()*S.quotes.length)]}"`;
+    const qtext=(S.quotes[Math.floor(Math.random()*S.quotes.length)]||'').replace(/</g,'&lt;');
+    cloud.innerHTML=`<div class="qc-text">"${qtext}"</div>`;
     cloud.style.display='block';
+    if(!cloud._dragBound){
+      makeDraggable(cloud,canvas,null);
+      cloud.addEventListener('touchstart',e=>{const t=cloud.querySelector('.qc-text');if(t&&t.scrollHeight>t.clientHeight&&e.target.closest('.qc-text'))e.stopPropagation();},{passive:true,capture:true});
+      cloud._dragBound=true;
+    }
   }else cloud.style.display='none';
 
   // habit totals
@@ -2126,11 +2168,13 @@ function renderProofBoard(habitsTotal){
 
 // ── PEOPLE MANAGER ────────────────────────────────────
 let selEmoji=PERSON_EMOJIS[0];
+let editPersonIdx=-1;
 function renderPeopleList(){
   const mode=getViewMode('people');
   const cards=S.myPeople.map((p,i)=>{
     if(mode==='grid'){
       return`<div class="person-card pgrid">
+        <button class="card-edit" data-i="${i}">✏️</button>
         <button class="card-del" data-i="${i}">✕</button>
         <div class="person-emoji">${p.img?`<img src="${p.img}"/>`:fi(p.emoji||'1f436',36)}</div>
         <div class="person-name">${p.name||''}</div>
@@ -2140,6 +2184,7 @@ function renderPeopleList(){
     return`<div class="person-card">
       <div class="person-emoji">${p.img?`<img src="${p.img}"/>`:fi(p.emoji||'1f436',30)}</div>
       <div class="person-info"><div class="person-name">${p.name||''}</div><div class="person-note">${p.note||''}</div></div>
+      <button class="card-edit" data-i="${i}">✏️</button>
       <button class="card-del" data-i="${i}">✕</button>
     </div>`;
   }).join('');
@@ -2151,8 +2196,22 @@ function renderPeopleList(){
     if(!confirm('確定移除？'))return;
     S.myPeople.splice(+b.dataset.i,1);sv(S);renderGarden();syncStateDebounced();
   }));
+  document.querySelectorAll('#people-list .card-edit').forEach(b=>b.addEventListener('click',()=>{
+    openPersonForm(+b.dataset.i);
+    document.getElementById('person-form').scrollIntoView({behavior:'smooth',block:'center'});
+  }));
 }
-document.getElementById('add-person-btn').addEventListener('click',()=>{
+function openPersonForm(idx){
+  editPersonIdx=idx;
+  const p=idx>=0?S.myPeople[idx]:null;
+  selEmoji=(p&&p.emoji)||PERSON_EMOJIS[0];
+  document.getElementById('person-name').value=p?(p.name||''):'';
+  document.getElementById('person-note').value=p?(p.note||''):'';
+  document.getElementById('person-img').value=p?(p.img||''):'';
+  const prev=document.getElementById('person-upload-preview');
+  if(p&&p.img){prev.src=p.img;prev.style.display='block';}else{prev.style.display='none';prev.removeAttribute('src');}
+  document.getElementById('person-upload-btn').textContent='📷 上傳圖片';
+  document.getElementById('person-save').textContent=idx>=0?'儲存修改':'加入';
   document.getElementById('person-form').style.display='block';
   document.getElementById('add-person-btn').style.display='none';
   const picker=document.getElementById('person-emoji-picker');
@@ -2162,17 +2221,23 @@ document.getElementById('add-person-btn').addEventListener('click',()=>{
     picker.querySelectorAll('.emoji-opt').forEach(x=>x.classList.remove('sel'));
     o.classList.add('sel');
   }));
-});
+}
+document.getElementById('add-person-btn').addEventListener('click',()=>openPersonForm(-1));
 document.getElementById('person-cancel').addEventListener('click',()=>{
+  editPersonIdx=-1;
+  document.getElementById('person-save').textContent='加入';
   document.getElementById('person-form').style.display='none';
   document.getElementById('add-person-btn').style.display='block';
 });
 document.getElementById('person-save').addEventListener('click',()=>{
   const name=document.getElementById('person-name').value.trim();
   if(!name){alert('至少填名字喔');return;}
-  S.myPeople.push({emoji:selEmoji,name,note:document.getElementById('person-note').value.trim(),img:document.getElementById('person-img').value.trim()});
+  const obj={emoji:selEmoji,name,note:document.getElementById('person-note').value.trim(),img:document.getElementById('person-img').value.trim()};
+  if(editPersonIdx>=0)S.myPeople[editPersonIdx]=obj;else S.myPeople.push(obj);
+  editPersonIdx=-1;
   sv(S);
   document.getElementById('person-name').value='';document.getElementById('person-note').value='';document.getElementById('person-img').value='';
+  document.getElementById('person-save').textContent='加入';
   document.getElementById('person-form').style.display='none';
   document.getElementById('add-person-btn').style.display='block';
   renderGarden();syncStateDebounced();
@@ -2180,17 +2245,35 @@ document.getElementById('person-save').addEventListener('click',()=>{
 
 // ── TREASURE MANAGER ──────────────────────────────────
 let treasureType='object';
+let editTreasureIdx=-1;
 document.querySelectorAll('.treasure-type-btn').forEach(b=>b.addEventListener('click',()=>{
   treasureType=b.dataset.t;
   document.querySelectorAll('.treasure-type-btn').forEach(x=>x.style.outline='none');
   b.style.outline='2.5px solid #8B7FE8';
 }));
+function openTreasureForm(idx){
+  editTreasureIdx=idx;
+  const t=idx>=0?S.treasures[idx]:null;
+  treasureType=(t&&t.type)||'object';
+  document.querySelectorAll('.treasure-type-btn').forEach(x=>{x.style.outline=(x.dataset.t===treasureType)?'2.5px solid #8B7FE8':'none';});
+  document.getElementById('treasure-emoji').value=t?(t.emoji||''):'';
+  document.getElementById('treasure-title').value=t?(t.title||''):'';
+  document.getElementById('treasure-desc').value=t?(t.desc||''):'';
+  document.getElementById('treasure-img').value=t?(t.img||''):'';
+  const prev=document.getElementById('treasure-upload-preview');
+  if(t&&t.img){prev.src=t.img;prev.style.display='block';}else{prev.style.display='none';prev.removeAttribute('src');}
+  document.getElementById('treasure-upload-btn').textContent='📷 上傳圖片';
+  document.getElementById('treasure-save').textContent=idx>=0?'儲存修改':'收藏';
+  document.getElementById('treasure-form').style.display='block';
+  document.getElementById('add-treasure-btn').style.display='none';
+}
 function renderTreasureList(){
   const mode=getViewMode('treasure');
   let inner;
   if(mode==='grid'){
     inner=`<div class="treasure-grid">`+S.treasures.map((t,i)=>`
       <div class="treasure-card tgrid">
+        <button class="card-edit" data-i="${i}">✏️</button>
         <button class="card-del" data-i="${i}">✕</button>
         ${t.img?`<img class="tg-img" src="${t.img}" onerror="this.style.display='none'"/>`:`<div class="tg-emoji">${t.emoji||'💎'}</div>`}
         <span class="treasure-type ${t.type}">${t.type==='person'?'🫂 人':'🎁 物'}</span>
@@ -2205,6 +2288,7 @@ function renderTreasureList(){
           <div class="treasure-title" style="font-size:13px;margin-bottom:1px;">${t.title||''} <span class="treasure-type ${t.type}" style="margin-bottom:0;">${t.type==='person'?'🫂 人':'🎁 物'}</span></div>
           <div class="treasure-desc" style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.desc||''}</div>
         </div>
+        <button class="card-edit" data-i="${i}">✏️</button>
         <button class="card-del" data-i="${i}">✕</button>
       </div>`).join('');
   }
@@ -2215,33 +2299,53 @@ function renderTreasureList(){
     if(!confirm('確定移除？'))return;
     S.treasures.splice(+b.dataset.i,1);sv(S);renderGarden();syncStateDebounced();
   }));
+  document.querySelectorAll('#treasure-list .card-edit').forEach(b=>b.addEventListener('click',()=>{
+    openTreasureForm(+b.dataset.i);
+    document.getElementById('treasure-form').scrollIntoView({behavior:'smooth',block:'center'});
+  }));
 }
-document.getElementById('add-treasure-btn').addEventListener('click',()=>{
-  document.getElementById('treasure-form').style.display='block';
-  document.getElementById('add-treasure-btn').style.display='none';
-});
+document.getElementById('add-treasure-btn').addEventListener('click',()=>openTreasureForm(-1));
 document.getElementById('treasure-cancel').addEventListener('click',()=>{
+  editTreasureIdx=-1;
+  document.getElementById('treasure-save').textContent='收藏';
   document.getElementById('treasure-form').style.display='none';
   document.getElementById('add-treasure-btn').style.display='block';
 });
 document.getElementById('treasure-save').addEventListener('click',()=>{
   const title=document.getElementById('treasure-title').value.trim();
   if(!title){alert('至少填標題喔');return;}
-  S.treasures.push({type:treasureType,emoji:document.getElementById('treasure-emoji').value.trim(),title,desc:document.getElementById('treasure-desc').value.trim(),img:document.getElementById('treasure-img').value.trim()});
+  const obj={type:treasureType,emoji:document.getElementById('treasure-emoji').value.trim(),title,desc:document.getElementById('treasure-desc').value.trim(),img:document.getElementById('treasure-img').value.trim()};
+  if(editTreasureIdx>=0)S.treasures[editTreasureIdx]=obj;else S.treasures.push(obj);
+  editTreasureIdx=-1;
   sv(S);
   ['treasure-emoji','treasure-title','treasure-desc','treasure-img'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('treasure-save').textContent='收藏';
   document.getElementById('treasure-form').style.display='none';
   document.getElementById('add-treasure-btn').style.display='block';
   renderGarden();syncStateDebounced();
 });
 
 // ── QUOTES ────────────────────────────────────────────
+let editQuoteIdx=-1;
 function renderQuoteList(){
-  document.getElementById('quote-list').innerHTML=S.quotes.length?S.quotes.map((q,i)=>`
-    <div class="quote-item"><div class="quote-text">"${q}"</div><button class="quote-del" data-i="${i}">✕</button></div>`).join(''):`<div style="font-size:13px;color:var(--tc3);text-align:center;padding:1rem;">還沒有收藏的金句，把讓妳有感覺的話記下來吧</div>`;
-  document.querySelectorAll('.quote-del').forEach(b=>b.addEventListener('click',()=>{
-    S.quotes.splice(+b.dataset.i,1);sv(S);renderQuoteList();checkAchievements();syncStateDebounced();
+  const box=document.getElementById('quote-list');
+  box.innerHTML=S.quotes.length?S.quotes.map((q,i)=>{
+    if(i===editQuoteIdx){
+      return`<div class="quote-item"><input class="tdl-in qedit-input" data-i="${i}" value="${(q||'').replace(/"/g,'&quot;')}" style="flex:1;min-width:0;"/><button class="mini-btn qedit-save" data-i="${i}" style="flex-shrink:0;">✓</button><button class="mini-btn qedit-cancel" style="flex-shrink:0;background:rgba(200,196,247,.4);color:var(--tc2);">✕</button></div>`;
+    }
+    return`<div class="quote-item"><div class="quote-text">"${q}"</div><button class="quote-edit" data-i="${i}" style="background:none;border:none;cursor:pointer;color:var(--tc3);font-size:13px;flex-shrink:0;">✏️</button><button class="quote-del" data-i="${i}">✕</button></div>`;
+  }).join(''):`<div style="font-size:13px;color:var(--tc3);text-align:center;padding:1rem;">還沒有收藏的金句，把讓妳有感覺的話記下來吧</div>`;
+  box.querySelectorAll('.quote-del').forEach(b=>b.addEventListener('click',()=>{
+    S.quotes.splice(+b.dataset.i,1);editQuoteIdx=-1;sv(S);renderQuoteList();checkAchievements();syncStateDebounced();
   }));
+  box.querySelectorAll('.quote-edit').forEach(b=>b.addEventListener('click',()=>{editQuoteIdx=+b.dataset.i;renderQuoteList();}));
+  box.querySelectorAll('.qedit-save').forEach(b=>b.addEventListener('click',()=>{
+    const inp=box.querySelector('.qedit-input[data-i="'+b.dataset.i+'"]');
+    const v=inp.value.trim();
+    if(v)S.quotes[+b.dataset.i]=v;
+    editQuoteIdx=-1;sv(S);renderQuoteList();syncStateDebounced();
+  }));
+  box.querySelectorAll('.qedit-cancel').forEach(b=>b.addEventListener('click',()=>{editQuoteIdx=-1;renderQuoteList();}));
 }
 document.getElementById('quote-add-btn').addEventListener('click',()=>{
   const input=document.getElementById('quote-new-input');
@@ -2278,11 +2382,12 @@ document.querySelectorAll('.nav-btn').forEach(btn=>{
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('page-'+btn.dataset.page).classList.add('active');
+    window.scrollTo(0,0);
     const p=btn.dataset.page;
     if(p==='week')renderWeekly();
     if(p==='month')renderMonthly();
     if(p==='garden')renderGarden();
-    if(p==='support'){renderSupportPage();renderResourcePage();}
+    if(p==='support'){bookPage=0;renderSupportPage();renderResourcePage();}
     if(p==='info')renderAchievements();
     if(p==='settings')renderSettings();
   });
@@ -2559,14 +2664,6 @@ function bindUpload(fileId,btnId,previewId,urlInputId){
 bindUpload('person-file','person-upload-btn','person-upload-preview','person-img');
 bindUpload('treasure-file','treasure-upload-btn','treasure-upload-preview','treasure-img');
 // 重開表單時清掉上一次的預覽圖
-document.getElementById('add-person-btn').addEventListener('click',()=>{
-  const p=document.getElementById('person-upload-preview');p.style.display='none';p.removeAttribute('src');
-  document.getElementById('person-upload-btn').textContent='📷 上傳圖片';
-});
-document.getElementById('add-treasure-btn').addEventListener('click',()=>{
-  const p=document.getElementById('treasure-upload-preview');p.style.display='none';p.removeAttribute('src');
-  document.getElementById('treasure-upload-btn').textContent='📷 上傳圖片';
-});
 
 // ── 今日照片（最多3張，存 Drive、網址進 entries.photos） ──
 function sanitizeFilePart(s){return (s||'').replace(/[\\\/:*?"<>|#%&{}\s]+/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'').slice(0,30);}
@@ -2584,7 +2681,7 @@ function renderTodayPhotos(){
   box.innerHTML=ps.map((p,i)=>`
     <div style="width:88px;">
       <div style="position:relative;">
-        <img src="${p.url}" style="width:88px;height:88px;object-fit:cover;border-radius:12px;border:1.5px solid rgba(255,255,255,.8);box-shadow:0 2px 8px rgba(120,90,200,.15);"/>
+        <img class="photo-thumb-img" data-i="${i}" src="${p.url}" style="width:88px;height:88px;object-fit:cover;border-radius:12px;border:1.5px solid rgba(255,255,255,.8);box-shadow:0 2px 8px rgba(120,90,200,.15);cursor:pointer;"/>
         <button class="photo-del" data-i="${i}" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:none;background:rgba(240,120,120,.9);color:#fff;font-size:11px;cursor:pointer;line-height:1;">✕</button>
       </div>
       ${p.caption?`<div style="font-size:10px;color:var(--tc2);margin-top:2px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.caption}</div>`:''}
@@ -2594,6 +2691,10 @@ function renderTodayPhotos(){
     getCtxPhotosArr(false).splice(+b.dataset.i,1);sv(S);
     if(ctxIsToday())syncTodayPhotosIfPlanted();else syncEntryDebounced();
     renderTodayPhotos();
+  }));
+  box.querySelectorAll('.photo-thumb-img').forEach(im=>im.addEventListener('click',()=>{
+    const p=getCtxPhotosArr(false)[+im.dataset.i];
+    if(p&&typeof showLightbox==='function')showLightbox(p.url,p.caption);
   }));
   const btn=document.getElementById('photo-add-btn');
   btn.style.display=ps.length>=3?'none':'';
@@ -2655,27 +2756,50 @@ function ensureResourceDefaults(){
     sv(S);
   }
 }
+let bookPage=0;
+let bkDragEl=null,bkSX=0,bkSY=0,bkMoved=false,bkTap=null,bkBound=false;
+function bkStart(el,onTap,e){bkDragEl=el;bkMoved=false;bkTap=onTap;const p=e.touches?e.touches[0]:e;bkSX=p.clientX;bkSY=p.clientY;el.style.transition='none';el.style.zIndex='6';el.style.position='relative';e.preventDefault();}
+function bkMove(e){if(!bkDragEl)return;const p=e.touches?e.touches[0]:e;const dx=p.clientX-bkSX,dy=p.clientY-bkSY;if(Math.abs(dx)>4||Math.abs(dy)>4)bkMoved=true;bkDragEl.style.transform=`translate(${dx}px,${dy}px)`;}
+function bkEnd(){if(!bkDragEl)return;const el=bkDragEl,moved=bkMoved,tap=bkTap;bkDragEl=null;if(!moved){el.style.transform='';el.style.zIndex='';if(tap)tap();}}
+function bindBookGlobals(){
+  if(bkBound)return;bkBound=true;
+  window.addEventListener('mousemove',bkMove);window.addEventListener('touchmove',bkMove,{passive:false});
+  window.addEventListener('mouseup',bkEnd);window.addEventListener('touchend',bkEnd);
+  const pv=document.getElementById('book-prev'),nx=document.getElementById('book-next');
+  if(pv)pv.addEventListener('click',()=>{bookPage=Math.max(0,bookPage-1);renderBookItems();});
+  if(nx)nx.addEventListener('click',()=>{bookPage=bookPage+1;renderBookItems();});
+}
 function renderBookItems(){
+  bindBookGlobals();
   const all=[];
   (S.resourceCats||[]).forEach(cat=>(cat.items||[]).forEach(it=>all.push(it)));
   const l=document.getElementById('book-page-l'),r=document.getElementById('book-page-r');
-  const empty=document.getElementById('book-empty'),more=document.getElementById('book-more');
+  const empty=document.getElementById('book-empty'),ind=document.getElementById('book-more');
   if(!l)return;
-  const shown=all.slice(0,12);
+  const per=12,totalPages=Math.max(1,Math.ceil(all.length/per));
+  if(bookPage>=totalPages)bookPage=totalPages-1;
+  if(bookPage<0)bookPage=0;
+  const shown=all.slice(bookPage*per,bookPage*per+per);
   const mk=(it,i)=>{
     const anim=it.type==='person'?`gdFloat ${2.2+(i%3)*.35}s ease-in-out infinite ${i*.18}s`:`objBounce ${2+(i%4)*.35}s ease-in-out infinite ${i*.22}s`;
-    const icon=it.img?`<img class="bi-img" src="${it.img}"/>`:`<span class="bi-icon">${fi(it.emoji||'1f4da',30)}</span>`;
-    return`<div class="book-item" data-rid="${it.id||''}" style="animation:${anim};">${icon}<div class="bi-title">${it.title||''}</div></div>`;
+    const icon=it.img?`<img class="bi-img" src="${it.img}"/>`:`<span class="bi-icon">${fi(it.emoji||'1f4da',40)}</span>`;
+    return`<div class="book-item" data-rid="${it.id||''}" style="animation:${anim};cursor:grab;">${icon}<div class="bi-title">${it.title||''}</div></div>`;
   };
-  l.innerHTML=shown.slice(0,6).map(mk).join('');
+  l.innerHTML=shown.slice(0,6).map((it,i)=>mk(it,i)).join('');
   r.innerHTML=shown.slice(6,12).map((it,i)=>mk(it,i+6)).join('');
-  [l,r].forEach(pg=>pg.querySelectorAll('.book-item').forEach(el=>el.addEventListener('click',()=>{
+  [l,r].forEach(pg=>pg.querySelectorAll('.book-item').forEach(el=>{
     const it=all.find(x=>String(x.id)===el.dataset.rid);
-    if(it)showResPopup(it);
-  })));
+    const tap=()=>{if(it)showResPopup(it);};
+    el.addEventListener('mousedown',e=>bkStart(el,tap,e));
+    el.addEventListener('touchstart',e=>bkStart(el,tap,e),{passive:false});
+  }));
   empty.style.display=all.length?'none':'block';
-  more.style.display=all.length>12?'block':'none';
-  if(all.length>12)more.textContent=`還有 ${all.length-12} 個資源收在書裡 ✨`;
+  const pv=document.getElementById('book-prev'),nx=document.getElementById('book-next');
+  if(all.length>per){
+    pv.style.display=bookPage>0?'flex':'none';
+    nx.style.display=bookPage<totalPages-1?'flex':'none';
+    ind.style.display='block';ind.textContent=`第 ${bookPage+1} / ${totalPages} 頁`;
+  }else{pv.style.display='none';nx.style.display='none';ind.style.display='none';}
 }
 let openResForm=-1,selResType='book',selResEmoji='1f4da',resUploadUrl='',editResIdx=-1;
 function resFormHTML(ci){
@@ -2896,7 +3020,7 @@ function renderPlantBtn(){
   const b=document.getElementById('plant-btn');
   if(!b)return;
   if(ctxIsToday()){
-    if(S.lastPlant===today()){b.innerHTML=`${fi('1f389',17)} 今天種下了！`;b.disabled=true;}
+    if(S.lastPlant===today()){b.innerHTML=`${fi('1f389',17)} 已種下 · 可更新`;b.disabled=false;}
     else{b.innerHTML=`${fi('2728',17)} 種下今天`;b.disabled=false;}
   }else{
     const e=S.entries.find(x=>x.date===viewDate);
@@ -3032,6 +3156,53 @@ document.getElementById('reset-cloud-btn').addEventListener('click',async()=>{
     b.disabled=false;b.textContent='🗑️ 清除雲端＋本機資料（完全歸零）';
     alert('雲端清除失敗 🥲\n可能是 GAS 還沒更新到 v2.5（有 clearAll 功能的版本），請先更新 GAS 並重新部署後再試。\n本機資料沒有被動到。');
   }
+});
+</script>
+<script>
+// ═══ v7 追加：載入骨架 / 大圖 / 匯出文字 ═══
+function hideLoadSkeleton(){const s=document.getElementById('load-skeleton');if(s){s.style.opacity='0';setTimeout(()=>{if(s.parentNode)s.remove();},400);}}
+setTimeout(hideLoadSkeleton,6000); // 保險：最多6秒一定收掉骨架
+
+function showLightbox(url,caption){
+  document.getElementById('lightbox-img').src=url;
+  const cap=document.getElementById('lightbox-cap');
+  cap.textContent=caption||'';cap.style.display=caption?'block':'none';
+  document.getElementById('lightbox').style.display='flex';
+}
+document.getElementById('lightbox').addEventListener('click',()=>{
+  document.getElementById('lightbox').style.display='none';
+  document.getElementById('lightbox-img').src='';
+});
+
+function buildExportText(){
+  const lines=['🌳 格蘭朵魔法森林 · 我的紀錄備份','匯出時間：'+new Date().toLocaleString(),''];
+  const es=(S.entries||[]).slice().filter(e=>/^\d{4}-\d{2}-\d{2}$/.test(e.date)).sort((a,b)=>a.date<b.date?-1:1);
+  es.forEach(e=>{
+    const d=new Date(e.date+'T00:00:00');
+    lines.push(`━━━ ${e.date}（週${wdArr[d.getDay()]}）━━━`);
+    const names=HABITS.filter(h=>(e.checked||[]).includes(h.k)).map(h=>h.l);
+    lines.push('✅ 習慣：'+(names.join('、')||'無'));
+    if(e.diary){
+      if(e.diary.hl)lines.push('🌟 Highlights：'+e.diary.hl);
+      if(e.diary.rf)lines.push('📖 Reflection：'+e.diary.rf);
+      if(e.diary.gr)lines.push('🥹 Gratitude：'+e.diary.gr);
+      if(e.diary.quote)lines.push('💬 金句：'+e.diary.quote);
+    }
+    if(e.tdl&&e.tdl.length)lines.push('📝 TDL：'+e.tdl.map(r=>`${r.theme?r.theme+'：':''}${r.task}`).join('、'));
+    if(e.photos&&e.photos.length)lines.push('📷 照片：'+e.photos.map(p=>(p.caption||'(無說明)')+' '+p.url).join(' / '));
+    lines.push('');
+  });
+  if(S.quotes&&S.quotes.length){lines.push('━━━ 💬 金句收藏 ━━━');S.quotes.forEach(q=>lines.push('・'+q));lines.push('');}
+  return lines.join('\n');
+}
+const _exportBtn=document.getElementById('export-txt-btn');
+if(_exportBtn)_exportBtn.addEventListener('click',()=>{
+  const txt=buildExportText();
+  const blob=new Blob([txt],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`格蘭朵紀錄_${today()}.txt`;
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
 });
 </script>
 </body>
