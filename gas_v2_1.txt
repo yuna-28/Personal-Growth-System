@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════
-// 格蘭朵魔法森林 GAS v2.4（新增 entries.photos + state.supportResources 欄）
+// 格蘭朵魔法森林 GAS v2.5（新增 clearAll 完全歸零功能）
 // ═══════════════════════════════════════════════════════
 // 【安裝步驟】
 // 1. 打開你的 Google Sheet（ID: ***REMOVED***）
@@ -105,6 +105,7 @@ function doPost(e){
     if(action==='saveEntry') return json({ok:saveEntry_(payload)});
     if(action==='saveState') return json({ok:saveState_(payload)});
     if(action==='uploadImage') return json({ok:true,url:uploadImageToDrive_(payload)});
+    if(action==='clearAll') return json({ok:clearAll_()});
     return json({ok:false,error:'unknown action: '+action});
   }catch(err){
     return json({ok:false,error:String(err)});
@@ -175,4 +176,14 @@ function getDriveFolder_(){
   const folderName = '格蘭朵圖片庫';
   const folders = DriveApp.getFoldersByName(folderName);
   return folders.hasNext() ? folders.next() : DriveApp.createFolder(folderName);
+}
+
+// ── 完全歸零：清空 entries 資料列（保留標題）＋ state 第2列 ──
+// 注意：不會刪 Drive「格蘭朵圖片庫」裡的圖片檔
+function clearAll_(){
+  const en = getSheet('entries');
+  if(en.getLastRow() > 1) en.deleteRows(2, en.getLastRow() - 1);
+  const st = getSheet('state');
+  if(st.getLastRow() > 1) st.getRange(2, 1, st.getLastRow() - 1, st.getLastColumn()).clearContent();
+  return true;
 }

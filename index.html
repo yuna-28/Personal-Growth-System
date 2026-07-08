@@ -16,7 +16,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --tc:#3A2E5A;--tc2:#7B6A9A;--tc3:#A898C8;
+  --tc:#3A2E5A;--tc2:#7B6A9A;--tc3:#8878AC;
   --g1:rgba(255,255,255,.45);--gb:rgba(255,255,255,.72);
   --gs:0 8px 32px rgba(100,80,200,.13),0 2px 8px rgba(100,80,200,.08),inset 0 1.5px 0 rgba(255,255,255,.92);
   --gs2:0 16px 48px rgba(80,60,180,.16),inset 0 2px 0 rgba(255,255,255,.95);
@@ -342,7 +342,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
 .gd-sprite{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none;}
 .gd-sprite.show-label .sprite-label{display:block;}
 /* ── 支持系統資源書 ── */
-.book-item{display:flex;flex-direction:column;align-items:center;width:46%;pointer-events:none;}
+.book-item{display:flex;flex-direction:column;align-items:center;width:46%;pointer-events:auto;cursor:pointer;}
 .book-item .bi-icon{font-size:32px;line-height:1.1;}
 .book-item img.bi-img{width:38px;height:38px;object-fit:cover;border-radius:10px;border:2px solid rgba(255,255,255,.9);box-shadow:0 2px 8px rgba(120,90,60,.25);}
 .book-item .bi-title{font-size:9px;color:#6B5A3A;max-width:100%;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}
@@ -362,13 +362,36 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
 .day-chip{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.5);border:1.5px solid rgba(255,255,255,.8);font-size:11px;font-weight:700;color:var(--tc3);cursor:pointer;user-select:none;}
 .day-chip.on{background:rgba(93,202,165,.4);border-color:rgba(93,202,165,.7);color:#2A7A5A;}
 
+
+/* ── 清單/格狀切換 ── */
+.view-toggle{display:inline-flex;background:rgba(255,255,255,.55);border:1.5px solid rgba(255,255,255,.85);border-radius:10px;overflow:hidden;}
+.vt-opt{padding:3px 10px;font-size:13px;color:var(--tc3);cursor:pointer;user-select:none;}
+.vt-opt.on{background:linear-gradient(135deg,rgba(139,127,232,.4),rgba(93,202,165,.35));color:var(--tc);}
+.people-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+.person-card.pgrid{flex-direction:column;text-align:center;position:relative;gap:4px;margin-bottom:0;padding:14px 8px 10px;}
+.person-card.pgrid .card-del{position:absolute;top:4px;right:8px;}
+.person-card.pgrid .person-emoji img{width:44px;height:44px;}
+.treasure-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+.treasure-card.tgrid{position:relative;padding:10px;margin-bottom:0;}
+.treasure-card.tgrid .card-del{position:absolute;top:6px;right:8px;z-index:2;}
+.tg-img{width:100%;height:84px;object-fit:cover;border-radius:10px;margin-bottom:6px;display:block;}
+.tg-emoji{height:84px;display:flex;align-items:center;justify-content:center;font-size:40px;background:rgba(255,255,255,.4);border-radius:10px;margin-bottom:6px;}
+.treasure-row{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.45);border:1.5px solid rgba(255,255,255,.7);border-radius:14px;padding:8px 10px;margin-bottom:8px;}
+.tr-thumb{width:44px;height:44px;object-fit:cover;border-radius:10px;flex-shrink:0;}
+.res-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:6px;}
+.res-gcard{position:relative;background:rgba(255,255,255,.45);border:1.5px solid rgba(255,255,255,.7);border-radius:14px;padding:10px;padding-top:26px;}
+@media(min-width:768px){
+  .people-grid{grid-template-columns:repeat(4,1fr);}
+  .treasure-grid{grid-template-columns:repeat(3,1fr);}
+  .res-grid{grid-template-columns:repeat(3,1fr);}
+}
 </style>
 </head>
 <body>
 <div id="pwa-splash"><img src="puppy_icon.png" alt="格蘭朵"/><div class="splash-name">格蘭朵魔法森林</div></div>
 <div class="wrap"><div class="bg">
 <div id="burst-overlay" class="burst-overlay" style="display:none;"></div>
-<button class="support-quick-btn" id="settings-quick-btn" title="設定">⚙️</button>
+<button class="support-quick-btn" id="settings-quick-btn" title="設定" style="background:none;border:none;box-shadow:none;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/2699_3d.png" width="42" height="42" style="filter:drop-shadow(0 3px 8px rgba(80,60,140,.4));" onerror="this.outerHTML='⚙️'"/></button>
 <div id="levelup-overlay" class="levelup-overlay" style="display:none;"><div class="levelup-card"><div style="font-size:32px;margin-bottom:8px;">🎉✨🌟</div><div style="font-family:'Baloo 2',sans-serif;font-size:64px;font-weight:800;color:#fff;" id="levelup-num">2</div><div style="font-family:'Baloo 2',sans-serif;font-size:18px;font-weight:700;color:rgba(255,255,255,.9);">格蘭朵樹升級了！</div></div></div>
 <div id="achieve-popup" class="achieve-popup" style="display:none;"><div style="font-size:36px;margin-bottom:4px;" id="achieve-icon">🏆</div><div style="font-family:'Baloo 2',sans-serif;font-size:15px;font-weight:800;color:#5A3800;" id="achieve-name"></div><div style="font-size:12px;color:#7A5000;margin-top:2px;" id="achieve-desc"></div></div>
 
@@ -383,6 +406,18 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
     <div class="cal-grid" id="pop-cal-grid" style="margin-bottom:12px;"></div>
     <div id="pop-cal-form" style="display:none;"></div>
     <button id="pop-cal-close" style="width:100%;padding:9px;border:none;border-radius:12px;background:rgba(200,196,247,.3);color:var(--tc2);font-family:'Quicksand',sans-serif;font-weight:600;font-size:13px;cursor:pointer;margin-top:6px;">關閉</button>
+  </div>
+</div>
+
+<!-- 資源彈窗 -->
+<div id="res-popup" style="display:none;position:fixed;inset:0;z-index:9991;background:rgba(60,40,100,.35);backdrop-filter:blur(4px);">
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(255,255,255,.97);border-radius:24px;box-shadow:0 20px 60px rgba(80,60,180,.25);padding:1.4rem;width:min(340px,90vw);text-align:center;">
+    <div id="res-popup-visual" style="margin-bottom:10px;"></div>
+    <div id="res-popup-type" style="margin-bottom:6px;"></div>
+    <div id="res-popup-title" style="font-family:'Baloo 2',sans-serif;font-size:16px;font-weight:800;color:var(--tc);margin-bottom:8px;"></div>
+    <div id="res-popup-desc" style="font-size:13px;color:var(--tc2);line-height:1.7;margin-bottom:12px;white-space:pre-wrap;"></div>
+    <a id="res-popup-link" target="_blank" rel="noopener" style="display:none;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#8B7FE8,#5DCAA5);color:#fff;border-radius:14px;padding:10px;font-family:'Baloo 2',sans-serif;font-weight:700;font-size:14px;text-decoration:none;margin-bottom:8px;">🔗 前往連結</a>
+    <button id="res-popup-close" style="width:100%;padding:9px;border:none;border-radius:12px;background:rgba(200,196,247,.3);color:var(--tc2);font-family:'Quicksand',sans-serif;font-weight:600;font-size:13px;cursor:pointer;">關閉</button>
   </div>
 </div>
 
@@ -753,8 +788,9 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
 
 <div class="gcard" style="border-color:rgba(240,150,150,.4);">
   <div class="sec-hd">🧹 清除測試資料</div>
-  <p style="font-size:12px;color:var(--tc3);line-height:1.7;margin-bottom:10px;">會清除<b>這台裝置</b>上的所有本機資料（花朵、果實、EXP、紀錄等）。<br/>⚠️ 注意：Google Sheet 上已同步的資料<b>不會</b>被刪除，而且重新載入後會自動同步回來。要「完全歸零」的話，請在清除之後，順便去 Google Sheet 把 <b>entries 分頁的資料列</b>（保留標題列）和 <b>state 分頁的第2列</b>一起刪掉。<br/>（此按鈕為測試期間使用，正式版會移除）</p>
+  <p style="font-size:12px;color:var(--tc3);line-height:1.7;margin-bottom:10px;">會清除<b>這台裝置</b>上的所有本機資料（花朵、果實、EXP、紀錄等）。<br/>⚠️ 注意：Google Sheet 上已同步的資料<b>不會</b>被刪除，而且重新載入後會自動同步回來。要「完全歸零」請直接用下面第二顆深紅色按鈕，會連 Google Sheet 一起清空。<br/>（兩種清除都不會刪掉 Google Drive「格蘭朵圖片庫」裡的圖片檔，要刪請自己去 Drive 刪）</p>
   <button id="reset-data-btn" style="width:100%;padding:10px;border:1.5px solid rgba(240,120,120,.5);border-radius:13px;background:rgba(255,235,235,.7);color:#C05050;font-family:'Baloo 2',sans-serif;font-weight:700;font-size:13px;cursor:pointer;">清除本機測試資料</button>
+  <button id="reset-cloud-btn" style="width:100%;padding:10px;margin-top:8px;border:1.5px solid rgba(200,40,40,.6);border-radius:13px;background:rgba(255,215,215,.85);color:#A02020;font-family:'Baloo 2',sans-serif;font-weight:700;font-size:13px;cursor:pointer;">🗑️ 清除雲端＋本機資料（完全歸零）</button>
 </div>
 
 <div class="gcard">
@@ -2015,7 +2051,7 @@ function renderGarden(){
     const el=document.createElement('div');
     el.className='gd-sprite';
     el.style.cssText=`left:${pos.x}px;${pos.top!==undefined?`top:${pos.top}px;`:`bottom:${pos.bottom}px;`}z-index:7;`;
-    const visual=p.img?`<img class="main" src="${p.img}" width="54" height="54" style="display:block;border-radius:50%;object-fit:cover;border:2.5px solid rgba(255,255,255,.9);box-shadow:0 3px 10px rgba(120,90,200,.25);" onerror="this.outerHTML='${fi(p.emoji||'1f436',54).replace(/'/g,"\\'")}'"/>`:`<img class="main" src="${CDN}${p.emoji||'1f436'}_3d.png" width="54" height="54" style="display:block;"/>`;
+    const visual=p.img?`<img class="main" src="${p.img}" width="54" height="54" style="display:block;object-fit:contain;" onerror="this.outerHTML='${fi(p.emoji||'1f436',54).replace(/'/g,"\\'")}'"/>`:`<img class="main" src="${CDN}${p.emoji||'1f436'}_3d.png" width="54" height="54" style="display:block;"/>`;
     el.innerHTML=`<div class="sprite-label">${p.name||''}${p.note?` · ${p.note}`:''} · 點一下切換動態</div>${visual}`;
     dyn.appendChild(el);
     initCharSprite(el,canvas,54);
@@ -2071,12 +2107,26 @@ function renderProofBoard(habitsTotal){
 // ── PEOPLE MANAGER ────────────────────────────────────
 let selEmoji=PERSON_EMOJIS[0];
 function renderPeopleList(){
-  document.getElementById('people-list').innerHTML=S.myPeople.map((p,i)=>`
-    <div class="person-card">
+  const mode=getViewMode('people');
+  const cards=S.myPeople.map((p,i)=>{
+    if(mode==='grid'){
+      return`<div class="person-card pgrid">
+        <button class="card-del" data-i="${i}">✕</button>
+        <div class="person-emoji">${p.img?`<img src="${p.img}"/>`:fi(p.emoji||'1f436',36)}</div>
+        <div class="person-name">${p.name||''}</div>
+        <div class="person-note">${p.note||''}</div>
+      </div>`;
+    }
+    return`<div class="person-card">
       <div class="person-emoji">${p.img?`<img src="${p.img}"/>`:fi(p.emoji||'1f436',30)}</div>
       <div class="person-info"><div class="person-name">${p.name||''}</div><div class="person-note">${p.note||''}</div></div>
       <button class="card-del" data-i="${i}">✕</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
+  document.getElementById('people-list').innerHTML=
+    `<div style="display:flex;justify-content:flex-end;margin-bottom:8px;">${viewToggleHTML('people')}</div>`+
+    (mode==='grid'?`<div class="people-grid">${cards}</div>`:cards);
+  bindViewToggle(document.getElementById('people-list'),renderPeopleList);
   document.querySelectorAll('#people-list .card-del').forEach(b=>b.addEventListener('click',()=>{
     if(!confirm('確定移除？'))return;
     S.myPeople.splice(+b.dataset.i,1);sv(S);renderGarden();syncStateDebounced();
@@ -2116,14 +2166,31 @@ document.querySelectorAll('.treasure-type-btn').forEach(b=>b.addEventListener('c
   b.style.outline='2.5px solid #8B7FE8';
 }));
 function renderTreasureList(){
-  document.getElementById('treasure-list').innerHTML=S.treasures.map((t,i)=>`
-    <div class="treasure-card">
-      <span class="treasure-type ${t.type}">${t.type==='person'?'🫂 人':'🎁 物'}</span>
-      <button class="card-del" data-i="${i}" style="float:right;">✕</button>
-      ${t.img?`<img class="treasure-img" src="${t.img}" onerror="this.style.display='none'"/>`:''}
-      <div class="treasure-title">${t.img?'':(t.emoji||'💎')+' '}${t.title||''}</div>
-      <div class="treasure-desc">${t.desc||''}</div>
-    </div>`).join('');
+  const mode=getViewMode('treasure');
+  let inner;
+  if(mode==='grid'){
+    inner=`<div class="treasure-grid">`+S.treasures.map((t,i)=>`
+      <div class="treasure-card tgrid">
+        <button class="card-del" data-i="${i}">✕</button>
+        ${t.img?`<img class="tg-img" src="${t.img}" onerror="this.style.display='none'"/>`:`<div class="tg-emoji">${t.emoji||'💎'}</div>`}
+        <span class="treasure-type ${t.type}">${t.type==='person'?'🫂 人':'🎁 物'}</span>
+        <div class="treasure-title" style="font-size:12px;margin-top:4px;">${t.title||''}</div>
+        ${t.desc?`<div class="treasure-desc" style="font-size:11px;">${t.desc}</div>`:''}
+      </div>`).join('')+`</div>`;
+  }else{
+    inner=S.treasures.map((t,i)=>`
+      <div class="treasure-row">
+        ${t.img?`<img class="tr-thumb" src="${t.img}" onerror="this.style.display='none'"/>`:`<div class="tr-thumb" style="display:flex;align-items:center;justify-content:center;font-size:24px;background:rgba(255,255,255,.5);">${t.emoji||'💎'}</div>`}
+        <div style="flex:1;min-width:0;">
+          <div class="treasure-title" style="font-size:13px;margin-bottom:1px;">${t.title||''} <span class="treasure-type ${t.type}" style="margin-bottom:0;">${t.type==='person'?'🫂 人':'🎁 物'}</span></div>
+          <div class="treasure-desc" style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.desc||''}</div>
+        </div>
+        <button class="card-del" data-i="${i}">✕</button>
+      </div>`).join('');
+  }
+  document.getElementById('treasure-list').innerHTML=
+    `<div style="display:flex;justify-content:flex-end;margin-bottom:8px;">${viewToggleHTML('treasure')}</div>`+inner;
+  bindViewToggle(document.getElementById('treasure-list'),renderTreasureList);
   document.querySelectorAll('#treasure-list .card-del').forEach(b=>b.addEventListener('click',()=>{
     if(!confirm('確定移除？'))return;
     S.treasures.splice(+b.dataset.i,1);sv(S);renderGarden();syncStateDebounced();
@@ -2426,7 +2493,9 @@ function compressImage(file,maxDim,quality){
       const cv=document.createElement('canvas');cv.width=w;cv.height=h;
       cv.getContext('2d').drawImage(img,0,0,w,h);
       URL.revokeObjectURL(img.src);
-      resolve(cv.toDataURL('image/jpeg',quality));
+      // PNG 保留原格式（透明背景不會變黑底）；其他壓成 JPEG
+      if(file.type==='image/png')resolve(cv.toDataURL('image/png'));
+      else resolve(cv.toDataURL('image/jpeg',quality));
     };
     img.onerror=reject;
     img.src=URL.createObjectURL(file);
@@ -2434,10 +2503,13 @@ function compressImage(file,maxDim,quality){
 }
 async function uploadImageToGAS(file,customName){
   const dataUrl=await compressImage(file,800,0.8);
+  const isPng=dataUrl.indexOf('data:image/png')===0;
+  const ext=isPng?'.png':'.jpg';
+  let fname=customName?customName.replace(/\.jpg$/i,ext):(((file.name||'image').replace(/\.[^.]+$/,'')||'image')+ext);
   const res=await gasPost('uploadImage',{
     data:dataUrl.split(',')[1],
-    filename:customName||(((file.name||'image').replace(/\.[^.]+$/,'')||'image')+'.jpg'),
-    mimeType:'image/jpeg'
+    filename:fname,
+    mimeType:isPng?'image/png':'image/jpeg'
   });
   const j=await res.json();
   if(!j.ok||!j.url)throw new Error(j.error||'upload failed');
@@ -2573,15 +2645,19 @@ function renderBookItems(){
   const mk=(it,i)=>{
     const anim=it.type==='person'?`gdFloat ${2.2+(i%3)*.35}s ease-in-out infinite ${i*.18}s`:`objBounce ${2+(i%4)*.35}s ease-in-out infinite ${i*.22}s`;
     const icon=it.img?`<img class="bi-img" src="${it.img}"/>`:`<span class="bi-icon">${fi(it.emoji||'1f4da',30)}</span>`;
-    return`<div class="book-item" style="animation:${anim};">${icon}<div class="bi-title">${it.title||''}</div></div>`;
+    return`<div class="book-item" data-rid="${it.id||''}" style="animation:${anim};">${icon}<div class="bi-title">${it.title||''}</div></div>`;
   };
   l.innerHTML=shown.slice(0,6).map(mk).join('');
   r.innerHTML=shown.slice(6,12).map((it,i)=>mk(it,i+6)).join('');
+  [l,r].forEach(pg=>pg.querySelectorAll('.book-item').forEach(el=>el.addEventListener('click',()=>{
+    const it=all.find(x=>String(x.id)===el.dataset.rid);
+    if(it)showResPopup(it);
+  })));
   empty.style.display=all.length?'none':'block';
   more.style.display=all.length>12?'block':'none';
   if(all.length>12)more.textContent=`還有 ${all.length-12} 個資源收在書裡 ✨`;
 }
-let openResForm=-1,selResType='book',selResEmoji='1f4da',resUploadUrl='';
+let openResForm=-1,selResType='book',selResEmoji='1f4da',resUploadUrl='',editResIdx=-1;
 function resFormHTML(ci){
   return`<div style="margin-top:8px;border-top:1px solid rgba(200,196,247,.3);padding-top:10px;">
     <div style="font-size:11px;color:var(--tc2);margin-bottom:5px;">類型</div>
@@ -2591,11 +2667,13 @@ function resFormHTML(ci){
     <div style="font-size:11px;color:var(--tc2);margin-bottom:4px;">選一個 icon（或下面上傳圖片取代）</div>
     <div class="emoji-picker" id="res-emoji-picker"></div>
     <input class="tdl-in" id="res-title" placeholder="標題（例如：看《也許你該找人聊聊》）" style="width:100%;margin:7px 0;"/>
+    <input class="tdl-in" id="res-desc" placeholder="敘述（選填，這個資源對妳的意義）" style="width:100%;margin-bottom:7px;"/>
+    <input class="tdl-in" id="res-link" placeholder="連結網址（選填，https://...）" style="width:100%;margin-bottom:7px;"/>
     <input type="file" id="res-file" accept="image/*" style="display:none;"/>
     <button type="button" class="mini-btn" id="res-upload-btn" style="width:100%;margin-bottom:7px;background:rgba(159,225,203,.55);color:#2A7A5A;">📷 上傳圖片（選填）</button>
     <img id="res-upload-preview" style="display:none;width:56px;height:56px;object-fit:cover;border-radius:10px;margin-bottom:7px;"/>
     <div style="display:flex;gap:8px;">
-      <button class="mini-btn" id="res-item-save" data-ci="${ci}" style="flex:1;">收進書裡</button>
+      <button class="mini-btn" id="res-item-save" data-ci="${ci}" style="flex:1;">${editResIdx>=0?'儲存修改':'收進書裡'}</button>
       <button class="mini-btn" id="res-item-cancel" style="flex:1;background:rgba(200,196,247,.4);color:var(--tc2);">取消</button>
     </div>
   </div>`;
@@ -2612,27 +2690,45 @@ function renderResEmojiPicker(){
     o.classList.add('sel');
   }));
 }
+function resItemHTML(it,ci,ii,mode){
+  const linkA=it.link?`<a href="${it.link}" target="_blank" rel="noopener" style="text-decoration:none;font-size:14px;flex-shrink:0;" title="前往連結">🔗</a>`:'';
+  const btns=`<button class="support-item-del res-item-edit" data-ci="${ci}" data-ii="${ii}" title="編輯">✏️</button><button class="support-item-del res-item-del" data-ci="${ci}" data-ii="${ii}">✕</button>`;
+  if(mode==='grid'){
+    const visual=it.img?`<img src="${it.img}" style="width:100%;height:72px;object-fit:cover;border-radius:10px;display:block;margin-bottom:6px;"/>`:`<div style="height:72px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.4);border-radius:10px;margin-bottom:6px;">${fi(it.emoji||'1f4da',40)}</div>`;
+    return`<div class="res-gcard">
+      <div style="position:absolute;top:4px;right:6px;display:flex;gap:2px;">${btns}</div>
+      ${visual}
+      <div style="font-size:12px;font-weight:700;color:var(--tc);line-height:1.4;">${it.title||''} ${linkA}</div>
+      ${it.desc?`<div style="font-size:11px;color:var(--tc3);line-height:1.5;margin-top:2px;">${it.desc}</div>`:''}
+    </div>`;
+  }
+  return`<div class="support-item-row" style="align-items:center;">
+    ${it.img?`<img src="${it.img}" style="width:34px;height:34px;object-fit:cover;border-radius:8px;flex-shrink:0;"/>`:`<span style="flex-shrink:0;">${fi(it.emoji||'1f4da',22)}</span>`}
+    <div style="flex:1;min-width:0;">
+      <div>${it.title||''}</div>
+      ${it.desc?`<div style="font-size:11px;color:var(--tc3);">${it.desc}</div>`:''}
+    </div>
+    ${linkA}${btns}
+  </div>`;
+}
 function renderResourcePage(){
   ensureResourceDefaults();
   renderBookItems();
   const box=document.getElementById('resource-categories');
   if(!box)return;
-  box.innerHTML=S.resourceCats.map((cat,ci)=>`
+  const mode=getViewMode('res');
+  box.innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:4px;">${viewToggleHTML('res')}</div>`+S.resourceCats.map((cat,ci)=>`
     <div class="gcard support-cat-card">
       <div class="support-cat-hd">
         <div class="support-cat-title">📖 ${cat.label}</div>
         <button class="support-cat-del res-cat-del" data-ci="${ci}">✕ 刪除分類</button>
       </div>
-      <div>
-        ${(cat.items||[]).map((it,ii)=>`
-          <div class="support-item-row" style="align-items:center;">
-            ${it.img?`<img src="${it.img}" style="width:30px;height:30px;object-fit:cover;border-radius:8px;flex-shrink:0;"/>`:`<span style="flex-shrink:0;">${fi(it.emoji||'1f4da',22)}</span>`}
-            <span style="flex:1;">${it.title||''}</span>
-            <button class="support-item-del res-item-del" data-ci="${ci}" data-ii="${ii}">✕</button>
-          </div>`).join('')||`<div style="font-size:12px;color:var(--tc3);padding:4px 0;">還沒有收藏資源</div>`}
+      <div class="${mode==='grid'?'res-grid':''}">
+        ${(cat.items||[]).map((it,ii)=>resItemHTML(it,ci,ii,mode)).join('')||`<div style="font-size:12px;color:var(--tc3);padding:4px 0;">還沒有收藏資源</div>`}
       </div>
       ${openResForm===ci?resFormHTML(ci):`<button class="mini-btn res-item-add" data-ci="${ci}" style="width:100%;margin-top:6px;background:rgba(200,196,247,.35);color:#5A4A8A;">＋ 新增資源</button>`}
     </div>`).join('');
+  bindViewToggle(box,renderResourcePage);
   bindResourceEvents();
 }
 function bindResourceEvents(){
@@ -2647,20 +2743,35 @@ function bindResourceEvents(){
     S.resourceCats[+b.dataset.ci].items.splice(+b.dataset.ii,1);sv(S);syncStateDebounced();
     renderResourcePage();
   }));
+  box.querySelectorAll('.res-item-edit').forEach(b=>b.addEventListener('click',()=>{
+    const ci=+b.dataset.ci,ii=+b.dataset.ii;
+    const it=S.resourceCats[ci].items[ii];
+    if(!it)return;
+    openResForm=ci;editResIdx=ii;
+    selResType=it.type||'book';selResEmoji=it.emoji||'1f4da';resUploadUrl='';
+    renderResourcePage();
+  }));
   box.querySelectorAll('.res-item-add').forEach(b=>b.addEventListener('click',()=>{
-    openResForm=+b.dataset.ci;selResType='book';selResEmoji='1f4da';resUploadUrl='';
+    openResForm=+b.dataset.ci;selResType='book';selResEmoji='1f4da';resUploadUrl='';editResIdx=-1;
     renderResourcePage();
   }));
   const chips=document.getElementById('res-type-chips');
   if(chips){
     renderResEmojiPicker();
+    if(editResIdx>=0&&S.resourceCats[openResForm]&&S.resourceCats[openResForm].items[editResIdx]){
+      const eit=S.resourceCats[openResForm].items[editResIdx];
+      document.getElementById('res-title').value=eit.title||'';
+      document.getElementById('res-desc').value=eit.desc||'';
+      document.getElementById('res-link').value=eit.link||'';
+      if(eit.img){const pv=document.getElementById('res-upload-preview');pv.src=eit.img;pv.style.display='block';}
+    }
     chips.querySelectorAll('.res-chip').forEach(ch=>ch.addEventListener('click',()=>{
       selResType=ch.dataset.t;
       chips.querySelectorAll('.res-chip').forEach(x=>x.classList.remove('on'));
       ch.classList.add('on');
       renderResEmojiPicker();
     }));
-    document.getElementById('res-item-cancel').addEventListener('click',()=>{openResForm=-1;resUploadUrl='';renderResourcePage();});
+    document.getElementById('res-item-cancel').addEventListener('click',()=>{openResForm=-1;resUploadUrl='';editResIdx=-1;renderResourcePage();});
     document.getElementById('res-upload-btn').addEventListener('click',()=>document.getElementById('res-file').click());
     document.getElementById('res-file').addEventListener('change',async()=>{
       const fEl=document.getElementById('res-file');
@@ -2682,10 +2793,18 @@ function bindResourceEvents(){
     document.getElementById('res-item-save').addEventListener('click',()=>{
       const title=document.getElementById('res-title').value.trim();
       if(!title){alert('先填標題喔');return;}
+      let link=document.getElementById('res-link').value.trim();
+      if(link&&!/^https?:\/\//i.test(link))link='https://'+link;
+      const desc=document.getElementById('res-desc').value.trim();
       const ci=+document.getElementById('res-item-save').dataset.ci;
-      S.resourceCats[ci].items.push({id:'r'+Date.now(),type:selResType,emoji:selResEmoji,title:title,img:resUploadUrl||''});
+      if(editResIdx>=0&&S.resourceCats[ci].items[editResIdx]){
+        const old=S.resourceCats[ci].items[editResIdx];
+        S.resourceCats[ci].items[editResIdx]={id:old.id,type:selResType,emoji:selResEmoji,title:title,desc:desc,link:link,img:resUploadUrl||old.img||''};
+      }else{
+        S.resourceCats[ci].items.push({id:'r'+Date.now(),type:selResType,emoji:selResEmoji,title:title,desc:desc,link:link,img:resUploadUrl||''});
+      }
       sv(S);syncStateDebounced();
-      openResForm=-1;resUploadUrl='';
+      openResForm=-1;resUploadUrl='';editResIdx=-1;
       renderResourcePage();
     });
   }
@@ -2842,6 +2961,58 @@ document.getElementById('backfill-exit').addEventListener('click',()=>{
   });
 })();
 applyViewDate(false);
+
+// ═══ 清單/格狀切換 helpers ═══
+function getViewMode(key){return localStorage.getItem('grandol_view_'+key)||'grid';}
+function setViewMode(key,v){try{localStorage.setItem('grandol_view_'+key,v);}catch(e){}}
+function viewToggleHTML(key){
+  const m=getViewMode(key);
+  return`<span class="view-toggle" data-vkey="${key}"><span class="vt-opt${m==='list'?' on':''}" data-v="list" title="清單">☰</span><span class="vt-opt${m==='grid'?' on':''}" data-v="grid" title="格狀">▦</span></span>`;
+}
+function bindViewToggle(container,rerender){
+  container.querySelectorAll('.view-toggle .vt-opt').forEach(o=>o.addEventListener('click',()=>{
+    setViewMode(o.closest('.view-toggle').dataset.vkey,o.dataset.v);
+    rerender();
+  }));
+}
+
+// ═══ 資源彈窗 ═══
+function showResPopup(it){
+  const t=(typeof RESOURCE_TYPES!=='undefined')?RESOURCE_TYPES.find(x=>x.id===it.type):null;
+  document.getElementById('res-popup-visual').innerHTML=it.img?`<img src="${it.img}" style="width:96px;height:96px;object-fit:cover;border-radius:16px;box-shadow:0 4px 14px rgba(120,90,200,.25);"/>`:fi(it.emoji||'1f4da',64);
+  document.getElementById('res-popup-type').innerHTML=t?`<span style="font-size:11px;background:rgba(200,196,247,.35);border-radius:999px;padding:3px 10px;color:#5A4A8A;">${fi(t.chip,13)} ${t.labelText}</span>`:'';
+  document.getElementById('res-popup-title').textContent=it.title||'';
+  const de=document.getElementById('res-popup-desc');
+  de.textContent=it.desc||'';
+  de.style.display=it.desc?'block':'none';
+  const a=document.getElementById('res-popup-link');
+  if(it.link){a.href=it.link;a.style.display='flex';}else{a.style.display='none';}
+  document.getElementById('res-popup').style.display='block';
+}
+document.getElementById('res-popup-close').addEventListener('click',()=>{document.getElementById('res-popup').style.display='none';});
+document.getElementById('res-popup').addEventListener('click',e=>{if(e.target.id==='res-popup')document.getElementById('res-popup').style.display='none';});
+
+// ═══ 清除雲端＋本機（完全歸零） ═══
+document.getElementById('reset-cloud-btn').addEventListener('click',async()=>{
+  if(!confirm('⚠️ 這會把 Google Sheet 上的所有紀錄和本機資料「全部清空」，完全歸零且無法復原。確定嗎？'))return;
+  if(!confirm('再確認一次：所有日記、習慣紀錄、花朵果實、收藏都會永久消失。真的要繼續嗎？'))return;
+  const word=prompt('最後一步：請輸入「歸零」兩個字確認');
+  if(word!=='歸零'){alert('已取消，什麼都沒有刪 🌱');return;}
+  const b=document.getElementById('reset-cloud-btn');
+  b.disabled=true;b.textContent='⏳ 清除中...';
+  try{
+    const res=await gasPost('clearAll',{});
+    const j=await res.json();
+    if(!j.ok)throw new Error(j.error||'clear failed');
+    localStorage.removeItem(SK);
+    localStorage.removeItem('grandol_notif_fired');
+    alert('已完全清除！頁面即將重新載入 🌱');
+    location.reload();
+  }catch(e){
+    b.disabled=false;b.textContent='🗑️ 清除雲端＋本機資料（完全歸零）';
+    alert('雲端清除失敗 🥲\n可能是 GAS 還沒更新到 v2.5（有 clearAll 功能的版本），請先更新 GAS 並重新部署後再試。\n本機資料沒有被動到。');
+  }
+});
 </script>
 </body>
 </html>
