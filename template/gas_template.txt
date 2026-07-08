@@ -1,0 +1,184 @@
+// ═══════════════════════════════════════════════════════
+// 格蘭朵魔法森林 GAS 範本（Template）
+// ═══════════════════════════════════════════════════════
+// 這是給「套用自己資料」用的乾淨範本，只需要改第30行的 SHEET_ID。
+// 完整設定步驟請看 SETUP.md，這裡只列重點：
+//
+// 1. 建立你自己的 Google Sheet，複製網址裡 /d/ 和 /edit 中間那一段當 SHEET_ID
+// 2. 建立兩個分頁，第1列填入標題（沒有分頁時本程式會自動建立空分頁+標題列）：
+//    ① entries（12欄）：
+//       date | checked | hl | rf | gr | quote | tdl | exp | streak | tdlTotal | tdlDone | photos
+//    ② state（19欄）：
+//       flowers | apples | bigApples | goldFruits | seedlings | trees |
+//       achievements | quotes | calNotes | myPeople | treasures |
+//       lastPlant | lastStreak | streak | exp | gardenPos | supportCategories |
+//       notifications | supportResources
+// 3. 把下面第30行的 SHEET_ID 換成你自己的
+// 4. 擴充功能 → Apps Script → 貼上這份程式碼 → 儲存
+// 5. 在編輯器函式選單選 testDriveAuth → 執行 → 跳出授權視窗 → 允許
+//    （這一步是為了讓「圖片上傳」功能能存取你的 Google Drive）
+// 6. 部署 → 新增部署作業 → 類型選「網頁應用程式」→
+//    執行身分：我 / 誰可以存取：所有人 → 部署
+// 7. 複製部署後得到的網址，貼到 index.html 的 GAS_URL 那一行
+// ═══════════════════════════════════════════════════════
+
+const SHEET_ID = 'PASTE_YOUR_GOOGLE_SHEET_ID_HERE';
+
+const ENTRY_COLS = ['date','checked','hl','rf','gr','quote','tdl','exp','streak','tdlTotal','tdlDone','photos'];
+const STATE_COLS = ['flowers','apples','bigApples','goldFruits','seedlings','trees',
+                    'achievements','quotes','calNotes','myPeople','treasures',
+                    'lastPlant','lastStreak','streak','exp','gardenPos','supportCategories',
+                    'notifications','supportResources'];
+
+// 這個函式只是用來手動觸發 Google Drive 授權，之後留著也沒關係
+function testDriveAuth(){
+  Logger.log('資料夾建立/找到成功：' + getDriveFolder_().getName());
+}
+
+function getSheet(name){
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  let sh = ss.getSheetByName(name);
+  if(!sh){
+    sh = ss.insertSheet(name);
+    if(name==='entries') sh.appendRow(ENTRY_COLS);
+    if(name==='state')   sh.appendRow(STATE_COLS);
+  }
+  return sh;
+}
+
+function json(obj){
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ── GET ──────────────────────────────────────────────
+function doGet(e){
+  const action = (e.parameter.action||'').trim();
+  try{
+    if(action==='getEntries') return json({ok:true,data:getEntries_()});
+    if(action==='getState')   return json({ok:true,data:getState_()});
+    return json({ok:false,error:'unknown action: '+action});
+  }catch(err){
+    return json({ok:false,error:String(err)});
+  }
+}
+
+function getEntries_(){
+  const sh = getSheet('entries');
+  const values = sh.getDataRange().getValues();
+  if(values.length<2) return [];
+  const header = values[0].map(String);
+  return values.slice(1).map(row=>{
+    const o = {};
+    header.forEach((h,i)=>{
+      let v = row[i];
+      if(h==='date' && v instanceof Date){
+        v = Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+      }
+      o[h] = v;
+    });
+    return o;
+  }).filter(o=>o.date);
+}
+
+function getState_(){
+  const sh = getSheet('state');
+  const values = sh.getDataRange().getValues();
+  if(values.length<2) return {};
+  const header = values[0].map(String);
+  const row = values[1];
+  const o = {};
+  header.forEach((h,i)=>{ o[h] = row[i]; });
+  return o;
+}
+
+// ── POST ─────────────────────────────────────────────
+function doPost(e){
+  const action = (e.parameter.action||'').trim();
+  try{
+    const payload = JSON.parse(e.postData.contents||'{}');
+    if(action==='saveEntry') return json({ok:saveEntry_(payload)});
+    if(action==='saveState') return json({ok:saveState_(payload)});
+    if(action==='uploadImage') return json({ok:true,url:uploadImageToDrive_(payload)});
+    if(action==='clearAll') return json({ok:clearAll_()});
+    return json({ok:false,error:'unknown action: '+action});
+  }catch(err){
+    return json({ok:false,error:String(err)});
+  }
+}
+
+function saveEntry_(p){
+  const sh = getSheet('entries');
+  const values = sh.getDataRange().getValues();
+  const header = values[0].map(String);
+  const dateCol = header.indexOf('date');
+  const dateStr = String(p.date).slice(0,10);
+
+  const rowData = header.map(h=>{
+    let v = p[h];
+    if(v===undefined||v===null) v = '';
+    if(typeof v==='object') v = JSON.stringify(v);
+    return v;
+  });
+
+  // 找同日期列 → 覆蓋；沒有 → 新增
+  for(let r=1; r<values.length; r++){
+    let cell = values[r][dateCol];
+    if(cell instanceof Date){
+      cell = Utilities.formatDate(cell, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+    }
+    if(String(cell).slice(0,10)===dateStr){
+      sh.getRange(r+1,1,1,rowData.length).setValues([rowData]);
+      return true;
+    }
+  }
+  sh.appendRow(rowData);
+  return true;
+}
+
+function saveState_(p){
+  const sh = getSheet('state');
+  const values = sh.getDataRange().getValues();
+  const header = values[0].map(String);
+  const rowData = header.map(h=>{
+    let v = p[h];
+    if(v===undefined||v===null) v = '';
+    if(typeof v==='object') v = JSON.stringify(v);
+    return v;
+  });
+  sh.getRange(2,1,1,rowData.length).setValues([rowData]);
+  return true;
+}
+
+// ── 圖片上傳到 Google Drive ──────────────────────────
+// p.data = base64 圖片資料（不含 data:xxx;base64, 前綴）
+// p.filename = 檔案名稱、p.mimeType = image/jpeg 等
+// 回傳 thumbnail 直連網址（在 <img> 裡最穩定能顯示的格式）
+function uploadImageToDrive_(p){
+  if(!p || !p.data) throw new Error('no image data');
+  const folder = getDriveFolder_();
+  const blob = Utilities.newBlob(
+    Utilities.base64Decode(p.data),
+    p.mimeType || 'image/jpeg',
+    p.filename || ('grandol_' + Date.now() + '.jpg')
+  );
+  const file = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return 'https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w800';
+}
+
+function getDriveFolder_(){
+  const folderName = '格蘭朵圖片庫';
+  const folders = DriveApp.getFoldersByName(folderName);
+  return folders.hasNext() ? folders.next() : DriveApp.createFolder(folderName);
+}
+
+// ── 完全歸零：清空 entries 資料列（保留標題）＋ state 第2列 ──
+// 注意：不會刪 Drive「格蘭朵圖片庫」裡的圖片檔
+function clearAll_(){
+  const en = getSheet('entries');
+  if(en.getLastRow() > 1) en.deleteRows(2, en.getLastRow() - 1);
+  const st = getSheet('state');
+  if(st.getLastRow() > 1) st.getRange(2, 1, st.getLastRow() - 1, st.getLastColumn()).clearContent();
+  return true;
+}

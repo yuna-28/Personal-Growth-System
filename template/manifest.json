@@ -1,0 +1,25 @@
+{
+  "name": "格蘭朵魔法森林",
+  "short_name": "格蘭朵",
+  "description": "妳正在成為自己的見證者",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#D4EEFF",
+  "theme_color": "#8B7FE8",
+  "icons": [
+    {
+      "src": "puppy_icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "puppy_icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
