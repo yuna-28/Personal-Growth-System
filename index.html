@@ -394,6 +394,10 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
   <div class="streak-pill"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f525_3d.png" width="18" height="18" onerror="this.outerHTML='🔥'"/><span class="streak-num" id="streak-num">0</span><span style="font-size:11px;color:var(--tc2);font-weight:600;">天連續</span></div>
 </div>
 <div class="sync-badge"><div class="sync-dot" id="sync-dot"></div><span id="sync-label">連線中...</span></div>
+<div id="backfill-banner" style="display:none;align-items:center;justify-content:space-between;gap:8px;background:rgba(255,220,120,.4);border:1.5px solid rgba(255,200,80,.65);border-radius:14px;padding:8px 12px;margin:0 1rem 8px;font-size:12px;font-weight:700;color:#8A6A00;box-shadow:0 2px 10px rgba(200,150,60,.15);">
+  <span id="backfill-date-lbl"></span>
+  <button id="backfill-exit" style="border:none;background:rgba(255,255,255,.85);border-radius:999px;padding:5px 12px;font-family:'Quicksand',sans-serif;font-size:12px;font-weight:700;color:#8A6A00;cursor:pointer;flex-shrink:0;">↩ 回到今天</button>
+</div>
 
 <!-- ══════ HOME ══════ -->
 <div class="page active" id="page-home">
@@ -452,6 +456,10 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
         <div id="photo-thumbs" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;"></div>
         <input type="file" id="photo-file" accept="image/*" style="display:none;"/>
         <button type="button" id="photo-add-btn" style="background:none;border:1.5px dashed rgba(160,140,220,.35);border-radius:11px;padding:7px 12px;font-family:'Quicksand',sans-serif;font-size:12px;color:var(--tc3);cursor:pointer;width:100%;">📷 新增照片</button>
+      </div>
+      <div class="diary-section" style="margin:12px 0 0;">
+        <div class="diary-label">📝 備註 <span style="font-size:11px;font-weight:500;color:var(--tc3);">選填·會在日曆上顯示黃點</span></div>
+        <input class="quote-input" id="d-note" placeholder="給這一天的小備註..." style="font-style:normal;"/>
       </div>
     </div>
   </div>
@@ -777,6 +785,8 @@ const CDN='https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/';
 const fi=(c,s=20)=>`<img src="${CDN}${c}_3d.png" width="${s}" height="${s}" style="display:inline-block;vertical-align:middle;" onerror="this.style.display='none'"/>`;
 const SK='grandol_v7';
 const wdArr=['日','一','二','三','四','五','六'];
+let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
+function ctxIsToday(){return !viewDate||viewDate===today();}
 
 const HABITS=[
   {k:'wakeup',l:'早起',c:'1f305',fc:'1fab7',phrase:'妳是一個善待自己的人'},
@@ -1035,16 +1045,18 @@ function makeDraggable(el,stage,onEnd){
 
 // ── TOP / EXP RENDER ──────────────────────────────────
 function renderTopDate(){
-  const d=new Date();
-  document.getElementById('top-date-main').innerHTML=`${fi('1f4c5',17)} ${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
-  document.getElementById('top-date-sub').textContent=`週${wdArr[d.getDay()]} · 點日期補記過去`;
+  const isT=ctxIsToday();
+  const d=isT?new Date():new Date(viewDate+'T00:00:00');
+  document.getElementById('top-date-main').innerHTML=`${fi('1f4c5',17)} ${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日${isT?'':' ✏️'}`;
+  document.getElementById('top-date-sub').textContent=isT?`週${wdArr[d.getDay()]} · 點日期補記過去`:`週${wdArr[d.getDay()]} · 補記模式`;
   document.getElementById('streak-num').textContent=S.streak||0;
   document.getElementById('today-date').textContent=`${d.getMonth()+1}月${d.getDate()}日 週${wdArr[d.getDay()]}`;
 }
 function renderExpBar(){
   const cur=S.exp%100,segs=10,filled=Math.round(cur/100*segs);
   document.getElementById('exprow').innerHTML=Array.from({length:segs},(_,i)=>`<div class="exp-seg ${i<filled?(i===filled-1?'on pulse':'on'):'off'}"></div>`).join('');
-  document.getElementById('explbl').textContent=`${S.exp} EXP · Lv.${Math.floor(S.exp/100)+1} · 今日 ${Object.keys(S.checked).length}/9`;
+  const ckN=ctxIsToday()?Object.keys(S.checked).length:(((S.entries.find(x=>x.date===viewDate)||{}).checked)||[]).length;
+  document.getElementById('explbl').textContent=`${S.exp} EXP · Lv.${Math.floor(S.exp/100)+1} · ${ctxIsToday()?'今日':'當日'} ${ckN}/9`;
   document.getElementById('lv').textContent=`Lv.${Math.floor(S.exp/100)+1}`;
 }
 
@@ -1080,11 +1092,16 @@ function renderFlowers(){
     });
   });
 }
-function addFlower(fc){
+function addFlower(fc,ds){
   const x=4+Math.random()*88,y=Math.random()*40;
-  S.flowers.push({f:fc,x:x,y:y,d:today()});
+  S.flowers.push({f:fc,x:x,y:y,d:ds||today()});
 }
-function removeFlower(fc){
+function removeFlower(fc,ds){
+  if(ds){
+    for(let i=S.flowers.length-1;i>=0;i--){
+      if(S.flowers[i].f===fc&&S.flowers[i].d===ds){S.flowers.splice(i,1);return;}
+    }
+  }
   for(let i=S.flowers.length-1;i>=0;i--){
     if(S.flowers[i].f===fc){S.flowers.splice(i,1);return;}
   }
@@ -1158,13 +1175,39 @@ function initStickyDrag(){
 
 // ── HABITS ────────────────────────────────────────────
 function renderHabits(){
-  const locked=S.lastPlant===today();
+  const isT=ctxIsToday();
+  const e=isT?null:S.entries.find(x=>x.date===viewDate);
+  const checkedMap=isT?S.checked:(()=>{const m={};((e&&e.checked)||[]).forEach(k=>m[k]=true);return m;})();
+  const locked=isT&&S.lastPlant===today();
   document.getElementById('habits').innerHTML=HABITS.map(h=>`
-    <div class="neo-chip${S.checked[h.k]?' on':''}${locked?' locked':''}" data-k="${h.k}" style="position:relative;">
+    <div class="neo-chip${checkedMap[h.k]?' on':''}${locked?' locked':''}" data-k="${h.k}" style="position:relative;">
       ${fi(h.c,20)}<span>${h.l}</span>
-      ${S.checked[h.k]?`<span style="margin-left:auto;">${fi('2705',15)}</span>`:''}
+      ${checkedMap[h.k]?`<span style="margin-left:auto;">${fi('2705',15)}</span>`:''}
     </div>`).join('');
   document.querySelectorAll('#habits .neo-chip').forEach(c=>c.addEventListener('click',()=>{
+    if(!ctxIsToday()){
+      // 補記模式：直接改那一天的紀錄，差異式加減 EXP 與花朵
+      const h=HABITS.find(x=>x.k===c.dataset.k);
+      const en=getOrCreateEntry(viewDate);
+      const oldExp=S.exp;
+      const idx=en.checked.indexOf(h.k);
+      if(idx>=0){
+        en.checked.splice(idx,1);
+        S.exp=Math.max(0,S.exp-10);
+        removeFlower(h.fc,viewDate);
+        showExpPop(c,'-10 EXP');
+      }else{
+        en.checked.push(h.k);S.exp+=10;addFlower(h.fc,viewDate);
+        triggerBurst(c);
+        const ring=document.createElement('div');ring.className='chip-ring';c.appendChild(ring);setTimeout(()=>ring.remove(),500);
+        showExpPop(c,'+10 EXP');
+        setTimeout(()=>showIdPhrase(h.phrase),600);
+      }
+      sv(S);checkLevelUp(oldExp,S.exp);
+      renderHabits();renderFlowers();renderExpBar();checkAchievements();
+      syncEntryDebounced();syncStateDebounced();
+      return;
+    }
     if(S.lastPlant===today()){showIdPhrase('今天已經種下了，明天再繼續 🌙');return;}
     const h=HABITS.find(x=>x.k===c.dataset.k);
     const oldExp=S.exp;
@@ -1205,11 +1248,15 @@ document.getElementById('tdl-add').addEventListener('click',()=>{tdlRows.push({t
 ['hl','rf','gr','quote'].forEach(k=>{
   const el=document.getElementById('d-'+k);
   el.value=S.diary[k]||'';
-  el.addEventListener('input',()=>{S.diary[k]=el.value;sv(S);});
+  el.addEventListener('input',()=>{
+    if(ctxIsToday()){S.diary[k]=el.value;sv(S);}
+    else{const en=getOrCreateEntry(viewDate);en.diary[k]=el.value;sv(S);syncEntryDebounced();}
+  });
 });
 
 // ── PLANT TODAY ───────────────────────────────────────
 document.getElementById('plant-btn').addEventListener('click',async()=>{
+  if(!ctxIsToday()){await plantBackfill();return;}
   const replant=S.lastPlant===today();
   if(replant&&!confirm('今天已經種過了！要覆蓋今天的紀錄嗎？'))return;
   const d=S.diary;
@@ -1242,6 +1289,7 @@ document.getElementById('plant-btn').addEventListener('click',async()=>{
 
   if(d.quote&&d.quote.trim()&&!S.quotes.includes(d.quote.trim()))S.quotes.push(d.quote.trim());
 
+  recalcStreak();entry.streak=S.streak;
   sv(S);
   renderFruits();renderExpBar();renderTopDate();renderHabits();
   checkLevelUp(oldExp,S.exp);checkAchievements();
@@ -1301,53 +1349,11 @@ function renderPopCal(){
     el.addEventListener('click',()=>selectPopCalDate(el.dataset.date));
   });
 }
-let calChecked={};
 function selectPopCalDate(ds){
   if(ds>today()){alert('還沒到那天喔 🌱');return;}
-  if(ds===today()){toggleCalPopup();return;}
-  const entry=S.entries.find(e=>e.date===ds)||null;
-  const note=S.calNotes[ds]||'';
-  const d=new Date(ds+'T00:00:00');
-  calChecked={};(entry?.checked||[]).forEach(k=>calChecked[k]=true);
-  const form=document.getElementById('pop-cal-form');
-  form.style.display='block';
-  form.innerHTML=`<div style="border-top:1px solid rgba(200,196,247,.3);margin:12px 0 0;padding-top:12px;">
-    <div style="font-family:'Baloo 2',sans-serif;font-size:13px;font-weight:800;color:var(--tc);margin-bottom:10px;">補記 ${d.getMonth()+1}/${d.getDate()} 週${wdArr[d.getDay()]}</div>
-    <div style="font-size:12px;font-weight:700;color:var(--tc2);margin-bottom:6px;">完成習慣</div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:10px;" id="pop-cal-habits">
-      ${HABITS.map(h=>`<div class="cal-chip${calChecked[h.k]?' on':''}" data-k="${h.k}">${fi(h.c,13)} ${h.l}</div>`).join('')}
-    </div>
-    <div style="font-size:12px;font-weight:700;color:var(--tc2);margin-bottom:4px;">🌟 Highlights</div>
-    <textarea class="diary-ta" id="pop-cal-hl" style="min-height:38px;margin-bottom:7px;">${entry?.diary?.hl||''}</textarea>
-    <div style="font-size:12px;font-weight:700;color:var(--tc2);margin-bottom:4px;">📖 Reflection</div>
-    <textarea class="diary-ta" id="pop-cal-rf" style="min-height:38px;margin-bottom:7px;">${entry?.diary?.rf||''}</textarea>
-    <div style="font-size:12px;font-weight:700;color:var(--tc2);margin-bottom:4px;">🥹 Gratitude</div>
-    <textarea class="diary-ta" id="pop-cal-gr" style="min-height:38px;margin-bottom:7px;">${entry?.diary?.gr||''}</textarea>
-    <div style="font-size:12px;font-weight:700;color:var(--tc2);margin-bottom:4px;">📝 備註</div>
-    <textarea class="diary-ta" id="pop-cal-note" style="min-height:34px;margin-bottom:10px;">${note}</textarea>
-    <button id="pop-cal-save" class="mini-btn" style="width:100%;">儲存 ${d.getMonth()+1}/${d.getDate()} 的紀錄</button>
-  </div>`;
-  form.querySelectorAll('.cal-chip').forEach(ch=>ch.addEventListener('click',()=>{
-    ch.classList.toggle('on');calChecked[ch.dataset.k]=ch.classList.contains('on');
-  }));
-  document.getElementById('pop-cal-save').addEventListener('click',()=>savePopCalEntry(ds));
-}
-async function savePopCalEntry(ds){
-  const checked=Object.keys(calChecked).filter(k=>calChecked[k]);
-  const hl=document.getElementById('pop-cal-hl').value;
-  const rf=document.getElementById('pop-cal-rf').value;
-  const gr=document.getElementById('pop-cal-gr').value;
-  const note=document.getElementById('pop-cal-note').value;
-  if(note.trim())S.calNotes[ds]=note.trim();else delete S.calNotes[ds];
-  const old=S.entries.find(e=>e.date===ds);
-  const entry={date:ds,checked,diary:{hl,rf,gr,quote:old?.diary?.quote||''},tdl:old?.tdl||[],exp:old?.exp||0,streak:old?.streak||0,tdlTotal:old?.tdlTotal||0,tdlDone:old?.tdlDone||0,photos:old?.photos||[]};
-  const idx=S.entries.findIndex(e=>e.date===ds);
-  if(idx>=0)S.entries[idx]=entry;else{S.entries.push(entry);S.entries.sort((a,b)=>a.date<b.date?-1:1);}
-  sv(S);
-  document.getElementById('pop-cal-form').innerHTML='<div style="text-align:center;padding:1rem;color:#5DCAA5;font-weight:700;">✅ 儲存成功！</div>';
-  setTimeout(()=>{document.getElementById('pop-cal-form').style.display='none';renderPopCal();},1000);
-  await syncEntry({date:ds,checked,hl,rf,gr,quote:entry.diary.quote,tdl:entry.tdl,exp:entry.exp,streak:entry.streak,tdlTotal:entry.tdlTotal,tdlDone:entry.tdlDone,photos:entry.photos||[]});
-  await syncState();
+  viewDate=(ds===today())?null:ds;
+  toggleCalPopup();
+  applyViewDate(true);
 }
 document.getElementById('pop-cal-prev').addEventListener('click',()=>{popCalMonth--;if(popCalMonth<0){popCalMonth=11;popCalYear--;}renderPopCal();document.getElementById('pop-cal-form').style.display='none';});
 document.getElementById('pop-cal-next').addEventListener('click',()=>{popCalMonth++;if(popCalMonth>11){popCalMonth=0;popCalYear++;}renderPopCal();document.getElementById('pop-cal-form').style.display='none';});
@@ -2201,10 +2207,12 @@ function renderAll(){
   renderTopDate();renderHabits();renderExpBar();renderFlowers();renderFruits();
   renderStickyNote();renderTDL();renderAchievements();
   if(typeof renderTodayPhotos==='function')renderTodayPhotos();
-  if(S.lastPlant===today()){
+  if(typeof renderPlantBtn==='function')renderPlantBtn();
+  else if(S.lastPlant===today()){
     const b=document.getElementById('plant-btn');
     b.innerHTML=`${fi('1f389',17)} 今天種下了！`;b.disabled=true;
   }
+  if(typeof applyViewDate==='function')applyViewDate(false);
   if(document.getElementById('page-garden').classList.contains('active'))renderGarden();
 }
 migrateFlowers();
@@ -2470,10 +2478,17 @@ document.getElementById('add-treasure-btn').addEventListener('click',()=>{
 
 // ── 今日照片（最多3張，存 Drive、網址進 entries.photos） ──
 function sanitizeFilePart(s){return (s||'').replace(/[\\\/:*?"<>|#%&{}\s]+/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'').slice(0,30);}
+function getCtxPhotosArr(create){
+  if(ctxIsToday()){S.todayPhotos=S.todayPhotos||[];return S.todayPhotos;}
+  let en=S.entries.find(x=>x.date===viewDate);
+  if(!en){if(!create)return[];en=getOrCreateEntry(viewDate);}
+  en.photos=en.photos||[];
+  return en.photos;
+}
 function renderTodayPhotos(){
   const box=document.getElementById('photo-thumbs');
   if(!box)return;
-  const ps=S.todayPhotos||[];
+  const ps=getCtxPhotosArr(false);
   box.innerHTML=ps.map((p,i)=>`
     <div style="width:88px;">
       <div style="position:relative;">
@@ -2484,8 +2499,8 @@ function renderTodayPhotos(){
     </div>`).join('');
   box.querySelectorAll('.photo-del').forEach(b=>b.addEventListener('click',()=>{
     if(!confirm('移除這張照片？（Drive 上的原檔不會被刪除）'))return;
-    S.todayPhotos.splice(+b.dataset.i,1);sv(S);
-    syncTodayPhotosIfPlanted();
+    getCtxPhotosArr(false).splice(+b.dataset.i,1);sv(S);
+    if(ctxIsToday())syncTodayPhotosIfPlanted();else syncEntryDebounced();
     renderTodayPhotos();
   }));
   const btn=document.getElementById('photo-add-btn');
@@ -2500,7 +2515,7 @@ function syncTodayPhotosIfPlanted(){
   syncEntry({date:today(),checked:e.checked||[],hl:e.diary?.hl||'',rf:e.diary?.rf||'',gr:e.diary?.gr||'',quote:e.diary?.quote||'',tdl:e.tdl||[],exp:e.exp||0,streak:e.streak||0,tdlTotal:e.tdlTotal||0,tdlDone:e.tdlDone||0,photos:e.photos});
 }
 document.getElementById('photo-add-btn').addEventListener('click',()=>{
-  if((S.todayPhotos||[]).length>=3){alert('一天最多3張照片喔');return;}
+  if(getCtxPhotosArr(false).length>=3){alert('一天最多3張照片喔');return;}
   document.getElementById('photo-file').click();
 });
 document.getElementById('photo-file').addEventListener('change',async()=>{
@@ -2513,10 +2528,11 @@ document.getElementById('photo-file').addEventListener('change',async()=>{
   btn.disabled=true;btn.textContent='⏳ 上傳中...';
   try{
     const caption=desc.trim();
-    const url=await uploadImageToGAS(f,`${today()}_${sanitizeFilePart(caption)||'photo'}.jpg`);
-    S.todayPhotos=S.todayPhotos||[];
-    S.todayPhotos.push({url:url,caption:caption});
-    sv(S);syncTodayPhotosIfPlanted();
+    const pds=ctxIsToday()?today():viewDate;
+    const url=await uploadImageToGAS(f,`${pds}_${sanitizeFilePart(caption)||'photo'}.jpg`);
+    getCtxPhotosArr(true).push({url:url,caption:caption});
+    sv(S);
+    if(ctxIsToday())syncTodayPhotosIfPlanted();else syncEntryDebounced();
   }catch(e){
     alert('上傳失敗 🥲 再試一次，或檢查一下網路');
   }
@@ -2695,6 +2711,137 @@ document.getElementById('res-cat-save').addEventListener('click',()=>{
 });
 
 renderSettings();
+</script>
+<script>
+// ═══ 補記模式（日期頁）核心 ═══════════════════════════
+function getOrCreateEntry(ds){
+  let e=S.entries.find(x=>x.date===ds);
+  if(!e){
+    e={date:ds,checked:[],diary:{hl:'',rf:'',gr:'',quote:''},tdl:[],exp:0,streak:0,tdlTotal:0,tdlDone:0,photos:[]};
+    S.entries.push(e);
+    S.entries.sort((a,b)=>a.date<b.date?-1:1);
+  }
+  if(!Array.isArray(e.checked))e.checked=[];
+  if(!e.diary)e.diary={hl:'',rf:'',gr:'',quote:''};
+  return e;
+}
+// 已種下的定義：entry.streak >= 1（當天種下與補種都會設；舊式補記為0，可再補種領蘋果）
+function plantedSet(){
+  // 只認 yyyy-mm-dd 格式的日期（Sheet 裡的範例列等雜訊排除）
+  return new Set(S.entries.filter(x=>/^\d{4}-\d{2}-\d{2}$/.test(x.date)&&(+x.streak||0)>=1).map(x=>x.date));
+}
+function runEndingAt(ds,set){
+  let c=0;const d=new Date(ds+'T00:00:00');
+  while(set.has(fmtLocal(d))){c++;d.setDate(d.getDate()-1);}
+  return c;
+}
+function recalcStreak(){
+  const set=plantedSet();
+  if(!set.size){S.streak=0;S.lastStreak='';return;}
+  const latest=[...set].sort().pop();
+  S.streak=runEndingAt(latest,set);
+  S.lastStreak=latest;
+}
+let entryTimer=null;
+function syncEntryFor(ds){
+  const e=S.entries.find(x=>x.date===ds);
+  if(!e)return Promise.resolve();
+  return syncEntry({date:e.date,checked:e.checked||[],hl:e.diary?.hl||'',rf:e.diary?.rf||'',gr:e.diary?.gr||'',quote:e.diary?.quote||'',tdl:e.tdl||[],exp:e.exp||0,streak:e.streak||0,tdlTotal:e.tdlTotal||0,tdlDone:e.tdlDone||0,photos:e.photos||[]});
+}
+function syncEntryDebounced(){
+  const ds=ctxIsToday()?today():viewDate;
+  clearTimeout(entryTimer);
+  entryTimer=setTimeout(()=>{syncEntryFor(ds);},1200);
+}
+function renderPlantBtn(){
+  const b=document.getElementById('plant-btn');
+  if(!b)return;
+  if(ctxIsToday()){
+    if(S.lastPlant===today()){b.innerHTML=`${fi('1f389',17)} 今天種下了！`;b.disabled=true;}
+    else{b.innerHTML=`${fi('2728',17)} 種下今天`;b.disabled=false;}
+  }else{
+    const e=S.entries.find(x=>x.date===viewDate);
+    const planted=e&&(+e.streak||0)>=1;
+    const d=new Date(viewDate+'T00:00:00');
+    if(planted){b.innerHTML=`${fi('1f389',17)} ${d.getMonth()+1}/${d.getDate()} 已種下 · 可更新`;b.disabled=false;}
+    else{b.innerHTML=`${fi('2728',17)} 補種 ${d.getMonth()+1}/${d.getDate()}`;b.disabled=false;}
+  }
+}
+async function plantBackfill(){
+  const ds=viewDate;
+  const e=getOrCreateEntry(ds);
+  const hasContent=(e.checked&&e.checked.length)||e.diary.hl||e.diary.rf||e.diary.gr||(e.photos&&e.photos.length);
+  if(!hasContent){alert('這一天還是空的，先勾個習慣或寫點小記再種下 📖');return;}
+  const planted=(+e.streak||0)>=1;
+  if(planted&&!confirm('這一天已經種過了！要用目前內容更新這天的紀錄嗎？'))return;
+  const oldExp=S.exp;
+  if(!planted){
+    S.apples.push('small');S.exp+=20;
+    while(S.apples.length>=7){S.apples.splice(0,7);S.bigApples++;}
+    while(S.bigApples>=4){S.bigApples-=4;S.goldFruits++;}
+    while(S.goldFruits>=3){S.goldFruits-=3;S.seedlings++;}
+    while(S.seedlings>=2){S.seedlings-=2;S.trees++;}
+    e.streak=1;
+  }
+  if(e.diary.quote&&e.diary.quote.trim()&&!S.quotes.includes(e.diary.quote.trim()))S.quotes.push(e.diary.quote.trim());
+  recalcStreak();
+  e.streak=runEndingAt(ds,plantedSet());
+  e.exp=S.exp;
+  sv(S);
+  renderFruits();renderExpBar();renderTopDate();renderPlantBtn();
+  checkLevelUp(oldExp,S.exp);checkAchievements();
+  const b=document.getElementById('plant-btn');
+  triggerBurst(b);
+  if(!planted)showExpPop(b,'+20 EXP 🌱');
+  await syncEntryFor(ds);
+  await syncState();
+  renderPlantBtn();
+}
+function applyViewDate(switchPage){
+  const isT=ctxIsToday();
+  const note=document.getElementById('sticky-note');
+  if(note)note.style.display=isT?'':'none';
+  const tdlCol=document.querySelector('.home-row2 .col-tdl');
+  if(tdlCol)tdlCol.style.display=isT?'':'none';
+  const copyBtn=document.getElementById('copy-btn');
+  if(copyBtn)copyBtn.style.display=isT?'':'none';
+  const bn=document.getElementById('backfill-banner');
+  if(isT){bn.style.display='none';}
+  else{
+    const d=new Date(viewDate+'T00:00:00');
+    bn.style.display='flex';
+    document.getElementById('backfill-date-lbl').textContent=`✏️ 補記中：${d.getMonth()+1}月${d.getDate()}日 週${wdArr[d.getDay()]}`;
+  }
+  const dv=isT?S.diary:((S.entries.find(x=>x.date===viewDate)||{}).diary||{hl:'',rf:'',gr:'',quote:''});
+  ['hl','rf','gr','quote'].forEach(k=>{document.getElementById('d-'+k).value=dv[k]||'';});
+  const noteEl=document.getElementById('d-note');
+  if(noteEl)noteEl.value=S.calNotes[isT?today():viewDate]||'';
+  renderTopDate();renderHabits();renderExpBar();renderPlantBtn();
+  if(typeof renderTodayPhotos==='function')renderTodayPhotos();
+  if(switchPage){
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.querySelector('.nav-btn[data-page="home"]').classList.add('active');
+    document.getElementById('page-home').classList.add('active');
+    window.scrollTo(0,0);
+  }
+}
+document.getElementById('backfill-exit').addEventListener('click',()=>{
+  viewDate=null;
+  applyViewDate(true);
+});
+// 備註欄（今天與補記日期都能填，日曆黃點沿用 calNotes）
+(function(){
+  const noteEl=document.getElementById('d-note');
+  noteEl.value=S.calNotes[today()]||'';
+  noteEl.addEventListener('input',()=>{
+    const ds=ctxIsToday()?today():viewDate;
+    const v=noteEl.value.trim();
+    if(v)S.calNotes[ds]=v;else delete S.calNotes[ds];
+    sv(S);syncStateDebounced();
+  });
+})();
+applyViewDate(false);
 </script>
 </body>
 </html>
