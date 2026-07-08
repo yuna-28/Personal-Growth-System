@@ -1,17 +1,19 @@
 // ═══════════════════════════════════════════════════════
-// 格蘭朵魔法森林 GAS v2.3（新增 notifications 欄 + 圖片上傳到 Drive）
+// 格蘭朵魔法森林 GAS v2.4（新增 entries.photos + state.supportResources 欄）
 // ═══════════════════════════════════════════════════════
 // 【安裝步驟】
 // 1. 打開你的 Google Sheet（ID: ***REMOVED***）
 // 2. 確認有兩個分頁（沒有的話手動建立，名字要一模一樣）：
-//    ① entries — 第1列標題（11欄）：
-//       date | checked | hl | rf | gr | quote | tdl | exp | streak | tdlTotal | tdlDone
-//    ② state — 第1列標題（18欄）：
+//    ① entries — 第1列標題（12欄）：
+//       date | checked | hl | rf | gr | quote | tdl | exp | streak | tdlTotal | tdlDone | photos
+//    ② state — 第1列標題（19欄）：
 //       flowers | apples | bigApples | goldFruits | seedlings | trees |
 //       achievements | quotes | calNotes | myPeople | treasures |
-//       lastPlant | lastStreak | streak | exp | gardenPos | supportCategories | notifications
-//    ※ 從 v2.1 升級：只要在 state 分頁第1列最後面（supportCategories 後面）
-//      補上一欄標題 notifications 就好，其他欄位跟舊資料都不用動
+//       lastPlant | lastStreak | streak | exp | gardenPos | supportCategories |
+//       notifications | supportResources
+//    ※ 從 v2.3 升級只要做兩件事，其他欄位跟舊資料都不用動：
+//      ① entries 分頁第1列最後面（tdlDone 後面）補一欄標題 photos
+//      ② state 分頁第1列最後面（notifications 後面）補一欄標題 supportResources
 // 3. 擴充功能 → Apps Script → 全選刪掉舊程式碼 → 貼上這份 → 儲存
 // 4. 部署 → 管理部署 → 編輯（鉛筆）→ 版本選「新版本」→ 部署
 //    （用「編輯現有部署」網址不會變；如果選「新增部署」網址會變，
@@ -27,11 +29,16 @@
 
 const SHEET_ID = '***REMOVED***';
 
-const ENTRY_COLS = ['date','checked','hl','rf','gr','quote','tdl','exp','streak','tdlTotal','tdlDone'];
+const ENTRY_COLS = ['date','checked','hl','rf','gr','quote','tdl','exp','streak','tdlTotal','tdlDone','photos'];
 const STATE_COLS = ['flowers','apples','bigApples','goldFruits','seedlings','trees',
                     'achievements','quotes','calNotes','myPeople','treasures',
                     'lastPlant','lastStreak','streak','exp','gardenPos','supportCategories',
-                    'notifications'];
+                    'notifications','supportResources'];
+
+// 這個函式只是用來手動觸發 Google Drive 授權，之後留著也沒關係
+function testDriveAuth(){
+  Logger.log('資料夾建立/找到成功：' + getDriveFolder_().getName());
+}
 
 function getSheet(name){
   const ss = SpreadsheetApp.openById(SHEET_ID);

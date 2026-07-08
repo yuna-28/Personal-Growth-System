@@ -338,6 +338,17 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
 #pwa-splash .splash-name{font-family:'Baloo 2',sans-serif;font-size:18px;font-weight:800;color:var(--tc);text-shadow:0 1px 6px rgba(255,255,255,.8);}
 @media(display-mode:standalone){#pwa-splash{display:flex;}}
 
+/* ── 長按顯示註解（手機） ── */
+.gd-sprite{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none;}
+.gd-sprite.show-label .sprite-label{display:block;}
+/* ── 支持系統資源書 ── */
+.book-item{display:flex;flex-direction:column;align-items:center;width:46%;pointer-events:none;}
+.book-item .bi-icon{font-size:32px;line-height:1.1;}
+.book-item img.bi-img{width:38px;height:38px;object-fit:cover;border-radius:10px;border:2px solid rgba(255,255,255,.9);box-shadow:0 2px 8px rgba(120,90,60,.25);}
+.book-item .bi-title{font-size:9px;color:#6B5A3A;max-width:100%;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}
+.res-chip{display:inline-flex;align-items:center;gap:4px;padding:6px 10px;background:rgba(255,255,255,.5);border:1.5px solid rgba(255,255,255,.8);border-radius:999px;cursor:pointer;font-size:12px;font-weight:600;color:var(--tc);}
+.res-chip.on{background:rgba(93,202,165,.35);border-color:rgba(93,202,165,.7);color:#2A7A5A;}
+
 /* ── SETTINGS ── */
 .set-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(200,196,247,.25);font-size:13px;color:var(--tc);}
 .set-row:last-child{border-bottom:none;}
@@ -436,6 +447,12 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
       <div class="diary-section"><div class="diary-label"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4d6_3d.png" width="15" height="15"/> Reflection <span style="font-size:11px;font-weight:500;color:var(--tc3);">反思與學習</span></div><textarea class="diary-ta" id="d-rf" placeholder="今天學到什麼或想到什麼..."></textarea></div>
       <div class="diary-section"><div class="diary-label"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f97a_3d.png" width="15" height="15" onerror="this.outerHTML='🥹'"/> Gratitude <span style="font-size:11px;font-weight:500;color:var(--tc3);">感恩的人事物</span></div><textarea class="diary-ta" id="d-gr" placeholder="今天想感謝誰或什麼..."></textarea></div>
       <div class="diary-section" style="margin-bottom:0;"><div class="diary-label">💬 今天讓我有感覺的一句話 <span style="font-size:11px;font-weight:500;color:var(--tc3);">選填·會存進金句收藏</span></div><input class="quote-input" id="d-quote" placeholder="可以是別人說的，也可以是自己想到的..."/></div>
+      <div class="diary-section" style="margin:12px 0 0;">
+        <div class="diary-label">📷 今日照片 <span style="font-size:11px;font-weight:500;color:var(--tc3);">選填·最多3張</span></div>
+        <div id="photo-thumbs" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;"></div>
+        <input type="file" id="photo-file" accept="image/*" style="display:none;"/>
+        <button type="button" id="photo-add-btn" style="background:none;border:1.5px dashed rgba(160,140,220,.35);border-radius:11px;padding:7px 12px;font-family:'Quicksand',sans-serif;font-size:12px;color:var(--tc3);cursor:pointer;width:100%;">📷 新增照片</button>
+      </div>
     </div>
   </div>
   <div class="col-tdl">
@@ -521,7 +538,41 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
 
 <!-- ══════ SUPPORT SYSTEM ══════ -->
 <div class="page" id="page-support">
-<div class="gcard" style="margin-top:4px;">
+<div class="gcard-scene" style="margin-top:4px;">
+  <div class="sec-hd" style="position:relative;z-index:1;">📖 我的資源書</div>
+  <div id="book-stage" style="position:relative;height:280px;border-radius:18px;overflow:hidden;background:linear-gradient(180deg,#EAD9C4 0%,#DFC3A0 55%,#CBA97F 100%);">
+    <div style="position:absolute;top:10px;left:14px;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/2615_3d.png" width="30" height="30" onerror="this.outerHTML='☕'"/></div>
+    <div style="position:absolute;top:8px;right:16px;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1fab4_3d.png" width="32" height="32" onerror="this.outerHTML='🪴'"/></div>
+    <div style="position:absolute;bottom:8px;right:12px;transform:rotate(-16deg);"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/270f_3d.png" width="26" height="26" onerror="this.outerHTML='✏️'"/></div>
+    <div style="position:absolute;bottom:12px;left:12px;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4a1_3d.png" width="28" height="28" onerror="this.outerHTML='💡'"/></div>
+    <div style="position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);width:min(90%,560px);height:206px;filter:drop-shadow(0 8px 18px rgba(110,80,40,.3));display:flex;">
+      <div style="flex:1;background:linear-gradient(105deg,#FFFDF5 55%,#F2E8D2 100%);border-radius:14px 3px 3px 14px;border:1px solid #E4D6B8;position:relative;overflow:hidden;">
+        <div style="position:absolute;inset:0;background:repeating-linear-gradient(180deg,transparent 0 26px,rgba(180,160,120,.14) 26px 27px);"></div>
+        <div id="book-page-l" style="position:absolute;inset:14px 8px 10px 14px;display:flex;flex-wrap:wrap;align-content:flex-start;justify-content:space-around;row-gap:8px;"></div>
+      </div>
+      <div style="width:9px;background:linear-gradient(90deg,#D8C8A8,#B09A74,#D8C8A8);flex-shrink:0;"></div>
+      <div style="flex:1;background:linear-gradient(255deg,#FFFDF5 55%,#F2E8D2 100%);border-radius:3px 14px 14px 3px;border:1px solid #E4D6B8;position:relative;overflow:hidden;">
+        <div style="position:absolute;inset:0;background:repeating-linear-gradient(180deg,transparent 0 26px,rgba(180,160,120,.14) 26px 27px);"></div>
+        <div id="book-page-r" style="position:absolute;inset:14px 14px 10px 8px;display:flex;flex-wrap:wrap;align-content:flex-start;justify-content:space-around;row-gap:8px;"></div>
+      </div>
+    </div>
+    <div id="book-empty" style="position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);font-size:12px;color:#A08858;display:none;white-space:nowrap;">書頁還是空的，從下面收進資源吧 ✨</div>
+    <div id="book-more" style="position:absolute;bottom:6px;left:50%;transform:translateX(-50%);font-size:10px;color:#8A7048;display:none;"></div>
+  </div>
+  <p style="text-align:center;font-size:11px;color:var(--tc3);margin-top:6px;position:relative;z-index:1;">妳收藏的書、音樂、影片、人...都會住進這本書裡</p>
+</div>
+<div id="resource-categories"></div>
+<div id="resource-add-cat" style="margin-bottom:16px;">
+  <button id="add-res-cat-btn" style="background:none;border:1.5px dashed rgba(160,140,220,.35);border-radius:11px;padding:9px;font-family:'Quicksand',sans-serif;font-size:12px;color:var(--tc3);cursor:pointer;width:100%;text-align:center;">＋ 新增一個資源分類</button>
+  <div id="res-cat-form" style="display:none;margin-top:8px;">
+    <input class="tdl-in" id="res-cat-name" placeholder="分類名稱（例如：焦慮的時候）" style="width:100%;margin-bottom:8px;"/>
+    <div style="display:flex;gap:8px;">
+      <button class="mini-btn" id="res-cat-save" style="flex:1;">新增</button>
+      <button class="mini-btn" id="res-cat-cancel" style="flex:1;background:rgba(200,196,247,.4);color:var(--tc2);">取消</button>
+    </div>
+  </div>
+</div>
+<div class="gcard">
   <div class="sec-hd"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1fac2_3d.png" width="19" height="19" onerror="this.outerHTML='🫂'"/> 支持系統</div>
   <p style="font-size:12px;color:var(--tc3);line-height:1.7;">這裡是給妳自己的急救包。狀態好的時候先寫下來，狀態不好的時候翻開看。沒有打勾、沒有連續天數，用不用都沒關係。</p>
 </div>
@@ -778,7 +829,7 @@ function defaults(){
   return{exp:0,flowers:[],apples:[],bigApples:0,goldFruits:0,seedlings:0,trees:1,
     streak:0,lastStreak:'',checked:{},diary:{hl:'',rf:'',gr:'',quote:''},
     lastPlant:'',tomorrowTDL:[],todayTDL:[],tdlDone:{},entries:[],
-    achievements:[],quotes:[],calNotes:{},myPeople:[],treasures:[],gardenPos:{},notePos:null,notifications:null};
+    achievements:[],quotes:[],calNotes:{},myPeople:[],treasures:[],gardenPos:{},notePos:null,notifications:null,todayPhotos:[],resourceCats:null};
 }
 function ld(){
   try{const r=localStorage.getItem(SK);if(r){const s=JSON.parse(r);return Object.assign(defaults(),s);}}catch(e){}
@@ -790,7 +841,7 @@ let S=ld();
 // New day rollover
 if(S.lastPlant!==today()&&S.lastStreak!==today()){
   if(S.dayKey!==today()){
-    S.checked={};S.diary={hl:'',rf:'',gr:'',quote:''};
+    S.checked={};S.diary={hl:'',rf:'',gr:'',quote:''};S.todayPhotos=[];
     S.todayTDL=S.tomorrowTDL||[];S.tomorrowTDL=[];S.tdlDone={};
     S.dayKey=today();sv(S);
   }
@@ -829,7 +880,8 @@ async function syncState(){
       streak:S.streak,exp:S.exp,
       gardenPos:JSON.stringify(S.gardenPos||{}),
       supportCategories:JSON.stringify(S.supportCategories||[]),
-      notifications:JSON.stringify(S.notifications||{})
+      notifications:JSON.stringify(S.notifications||{}),
+      supportResources:JSON.stringify(S.resourceCats||[])
     });
     setSync('ok','已同步 ✓');
   }catch(e){setSync('error','同步失敗，資料在本機');}
@@ -861,6 +913,7 @@ async function loadCloud(){
       if(d.gardenPos)S.gardenPos=parseJ(d.gardenPos,S.gardenPos||{});
       if(d.supportCategories)S.supportCategories=parseJ(d.supportCategories,S.supportCategories||[]);
       if(d.notifications){const nf=parseJ(d.notifications,null);if(nf&&nf.presets)S.notifications=nf;}
+      if(d.supportResources){const rc=parseJ(d.supportResources,null);if(Array.isArray(rc))S.resourceCats=rc;}
     }
     if(en.ok&&Array.isArray(en.data)){
       en.data.forEach(row=>{
@@ -869,7 +922,7 @@ async function loadCloud(){
         const entry={date:dateStr,checked:parseJ(row.checked,[]),
           diary:{hl:row.hl||'',rf:row.rf||'',gr:row.gr||'',quote:row.quote||''},
           tdl:parseJ(row.tdl,[]),exp:+row.exp||0,streak:+row.streak||0,
-          tdlTotal:+row.tdlTotal||0,tdlDone:+row.tdlDone||0};
+          tdlTotal:+row.tdlTotal||0,tdlDone:+row.tdlDone||0,photos:parseJ(row.photos,[])};
         const idx=S.entries.findIndex(e=>e.date===dateStr);
         if(idx>=0)S.entries[idx]=entry;else S.entries.push(entry);
       });
@@ -881,6 +934,7 @@ async function loadCloud(){
       if(!Object.keys(S.checked).length)te.checked.forEach(k=>S.checked[k]=true);
       if(!S.diary.hl&&!S.diary.rf&&!S.diary.gr)S.diary={...te.diary};
       if(!S.tomorrowTDL.length)S.tomorrowTDL=te.tdl||[];
+      if(!(S.todayPhotos||[]).length&&Array.isArray(te.photos))S.todayPhotos=te.photos.slice();
     }
     sv(S);renderAll();
     setSync('ok','已同步 ✓');
@@ -1182,7 +1236,7 @@ document.getElementById('plant-btn').addEventListener('click',async()=>{
     while(S.seedlings>=2){S.seedlings-=2;S.trees++;}
   }
 
-  const entry={date:today(),checked:[...Object.keys(S.checked)],diary:{...d},exp:S.exp,streak:S.streak,tdl:S.tomorrowTDL,tdlTotal:(S.todayTDL||[]).length,tdlDone:Object.keys(S.tdlDone).length};
+  const entry={date:today(),checked:[...Object.keys(S.checked)],diary:{...d},exp:S.exp,streak:S.streak,tdl:S.tomorrowTDL,tdlTotal:(S.todayTDL||[]).length,tdlDone:Object.keys(S.tdlDone).length,photos:(S.todayPhotos||[])};
   const idx=S.entries.findIndex(e=>e.date===today());
   if(idx>=0)S.entries[idx]=entry;else S.entries.push(entry);
 
@@ -1196,7 +1250,7 @@ document.getElementById('plant-btn').addEventListener('click',async()=>{
   btn.innerHTML=`${fi('1f389',17)} 今天種下了！`;btn.disabled=true;
   triggerBurst(btn);if(!replant)showExpPop(btn,'+20 EXP 🌱');
 
-  await syncEntry({date:today(),checked:Object.keys(S.checked),hl:d.hl,rf:d.rf,gr:d.gr,quote:d.quote||'',tdl:S.tomorrowTDL,exp:S.exp,streak:S.streak,tdlTotal:entry.tdlTotal,tdlDone:entry.tdlDone});
+  await syncEntry({date:today(),checked:Object.keys(S.checked),hl:d.hl,rf:d.rf,gr:d.gr,quote:d.quote||'',tdl:S.tomorrowTDL,exp:S.exp,streak:S.streak,tdlTotal:entry.tdlTotal,tdlDone:entry.tdlDone,photos:S.todayPhotos||[]});
   await syncState();
 });
 
@@ -1286,13 +1340,13 @@ async function savePopCalEntry(ds){
   const note=document.getElementById('pop-cal-note').value;
   if(note.trim())S.calNotes[ds]=note.trim();else delete S.calNotes[ds];
   const old=S.entries.find(e=>e.date===ds);
-  const entry={date:ds,checked,diary:{hl,rf,gr,quote:old?.diary?.quote||''},tdl:old?.tdl||[],exp:old?.exp||0,streak:old?.streak||0,tdlTotal:old?.tdlTotal||0,tdlDone:old?.tdlDone||0};
+  const entry={date:ds,checked,diary:{hl,rf,gr,quote:old?.diary?.quote||''},tdl:old?.tdl||[],exp:old?.exp||0,streak:old?.streak||0,tdlTotal:old?.tdlTotal||0,tdlDone:old?.tdlDone||0,photos:old?.photos||[]};
   const idx=S.entries.findIndex(e=>e.date===ds);
   if(idx>=0)S.entries[idx]=entry;else{S.entries.push(entry);S.entries.sort((a,b)=>a.date<b.date?-1:1);}
   sv(S);
   document.getElementById('pop-cal-form').innerHTML='<div style="text-align:center;padding:1rem;color:#5DCAA5;font-weight:700;">✅ 儲存成功！</div>';
   setTimeout(()=>{document.getElementById('pop-cal-form').style.display='none';renderPopCal();},1000);
-  await syncEntry({date:ds,checked,hl,rf,gr,quote:entry.diary.quote,tdl:entry.tdl,exp:entry.exp,streak:entry.streak,tdlTotal:entry.tdlTotal,tdlDone:entry.tdlDone});
+  await syncEntry({date:ds,checked,hl,rf,gr,quote:entry.diary.quote,tdl:entry.tdl,exp:entry.exp,streak:entry.streak,tdlTotal:entry.tdlTotal,tdlDone:entry.tdlDone,photos:entry.photos||[]});
   await syncState();
 }
 document.getElementById('pop-cal-prev').addEventListener('click',()=>{popCalMonth--;if(popCalMonth<0){popCalMonth=11;popCalYear--;}renderPopCal();document.getElementById('pop-cal-form').style.display='none';});
@@ -1324,6 +1378,10 @@ function diaryBlock(diary){
   if(diary.gr)parts.push(`<b>🥹 Gratitude：</b>${diary.gr}`);
   if(diary.quote)parts.push(`<b>💬 金句：</b>${diary.quote}`);
   return parts.length?`<div class="week-diary-full">${parts.join('<br/>')}</div>`:'';
+}
+function photosBlock(photos){
+  if(!photos||!photos.length)return'';
+  return`<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">${photos.map(p=>`<div style="width:64px;"><img src="${p.url}" style="width:64px;height:64px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,.7);"/>${p.caption?`<div style="font-size:9px;color:var(--tc3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;">${p.caption}</div>`:''}</div>`).join('')}</div>`;
 }
 
 // ── DATE / PERIOD HELPERS ─────────────────────────────
@@ -1505,7 +1563,7 @@ function renderWeekly(){
     return`<div class="week-card" style="${isToday?'border-color:rgba(123,111,232,.4);':''}">
       <div class="week-day-hd"><span>${d.getMonth()+1}/${d.getDate()} 週${wdArr[d.getDay()]}${isToday?' ⭐':''}</span><span class="exp-badge">+${ck.length*10+20} EXP</span></div>
       <div class="habit-dots">${dots}</div>
-      ${diaryBlock(e.diary)}${tdlHtml}
+      ${diaryBlock(e.diary)}${photosBlock(e.photos)}${tdlHtml}
     </div>`;
   }).join('');
 }
@@ -1590,9 +1648,9 @@ function renderMonthly(){
 
   document.getElementById('month-entries').innerHTML=dates.slice().reverse().map(ds=>{
     const e=S.entries.find(x=>x.date===ds);
-    if(!e||(!e.diary?.hl&&!e.diary?.rf&&!e.diary?.gr))return'';
+    if(!e||(!e.diary?.hl&&!e.diary?.rf&&!e.diary?.gr&&!(e.photos&&e.photos.length)))return'';
     const d=new Date(ds+'T00:00:00');
-    return`<div class="week-card"><div class="week-day-hd"><span>${d.getMonth()+1}/${d.getDate()} 週${wdArr[d.getDay()]}</span></div>${diaryBlock(e.diary)}</div>`;
+    return`<div class="week-card"><div class="week-day-hd"><span>${d.getMonth()+1}/${d.getDate()} 週${wdArr[d.getDay()]}</span></div>${diaryBlock(e.diary)}${photosBlock(e.photos)}</div>`;
   }).join('');
 }
 document.getElementById('mo-prev').addEventListener('click',()=>{monthOffset--;renderMonthly();});
@@ -1766,6 +1824,84 @@ function initPuppy(wrap,stage,size){
   go(0);
 }
 
+// ── 我的人：12種動態（同小狗，睡覺時多一張床）─────────
+function charFxHTML(){
+  return`
+  <div class="pfx pfx-bed" style="position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);display:none;"><span style="font-size:34px;">🛏️</span></div>
+  <div class="pfx pfx-zzz" style="position:absolute;top:-24px;right:-12px;display:none;animation:bobY 1.8s ease-in-out infinite;">${fi('1f4a4',19)}</div>
+  <div class="pfx pfx-sweat" style="position:absolute;top:-4px;right:-10px;display:none;">${fi('1f4a6',16)}</div>
+  <div class="pfx pfx-note1" style="position:absolute;top:-20px;left:-24px;display:none;">${fi('1f3b5',20)}</div>
+  <div class="pfx pfx-note2" style="position:absolute;top:-14px;right:-24px;display:none;">${fi('1f3b6',18)}</div>
+  <div class="pfx pfx-happy" style="position:absolute;top:-24px;left:50%;transform:translateX(-50%);display:none;gap:3px;">
+    <img src="${CDN}1f338_3d.png" width="17" height="17" style="animation:bobY 1s ease-in-out infinite"/>
+    <img src="${CDN}2728_3d.png" width="15" height="15" style="animation:sparkle 1.2s ease-in-out infinite"/>
+    <img src="${CDN}1f33c_3d.png" width="17" height="17" style="animation:bobY 1s ease-in-out infinite .3s"/>
+  </div>
+  <div class="pfx pfx-ball" style="position:absolute;bottom:4px;left:-30px;display:none;">${fi('1f3c0',26)}</div>
+  <div class="pfx pfx-water" style="position:absolute;top:-10px;right:-40px;display:none;">
+    ${fi('1faa3',27)}
+    <div style="position:absolute;top:26px;left:5px;animation:bobY .9s ease-in-out infinite;">${fi('1f4a7',12)}</div>
+  </div>
+  <div class="pfx pfx-read" style="position:absolute;bottom:2px;left:-28px;display:none;animation:bobY 2s ease-in-out infinite;">${fi('1f4da',24)}</div>
+  <div class="pfx pfx-boba" style="position:absolute;top:-6px;right:-26px;display:none;animation:bobY 1.4s ease-in-out infinite;">${fi('1f9cb',24)}</div>
+  <div class="pfx pfx-tea" style="position:absolute;top:2px;right:-26px;display:none;animation:bobY 2.2s ease-in-out infinite;">${fi('1f375',22)}</div>
+  <div class="pfx pfx-cry" style="position:absolute;top:-24px;left:50%;transform:translateX(-50%);display:none;">${fi('1f62d',22)}</div>`;
+}
+function initCharSprite(wrap,stage,size){
+  const main=wrap.querySelector('.main');
+  if(!main)return;
+  main.insertAdjacentHTML('beforebegin',charFxHTML());
+  let cur=0,walkT=null,circT=null,ang=0,dragging=false;
+  const animMap={stand:'pBreathe 2.2s ease-in-out infinite',sleep:'pSleep 3s ease-in-out infinite',play:'pPlay .6s ease-in-out infinite',water:'pWater 1s ease-in-out infinite',dance:'pDance .5s ease-in-out infinite',happy:'pBounce .5s ease-in-out infinite',walk:'pBreathe .8s ease-in-out infinite',circle:'pBreathe .8s ease-in-out infinite',read:'pRead 2.4s ease-in-out infinite',boba:'bobY 1.4s ease-in-out infinite',tea:'pBreathe 2.4s ease-in-out infinite',cry:'pCry .7s ease-in-out infinite',drag:'pShake .2s ease-in-out infinite'};
+  const fxMap={sleep:['zzz','bed'],drag:['sweat'],dance:['note1','note2'],happy:['happy'],play:['ball'],water:['water'],read:['read'],boba:['boba'],tea:['tea'],cry:['cry']};
+  function sc(c){
+    const im=wrap.querySelector('.main');
+    if(im)im.style.animation=animMap[c]||animMap.stand;
+    wrap.querySelectorAll('.pfx').forEach(el=>el.style.display='none');
+    (fxMap[c]||[]).forEach(name=>{
+      const el=wrap.querySelector('.pfx-'+name);
+      if(el)el.style.display=name==='happy'?'flex':'block';
+    });
+  }
+  function stop(){clearInterval(walkT);clearInterval(circT);walkT=circT=null;}
+  function go(i){
+    stop();cur=((i%PUPPY_STATES.length)+PUPPY_STATES.length)%PUPPY_STATES.length;
+    const s=PUPPY_STATES[cur];sc(s);
+    if(s==='walk'){walkT=setInterval(()=>{if(dragging)return;wrap.style.transition='left 1.4s ease,top 1.4s ease';wrap.style.left=(18+Math.random()*(stage.clientWidth-size-40))+'px';wrap.style.top=(18+Math.random()*(stage.clientHeight-size-40))+'px';wrap.style.bottom='auto';},1700);}
+    if(s==='circle'){wrap.style.transition='none';circT=setInterval(()=>{if(dragging)return;ang+=.1;wrap.style.left=(stage.clientWidth/2+Math.cos(ang)*90-size/2)+'px';wrap.style.top=(stage.clientHeight-90+Math.sin(ang)*36-size/2)+'px';wrap.style.bottom='auto';},60);}
+  }
+  wrap._onDragStart=()=>{dragging=true;sc('drag');};
+  wrap._onDragEnd=(moved)=>{
+    dragging=false;
+    if(!moved){go(cur+1);}
+    else{sc(PUPPY_STATES[cur]);if(PUPPY_STATES[cur]==='walk'||PUPPY_STATES[cur]==='circle')go(cur);}
+  };
+  makeDraggable(wrap,stage,null);
+  go(0);
+}
+
+// ── 手機長按顯示註解（花園所有可拖曳物件）─────────────
+function initLongPress(el){
+  let t=null;
+  const clearT=()=>{if(t){clearTimeout(t);t=null;}};
+  el.addEventListener('touchstart',()=>{
+    clearT();
+    t=setTimeout(()=>{
+      el._lpFired=true;
+      document.querySelectorAll('.gd-sprite.show-label').forEach(x=>x.classList.remove('show-label'));
+      el.classList.add('show-label');
+      setTimeout(()=>el.classList.remove('show-label'),2500);
+    },500);
+  },{passive:true});
+  el.addEventListener('touchmove',clearT,{passive:true});
+  el.addEventListener('touchend',clearT,{passive:true});
+  const orig=el._onDragEnd;
+  el._onDragEnd=(moved)=>{
+    if(el._lpFired){el._lpFired=false;if(!moved)return;}
+    if(orig)orig(moved);
+  };
+}
+
 // ── INNER GARDEN ──────────────────────────────────────
 function gdStaticsHTML(){
   const fencePosts=Array.from({length:14},(_,i)=>`<div style="position:absolute;bottom:0;left:${i*66}px;width:10px;height:52px;background:linear-gradient(180deg,#C89A66,#A87848);border-radius:4px 4px 0 0;box-shadow:1px 0 2px rgba(120,80,40,.3);"></div>`).join('');
@@ -1839,6 +1975,8 @@ function renderGarden(){
   initPuppy(pWrap,canvas,86);
   const origEnd=pWrap._onDragEnd;
   pWrap._onDragEnd=(moved)=>{origEnd(moved);if(moved){S.gardenPos[pk]={x:parseFloat(pWrap.style.left)||0,top:parseFloat(pWrap.style.top)||0};sv(S);syncStateDebounced();}};
+  pWrap.insertAdjacentHTML('afterbegin','<div class="sprite-label">小狗 · 點一下切換動態</div>');
+  initLongPress(pWrap);
 
   // — 8 identity sprites 54px, default left 200~760 spacing 80, bottom 72
   IDENTITY_TAGS.forEach((tag,i)=>{
@@ -1861,22 +1999,23 @@ function renderGarden(){
       if(!moved)return;
       S.gardenPos[key]={x:left,top:top};sv(S);syncStateDebounced();
     });
+    initLongPress(el);
   });
 
-  // — my people 54px
+  // — my people 54px（12種動態，同小狗）
   S.myPeople.forEach((p,i)=>{
     const key=gdKey('pp',i);
     const pos=gdPos(key,160+i*70,140);
     const el=document.createElement('div');
     el.className='gd-sprite';
-    el.style.cssText=`left:${pos.x}px;${pos.top!==undefined?`top:${pos.top}px;`:`bottom:${pos.bottom}px;`}animation:gdFloat ${2.2+(i%3)*.3}s ease-in-out infinite ${i*.2}s;`;
-    const visual=p.img?`<img class="main" src="${p.img}" width="54" height="54" style="border-radius:50%;object-fit:cover;border:2.5px solid rgba(255,255,255,.9);box-shadow:0 3px 10px rgba(120,90,200,.25);" onerror="this.outerHTML='${fi(p.emoji||'1f436',54).replace(/'/g,"\\'")}'"/>`:`<img class="main" src="${CDN}${p.emoji||'1f436'}_3d.png" width="54" height="54"/>`;
-    el.innerHTML=`<div class="sprite-label">${p.name||''}${p.note?` · ${p.note}`:''}</div>${visual}`;
+    el.style.cssText=`left:${pos.x}px;${pos.top!==undefined?`top:${pos.top}px;`:`bottom:${pos.bottom}px;`}z-index:7;`;
+    const visual=p.img?`<img class="main" src="${p.img}" width="54" height="54" style="display:block;border-radius:50%;object-fit:cover;border:2.5px solid rgba(255,255,255,.9);box-shadow:0 3px 10px rgba(120,90,200,.25);" onerror="this.outerHTML='${fi(p.emoji||'1f436',54).replace(/'/g,"\\'")}'"/>`:`<img class="main" src="${CDN}${p.emoji||'1f436'}_3d.png" width="54" height="54" style="display:block;"/>`;
+    el.innerHTML=`<div class="sprite-label">${p.name||''}${p.note?` · ${p.note}`:''} · 點一下切換動態</div>${visual}`;
     dyn.appendChild(el);
-    makeDraggable(el,canvas,(moved,left,top)=>{
-      if(!moved)return;
-      S.gardenPos[key]={x:left,top:top};sv(S);syncStateDebounced();
-    });
+    initCharSprite(el,canvas,54);
+    const pe=el._onDragEnd;
+    el._onDragEnd=(moved)=>{pe(moved);if(moved){S.gardenPos[key]={x:parseFloat(el.style.left)||0,top:parseFloat(el.style.top)||0};sv(S);syncStateDebounced();}};
+    initLongPress(el);
   });
 
   // — treasures 52px
@@ -1894,6 +2033,7 @@ function renderGarden(){
       if(!moved)return;
       S.gardenPos[key]={x:left,top:top};sv(S);syncStateDebounced();
     });
+    initLongPress(el);
   });
 
   renderIdentityWall(habitsTotal);
@@ -2049,7 +2189,7 @@ document.querySelectorAll('.nav-btn').forEach(btn=>{
     if(p==='week')renderWeekly();
     if(p==='month')renderMonthly();
     if(p==='garden')renderGarden();
-    if(p==='support')renderSupportPage();
+    if(p==='support'){renderSupportPage();renderResourcePage();}
     if(p==='info')renderAchievements();
     if(p==='settings')renderSettings();
   });
@@ -2060,6 +2200,7 @@ function renderAll(){
   migrateFlowers();
   renderTopDate();renderHabits();renderExpBar();renderFlowers();renderFruits();
   renderStickyNote();renderTDL();renderAchievements();
+  if(typeof renderTodayPhotos==='function')renderTodayPhotos();
   if(S.lastPlant===today()){
     const b=document.getElementById('plant-btn');
     b.innerHTML=`${fi('1f389',17)} 今天種下了！`;b.disabled=true;
@@ -2283,11 +2424,11 @@ function compressImage(file,maxDim,quality){
     img.src=URL.createObjectURL(file);
   });
 }
-async function uploadImageToGAS(file){
+async function uploadImageToGAS(file,customName){
   const dataUrl=await compressImage(file,800,0.8);
   const res=await gasPost('uploadImage',{
     data:dataUrl.split(',')[1],
-    filename:((file.name||'image').replace(/\.[^.]+$/,'')||'image')+'.jpg',
+    filename:customName||(((file.name||'image').replace(/\.[^.]+$/,'')||'image')+'.jpg'),
     mimeType:'image/jpeg'
   });
   const j=await res.json();
@@ -2325,6 +2466,232 @@ document.getElementById('add-person-btn').addEventListener('click',()=>{
 document.getElementById('add-treasure-btn').addEventListener('click',()=>{
   const p=document.getElementById('treasure-upload-preview');p.style.display='none';p.removeAttribute('src');
   document.getElementById('treasure-upload-btn').textContent='📷 上傳圖片';
+});
+
+// ── 今日照片（最多3張，存 Drive、網址進 entries.photos） ──
+function sanitizeFilePart(s){return (s||'').replace(/[\\\/:*?"<>|#%&{}\s]+/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'').slice(0,30);}
+function renderTodayPhotos(){
+  const box=document.getElementById('photo-thumbs');
+  if(!box)return;
+  const ps=S.todayPhotos||[];
+  box.innerHTML=ps.map((p,i)=>`
+    <div style="width:88px;">
+      <div style="position:relative;">
+        <img src="${p.url}" style="width:88px;height:88px;object-fit:cover;border-radius:12px;border:1.5px solid rgba(255,255,255,.8);box-shadow:0 2px 8px rgba(120,90,200,.15);"/>
+        <button class="photo-del" data-i="${i}" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:none;background:rgba(240,120,120,.9);color:#fff;font-size:11px;cursor:pointer;line-height:1;">✕</button>
+      </div>
+      ${p.caption?`<div style="font-size:10px;color:var(--tc2);margin-top:2px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.caption}</div>`:''}
+    </div>`).join('');
+  box.querySelectorAll('.photo-del').forEach(b=>b.addEventListener('click',()=>{
+    if(!confirm('移除這張照片？（Drive 上的原檔不會被刪除）'))return;
+    S.todayPhotos.splice(+b.dataset.i,1);sv(S);
+    syncTodayPhotosIfPlanted();
+    renderTodayPhotos();
+  }));
+  const btn=document.getElementById('photo-add-btn');
+  btn.style.display=ps.length>=3?'none':'';
+  btn.textContent=`📷 新增照片（${ps.length}/3）`;
+}
+function syncTodayPhotosIfPlanted(){
+  if(S.lastPlant!==today())return;
+  const e=S.entries.find(x=>x.date===today());
+  if(!e)return;
+  e.photos=(S.todayPhotos||[]).slice();sv(S);
+  syncEntry({date:today(),checked:e.checked||[],hl:e.diary?.hl||'',rf:e.diary?.rf||'',gr:e.diary?.gr||'',quote:e.diary?.quote||'',tdl:e.tdl||[],exp:e.exp||0,streak:e.streak||0,tdlTotal:e.tdlTotal||0,tdlDone:e.tdlDone||0,photos:e.photos});
+}
+document.getElementById('photo-add-btn').addEventListener('click',()=>{
+  if((S.todayPhotos||[]).length>=3){alert('一天最多3張照片喔');return;}
+  document.getElementById('photo-file').click();
+});
+document.getElementById('photo-file').addEventListener('change',async()=>{
+  const fileEl=document.getElementById('photo-file');
+  const f=fileEl.files&&fileEl.files[0];
+  if(!f)return;
+  const desc=prompt('這張照片的敘述？（會加進檔名＆顯示在照片下方）');
+  if(desc===null){fileEl.value='';return;}
+  const btn=document.getElementById('photo-add-btn');
+  btn.disabled=true;btn.textContent='⏳ 上傳中...';
+  try{
+    const caption=desc.trim();
+    const url=await uploadImageToGAS(f,`${today()}_${sanitizeFilePart(caption)||'photo'}.jpg`);
+    S.todayPhotos=S.todayPhotos||[];
+    S.todayPhotos.push({url:url,caption:caption});
+    sv(S);syncTodayPhotosIfPlanted();
+  }catch(e){
+    alert('上傳失敗 🥲 再試一次，或檢查一下網路');
+  }
+  btn.disabled=false;
+  renderTodayPhotos();
+  fileEl.value='';
+});
+renderTodayPhotos();
+
+// ── 支持系統：資源書 ──────────────────────────────────
+const RESOURCE_TYPES=[
+  {id:'book',label:'📚 書籍',emojis:['📚','📖','📕','📗','📘','📙']},
+  {id:'video',label:'🎬 影片',emojis:['🎬','📺','🎥']},
+  {id:'podcast',label:'🎙️ Podcast',emojis:['🎙️','🎧']},
+  {id:'music',label:'🎵 音樂',emojis:['🎵','🎶','🎼']},
+  {id:'lecture',label:'🎤 講座',emojis:['🎤','🗣️']},
+  {id:'course',label:'🎓 課程',emojis:['🏫','✏️','🎓']},
+  {id:'person',label:'🧑 人',emojis:['🧑','👩','👨','👧','👦','🧓','🐶','🐱','🐰','🐻','🐨','🦊']},
+];
+function ensureResourceDefaults(){
+  if(!Array.isArray(S.resourceCats)){
+    S.resourceCats=[
+      {id:'sad',label:'難過的時候',items:[]},
+      {id:'nomo',label:'沒有動力的時候',items:[]},
+      {id:'inspire',label:'需要靈感的時候',items:[]},
+      {id:'relax',label:'想放鬆充電的時候',items:[]},
+    ];
+    sv(S);
+  }
+}
+function renderBookItems(){
+  const all=[];
+  (S.resourceCats||[]).forEach(cat=>(cat.items||[]).forEach(it=>all.push(it)));
+  const l=document.getElementById('book-page-l'),r=document.getElementById('book-page-r');
+  const empty=document.getElementById('book-empty'),more=document.getElementById('book-more');
+  if(!l)return;
+  const shown=all.slice(0,12);
+  const mk=(it,i)=>{
+    const anim=it.type==='person'?`gdFloat ${2.2+(i%3)*.35}s ease-in-out infinite ${i*.18}s`:`objBounce ${2+(i%4)*.35}s ease-in-out infinite ${i*.22}s`;
+    const icon=it.img?`<img class="bi-img" src="${it.img}"/>`:`<span class="bi-icon">${it.emoji||'📚'}</span>`;
+    return`<div class="book-item" style="animation:${anim};">${icon}<div class="bi-title">${it.title||''}</div></div>`;
+  };
+  l.innerHTML=shown.slice(0,6).map(mk).join('');
+  r.innerHTML=shown.slice(6,12).map((it,i)=>mk(it,i+6)).join('');
+  empty.style.display=all.length?'none':'block';
+  more.style.display=all.length>12?'block':'none';
+  if(all.length>12)more.textContent=`還有 ${all.length-12} 個資源收在書裡 ✨`;
+}
+let openResForm=-1,selResType='book',selResEmoji='📚',resUploadUrl='';
+function resFormHTML(ci){
+  return`<div style="margin-top:8px;border-top:1px solid rgba(200,196,247,.3);padding-top:10px;">
+    <div style="font-size:11px;color:var(--tc2);margin-bottom:5px;">類型</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;" id="res-type-chips">
+      ${RESOURCE_TYPES.map(t=>`<div class="res-chip${t.id===selResType?' on':''}" data-t="${t.id}">${t.label}</div>`).join('')}
+    </div>
+    <div style="font-size:11px;color:var(--tc2);margin-bottom:4px;">選一個 icon（或下面上傳圖片取代）</div>
+    <div class="emoji-picker" id="res-emoji-picker"></div>
+    <input class="tdl-in" id="res-title" placeholder="標題（例如：看《也許你該找人聊聊》）" style="width:100%;margin:7px 0;"/>
+    <input type="file" id="res-file" accept="image/*" style="display:none;"/>
+    <button type="button" class="mini-btn" id="res-upload-btn" style="width:100%;margin-bottom:7px;background:rgba(159,225,203,.55);color:#2A7A5A;">📷 上傳圖片（選填）</button>
+    <img id="res-upload-preview" style="display:none;width:56px;height:56px;object-fit:cover;border-radius:10px;margin-bottom:7px;"/>
+    <div style="display:flex;gap:8px;">
+      <button class="mini-btn" id="res-item-save" data-ci="${ci}" style="flex:1;">收進書裡</button>
+      <button class="mini-btn" id="res-item-cancel" style="flex:1;background:rgba(200,196,247,.4);color:var(--tc2);">取消</button>
+    </div>
+  </div>`;
+}
+function renderResEmojiPicker(){
+  const t=RESOURCE_TYPES.find(x=>x.id===selResType)||RESOURCE_TYPES[0];
+  if(!t.emojis.includes(selResEmoji))selResEmoji=t.emojis[0];
+  const picker=document.getElementById('res-emoji-picker');
+  if(!picker)return;
+  picker.innerHTML=t.emojis.map(e=>`<div class="emoji-opt${e===selResEmoji?' sel':''}" data-e="${e}" style="font-size:22px;">${e}</div>`).join('');
+  picker.querySelectorAll('.emoji-opt').forEach(o=>o.addEventListener('click',()=>{
+    selResEmoji=o.dataset.e;
+    picker.querySelectorAll('.emoji-opt').forEach(x=>x.classList.remove('sel'));
+    o.classList.add('sel');
+  }));
+}
+function renderResourcePage(){
+  ensureResourceDefaults();
+  renderBookItems();
+  const box=document.getElementById('resource-categories');
+  if(!box)return;
+  box.innerHTML=S.resourceCats.map((cat,ci)=>`
+    <div class="gcard support-cat-card">
+      <div class="support-cat-hd">
+        <div class="support-cat-title">📖 ${cat.label}</div>
+        <button class="support-cat-del res-cat-del" data-ci="${ci}">✕ 刪除分類</button>
+      </div>
+      <div>
+        ${(cat.items||[]).map((it,ii)=>`
+          <div class="support-item-row" style="align-items:center;">
+            ${it.img?`<img src="${it.img}" style="width:30px;height:30px;object-fit:cover;border-radius:8px;flex-shrink:0;"/>`:`<span style="font-size:20px;flex-shrink:0;">${it.emoji||'📚'}</span>`}
+            <span style="flex:1;">${it.title||''}</span>
+            <button class="support-item-del res-item-del" data-ci="${ci}" data-ii="${ii}">✕</button>
+          </div>`).join('')||`<div style="font-size:12px;color:var(--tc3);padding:4px 0;">還沒有收藏資源</div>`}
+      </div>
+      ${openResForm===ci?resFormHTML(ci):`<button class="mini-btn res-item-add" data-ci="${ci}" style="width:100%;margin-top:6px;background:rgba(200,196,247,.35);color:#5A4A8A;">＋ 新增資源</button>`}
+    </div>`).join('');
+  bindResourceEvents();
+}
+function bindResourceEvents(){
+  const box=document.getElementById('resource-categories');
+  box.querySelectorAll('.res-cat-del').forEach(b=>b.addEventListener('click',()=>{
+    if(!confirm('確定刪除這個資源分類嗎？裡面的資源也會一起刪除'))return;
+    S.resourceCats.splice(+b.dataset.ci,1);sv(S);syncStateDebounced();
+    openResForm=-1;renderResourcePage();
+  }));
+  box.querySelectorAll('.res-item-del').forEach(b=>b.addEventListener('click',()=>{
+    if(!confirm('移除這個資源？'))return;
+    S.resourceCats[+b.dataset.ci].items.splice(+b.dataset.ii,1);sv(S);syncStateDebounced();
+    renderResourcePage();
+  }));
+  box.querySelectorAll('.res-item-add').forEach(b=>b.addEventListener('click',()=>{
+    openResForm=+b.dataset.ci;selResType='book';selResEmoji='📚';resUploadUrl='';
+    renderResourcePage();
+  }));
+  const chips=document.getElementById('res-type-chips');
+  if(chips){
+    renderResEmojiPicker();
+    chips.querySelectorAll('.res-chip').forEach(ch=>ch.addEventListener('click',()=>{
+      selResType=ch.dataset.t;
+      chips.querySelectorAll('.res-chip').forEach(x=>x.classList.remove('on'));
+      ch.classList.add('on');
+      renderResEmojiPicker();
+    }));
+    document.getElementById('res-item-cancel').addEventListener('click',()=>{openResForm=-1;resUploadUrl='';renderResourcePage();});
+    document.getElementById('res-upload-btn').addEventListener('click',()=>document.getElementById('res-file').click());
+    document.getElementById('res-file').addEventListener('change',async()=>{
+      const fEl=document.getElementById('res-file');
+      const f=fEl.files&&fEl.files[0];
+      if(!f)return;
+      const btn=document.getElementById('res-upload-btn');
+      btn.disabled=true;btn.textContent='⏳ 上傳中...';
+      try{
+        resUploadUrl=await uploadImageToGAS(f);
+        const prev=document.getElementById('res-upload-preview');
+        prev.src=resUploadUrl;prev.style.display='block';
+        btn.textContent='✅ 已上傳！';
+      }catch(e){
+        btn.textContent='📷 上傳圖片（選填）';
+        alert('上傳失敗 🥲 再試一次，或檢查一下網路');
+      }
+      btn.disabled=false;fEl.value='';
+    });
+    document.getElementById('res-item-save').addEventListener('click',()=>{
+      const title=document.getElementById('res-title').value.trim();
+      if(!title){alert('先填標題喔');return;}
+      const ci=+document.getElementById('res-item-save').dataset.ci;
+      S.resourceCats[ci].items.push({id:'r'+Date.now(),type:selResType,emoji:selResEmoji,title:title,img:resUploadUrl||''});
+      sv(S);syncStateDebounced();
+      openResForm=-1;resUploadUrl='';
+      renderResourcePage();
+    });
+  }
+}
+document.getElementById('add-res-cat-btn').addEventListener('click',()=>{
+  document.getElementById('res-cat-form').style.display='block';
+  document.getElementById('add-res-cat-btn').style.display='none';
+});
+document.getElementById('res-cat-cancel').addEventListener('click',()=>{
+  document.getElementById('res-cat-form').style.display='none';
+  document.getElementById('add-res-cat-btn').style.display='block';
+});
+document.getElementById('res-cat-save').addEventListener('click',()=>{
+  const name=document.getElementById('res-cat-name').value.trim();
+  if(!name)return;
+  ensureResourceDefaults();
+  S.resourceCats.push({id:'rc'+Date.now(),label:name,items:[]});
+  sv(S);syncStateDebounced();
+  document.getElementById('res-cat-name').value='';
+  document.getElementById('res-cat-form').style.display='none';
+  document.getElementById('add-res-cat-btn').style.display='block';
+  renderResourcePage();
 });
 
 renderSettings();
