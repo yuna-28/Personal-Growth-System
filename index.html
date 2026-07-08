@@ -2528,13 +2528,13 @@ renderTodayPhotos();
 
 // ── 支持系統：資源書 ──────────────────────────────────
 const RESOURCE_TYPES=[
-  {id:'book',label:'📚 書籍',emojis:['📚','📖','📕','📗','📘','📙']},
-  {id:'video',label:'🎬 影片',emojis:['🎬','📺','🎥']},
-  {id:'podcast',label:'🎙️ Podcast',emojis:['🎙️','🎧']},
-  {id:'music',label:'🎵 音樂',emojis:['🎵','🎶','🎼']},
-  {id:'lecture',label:'🎤 講座',emojis:['🎤','🗣️']},
-  {id:'course',label:'🎓 課程',emojis:['🏫','✏️','🎓']},
-  {id:'person',label:'🧑 人',emojis:['🧑','👩','👨','👧','👦','🧓','🐶','🐱','🐰','🐻','🐨','🦊']},
+  {id:'book',chip:'1f4da',labelText:'書籍',emojis:['1f4da','1f4d6','1f4d5','1f4d7','1f4d8','1f4d9']},
+  {id:'video',chip:'1f3ac',labelText:'影片',emojis:['1f3ac','1f4fa','1f3a5']},
+  {id:'podcast',chip:'1f399',labelText:'Podcast',emojis:['1f399','1f3a7']},
+  {id:'music',chip:'1f3b5',labelText:'音樂',emojis:['1f3b5','1f3b6','1f3bc']},
+  {id:'lecture',chip:'1f3a4',labelText:'講座',emojis:['1f3a4','1f5e3']},
+  {id:'course',chip:'1f393',labelText:'課程',emojis:['1f3eb','270f','1f393']},
+  {id:'person',chip:'1f9d1',labelText:'人',emojis:PERSON_EMOJIS},
 ];
 function ensureResourceDefaults(){
   if(!Array.isArray(S.resourceCats)){
@@ -2556,7 +2556,7 @@ function renderBookItems(){
   const shown=all.slice(0,12);
   const mk=(it,i)=>{
     const anim=it.type==='person'?`gdFloat ${2.2+(i%3)*.35}s ease-in-out infinite ${i*.18}s`:`objBounce ${2+(i%4)*.35}s ease-in-out infinite ${i*.22}s`;
-    const icon=it.img?`<img class="bi-img" src="${it.img}"/>`:`<span class="bi-icon">${it.emoji||'📚'}</span>`;
+    const icon=it.img?`<img class="bi-img" src="${it.img}"/>`:`<span class="bi-icon">${fi(it.emoji||'1f4da',30)}</span>`;
     return`<div class="book-item" style="animation:${anim};">${icon}<div class="bi-title">${it.title||''}</div></div>`;
   };
   l.innerHTML=shown.slice(0,6).map(mk).join('');
@@ -2565,12 +2565,12 @@ function renderBookItems(){
   more.style.display=all.length>12?'block':'none';
   if(all.length>12)more.textContent=`還有 ${all.length-12} 個資源收在書裡 ✨`;
 }
-let openResForm=-1,selResType='book',selResEmoji='📚',resUploadUrl='';
+let openResForm=-1,selResType='book',selResEmoji='1f4da',resUploadUrl='';
 function resFormHTML(ci){
   return`<div style="margin-top:8px;border-top:1px solid rgba(200,196,247,.3);padding-top:10px;">
     <div style="font-size:11px;color:var(--tc2);margin-bottom:5px;">類型</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;" id="res-type-chips">
-      ${RESOURCE_TYPES.map(t=>`<div class="res-chip${t.id===selResType?' on':''}" data-t="${t.id}">${t.label}</div>`).join('')}
+      ${RESOURCE_TYPES.map(t=>`<div class="res-chip${t.id===selResType?' on':''}" data-t="${t.id}">${fi(t.chip,15)} ${t.labelText}</div>`).join('')}
     </div>
     <div style="font-size:11px;color:var(--tc2);margin-bottom:4px;">選一個 icon（或下面上傳圖片取代）</div>
     <div class="emoji-picker" id="res-emoji-picker"></div>
@@ -2589,7 +2589,7 @@ function renderResEmojiPicker(){
   if(!t.emojis.includes(selResEmoji))selResEmoji=t.emojis[0];
   const picker=document.getElementById('res-emoji-picker');
   if(!picker)return;
-  picker.innerHTML=t.emojis.map(e=>`<div class="emoji-opt${e===selResEmoji?' sel':''}" data-e="${e}" style="font-size:22px;">${e}</div>`).join('');
+  picker.innerHTML=t.emojis.map(e=>`<div class="emoji-opt${e===selResEmoji?' sel':''}" data-e="${e}">${fi(e,26)}</div>`).join('');
   picker.querySelectorAll('.emoji-opt').forEach(o=>o.addEventListener('click',()=>{
     selResEmoji=o.dataset.e;
     picker.querySelectorAll('.emoji-opt').forEach(x=>x.classList.remove('sel'));
@@ -2610,7 +2610,7 @@ function renderResourcePage(){
       <div>
         ${(cat.items||[]).map((it,ii)=>`
           <div class="support-item-row" style="align-items:center;">
-            ${it.img?`<img src="${it.img}" style="width:30px;height:30px;object-fit:cover;border-radius:8px;flex-shrink:0;"/>`:`<span style="font-size:20px;flex-shrink:0;">${it.emoji||'📚'}</span>`}
+            ${it.img?`<img src="${it.img}" style="width:30px;height:30px;object-fit:cover;border-radius:8px;flex-shrink:0;"/>`:`<span style="flex-shrink:0;">${fi(it.emoji||'1f4da',22)}</span>`}
             <span style="flex:1;">${it.title||''}</span>
             <button class="support-item-del res-item-del" data-ci="${ci}" data-ii="${ii}">✕</button>
           </div>`).join('')||`<div style="font-size:12px;color:var(--tc3);padding:4px 0;">還沒有收藏資源</div>`}
@@ -2632,7 +2632,7 @@ function bindResourceEvents(){
     renderResourcePage();
   }));
   box.querySelectorAll('.res-item-add').forEach(b=>b.addEventListener('click',()=>{
-    openResForm=+b.dataset.ci;selResType='book';selResEmoji='📚';resUploadUrl='';
+    openResForm=+b.dataset.ci;selResType='book';selResEmoji='1f4da';resUploadUrl='';
     renderResourcePage();
   }));
   const chips=document.getElementById('res-type-chips');
