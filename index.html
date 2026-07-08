@@ -321,7 +321,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
 @keyframes objBounce{0%,100%{transform:scale(1,1)}30%{transform:scale(1.09,.91)}60%{transform:scale(.95,1.05)}80%{transform:scale(1.03,.97)}}
 @keyframes noteFloat{0%,100%{transform:rotate(2deg) translateY(0)}50%{transform:rotate(2.6deg) translateY(-4px)}}
 @keyframes segPulse{0%,100%{opacity:1}50%{opacity:.35}}
-@keyframes pBreathe{0%,100%{transform:scale(1,1)}50%{transform:scale(1.02,.96)}}
+@keyframes pBreathe{0%,100%{transform:scale(1,1)}50%{transform:scale(1.045,.935)}}
 @keyframes pSleep{0%,100%{transform:rotate(85deg)}50%{transform:rotate(85deg) scale(1.03)}}
 @keyframes pPlay{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(7deg)}}
 @keyframes pDance{0%,100%{transform:scaleX(1) rotate(-4deg)}50%{transform:scaleX(1.18) scaleY(.88) rotate(4deg)}}
@@ -819,6 +819,15 @@ let GAS_URL=localStorage.getItem('grandol_gas_url')||DEFAULT_GAS_URL;
 const SHEET_ID='***REMOVED***';
 const CDN='https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/';
 const fi=(c,s=20)=>`<img src="${CDN}${c}_3d.png" width="${s}" height="${s}" style="display:inline-block;vertical-align:middle;" onerror="this.style.display='none'"/>`;
+// 圖片讀取失敗時安全退回 emoji 圖（不能用字串拼 onerror，引號會炸出亂碼）
+function grFallback(el,code,size){
+  const img=document.createElement('img');
+  img.className=el.className||'main';
+  img.width=size;img.height=size;
+  img.style.display='block';
+  img.src=CDN+code+'_3d.png';
+  el.replaceWith(img);
+}
 const SK='grandol_v7';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
@@ -1867,9 +1876,10 @@ function initPuppy(wrap,stage,size){
 }
 
 // ── 我的人：12種動態（同小狗，睡覺時多一張床）─────────
-function charFxHTML(){
+function charFxHTML(size){
+  const bedSize=Math.round((size||54)*.63);
   return`
-  <div class="pfx pfx-bed" style="position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);display:none;"><span style="font-size:34px;">🛏️</span></div>
+  <div class="pfx pfx-bed" style="position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);display:none;"><span style="font-size:${bedSize}px;">🛏️</span></div>
   <div class="pfx pfx-zzz" style="position:absolute;top:-24px;right:-12px;display:none;animation:bobY 1.8s ease-in-out infinite;">${fi('1f4a4',19)}</div>
   <div class="pfx pfx-sweat" style="position:absolute;top:-4px;right:-10px;display:none;">${fi('1f4a6',16)}</div>
   <div class="pfx pfx-note1" style="position:absolute;top:-20px;left:-24px;display:none;">${fi('1f3b5',20)}</div>
@@ -1892,7 +1902,7 @@ function charFxHTML(){
 function initCharSprite(wrap,stage,size){
   const main=wrap.querySelector('.main');
   if(!main)return;
-  main.insertAdjacentHTML('beforebegin',charFxHTML());
+  main.insertAdjacentHTML('beforebegin',charFxHTML(size));
   let cur=0,walkT=null,circT=null,ang=0,dragging=false;
   const animMap={stand:'pBreathe 2.2s ease-in-out infinite',sleep:'pSleep 3s ease-in-out infinite',play:'pPlay .6s ease-in-out infinite',water:'pWater 1s ease-in-out infinite',dance:'pDance .5s ease-in-out infinite',happy:'pBounce .5s ease-in-out infinite',walk:'pBreathe .8s ease-in-out infinite',circle:'pBreathe .8s ease-in-out infinite',read:'pRead 2.4s ease-in-out infinite',boba:'bobY 1.4s ease-in-out infinite',tea:'pBreathe 2.4s ease-in-out infinite',cry:'pCry .7s ease-in-out infinite',drag:'pShake .2s ease-in-out infinite'};
   const fxMap={sleep:['zzz','bed'],drag:['sweat'],dance:['note1','note2'],happy:['happy'],play:['ball'],water:['water'],read:['read'],boba:['boba'],tea:['tea'],cry:['cry']};
@@ -2044,37 +2054,47 @@ function renderGarden(){
     initLongPress(el);
   });
 
-  // — my people 54px（12種動態，同小狗）
+  // — my people 81px（12種動態，同小狗）
   S.myPeople.forEach((p,i)=>{
     const key=gdKey('pp',i);
     const pos=gdPos(key,160+i*70,140);
     const el=document.createElement('div');
     el.className='gd-sprite';
     el.style.cssText=`left:${pos.x}px;${pos.top!==undefined?`top:${pos.top}px;`:`bottom:${pos.bottom}px;`}z-index:7;`;
-    const visual=p.img?`<img class="main" src="${p.img}" width="54" height="54" style="display:block;object-fit:contain;" onerror="this.outerHTML='${fi(p.emoji||'1f436',54).replace(/'/g,"\\'")}'"/>`:`<img class="main" src="${CDN}${p.emoji||'1f436'}_3d.png" width="54" height="54" style="display:block;"/>`;
+    const visual=p.img?`<img class="main" src="${p.img}" width="81" height="81" style="display:block;object-fit:contain;" onerror="grFallback(this,'${p.emoji||'1f436'}',81)"/>`:`<img class="main" src="${CDN}${p.emoji||'1f436'}_3d.png" width="81" height="81" style="display:block;"/>`;
     el.innerHTML=`<div class="sprite-label">${p.name||''}${p.note?` · ${p.note}`:''} · 點一下切換動態</div>${visual}`;
     dyn.appendChild(el);
-    initCharSprite(el,canvas,54);
+    initCharSprite(el,canvas,81);
     const pe=el._onDragEnd;
     el._onDragEnd=(moved)=>{pe(moved);if(moved){S.gardenPos[key]={x:parseFloat(el.style.left)||0,top:parseFloat(el.style.top)||0};sv(S);syncStateDebounced();}};
     initLongPress(el);
   });
 
-  // — treasures 52px
+  // — treasures 52px（物=純漂浮；人=12種動態同「我的人」且去框）
   S.treasures.forEach((t,i)=>{
     const key=gdKey('tr',i);
     const pos=gdPos(key,260+i*76,150);
     const el=document.createElement('div');
     el.className='gd-sprite';
-    const anim=t.type==='person'?`gdFloat ${2.4+(i%3)*.3}s ease-in-out infinite ${i*.2}s`:`objBounce ${2+(i%3)*.4}s ease-in-out infinite ${i*.25}s`;
-    el.style.cssText=`left:${pos.x}px;${pos.top!==undefined?`top:${pos.top}px;`:`bottom:${pos.bottom}px;`}animation:${anim};`;
-    const visual=t.img?`<img class="main" src="${t.img}" width="52" height="52" style="border-radius:12px;object-fit:cover;border:2px solid rgba(255,255,255,.9);box-shadow:0 3px 10px rgba(120,90,200,.25);"/>`:`<span class="main" style="font-size:44px;display:block;">${t.emoji||'💎'}</span>`;
-    el.innerHTML=`<div class="sprite-label">${t.title||''}${t.desc?` · ${t.desc}`:''}</div>${visual}`;
+    const isPerson=t.type==='person';
+    el.style.cssText=`left:${pos.x}px;${pos.top!==undefined?`top:${pos.top}px;`:`bottom:${pos.bottom}px;`}${isPerson?'z-index:7;':`animation:gdFloat ${2+(i%3)*.4}s ease-in-out infinite ${i*.25}s;`}`;
+    const visual=t.img
+      ?(isPerson
+        ?`<img class="main" src="${t.img}" width="52" height="52" style="display:block;object-fit:contain;"/>`
+        :`<img class="main" src="${t.img}" width="52" height="52" style="border-radius:12px;object-fit:cover;border:2px solid rgba(255,255,255,.9);box-shadow:0 3px 10px rgba(120,90,200,.25);"/>`)
+      :`<span class="main" style="font-size:44px;display:block;">${t.emoji||'💎'}</span>`;
+    el.innerHTML=`<div class="sprite-label">${t.title||''}${t.desc?` · ${t.desc}`:''}${isPerson?' · 點一下切換動態':''}</div>${visual}`;
     dyn.appendChild(el);
-    makeDraggable(el,canvas,(moved,left,top)=>{
-      if(!moved)return;
-      S.gardenPos[key]={x:left,top:top};sv(S);syncStateDebounced();
-    });
+    if(isPerson){
+      initCharSprite(el,canvas,52);
+      const pe=el._onDragEnd;
+      el._onDragEnd=(moved)=>{pe(moved);if(moved){S.gardenPos[key]={x:parseFloat(el.style.left)||0,top:parseFloat(el.style.top)||0};sv(S);syncStateDebounced();}};
+    }else{
+      makeDraggable(el,canvas,(moved,left,top)=>{
+        if(!moved)return;
+        S.gardenPos[key]={x:left,top:top};sv(S);syncStateDebounced();
+      });
+    }
     initLongPress(el);
   });
 
