@@ -2170,7 +2170,7 @@ function renderGarden(){
     el.className='gd-sprite';
     el.style.cssText=`left:${pos.x}px;${pos.top!==undefined?`top:${pos.top}px;`:`bottom:${pos.bottom}px;`}z-index:7;`;
     const visual=p.img?`<img class="main" src="${p.img}" width="81" height="81" style="display:block;object-fit:contain;" onerror="grFallback(this,'${p.emoji||'1f436'}',81)"/>`:`<img class="main" src="${CDN}${p.emoji||'1f436'}_3d.png" width="81" height="81" style="display:block;"/>`;
-    el.innerHTML=`<div class="sprite-label">${p.name||''}${p.note?` · ${p.note}`:''} · 點一下切換動態</div>${visual}`;
+    el.innerHTML=`<div class="sprite-label">${p.name||''}${p.note?` · ${p.note}`:''}</div>${visual}`;
     dyn.appendChild(el);
     initCharSprite(el,canvas,81);
     const pe=el._onDragEnd;
@@ -2191,7 +2191,7 @@ function renderGarden(){
         ?`<img class="main" src="${t.img}" width="52" height="52" style="display:block;object-fit:contain;"/>`
         :`<img class="main" src="${t.img}" width="52" height="52" style="display:block;object-fit:contain;"/>`)
       :`<span class="main" style="font-size:44px;display:block;">${t.emoji||'💎'}</span>`;
-    el.innerHTML=`<div class="sprite-label">${t.title||''}${t.desc?` · ${t.desc}`:''}${isPerson?' · 點一下切換動態':''}</div>${visual}`;
+    el.innerHTML=`<div class="sprite-label">${t.title||''}${t.desc?` · ${t.desc}`:''}</div>${visual}`;
     dyn.appendChild(el);
     if(isPerson){
       initCharSprite(el,canvas,52);
