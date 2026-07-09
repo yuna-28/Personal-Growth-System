@@ -93,10 +93,13 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
 .sticky-note:active{cursor:grabbing;}
 .sticky-note::before{content:'';position:absolute;top:-9px;left:50%;transform:translateX(-50%) rotate(-1.5deg);width:56px;height:18px;background:rgba(230,80,90,.75);border-radius:2px;box-shadow:0 1px 3px rgba(150,30,40,.3);}
 .sticky-header{position:absolute;top:8px;left:14px;font-weight:700;font-size:11px;color:#A08030;}
-.sticky-item{display:flex;align-items:flex-start;gap:5px;margin-bottom:4px;font-size:11px;line-height:1.4;}
-.sticky-check{width:14px;height:14px;flex-shrink:0;border:1.5px solid rgba(160,130,60,.5);border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:#3A8A6A;background:rgba(255,255,255,.6);margin-top:1px;}
+.sticky-item{display:flex;align-items:center;gap:6px;margin-bottom:5px;font-size:1em;line-height:1.4;}
+.sticky-check{width:var(--sn-cb,20px);height:var(--sn-cb,20px);flex-shrink:0;border:1.5px solid rgba(160,130,60,.55);border-radius:5px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:calc(var(--sn-cb,20px)*0.62);color:#3A8A6A;background:rgba(255,255,255,.7);}
 .sticky-check.done{background:rgba(93,202,165,.4);border-color:rgba(93,202,165,.8);}
-.sticky-empty{font-size:11px;color:#B09850;line-height:1.6;text-align:center;padding:4px 0;}
+.sticky-empty{font-size:1em;color:#B09850;line-height:1.6;text-align:center;padding:4px 0;}
+.sticky-ctrls{position:absolute;top:6px;right:7px;display:flex;gap:3px;z-index:3;}
+.sn-btn{width:18px;height:18px;border:none;border-radius:5px;background:rgba(180,140,40,.18);color:#8A6A20;font-size:12px;font-weight:700;cursor:pointer;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;}
+.sn-btn:active{background:rgba(180,140,40,.35);}
 
 .level-pill{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.7);border:1.5px solid rgba(255,255,255,.9);border-radius:999px;padding:3px 14px;font-family:'Baloo 2',sans-serif;font-size:13px;font-weight:700;color:var(--tc);box-shadow:0 2px 10px rgba(150,130,220,.15);}
 .exp-seg{width:20px;height:8px;border-radius:4px;transition:all .3s;}
@@ -488,8 +491,13 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
         </div>
         <div id="seedling-zone" style="position:absolute;left:12px;bottom:44px;display:flex;gap:4px;align-items:flex-end;z-index:3;"></div>
         <div class="sticky-note" id="sticky-note">
+          <div class="sticky-ctrls" id="sticky-ctrls">
+            <button class="sn-btn" id="sn-minus" title="縮小">－</button>
+            <button class="sn-btn" id="sn-plus" title="放大">＋</button>
+            <button class="sn-btn" id="sn-collapse" title="收合">▾</button>
+          </div>
           <div class="sticky-header">📋 今日 TDL</div>
-          <div id="sticky-date" style="font-size:10px;color:#B09850;margin-bottom:4px;"></div>
+          <div id="sticky-date" style="font-size:.9em;color:#B09850;margin-bottom:4px;"></div>
           <div id="sticky-items"></div>
         </div>
         <div id="puppy" style="position:absolute;left:56px;bottom:44px;cursor:pointer;touch-action:none;z-index:5;"></div>
@@ -1222,6 +1230,7 @@ function renderFruits(){
 // ── STICKY NOTE (always visible, checkable, draggable) ──
 function renderStickyNote(){
   const note=document.getElementById('sticky-note');
+  applyNoteStyle();
   const d=new Date();
   document.getElementById('sticky-date').textContent=`${d.getMonth()+1}/${d.getDate()}`;
   const items=S.todayTDL||[];
@@ -1238,6 +1247,8 @@ function renderStickyNote(){
       </div>`;
     }).join('');
     box.querySelectorAll('.sticky-check').forEach(el=>{
+      el.addEventListener('mousedown',e=>e.stopPropagation());
+      el.addEventListener('touchstart',e=>e.stopPropagation(),{passive:true});
       el.addEventListener('click',ev=>{
         ev.stopPropagation();
         const key=el.dataset.k;
@@ -1258,16 +1269,46 @@ function renderStickyNote(){
     if(cx!==S.notePos.x||cy!==S.notePos.y){S.notePos={x:cx,y:cy};note.style.left=cx+'px';note.style.top=cy+'px';sv(S);}
   }
 }
+const NOTE_SCALES=[0.85,1,1.2,1.45,1.7];
+function applyNoteStyle(){
+  const note=document.getElementById('sticky-note');
+  if(!note)return;
+  const scale=S.noteScale||1;
+  note.style.fontSize=(11*scale)+'px';
+  note.style.setProperty('--sn-cb',(20*scale)+'px');
+  note.style.minWidth=(140*scale)+'px';
+  note.style.maxWidth=(184*scale)+'px';
+  const collapsed=!!S.noteCollapsed;
+  const dt=document.getElementById('sticky-date'),it=document.getElementById('sticky-items');
+  if(dt)dt.style.display=collapsed?'none':'';
+  if(it)it.style.display=collapsed?'none':'';
+  const cb=document.getElementById('sn-collapse');if(cb)cb.textContent=collapsed?'▸':'▾';
+}
 function initStickyDrag(){
   const note=document.getElementById('sticky-note');
   const stage=document.getElementById('scene-stage');
   const box=document.getElementById('sticky-items');
   box.addEventListener('touchstart',e=>{if(box.scrollHeight>box.clientHeight)e.stopPropagation();},{passive:true});
   box.addEventListener('mousedown',e=>{if(box.scrollHeight>box.clientHeight)e.stopPropagation();});
+  // 控制鈕：不啟動拖曳
+  const stopDrag=e=>e.stopPropagation();
+  ['sn-minus','sn-plus','sn-collapse'].forEach(id=>{
+    const b=document.getElementById(id);
+    if(b){b.addEventListener('mousedown',stopDrag);b.addEventListener('touchstart',stopDrag,{passive:true});}
+  });
+  function stepScale(dir){
+    let i=NOTE_SCALES.indexOf(S.noteScale||1);if(i<0)i=1;
+    i=Math.max(0,Math.min(NOTE_SCALES.length-1,i+dir));
+    S.noteScale=NOTE_SCALES[i];sv(S);applyNoteStyle();
+  }
+  document.getElementById('sn-minus').addEventListener('click',e=>{e.stopPropagation();stepScale(-1);});
+  document.getElementById('sn-plus').addEventListener('click',e=>{e.stopPropagation();stepScale(1);});
+  document.getElementById('sn-collapse').addEventListener('click',e=>{e.stopPropagation();S.noteCollapsed=!S.noteCollapsed;sv(S);applyNoteStyle();});
   makeDraggable(note,stage,(moved,left,top)=>{
     if(!moved)return;
     S.notePos={x:left,y:top};sv(S);
   });
+  applyNoteStyle();
 }
 
 // ── HABITS ────────────────────────────────────────────
@@ -2783,9 +2824,9 @@ function ensureResourceDefaults(){
 }
 let bookPage=0;
 let bkDragEl=null,bkSX=0,bkSY=0,bkMoved=false,bkTap=null,bkBound=false;
-function bkStart(el,onTap,e){bkDragEl=el;bkMoved=false;bkTap=onTap;const p=e.touches?e.touches[0]:e;bkSX=p.clientX;bkSY=p.clientY;el.style.transition='none';el.style.zIndex='6';el.style.position='relative';e.preventDefault();}
+function bkStart(el,onTap,e){bkDragEl=el;bkMoved=false;bkTap=onTap;const p=e.touches?e.touches[0]:e;bkSX=p.clientX;bkSY=p.clientY;el._anim=el.style.animation;el.style.animation='none';el.style.transition='none';el.style.zIndex='6';el.style.position='relative';e.preventDefault();}
 function bkMove(e){if(!bkDragEl)return;if(e.cancelable)e.preventDefault();const p=e.touches?e.touches[0]:e;const dx=p.clientX-bkSX,dy=p.clientY-bkSY;if(Math.abs(dx)>4||Math.abs(dy)>4)bkMoved=true;bkDragEl.style.transform=`translate(${dx}px,${dy}px)`;}
-function bkEnd(){if(!bkDragEl)return;const el=bkDragEl,moved=bkMoved,tap=bkTap;bkDragEl=null;if(!moved){el.style.transform='';el.style.zIndex='';if(tap)tap();}}
+function bkEnd(){if(!bkDragEl)return;const el=bkDragEl,moved=bkMoved,tap=bkTap;bkDragEl=null;if(!moved){el.style.transform='';el.style.zIndex='';el.style.animation=el._anim||'';if(tap)tap();}}
 function bindBookGlobals(){
   if(bkBound)return;bkBound=true;
   window.addEventListener('mousemove',bkMove);window.addEventListener('touchmove',bkMove,{passive:false});
