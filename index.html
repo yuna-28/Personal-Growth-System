@@ -291,6 +291,14 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
 .quote-item{display:flex;align-items:flex-start;gap:8px;padding:10px;background:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.6);border-radius:12px;margin-bottom:8px;}
 .quote-text{flex:1;font-size:13px;color:var(--tc);font-style:italic;line-height:1.5;}
 .quote-del{background:none;border:none;cursor:pointer;color:var(--tc3);font-size:14px;flex-shrink:0;}
+.quote-desc{font-size:11px;color:var(--tc3);font-style:normal;line-height:1.5;margin-top:3px;}
+.quote-item.exported,.person-card.exported,.treasure-card.tgrid.exported,.treasure-row.exported,.res-gcard.exported{opacity:.5;}
+.exp-toggle{background:none;border:none;cursor:pointer;font-size:14px;flex-shrink:0;padding:0;line-height:1;}
+.export-row{display:flex;gap:8px;margin-top:10px;}
+.export-new-btn{flex:1;border:none;border-radius:12px;padding:9px;background:linear-gradient(135deg,rgba(139,127,232,.9),rgba(93,202,165,.85));color:#fff;font-family:'Quicksand',sans-serif;font-weight:600;font-size:12px;cursor:pointer;}
+.export-all-btn{border:1.5px solid rgba(200,196,247,.6);border-radius:12px;padding:9px 12px;background:rgba(255,255,255,.5);color:var(--tc2);font-family:'Quicksand',sans-serif;font-weight:600;font-size:12px;cursor:pointer;flex-shrink:0;}
+.person-card.pgrid .exp-toggle,.treasure-card.tgrid .exp-toggle,.res-gcard .exp-toggle{position:absolute;top:4px;left:6px;z-index:2;}
+.support-item-row.exported{opacity:.5;}
 
 /* ACHIEVEMENTS */
 .achievement-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
@@ -448,6 +456,14 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
   </div>
 </div>
 
+<div id="quote-popup" style="display:none;position:fixed;inset:0;z-index:9992;background:rgba(60,40,100,.4);backdrop-filter:blur(4px);flex-direction:column;align-items:center;justify-content:center;padding:24px;">
+  <div style="background:rgba(255,255,255,.98);border-radius:22px;box-shadow:0 20px 60px rgba(80,60,180,.3);padding:1.6rem 1.4rem;width:min(360px,92vw);max-height:70vh;display:flex;flex-direction:column;">
+    <div style="font-size:26px;margin-bottom:8px;text-align:center;">💬</div>
+    <div id="quote-popup-text" style="flex:1;overflow-y:auto;font-size:15px;line-height:1.8;color:var(--tc);font-style:italic;text-align:center;margin-bottom:14px;-webkit-overflow-scrolling:touch;"></div>
+    <button id="quote-popup-next" style="border:none;background:linear-gradient(135deg,#8B7FE8,#5DCAA5);color:#fff;border-radius:14px;padding:10px;font-family:'Baloo 2',sans-serif;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;">🔄 換下一句</button>
+    <button id="quote-popup-close" style="border:none;background:rgba(200,196,247,.3);color:var(--tc2);border-radius:12px;padding:9px;font-family:'Quicksand',sans-serif;font-weight:600;font-size:13px;cursor:pointer;">關閉</button>
+  </div>
+</div>
 <div id="lightbox" style="display:none;position:fixed;inset:0;z-index:10005;background:rgba(20,10,40,.9);flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px;cursor:zoom-out;">
   <img id="lightbox-img" style="max-width:94%;max-height:82%;object-fit:contain;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.5);"/>
   <div id="lightbox-cap" style="color:#fff;font-size:14px;text-align:center;max-width:90%;"></div>
@@ -643,6 +659,10 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
   <p style="text-align:center;font-size:11px;color:var(--tc3);margin-top:6px;position:relative;z-index:1;">妳收藏的書、音樂、影片、人...都會住進這本書裡</p>
 </div>
 <div id="resource-categories"></div>
+<div class="export-row" style="margin:0 0 16px;">
+  <button class="export-new-btn" data-kind="resource">📋 複製新項目給 Claude</button>
+  <button class="export-all-btn" data-kind="resource">複製全部</button>
+</div>
 <div id="resource-add-cat" style="margin-bottom:16px;">
   <button id="add-res-cat-btn" style="background:none;border:1.5px dashed rgba(160,140,220,.35);border-radius:11px;padding:9px;font-family:'Quicksand',sans-serif;font-size:12px;color:var(--tc3);cursor:pointer;width:100%;text-align:center;">＋ 新增一個資源分類</button>
   <div id="res-cat-form" style="display:none;margin-top:8px;">
@@ -705,6 +725,10 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
   <div class="sec-hd">🐾 我的人</div>
   <p style="font-size:11px;color:var(--tc3);margin-bottom:12px;">他們會在花園裡陪妳</p>
   <div id="people-list"></div>
+  <div class="export-row">
+    <button class="export-new-btn" data-kind="people">📋 複製新項目給 Claude</button>
+    <button class="export-all-btn" data-kind="people">複製全部</button>
+  </div>
   <div id="person-form" style="display:none;">
     <div style="font-size:12px;font-weight:700;color:var(--tc2);margin-bottom:4px;">選一個代表 TA 的樣子</div>
     <div class="emoji-picker" id="person-emoji-picker"></div>
@@ -726,6 +750,10 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
   <div class="sec-hd">💎 豐盛收藏庫</div>
   <p style="font-size:11px;color:var(--tc3);margin-bottom:12px;">我擁有的一切 · 值得被記住的人事物</p>
   <div id="treasure-list"></div>
+  <div class="export-row">
+    <button class="export-new-btn" data-kind="treasures">📋 複製新項目給 Claude</button>
+    <button class="export-all-btn" data-kind="treasures">複製全部</button>
+  </div>
   <div id="treasure-form" style="display:none;">
     <div style="display:flex;gap:8px;margin-bottom:7px;">
       <button class="mini-btn treasure-type-btn" data-t="object" style="flex:1;background:rgba(159,225,203,.5);color:#2A7A5A;">🎁 物</button>
@@ -748,11 +776,19 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
 
 <div class="gcard">
   <div class="sec-hd">💬 金句收藏</div>
-  <div style="display:flex;gap:8px;margin-bottom:12px;">
-    <input id="quote-new-input" class="tdl-in" placeholder="輸入一句讓妳有感覺的話..." style="flex:1;"/>
-    <button id="quote-add-btn" class="mini-btn">＋</button>
+  <div style="margin-bottom:12px;">
+    <input id="quote-new-input" class="tdl-in" placeholder="輸入一句讓妳有感覺的話..." style="width:100%;margin-bottom:6px;"/>
+    <input id="quote-new-desc" class="tdl-in" placeholder="敘述（選填·補充說明或出處）" style="width:100%;margin-bottom:6px;"/>
+    <div style="display:flex;gap:8px;">
+      <input id="quote-new-link" class="tdl-in" placeholder="來源連結（選填）" style="flex:1;"/>
+      <button id="quote-add-btn" class="mini-btn" style="flex-shrink:0;">＋ 加入</button>
+    </div>
   </div>
   <div id="quote-list"></div>
+  <div class="export-row">
+    <button class="export-new-btn" data-kind="quotes">📋 複製新項目給 Claude</button>
+    <button class="export-all-btn" data-kind="quotes">複製全部</button>
+  </div>
 </div>
 </div>
 
@@ -935,7 +971,10 @@ function ld(){
   return defaults();
 }
 function sv(s){try{localStorage.setItem(SK,JSON.stringify(s));}catch(e){}}
+function qText(q){return typeof q==='string'?q:((q&&q.text)||'');}
+function migQuotes(){if(Array.isArray(S.quotes))S.quotes=S.quotes.map(q=>typeof q==='string'?{text:q,desc:'',link:'',exported:false}:Object.assign({text:'',desc:'',link:'',exported:false},q));}
 let S=ld();
+migQuotes();
 
 // New day rollover
 if(S.lastPlant!==today()&&S.lastStreak!==today()){
@@ -1002,7 +1041,7 @@ async function loadCloud(){
       S.bigApples=+d.bigApples||0;S.goldFruits=+d.goldFruits||0;
       S.seedlings=+d.seedlings||0;S.trees=+d.trees||1;
       S.achievements=parseJ(d.achievements,S.achievements);
-      S.quotes=parseJ(d.quotes,S.quotes);
+      S.quotes=parseJ(d.quotes,S.quotes);migQuotes();
       S.calNotes=parseJ(d.calNotes,S.calNotes);
       S.myPeople=parseJ(d.myPeople,S.myPeople);
       S.treasures=parseJ(d.treasures,S.treasures);
@@ -1426,7 +1465,7 @@ document.getElementById('plant-btn').addEventListener('click',async()=>{
   const idx=S.entries.findIndex(e=>e.date===today());
   if(idx>=0)S.entries[idx]=entry;else S.entries.push(entry);
 
-  if(d.quote&&d.quote.trim()&&!S.quotes.includes(d.quote.trim()))S.quotes.push(d.quote.trim());
+  if(d.quote&&d.quote.trim()&&!S.quotes.some(q=>qText(q)===d.quote.trim()))S.quotes.push({text:d.quote.trim(),desc:'',link:'',exported:false});
 
   recalcStreak();entry.streak=S.streak;
   sv(S);
@@ -2093,14 +2132,29 @@ function gdPos(key,defX,defBottom){
   if(S.gardenPos[key])return S.gardenPos[key];
   return{x:defX,bottom:defBottom};
 }
+function setGardenQuote(q){
+  const cloud=document.getElementById('garden-quote');
+  if(!cloud)return;
+  cloud._curQ=q;
+  const qt=cloud.querySelector('.qc-text');
+  if(qt)qt.innerHTML=`"${qText(q).replace(/</g,'&lt;')}"`;
+}
 function switchGardenQuote(){
   const cloud=document.getElementById('garden-quote');
   if(!cloud||!S.quotes.length)return;
   let q=S.quotes[Math.floor(Math.random()*S.quotes.length)];
-  if(S.quotes.length>1){let g=0;while(q===cloud._cur&&g<12){q=S.quotes[Math.floor(Math.random()*S.quotes.length)];g++;}}
-  cloud._cur=q;
-  const qt=cloud.querySelector('.qc-text');
-  if(qt)qt.innerHTML=`"${q.replace(/</g,'&lt;')}"`;
+  if(S.quotes.length>1){let g=0;while(q===cloud._curQ&&g<12){q=S.quotes[Math.floor(Math.random()*S.quotes.length)];g++;}}
+  setGardenQuote(q);updateQuotePopup(q);
+}
+function updateQuotePopup(q){
+  const el=document.getElementById('quote-popup-text');
+  if(el)el.textContent=`「${qText(q)}」`;
+}
+function openQuotePopup(){
+  const cloud=document.getElementById('garden-quote');
+  if(!cloud||!cloud._curQ)return;
+  updateQuotePopup(cloud._curQ);
+  document.getElementById('quote-popup').style.display='flex';
 }
 function renderGarden(){
   const canvas=document.getElementById('garden-canvas');
@@ -2108,15 +2162,14 @@ function renderGarden(){
   const dyn=document.getElementById('gd-dynamics');
   dyn.innerHTML='';
 
-  // quote cloud（點一下切換金句、可拖移、長句限2行）
+  // quote cloud（預覽2行、輕點彈出完整視窗、可拖移）
   const cloud=document.getElementById('garden-quote');
   if(S.quotes.length){
-    const q0=S.quotes[Math.floor(Math.random()*S.quotes.length)]||'';
-    cloud._cur=q0;
-    cloud.innerHTML=`<div class="qc-text">"${q0.replace(/</g,'&lt;')}"</div>`;
     cloud.style.display='block';
+    cloud.innerHTML=`<div class="qc-text"></div>`;
+    setGardenQuote(S.quotes[Math.floor(Math.random()*S.quotes.length)]);
     if(!cloud._dragBound){
-      makeDraggable(cloud,canvas,(moved)=>{if(!moved)switchGardenQuote();});
+      makeDraggable(cloud,canvas,(moved)=>{if(!moved)openQuotePopup();});
       cloud._dragBound=true;
     }
   }else cloud.style.display='none';
@@ -2135,7 +2188,7 @@ function renderGarden(){
   initPuppy(pWrap,canvas,86);
   const origEnd=pWrap._onDragEnd;
   pWrap._onDragEnd=(moved)=>{origEnd(moved);if(moved){S.gardenPos[pk]={x:parseFloat(pWrap.style.left)||0,top:parseFloat(pWrap.style.top)||0};sv(S);syncStateDebounced();}};
-  pWrap.insertAdjacentHTML('afterbegin','<div class="sprite-label">小狗 · 點一下切換動態</div>');
+  pWrap.insertAdjacentHTML('afterbegin','<div class="sprite-label">我</div>');
   initLongPress(pWrap);
 
   // — 8 identity sprites 54px, default left 200~760 spacing 80, bottom 72
@@ -2239,7 +2292,8 @@ function renderPeopleList(){
   const mode=getViewMode('people');
   const cards=S.myPeople.map((p,i)=>{
     if(mode==='grid'){
-      return`<div class="person-card pgrid">
+      return`<div class="person-card pgrid${p.exported?' exported':''}">
+        <button class="exp-toggle" data-i="${i}" title="${p.exported?'已匯出（點取消）':'標記已匯出'}">${p.exported?'✅':'⬜'}</button>
         <button class="card-edit" data-i="${i}">✏️</button>
         <button class="card-del" data-i="${i}">✕</button>
         <div class="person-emoji">${p.img?`<img src="${p.img}"/>`:fi(p.emoji||'1f436',36)}</div>
@@ -2247,9 +2301,10 @@ function renderPeopleList(){
         <div class="person-note">${p.note||''}</div>
       </div>`;
     }
-    return`<div class="person-card">
+    return`<div class="person-card${p.exported?' exported':''}">
       <div class="person-emoji">${p.img?`<img src="${p.img}"/>`:fi(p.emoji||'1f436',30)}</div>
       <div class="person-info"><div class="person-name">${p.name||''}</div><div class="person-note">${p.note||''}</div></div>
+      <button class="exp-toggle" data-i="${i}" title="${p.exported?'已匯出（點取消）':'標記已匯出'}">${p.exported?'✅':'⬜'}</button>
       <button class="card-edit" data-i="${i}">✏️</button>
       <button class="card-del" data-i="${i}">✕</button>
     </div>`;
@@ -2265,6 +2320,9 @@ function renderPeopleList(){
   document.querySelectorAll('#people-list .card-edit').forEach(b=>b.addEventListener('click',()=>{
     openPersonForm(+b.dataset.i);
     document.getElementById('person-form').scrollIntoView({behavior:'smooth',block:'center'});
+  }));
+  document.querySelectorAll('#people-list .exp-toggle').forEach(b=>b.addEventListener('click',()=>{
+    const p=S.myPeople[+b.dataset.i];p.exported=!p.exported;sv(S);renderPeopleList();syncStateDebounced();
   }));
 }
 function openPersonForm(idx){
@@ -2338,7 +2396,8 @@ function renderTreasureList(){
   let inner;
   if(mode==='grid'){
     inner=`<div class="treasure-grid">`+S.treasures.map((t,i)=>`
-      <div class="treasure-card tgrid">
+      <div class="treasure-card tgrid${t.exported?' exported':''}">
+        <button class="exp-toggle" data-i="${i}" title="${t.exported?'已匯出（點取消）':'標記已匯出'}">${t.exported?'✅':'⬜'}</button>
         <button class="card-edit" data-i="${i}">✏️</button>
         <button class="card-del" data-i="${i}">✕</button>
         ${t.img?`<img class="tg-img" src="${t.img}" onerror="this.style.display='none'"/>`:`<div class="tg-emoji">${t.emoji||'💎'}</div>`}
@@ -2348,7 +2407,8 @@ function renderTreasureList(){
       </div>`).join('')+`</div>`;
   }else{
     inner=S.treasures.map((t,i)=>`
-      <div class="treasure-row">
+      <div class="treasure-row${t.exported?' exported':''}">
+        <button class="exp-toggle" data-i="${i}" title="${t.exported?'已匯出（點取消）':'標記已匯出'}">${t.exported?'✅':'⬜'}</button>
         ${t.img?`<img class="tr-thumb" src="${t.img}" onerror="this.style.display='none'"/>`:`<div class="tr-thumb" style="display:flex;align-items:center;justify-content:center;font-size:24px;background:rgba(255,255,255,.5);">${t.emoji||'💎'}</div>`}
         <div style="flex:1;min-width:0;">
           <div class="treasure-title" style="font-size:13px;margin-bottom:1px;">${t.title||''} <span class="treasure-type ${t.type}" style="margin-bottom:0;">${t.type==='person'?'🫂 人':'🎁 物'}</span></div>
@@ -2368,6 +2428,9 @@ function renderTreasureList(){
   document.querySelectorAll('#treasure-list .card-edit').forEach(b=>b.addEventListener('click',()=>{
     openTreasureForm(+b.dataset.i);
     document.getElementById('treasure-form').scrollIntoView({behavior:'smooth',block:'center'});
+  }));
+  document.querySelectorAll('#treasure-list .exp-toggle').forEach(b=>b.addEventListener('click',()=>{
+    const t=S.treasures[+b.dataset.i];t.exported=!t.exported;sv(S);renderTreasureList();syncStateDebounced();
   }));
 }
 document.getElementById('add-treasure-btn').addEventListener('click',()=>openTreasureForm(-1));
@@ -2397,18 +2460,39 @@ function renderQuoteList(){
   const box=document.getElementById('quote-list');
   box.innerHTML=S.quotes.length?S.quotes.map((q,i)=>{
     if(i===editQuoteIdx){
-      return`<div class="quote-item"><input class="tdl-in qedit-input" data-i="${i}" value="${(q||'').replace(/"/g,'&quot;')}" style="flex:1;min-width:0;"/><button class="mini-btn qedit-save" data-i="${i}" style="flex-shrink:0;">✓</button><button class="mini-btn qedit-cancel" style="flex-shrink:0;background:rgba(200,196,247,.4);color:var(--tc2);">✕</button></div>`;
+      return`<div class="quote-item" style="flex-direction:column;align-items:stretch;gap:6px;">
+        <input class="tdl-in qedit-text" value="${qText(q).replace(/"/g,'&quot;')}" placeholder="金句本文"/>
+        <input class="tdl-in qedit-desc" value="${(q.desc||'').replace(/"/g,'&quot;')}" placeholder="敘述（選填）"/>
+        <div style="display:flex;gap:6px;">
+          <input class="tdl-in qedit-link" value="${(q.link||'').replace(/"/g,'&quot;')}" placeholder="連結（選填）" style="flex:1;min-width:0;"/>
+          <button class="mini-btn qedit-save" data-i="${i}" style="flex-shrink:0;">✓</button>
+          <button class="mini-btn qedit-cancel" style="flex-shrink:0;background:rgba(200,196,247,.4);color:var(--tc2);">✕</button>
+        </div>
+      </div>`;
     }
-    return`<div class="quote-item"><div class="quote-text">"${q}"</div><button class="quote-edit" data-i="${i}" style="background:none;border:none;cursor:pointer;color:var(--tc3);font-size:13px;flex-shrink:0;">✏️</button><button class="quote-del" data-i="${i}">✕</button></div>`;
+    const link=q.link?` <a href="${q.link}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="text-decoration:none;">🔗</a>`:'';
+    return`<div class="quote-item${q.exported?' exported':''}">
+      <button class="exp-toggle" data-i="${i}" title="${q.exported?'已匯出（點取消標記）':'標記為已匯出'}">${q.exported?'✅':'⬜'}</button>
+      <div class="quote-text">"${qText(q)}"${link}${q.desc?`<div class="quote-desc">${q.desc}</div>`:''}</div>
+      <button class="quote-edit" data-i="${i}" style="background:none;border:none;cursor:pointer;color:var(--tc3);font-size:13px;flex-shrink:0;">✏️</button>
+      <button class="quote-del" data-i="${i}">✕</button>
+    </div>`;
   }).join(''):`<div style="font-size:13px;color:var(--tc3);text-align:center;padding:1rem;">還沒有收藏的金句，把讓妳有感覺的話記下來吧</div>`;
   box.querySelectorAll('.quote-del').forEach(b=>b.addEventListener('click',()=>{
     S.quotes.splice(+b.dataset.i,1);editQuoteIdx=-1;sv(S);renderQuoteList();checkAchievements();syncStateDebounced();
   }));
+  box.querySelectorAll('.exp-toggle').forEach(b=>b.addEventListener('click',()=>{
+    const q=S.quotes[+b.dataset.i];q.exported=!q.exported;sv(S);renderQuoteList();syncStateDebounced();
+  }));
   box.querySelectorAll('.quote-edit').forEach(b=>b.addEventListener('click',()=>{editQuoteIdx=+b.dataset.i;renderQuoteList();}));
   box.querySelectorAll('.qedit-save').forEach(b=>b.addEventListener('click',()=>{
-    const inp=box.querySelector('.qedit-input[data-i="'+b.dataset.i+'"]');
-    const v=inp.value.trim();
-    if(v)S.quotes[+b.dataset.i]=v;
+    const wrap=b.closest('.quote-item');
+    const t=wrap.querySelector('.qedit-text').value.trim();
+    if(!t){alert('金句本文不能空白喔');return;}
+    let link=wrap.querySelector('.qedit-link').value.trim();
+    if(link&&!/^https?:\/\//i.test(link))link='https://'+link;
+    const q=S.quotes[+b.dataset.i];
+    q.text=t;q.desc=wrap.querySelector('.qedit-desc').value.trim();q.link=link;
     editQuoteIdx=-1;sv(S);renderQuoteList();syncStateDebounced();
   }));
   box.querySelectorAll('.qedit-cancel').forEach(b=>b.addEventListener('click',()=>{editQuoteIdx=-1;renderQuoteList();}));
@@ -2417,9 +2501,17 @@ document.getElementById('quote-add-btn').addEventListener('click',()=>{
   const input=document.getElementById('quote-new-input');
   const val=input.value.trim();
   if(!val)return;
-  if(!S.quotes.includes(val)){S.quotes.push(val);sv(S);checkAchievements();syncStateDebounced();}
-  input.value='';renderQuoteList();
+  let link=(document.getElementById('quote-new-link').value||'').trim();
+  if(link&&!/^https?:\/\//i.test(link))link='https://'+link;
+  const desc=(document.getElementById('quote-new-desc').value||'').trim();
+  if(!S.quotes.some(q=>qText(q)===val)){S.quotes.push({text:val,desc:desc,link:link,exported:false});sv(S);checkAchievements();syncStateDebounced();}
+  input.value='';document.getElementById('quote-new-desc').value='';document.getElementById('quote-new-link').value='';
+  renderQuoteList();
 });
+// 金句彈窗按鈕
+document.getElementById('quote-popup-next').addEventListener('click',switchGardenQuote);
+document.getElementById('quote-popup-close').addEventListener('click',()=>{document.getElementById('quote-popup').style.display='none';});
+document.getElementById('quote-popup').addEventListener('click',e=>{if(e.target.id==='quote-popup')document.getElementById('quote-popup').style.display='none';});
 
 // garden arrows
 document.getElementById('gd-arrow-l').addEventListener('click',()=>{
@@ -2905,14 +2997,16 @@ function resItemHTML(it,ci,ii,mode){
   const btns=`<button class="support-item-del res-item-edit" data-ci="${ci}" data-ii="${ii}" title="編輯">✏️</button><button class="support-item-del res-item-del" data-ci="${ci}" data-ii="${ii}">✕</button>`;
   if(mode==='grid'){
     const visual=it.img?`<img src="${it.img}" style="width:100%;height:72px;object-fit:contain;display:block;margin-bottom:6px;"/>`:`<div style="height:72px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.4);border-radius:10px;margin-bottom:6px;">${fi(it.emoji||'1f4da',40)}</div>`;
-    return`<div class="res-gcard">
+    return`<div class="res-gcard${it.exported?' exported':''}">
+      <button class="exp-toggle res-exp" data-ci="${ci}" data-ii="${ii}" title="${it.exported?'已匯出（點取消）':'標記已匯出'}">${it.exported?'✅':'⬜'}</button>
       <div style="position:absolute;top:4px;right:6px;display:flex;gap:2px;">${btns}</div>
       ${visual}
       <div style="font-size:12px;font-weight:700;color:var(--tc);line-height:1.4;">${it.title||''} ${linkA}</div>
       ${it.desc?`<div style="font-size:11px;color:var(--tc3);line-height:1.5;margin-top:2px;">${it.desc}</div>`:''}
     </div>`;
   }
-  return`<div class="support-item-row" style="align-items:center;">
+  return`<div class="support-item-row${it.exported?' exported':''}" style="align-items:center;">
+    <button class="exp-toggle res-exp" data-ci="${ci}" data-ii="${ii}" title="${it.exported?'已匯出（點取消）':'標記已匯出'}">${it.exported?'✅':'⬜'}</button>
     ${it.img?`<img src="${it.img}" style="width:34px;height:34px;object-fit:contain;flex-shrink:0;"/>`:`<span style="flex-shrink:0;">${fi(it.emoji||'1f4da',22)}</span>`}
     <div style="flex:1;min-width:0;">
       <div>${it.title||''}</div>
@@ -2952,6 +3046,9 @@ function bindResourceEvents(){
     if(!confirm('移除這個資源？'))return;
     S.resourceCats[+b.dataset.ci].items.splice(+b.dataset.ii,1);sv(S);syncStateDebounced();
     renderResourcePage();
+  }));
+  box.querySelectorAll('.res-exp').forEach(b=>b.addEventListener('click',()=>{
+    const it=S.resourceCats[+b.dataset.ci].items[+b.dataset.ii];it.exported=!it.exported;sv(S);renderResourcePage();syncStateDebounced();
   }));
   box.querySelectorAll('.res-item-edit').forEach(b=>b.addEventListener('click',()=>{
     const ci=+b.dataset.ci,ii=+b.dataset.ii;
@@ -3112,7 +3209,7 @@ async function plantBackfill(){
     while(S.seedlings>=2){S.seedlings-=2;S.trees++;}
     e.streak=1;
   }
-  if(e.diary.quote&&e.diary.quote.trim()&&!S.quotes.includes(e.diary.quote.trim()))S.quotes.push(e.diary.quote.trim());
+  if(e.diary.quote&&e.diary.quote.trim()&&!S.quotes.some(q=>qText(q)===e.diary.quote.trim()))S.quotes.push({text:e.diary.quote.trim(),desc:'',link:'',exported:false});
   recalcStreak();
   e.streak=runEndingAt(ds,plantedSet());
   e.exp=S.exp;
@@ -3258,7 +3355,7 @@ function buildExportText(){
     if(e.photos&&e.photos.length)lines.push('📷 照片：'+e.photos.map(p=>(p.caption||'(無說明)')+' '+p.url).join(' / '));
     lines.push('');
   });
-  if(S.quotes&&S.quotes.length){lines.push('━━━ 💬 金句收藏 ━━━');S.quotes.forEach(q=>lines.push('・'+q));lines.push('');}
+  if(S.quotes&&S.quotes.length){lines.push('━━━ 💬 金句收藏 ━━━');S.quotes.forEach(q=>lines.push('・'+qText(q)+(q.link?' （'+q.link+'）':'')));lines.push('');}
   return lines.join('\n');
 }
 const _exportBtn=document.getElementById('export-txt-btn');
@@ -3270,6 +3367,32 @@ if(_exportBtn)_exportBtn.addEventListener('click',()=>{
   document.body.appendChild(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 });
+
+// ═══ 四區塊匯出（金句/資源/我的人/收藏庫）═══
+const EXPORT_META={
+  quotes:{title:'💬 金句收藏',refs:()=>S.quotes,line:q=>{let s='「'+qText(q)+'」';if(q.desc)s+='\n  '+q.desc;if(q.link)s+='\n  來源：'+q.link;return s;},render:()=>renderQuoteList()},
+  people:{title:'🐾 我的人',refs:()=>S.myPeople,line:p=>{let s='🐾 '+(p.name||'');if(p.note)s+=' — '+p.note;if(p.img)s+='\n  圖片：'+p.img;return s;},render:()=>renderPeopleList()},
+  treasures:{title:'💎 豐盛收藏庫',refs:()=>S.treasures,line:t=>{let s=(t.type==='person'?'🫂 ':'🎁 ')+(t.title||'');if(t.desc)s+='\n  '+t.desc;if(t.img)s+='\n  圖片：'+t.img;return s;},render:()=>renderTreasureList()},
+  resource:{title:'📖 我的資源',refs:()=>{const a=[];(S.resourceCats||[]).forEach(c=>(c.items||[]).forEach(it=>a.push(it)));return a;},line:it=>{const t=(typeof RESOURCE_TYPES!=='undefined')?((RESOURCE_TYPES.find(x=>x.id===it.type)||{}).labelText||''):'';let s='📖 '+(it.title||'')+(t?'（'+t+'）':'');if(it.desc)s+='\n  '+it.desc;if(it.link)s+='\n  連結：'+it.link;return s;},render:()=>renderResourcePage()}
+};
+function fallbackCopy(text){const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(e){}ta.remove();}
+function doExportCopy(kind,onlyNew){
+  const meta=EXPORT_META[kind];if(!meta)return;
+  const refs=meta.refs();
+  const targets=onlyNew?refs.filter(x=>!x.exported):refs.slice();
+  if(!targets.length){alert(onlyNew?'沒有新項目～都匯出過了 ✨':'這裡還沒有東西可以複製');return;}
+  const text=meta.title+'（'+today()+'）\n\n'+targets.map(x=>meta.line(x)).join('\n\n');
+  const done=()=>{
+    if(confirm('已複製 '+targets.length+' 則到剪貼簿 📋\n\n確定都貼進 Heptabase 了嗎？\n按「確定」標記為已匯出；按「取消」維持未匯出、下次還能再複製。')){
+      targets.forEach(x=>{x.exported=true;});sv(S);syncStateDebounced();
+    }
+    meta.render();
+  };
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(done).catch(()=>{fallbackCopy(text);done();});}
+  else{fallbackCopy(text);done();}
+}
+document.querySelectorAll('.export-new-btn').forEach(b=>b.addEventListener('click',()=>doExportCopy(b.dataset.kind,true)));
+document.querySelectorAll('.export-all-btn').forEach(b=>b.addEventListener('click',()=>doExportCopy(b.dataset.kind,false)));
 </script>
 </body>
 </html>
