@@ -261,7 +261,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
 .quote-cloud{position:absolute;top:14px;left:20px;background:rgba(255,255,255,.9);border:1.5px solid rgba(255,255,255,.95);border-radius:18px;padding:8px 16px;font-size:12px;color:var(--tc);font-style:italic;max-width:250px;box-shadow:0 4px 16px rgba(150,130,220,.2);z-index:8;animation:bobY 3.4s ease-in-out infinite;}
 .quote-cloud{cursor:grab;}
 .quote-cloud:active{cursor:grabbing;}
-.quote-cloud .qc-text{max-height:3em;overflow-y:auto;line-height:1.5;-webkit-overflow-scrolling:touch;}
+.quote-cloud .qc-text{line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .quote-cloud::after{content:'';position:absolute;bottom:-9px;left:36px;border:5px solid transparent;border-top-color:rgba(255,255,255,.9);}
 
 /* PEOPLE / TREASURE mgmt */
@@ -349,7 +349,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
 /* ── 支持系統資源書 ── */
 .book-item{display:flex;flex-direction:column;align-items:center;width:46%;pointer-events:auto;cursor:pointer;}
 .book-item .bi-icon{font-size:32px;line-height:1.1;}
-.book-item img.bi-img{width:52px;height:52px;object-fit:cover;border-radius:10px;border:2px solid rgba(255,255,255,.9);box-shadow:0 2px 8px rgba(120,90,60,.25);}
+.book-item img.bi-img{width:52px;height:52px;object-fit:contain;}
 .book-item .bi-title{font-size:11px;color:#6B5A3A;max-width:100%;text-align:center;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:3px;}
 .book-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:10;width:30px;height:30px;border-radius:50%;border:1.5px solid rgba(255,255,255,.9);background:rgba(255,255,255,.8);cursor:pointer;font-size:15px;color:#8A7048;display:none;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(120,90,40,.2);}
 .book-arrow.left{left:6px;}
@@ -617,13 +617,13 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
     <div style="position:absolute;bottom:8px;right:12px;transform:rotate(-16deg);"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/270f_3d.png" width="26" height="26" onerror="this.outerHTML='✏️'"/></div>
     <div style="position:absolute;bottom:12px;left:12px;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4a1_3d.png" width="28" height="28" onerror="this.outerHTML='💡'"/></div>
     <div style="position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);width:min(94%,600px);height:300px;filter:drop-shadow(0 8px 18px rgba(110,80,40,.3));display:flex;">
-      <div style="flex:1;background:linear-gradient(105deg,#FFFDF5 55%,#F2E8D2 100%);border-radius:14px 3px 3px 14px;border:1px solid #E4D6B8;position:relative;overflow:hidden;">
-        <div style="position:absolute;inset:0;background:repeating-linear-gradient(180deg,transparent 0 26px,rgba(180,160,120,.14) 26px 27px);"></div>
+      <div style="flex:1;background:linear-gradient(105deg,#FFFDF5 55%,#F2E8D2 100%);border-radius:14px 3px 3px 14px;border:1px solid #E4D6B8;position:relative;">
+        <div style="position:absolute;inset:0;border-radius:14px 3px 3px 14px;overflow:hidden;background:repeating-linear-gradient(180deg,transparent 0 26px,rgba(180,160,120,.14) 26px 27px);"></div>
         <div id="book-page-l" style="position:absolute;inset:14px 8px 10px 14px;display:flex;flex-wrap:wrap;align-content:flex-start;justify-content:space-around;row-gap:8px;"></div>
       </div>
       <div style="width:9px;background:linear-gradient(90deg,#D8C8A8,#B09A74,#D8C8A8);flex-shrink:0;"></div>
-      <div style="flex:1;background:linear-gradient(255deg,#FFFDF5 55%,#F2E8D2 100%);border-radius:3px 14px 14px 3px;border:1px solid #E4D6B8;position:relative;overflow:hidden;">
-        <div style="position:absolute;inset:0;background:repeating-linear-gradient(180deg,transparent 0 26px,rgba(180,160,120,.14) 26px 27px);"></div>
+      <div style="flex:1;background:linear-gradient(255deg,#FFFDF5 55%,#F2E8D2 100%);border-radius:3px 14px 14px 3px;border:1px solid #E4D6B8;position:relative;">
+        <div style="position:absolute;inset:0;border-radius:3px 14px 14px 3px;overflow:hidden;background:repeating-linear-gradient(180deg,transparent 0 26px,rgba(180,160,120,.14) 26px 27px);"></div>
         <div id="book-page-r" style="position:absolute;inset:14px 14px 10px 8px;display:flex;flex-wrap:wrap;align-content:flex-start;justify-content:space-around;row-gap:8px;"></div>
       </div>
     </div>
@@ -1019,6 +1019,12 @@ async function loadCloud(){
       });
       S.entries.sort((a,b)=>a.date<b.date?-1:1);
     }
+    // 便利貼今日TDL：跨裝置時本機推算不到，改從昨天 entry.tdl 還原
+    if(!S.todayTDL||!S.todayTDL.length){
+      const _yd=new Date();_yd.setDate(_yd.getDate()-1);const _yds=fmtLocal(_yd);
+      const _ye=S.entries.find(e=>e.date===_yds);
+      if(_ye&&Array.isArray(_ye.tdl)&&_ye.tdl.length)S.todayTDL=_ye.tdl.slice();
+    }
     // restore today's session from cloud entry if fresh device
     const te=S.entries.find(e=>e.date===today());
     if(te&&S.lastPlant===today()){
@@ -1104,6 +1110,7 @@ function makeDraggable(el,stage,onEnd){
   };
   const move=e=>{
     if(!drag)return;
+    if(e.cancelable)e.preventDefault();
     const p=xy(e),dx=p.x-sx,dy=p.y-sy;
     if(Math.abs(dx)>4||Math.abs(dy)>4)moved=true;
     let nl=ol+dx,nt=ot+dy;
@@ -2036,21 +2043,30 @@ function gdPos(key,defX,defBottom){
   if(S.gardenPos[key])return S.gardenPos[key];
   return{x:defX,bottom:defBottom};
 }
+function switchGardenQuote(){
+  const cloud=document.getElementById('garden-quote');
+  if(!cloud||!S.quotes.length)return;
+  let q=S.quotes[Math.floor(Math.random()*S.quotes.length)];
+  if(S.quotes.length>1){let g=0;while(q===cloud._cur&&g<12){q=S.quotes[Math.floor(Math.random()*S.quotes.length)];g++;}}
+  cloud._cur=q;
+  const qt=cloud.querySelector('.qc-text');
+  if(qt)qt.innerHTML=`"${q.replace(/</g,'&lt;')}"`;
+}
 function renderGarden(){
   const canvas=document.getElementById('garden-canvas');
   document.getElementById('gd-statics').innerHTML=gdStaticsHTML();
   const dyn=document.getElementById('gd-dynamics');
   dyn.innerHTML='';
 
-  // quote cloud（限2行可滑動、泡泡可拖移）
+  // quote cloud（點一下切換金句、可拖移、長句限2行）
   const cloud=document.getElementById('garden-quote');
   if(S.quotes.length){
-    const qtext=(S.quotes[Math.floor(Math.random()*S.quotes.length)]||'').replace(/</g,'&lt;');
-    cloud.innerHTML=`<div class="qc-text">"${qtext}"</div>`;
+    const q0=S.quotes[Math.floor(Math.random()*S.quotes.length)]||'';
+    cloud._cur=q0;
+    cloud.innerHTML=`<div class="qc-text">"${q0.replace(/</g,'&lt;')}"</div>`;
     cloud.style.display='block';
     if(!cloud._dragBound){
-      makeDraggable(cloud,canvas,null);
-      cloud.addEventListener('touchstart',e=>{const t=cloud.querySelector('.qc-text');if(t&&t.scrollHeight>t.clientHeight&&e.target.closest('.qc-text'))e.stopPropagation();},{passive:true,capture:true});
+      makeDraggable(cloud,canvas,(moved)=>{if(!moved)switchGardenQuote();});
       cloud._dragBound=true;
     }
   }else cloud.style.display='none';
@@ -2123,7 +2139,7 @@ function renderGarden(){
     const visual=t.img
       ?(isPerson
         ?`<img class="main" src="${t.img}" width="52" height="52" style="display:block;object-fit:contain;"/>`
-        :`<img class="main" src="${t.img}" width="52" height="52" style="border-radius:12px;object-fit:cover;border:2px solid rgba(255,255,255,.9);box-shadow:0 3px 10px rgba(120,90,200,.25);"/>`)
+        :`<img class="main" src="${t.img}" width="52" height="52" style="display:block;object-fit:contain;"/>`)
       :`<span class="main" style="font-size:44px;display:block;">${t.emoji||'💎'}</span>`;
     el.innerHTML=`<div class="sprite-label">${t.title||''}${t.desc?` · ${t.desc}`:''}${isPerson?' · 點一下切換動態':''}</div>${visual}`;
     dyn.appendChild(el);
@@ -2759,7 +2775,7 @@ function ensureResourceDefaults(){
 let bookPage=0;
 let bkDragEl=null,bkSX=0,bkSY=0,bkMoved=false,bkTap=null,bkBound=false;
 function bkStart(el,onTap,e){bkDragEl=el;bkMoved=false;bkTap=onTap;const p=e.touches?e.touches[0]:e;bkSX=p.clientX;bkSY=p.clientY;el.style.transition='none';el.style.zIndex='6';el.style.position='relative';e.preventDefault();}
-function bkMove(e){if(!bkDragEl)return;const p=e.touches?e.touches[0]:e;const dx=p.clientX-bkSX,dy=p.clientY-bkSY;if(Math.abs(dx)>4||Math.abs(dy)>4)bkMoved=true;bkDragEl.style.transform=`translate(${dx}px,${dy}px)`;}
+function bkMove(e){if(!bkDragEl)return;if(e.cancelable)e.preventDefault();const p=e.touches?e.touches[0]:e;const dx=p.clientX-bkSX,dy=p.clientY-bkSY;if(Math.abs(dx)>4||Math.abs(dy)>4)bkMoved=true;bkDragEl.style.transform=`translate(${dx}px,${dy}px)`;}
 function bkEnd(){if(!bkDragEl)return;const el=bkDragEl,moved=bkMoved,tap=bkTap;bkDragEl=null;if(!moved){el.style.transform='';el.style.zIndex='';if(tap)tap();}}
 function bindBookGlobals(){
   if(bkBound)return;bkBound=true;
@@ -2838,7 +2854,7 @@ function resItemHTML(it,ci,ii,mode){
   const linkA=it.link?`<a href="${it.link}" target="_blank" rel="noopener" style="text-decoration:none;font-size:14px;flex-shrink:0;" title="前往連結">🔗</a>`:'';
   const btns=`<button class="support-item-del res-item-edit" data-ci="${ci}" data-ii="${ii}" title="編輯">✏️</button><button class="support-item-del res-item-del" data-ci="${ci}" data-ii="${ii}">✕</button>`;
   if(mode==='grid'){
-    const visual=it.img?`<img src="${it.img}" style="width:100%;height:72px;object-fit:cover;border-radius:10px;display:block;margin-bottom:6px;"/>`:`<div style="height:72px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.4);border-radius:10px;margin-bottom:6px;">${fi(it.emoji||'1f4da',40)}</div>`;
+    const visual=it.img?`<img src="${it.img}" style="width:100%;height:72px;object-fit:contain;display:block;margin-bottom:6px;"/>`:`<div style="height:72px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.4);border-radius:10px;margin-bottom:6px;">${fi(it.emoji||'1f4da',40)}</div>`;
     return`<div class="res-gcard">
       <div style="position:absolute;top:4px;right:6px;display:flex;gap:2px;">${btns}</div>
       ${visual}
@@ -2847,7 +2863,7 @@ function resItemHTML(it,ci,ii,mode){
     </div>`;
   }
   return`<div class="support-item-row" style="align-items:center;">
-    ${it.img?`<img src="${it.img}" style="width:34px;height:34px;object-fit:cover;border-radius:8px;flex-shrink:0;"/>`:`<span style="flex-shrink:0;">${fi(it.emoji||'1f4da',22)}</span>`}
+    ${it.img?`<img src="${it.img}" style="width:34px;height:34px;object-fit:contain;flex-shrink:0;"/>`:`<span style="flex-shrink:0;">${fi(it.emoji||'1f4da',22)}</span>`}
     <div style="flex:1;min-width:0;">
       <div>${it.title||''}</div>
       ${it.desc?`<div style="font-size:11px;color:var(--tc3);">${it.desc}</div>`:''}
@@ -3123,7 +3139,7 @@ function bindViewToggle(container,rerender){
 // ═══ 資源彈窗 ═══
 function showResPopup(it){
   const t=(typeof RESOURCE_TYPES!=='undefined')?RESOURCE_TYPES.find(x=>x.id===it.type):null;
-  document.getElementById('res-popup-visual').innerHTML=it.img?`<img src="${it.img}" style="width:96px;height:96px;object-fit:cover;border-radius:16px;box-shadow:0 4px 14px rgba(120,90,200,.25);"/>`:fi(it.emoji||'1f4da',64);
+  document.getElementById('res-popup-visual').innerHTML=it.img?`<img src="${it.img}" style="width:110px;height:110px;object-fit:contain;"/>`:fi(it.emoji||'1f4da',64);
   document.getElementById('res-popup-type').innerHTML=t?`<span style="font-size:11px;background:rgba(200,196,247,.35);border-radius:999px;padding:3px 10px;color:#5A4A8A;">${fi(t.chip,13)} ${t.labelText}</span>`:'';
   document.getElementById('res-popup-title').textContent=it.title||'';
   const de=document.getElementById('res-popup-desc');
