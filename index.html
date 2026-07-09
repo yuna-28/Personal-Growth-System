@@ -972,7 +972,8 @@ async function syncState(){
       gardenPos:JSON.stringify(S.gardenPos||{}),
       supportCategories:JSON.stringify(S.supportCategories||[]),
       notifications:JSON.stringify(S.notifications||{}),
-      supportResources:JSON.stringify(S.resourceCats||[])
+      supportResources:JSON.stringify(S.resourceCats||[]),
+      todaySession:JSON.stringify({date:today(),checked:S.checked||{},tdlDone:S.tdlDone||{},todayTDL:S.todayTDL||[]})
     });
     setSync('ok','已同步 ✓');
   }catch(e){setSync('error','同步失敗，資料在本機');}
@@ -1005,6 +1006,14 @@ async function loadCloud(){
       if(d.supportCategories)S.supportCategories=parseJ(d.supportCategories,S.supportCategories||[]);
       if(d.notifications){const nf=parseJ(d.notifications,null);if(nf&&nf.presets)S.notifications=nf;}
       if(d.supportResources){const rc=parseJ(d.supportResources,null);if(Array.isArray(rc))S.resourceCats=rc;}
+      if(d.todaySession){
+        const ts=parseJ(d.todaySession,null);
+        if(ts&&ts.date===today()&&!Object.keys(S.checked||{}).length&&!Object.keys(S.tdlDone||{}).length){
+          if(ts.checked&&Object.keys(ts.checked).length)S.checked={...ts.checked};
+          if(ts.tdlDone&&Object.keys(ts.tdlDone).length)S.tdlDone={...ts.tdlDone};
+          if(Array.isArray(ts.todayTDL)&&ts.todayTDL.length&&(!S.todayTDL||!S.todayTDL.length))S.todayTDL=ts.todayTDL.slice();
+        }
+      }
     }
     if(en.ok&&Array.isArray(en.data)){
       en.data.forEach(row=>{

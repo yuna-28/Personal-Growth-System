@@ -1,19 +1,20 @@
 // ═══════════════════════════════════════════════════════
-// 格蘭朵魔法森林 GAS v2.5（新增 clearAll 完全歸零功能）
+// 格蘭朵魔法森林 GAS v2.6（state 新增 todaySession 欄：今天打勾狀態跨裝置同步）
 // ═══════════════════════════════════════════════════════
 // 【安裝步驟】
 // 1. 打開你的 Google Sheet（ID: ***REMOVED***）
 // 2. 確認有兩個分頁（沒有的話手動建立，名字要一模一樣）：
 //    ① entries — 第1列標題（12欄）：
 //       date | checked | hl | rf | gr | quote | tdl | exp | streak | tdlTotal | tdlDone | photos
-//    ② state — 第1列標題（19欄）：
+//    ② state — 第1列標題（20欄）：
 //       flowers | apples | bigApples | goldFruits | seedlings | trees |
 //       achievements | quotes | calNotes | myPeople | treasures |
 //       lastPlant | lastStreak | streak | exp | gardenPos | supportCategories |
-//       notifications | supportResources
-//    ※ 從 v2.3 升級只要做兩件事，其他欄位跟舊資料都不用動：
-//      ① entries 分頁第1列最後面（tdlDone 後面）補一欄標題 photos
-//      ② state 分頁第1列最後面（notifications 後面）補一欄標題 supportResources
+//       notifications | supportResources | todaySession
+//    ※ 從 v2.5 升級只要做一件事：
+//      state 分頁第1列最後面（supportResources 後面）補一欄標題 todaySession
+//    ※ 從更舊版升級，state 尾端依序要有：supportResources、todaySession；
+//      entries 尾端要有 photos
 // 3. 擴充功能 → Apps Script → 全選刪掉舊程式碼 → 貼上這份 → 儲存
 // 4. 部署 → 管理部署 → 編輯（鉛筆）→ 版本選「新版本」→ 部署
 //    （用「編輯現有部署」網址不會變；如果選「新增部署」網址會變，
@@ -33,7 +34,7 @@ const ENTRY_COLS = ['date','checked','hl','rf','gr','quote','tdl','exp','streak'
 const STATE_COLS = ['flowers','apples','bigApples','goldFruits','seedlings','trees',
                     'achievements','quotes','calNotes','myPeople','treasures',
                     'lastPlant','lastStreak','streak','exp','gardenPos','supportCategories',
-                    'notifications','supportResources'];
+                    'notifications','supportResources','todaySession'];
 
 // 這個函式只是用來手動觸發 Google Drive 授權，之後留著也沒關係
 function testDriveAuth(){
