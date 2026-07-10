@@ -805,6 +805,13 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
   <div class="achievement-grid" id="achievement-grid"></div>
 </div>
 <div class="gcard">
+  <div class="sec-hd" id="explog-hd" style="cursor:pointer;justify-content:space-between;">
+    <span>📊 EXP 明細</span>
+    <span id="explog-toggle" style="font-size:12px;font-weight:600;color:var(--tc3);">展開 ▸</span>
+  </div>
+  <div id="explog-body" style="display:none;"></div>
+</div>
+<div class="gcard">
   <div class="sec-hd">🌳 格蘭朵機制說明</div>
   <div style="font-size:13px;color:var(--tc);line-height:1.8;">
     <p style="margin-bottom:10px;"><b>格蘭朵不是目標管理工具，是妳正在成為自己的見證者 🌱</b><br/>活在當下、不設截止日期，數字只記錄妳已經做了多少。</p>
@@ -970,13 +977,19 @@ function defaults(){
   return{exp:0,flowers:[],apples:[],bigApples:0,goldFruits:0,seedlings:0,trees:1,
     streak:0,lastStreak:'',checked:{},diary:{hl:'',rf:'',gr:'',quote:''},
     lastPlant:'',tomorrowTDL:[],todayTDL:[],tdlDone:{},entries:[],
-    achievements:[],quotes:[],calNotes:{},myPeople:[],treasures:[],gardenPos:{},notePos:null,notifications:null,todayPhotos:[],resourceCats:null};
+    achievements:[],quotes:[],calNotes:{},myPeople:[],treasures:[],gardenPos:{},notePos:null,notifications:null,todayPhotos:[],resourceCats:null,expLog:[]};
 }
 function ld(){
   try{const r=localStorage.getItem(SK);if(r){const s=JSON.parse(r);return Object.assign(defaults(),s);}}catch(e){}
   return defaults();
 }
 function sv(s){try{localStorage.setItem(SK,JSON.stringify(s));}catch(e){}}
+function logExp(delta,reason){
+  if(!delta)return;
+  S.expLog=S.expLog||[];
+  S.expLog.push({t:Date.now(),d:delta,r:reason});
+  if(S.expLog.length>100)S.expLog=S.expLog.slice(-100);
+}
 function qText(q){return typeof q==='string'?q:((q&&q.text)||'');}
 function migQuotes(){if(Array.isArray(S.quotes))S.quotes=S.quotes.map(q=>typeof q==='string'?{text:q,desc:'',link:'',exported:false}:Object.assign({text:'',desc:'',link:'',exported:false},q));}
 let S=ld();
@@ -1026,7 +1039,8 @@ async function syncState(){
       supportCategories:JSON.stringify(S.supportCategories||[]),
       notifications:JSON.stringify(S.notifications||{}),
       supportResources:JSON.stringify(S.resourceCats||[]),
-      todaySession:JSON.stringify({date:today(),checked:S.checked||{},tdlDone:S.tdlDone||{},todayTDL:S.todayTDL||[]})
+      todaySession:JSON.stringify({date:today(),checked:S.checked||{},tdlDone:S.tdlDone||{},todayTDL:S.todayTDL||[]}),
+      expLog:JSON.stringify(S.expLog||[])
     });
     setSync('ok','已同步 ✓');
   }catch(e){setSync('error','同步失敗，資料在本機');}
@@ -1067,6 +1081,7 @@ async function loadCloud(){
           if(Array.isArray(ts.todayTDL)&&ts.todayTDL.length&&(!S.todayTDL||!S.todayTDL.length))S.todayTDL=ts.todayTDL.slice();
         }
       }
+      if(d.expLog){const _el=parseJ(d.expLog,null);if(Array.isArray(_el))S.expLog=_el;}
     }
     if(en.ok&&Array.isArray(en.data)){
       en.data.forEach(row=>{
@@ -1299,8 +1314,9 @@ function renderStickyNote(){
         ev.stopPropagation();
         const key=el.dataset.k;
         const oldExp=S.exp;
-        if(S.tdlDone[key]){delete S.tdlDone[key];S.exp=Math.max(0,S.exp-10);showExpPop(el,'-10 EXP');}
-        else{S.tdlDone[key]=true;S.exp+=10;showExpPop(el,'+10 EXP');triggerBurst(el);}
+        const _tt=(S.todayTDL||[])[+key.slice(1)]||{};const _tn=_tt.task||_tt.theme||'項目';
+        if(S.tdlDone[key]){delete S.tdlDone[key];S.exp=Math.max(0,S.exp-10);showExpPop(el,'-10 EXP');logExp(-10,'↩️ 取消 TDL：'+_tn);}
+        else{S.tdlDone[key]=true;S.exp+=10;showExpPop(el,'+10 EXP');triggerBurst(el);logExp(10,'📋 完成 TDL：'+_tn);}
         sv(S);checkLevelUp(oldExp,S.exp);renderExpBar();renderStickyNote();syncStateDebounced();
       });
     });
@@ -1379,9 +1395,9 @@ function renderHabits(){
         en.checked.splice(idx,1);
         S.exp=Math.max(0,S.exp-10);
         removeFlower(h.fc,viewDate);
-        showExpPop(c,'-10 EXP');
+        showExpPop(c,'-10 EXP');logExp(-10,'↩️ 取消 '+h.l);
       }else{
-        en.checked.push(h.k);S.exp+=10;addFlower(h.fc,viewDate);
+        en.checked.push(h.k);S.exp+=10;addFlower(h.fc,viewDate);logExp(10,'✅ '+h.l);
         triggerBurst(c);
         const ring=document.createElement('div');ring.className='chip-ring';c.appendChild(ring);setTimeout(()=>ring.remove(),500);
         showExpPop(c,'+10 EXP');
@@ -1398,9 +1414,9 @@ function renderHabits(){
       delete S.checked[h.k];
       S.exp=Math.max(0,S.exp-10);
       removeFlower(h.fc);
-      showExpPop(c,'-10 EXP');
+      showExpPop(c,'-10 EXP');logExp(-10,'↩️ 取消 '+h.l);
     }else{
-      S.checked[h.k]=true;S.exp+=10;addFlower(h.fc);
+      S.checked[h.k]=true;S.exp+=10;addFlower(h.fc);logExp(10,'✅ '+h.l);
       triggerBurst(c);
       const ring=document.createElement('div');ring.className='chip-ring';c.appendChild(ring);setTimeout(()=>ring.remove(),500);
       showExpPop(c,'+10 EXP');
@@ -1471,7 +1487,7 @@ document.getElementById('plant-btn').addEventListener('click',async()=>{
 
   const oldExp=S.exp;
   if(!replant){
-    S.apples.push('small');S.exp+=20;
+    S.apples.push('small');S.exp+=20;logExp(20,'🌱 種下今天');
     while(S.apples.length>=7){S.apples.splice(0,7);S.bigApples++;}
     while(S.bigApples>=4){S.bigApples-=4;S.goldFruits++;}
     while(S.goldFruits>=3){S.goldFruits-=3;S.seedlings++;}
@@ -2583,6 +2599,31 @@ function renderAchievements(){
     </div>`;
   }).join('');
 }
+let expLogOpen=false,expLogShowAll=false;
+function renderExpLog(){
+  const body=document.getElementById('explog-body'),tog=document.getElementById('explog-toggle');
+  if(!body)return;
+  body.style.display=expLogOpen?'block':'none';
+  if(tog)tog.textContent=expLogOpen?'收合 ▾':'展開 ▸';
+  if(!expLogOpen)return;
+  const log=(S.expLog||[]).slice().reverse();
+  if(!log.length){body.innerHTML='<div style="font-size:12px;color:var(--tc3);padding:8px 0;line-height:1.7;">開始打勾／完成 TDL／種下之後，每一筆 EXP 變化都會記在這裡 🌱<br/>（過去已賺的無法回溯，從現在開始記錄）</div>';return;}
+  const shown=expLogShowAll?log:log.slice(0,10);
+  const rows=shown.map(x=>{
+    const d=new Date(x.t),dt=`${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const pos=x.d>0;
+    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(200,196,247,.2);font-size:12px;">
+      <span style="font-family:'Baloo 2',sans-serif;font-weight:800;width:40px;flex-shrink:0;color:${pos?'#2A7A5A':'#C0708A'};">${pos?'+':''}${x.d}</span>
+      <span style="flex:1;color:var(--tc);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${x.r||''}</span>
+      <span style="color:var(--tc3);flex-shrink:0;font-size:11px;">${dt}</span>
+    </div>`;
+  }).join('');
+  const more=(!expLogShowAll&&log.length>10)?`<div id="explog-more" style="text-align:center;font-size:12px;color:#7B6FE8;cursor:pointer;padding:9px 0 2px;">展開全部（共 ${log.length} 筆）</div>`:'';
+  body.innerHTML=rows+more;
+  const mb=document.getElementById('explog-more');
+  if(mb)mb.addEventListener('click',()=>{expLogShowAll=true;renderExpLog();});
+}
+(function(){const h=document.getElementById('explog-hd');if(h)h.addEventListener('click',()=>{expLogOpen=!expLogOpen;if(!expLogOpen)expLogShowAll=false;renderExpLog();});})();
 
 // ── NAV ───────────────────────────────────────────────
 document.querySelectorAll('.nav-btn').forEach(btn=>{
@@ -2597,7 +2638,7 @@ document.querySelectorAll('.nav-btn').forEach(btn=>{
     if(p==='month')renderMonthly();
     if(p==='garden')renderGarden();
     if(p==='support'){bookPage=0;renderSupportPage();renderResourcePage();}
-    if(p==='info')renderAchievements();
+    if(p==='info'){renderAchievements();renderExpLog();}
     if(p==='settings')renderSettings();
   });
 });
@@ -3254,7 +3295,7 @@ async function plantBackfill(){
   if(planted&&!confirm('這一天已經種過了！要用目前內容更新這天的紀錄嗎？'))return;
   const oldExp=S.exp;
   if(!planted){
-    S.apples.push('small');S.exp+=20;
+    S.apples.push('small');S.exp+=20;logExp(20,'🌱 補種 '+ds.slice(5).replace('-','/'));
     while(S.apples.length>=7){S.apples.splice(0,7);S.bigApples++;}
     while(S.bigApples>=4){S.bigApples-=4;S.goldFruits++;}
     while(S.goldFruits>=3){S.goldFruits-=3;S.seedlings++;}

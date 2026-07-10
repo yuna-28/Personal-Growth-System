@@ -1,18 +1,18 @@
 // ═══════════════════════════════════════════════════════
-// 格蘭朵魔法森林 GAS v2.6（state 新增 todaySession 欄：今天打勾狀態跨裝置同步）
+// 格蘭朵魔法森林 GAS v2.7（state 新增 expLog 欄：EXP 明細跨裝置同步）
 // ═══════════════════════════════════════════════════════
 // 【安裝步驟】
 // 1. 打開你的 Google Sheet（ID: ***REMOVED***）
 // 2. 確認有兩個分頁（沒有的話手動建立，名字要一模一樣）：
 //    ① entries — 第1列標題（12欄）：
 //       date | checked | hl | rf | gr | quote | tdl | exp | streak | tdlTotal | tdlDone | photos
-//    ② state — 第1列標題（20欄）：
+//    ② state — 第1列標題（21欄）：
 //       flowers | apples | bigApples | goldFruits | seedlings | trees |
 //       achievements | quotes | calNotes | myPeople | treasures |
 //       lastPlant | lastStreak | streak | exp | gardenPos | supportCategories |
-//       notifications | supportResources | todaySession
-//    ※ 從 v2.5 升級只要做一件事：
-//      state 分頁第1列最後面（supportResources 後面）補一欄標題 todaySession
+//       notifications | supportResources | todaySession | expLog
+//    ※ 從 v2.6 升級只要做一件事：
+//      state 分頁第1列最後面（todaySession 後面）補一欄標題 expLog
 //    ※ 從更舊版升級，state 尾端依序要有：supportResources、todaySession；
 //      entries 尾端要有 photos
 // 3. 擴充功能 → Apps Script → 全選刪掉舊程式碼 → 貼上這份 → 儲存
@@ -34,7 +34,7 @@ const ENTRY_COLS = ['date','checked','hl','rf','gr','quote','tdl','exp','streak'
 const STATE_COLS = ['flowers','apples','bigApples','goldFruits','seedlings','trees',
                     'achievements','quotes','calNotes','myPeople','treasures',
                     'lastPlant','lastStreak','streak','exp','gardenPos','supportCategories',
-                    'notifications','supportResources','todaySession'];
+                    'notifications','supportResources','todaySession','expLog'];
 
 // 這個函式只是用來手動觸發 Google Drive 授權，之後留著也沒關係
 function testDriveAuth(){
