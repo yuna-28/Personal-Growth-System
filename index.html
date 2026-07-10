@@ -170,6 +170,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
 .week-diary-full{font-size:12px;color:var(--tc2);margin-top:6px;background:rgba(255,255,255,.4);border-radius:10px;padding:8px 10px;line-height:1.6;}
 .week-diary-full b{color:var(--tc);}
 .empty-state{text-align:center;padding:2rem 1rem;color:var(--tc3);font-size:13px;line-height:2;}
+.witness-card{background:linear-gradient(135deg,rgba(159,225,203,.28),rgba(200,196,247,.22));border:1.5px solid rgba(255,255,255,.75);border-radius:20px;padding:14px 16px;margin-bottom:13px;font-size:13px;line-height:1.85;color:var(--tc);box-shadow:var(--gs);}
 
 /* PERIOD NAV */
 .period-nav{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.55);border:1.5px solid rgba(255,255,255,.8);border-radius:16px;padding:8px 6px;margin-top:4px;margin-bottom:10px;box-shadow:var(--nm);}
@@ -552,7 +553,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
   </div>
   <div class="col-tdl">
     <div class="gcard">
-      <div class="sec-hd"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f319_3d.png" width="19" height="19"/> 明天 TDL</div>
+      <div class="sec-hd"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f319_3d.png" width="19" height="19"/> <span id="tdl-title">明天 TDL</span></div>
       <div id="tdl-rows"></div>
       <button id="tdl-add" style="background:none;border:1.5px dashed rgba(160,140,220,.35);border-radius:11px;padding:7px 12px;font-family:'Quicksand',sans-serif;font-size:12px;color:var(--tc3);cursor:pointer;width:100%;text-align:center;margin-top:2px;">＋ 新增</button>
     </div>
@@ -560,6 +561,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
 </div>
 
 <button class="liq-btn" id="plant-btn"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/2728_3d.png" width="17" height="17"/> 種下今天</button>
+<button class="ghost-btn" id="draft-btn">💾 儲存草稿（先存不種）</button>
 <button class="ghost-btn" id="copy-btn"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4cb_3d.png" width="15" height="15"/> 複製今日紀錄給 Claude</button>
 </div>
 
@@ -571,6 +573,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
   <button class="period-arrow" id="wk-next">›</button>
 </div>
 <div id="wk-jump-today" class="jump-today-btn" style="display:none;">回到本週</div>
+<div class="witness-card" id="wk-witness"></div>
 
 <div class="gcard">
   <div class="sec-hd"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4c5_3d.png" width="19" height="19"/> 週回顧</div>
@@ -587,6 +590,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
 </div>
 
 <div class="gcard"><div class="sec-hd">🍯 距離下一階段</div><div id="wk-fruit-progress"></div></div>
+<div class="gcard"><div class="sec-hd">🍩 TDL 完成率</div><div id="wk-donut"></div></div>
 <div class="gcard"><div class="sec-hd">📈 每日 TDL 達成率</div><div id="wk-trend"></div></div>
 <div class="gcard"><div class="sec-hd">🌿 習慣分佈</div><div id="wk-dist"></div></div>
 <div class="gcard"><div class="sec-hd">✨ 身份進度</div><div id="wk-identity"></div></div>
@@ -605,6 +609,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
   <button class="period-arrow" id="mo-next">›</button>
 </div>
 <div id="mo-jump-today" class="jump-today-btn" style="display:none;">回到本月</div>
+<div class="witness-card" id="mo-witness"></div>
 
 <div class="gcard">
   <div class="sec-hd"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4c6_3d.png" width="19" height="19"/> 月回顧</div>
@@ -619,6 +624,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
   </div>
 </div>
 
+<div class="gcard"><div class="sec-hd">🍩 TDL 完成率</div><div id="mo-donut"></div></div>
 <div class="gcard"><div class="sec-hd">🍯 距離下一階段</div><div id="mo-fruit-progress"></div></div>
 <div class="gcard"><div class="sec-hd">📅 星期幾比較容易完成？</div><div id="mo-weekday-dist"></div></div>
 <div class="gcard"><div class="sec-hd">🌿 習慣分佈</div><div id="mo-dist"></div></div>
@@ -1081,14 +1087,15 @@ async function loadCloud(){
       const _ye=S.entries.find(e=>e.date===_yds);
       if(_ye&&Array.isArray(_ye.tdl)&&_ye.tdl.length)S.todayTDL=_ye.tdl.slice();
     }
-    // restore today's session from cloud entry if fresh device
+    // restore today's session from cloud entry（草稿或已種下都還原，本機空才採用）
     const te=S.entries.find(e=>e.date===today());
-    if(te&&S.lastPlant===today()){
-      if(!Object.keys(S.checked).length)te.checked.forEach(k=>S.checked[k]=true);
-      if(!S.diary.hl&&!S.diary.rf&&!S.diary.gr)S.diary={...te.diary};
-      if(!S.tomorrowTDL.length)S.tomorrowTDL=te.tdl||[];
+    if(te){
+      if(!Object.keys(S.checked).length&&Array.isArray(te.checked))te.checked.forEach(k=>S.checked[k]=true);
+      if(!S.diary.hl&&!S.diary.rf&&!S.diary.gr&&te.diary)S.diary={...te.diary};
+      if(!S.tomorrowTDL.length&&Array.isArray(te.tdl))S.tomorrowTDL=te.tdl.slice();
       if(!(S.todayPhotos||[]).length&&Array.isArray(te.photos))S.todayPhotos=te.photos.slice();
     }
+    if(tdlEditCtx==='today'&&S.tomorrowTDL.length)tdlRows=S.tomorrowTDL.map(r=>({...r,confirmed:r.confirmed||false}));
     sv(S);renderAll();
     setSync('ok','已同步 ✓');if(typeof hideLoadSkeleton==='function')hideLoadSkeleton();
   }catch(e){setSync('error','無法連線，使用本機資料');if(typeof hideLoadSkeleton==='function')hideLoadSkeleton();}
@@ -1137,7 +1144,7 @@ function unlockAchievement(id){
   }
 }
 function checkAchievements(){
-  if(S.entries.length>=1)unlockAchievement('first_plant');
+  if(typeof plantedSet==='function'?plantedSet().size>=1:S.entries.length>=1)unlockAchievement('first_plant');
   if(S.streak>=3)unlockAchievement('streak_3');
   if(S.streak>=7)unlockAchievement('streak_7');
   if(S.streak>=30)unlockAchievement('streak_30');
@@ -1408,19 +1415,29 @@ function renderHabits(){
 
 // ── TOMORROW TDL ──────────────────────────────────────
 let tdlRows=S.tomorrowTDL.length?S.tomorrowTDL.map(r=>({...r,confirmed:r.confirmed||false})):[{theme:'',task:'',confirmed:false},{theme:'',task:'',confirmed:false},{theme:'',task:'',confirmed:false}];
+let tdlEditCtx='today',backfillRows=[];
+function curRows(){return tdlEditCtx==='today'?tdlRows:backfillRows;}
+function persistTdlIfBackfill(){
+  if(tdlEditCtx&&tdlEditCtx!=='today'){
+    const en=getOrCreateEntry(tdlEditCtx);
+    en.tdl=backfillRows.filter(r=>r.theme||r.task).map(r=>({theme:r.theme,task:r.task}));
+    sv(S);syncEntryDebounced();
+  }
+}
 function renderTDL(){
-  document.getElementById('tdl-rows').innerHTML=tdlRows.map((r,i)=>`
+  const rows=curRows();const showConfirm=(tdlEditCtx==='today');
+  document.getElementById('tdl-rows').innerHTML=rows.map((r,i)=>`
     <div class="tdl-row-wrap${r.confirmed?' confirmed-row':''}">
       <input class="tdl-in" placeholder="主題" value="${(r.theme||'').replace(/"/g,'&quot;')}" data-i="${i}" data-f="theme" style="width:75px;flex-shrink:0;"/>
-      <input class="tdl-in" placeholder="明日目標" value="${(r.task||'').replace(/"/g,'&quot;')}" data-i="${i}" data-f="task" style="flex:1;min-width:0;"/>
-      <button class="tdl-confirm-btn${r.confirmed?' confirmed':''}" data-i="${i}" title="確認加入明天">${r.confirmed?'⭐':'✓'}</button>
+      <input class="tdl-in" placeholder="${showConfirm?'明日目標':'目標'}" value="${(r.task||'').replace(/"/g,'&quot;')}" data-i="${i}" data-f="task" style="flex:1;min-width:0;"/>
+      ${showConfirm?`<button class="tdl-confirm-btn${r.confirmed?' confirmed':''}" data-i="${i}" title="確認加入明天">${r.confirmed?'⭐':'✓'}</button>`:''}
       <button class="tdl-del-btn" data-i="${i}" title="刪除">✕</button>
     </div>`).join('');
-  document.querySelectorAll('#tdl-rows input').forEach(el=>el.addEventListener('input',()=>{tdlRows[+el.dataset.i][el.dataset.f]=el.value;}));
-  document.querySelectorAll('#tdl-rows .tdl-confirm-btn').forEach(b=>b.addEventListener('click',()=>{tdlRows[+b.dataset.i].confirmed=!tdlRows[+b.dataset.i].confirmed;renderTDL();}));
-  document.querySelectorAll('#tdl-rows .tdl-del-btn').forEach(b=>b.addEventListener('click',()=>{tdlRows.splice(+b.dataset.i,1);renderTDL();}));
+  document.querySelectorAll('#tdl-rows input').forEach(el=>el.addEventListener('input',()=>{curRows()[+el.dataset.i][el.dataset.f]=el.value;persistTdlIfBackfill();}));
+  document.querySelectorAll('#tdl-rows .tdl-confirm-btn').forEach(b=>b.addEventListener('click',()=>{curRows()[+b.dataset.i].confirmed=!curRows()[+b.dataset.i].confirmed;renderTDL();}));
+  document.querySelectorAll('#tdl-rows .tdl-del-btn').forEach(b=>b.addEventListener('click',()=>{curRows().splice(+b.dataset.i,1);persistTdlIfBackfill();renderTDL();}));
 }
-document.getElementById('tdl-add').addEventListener('click',()=>{tdlRows.push({theme:'',task:'',confirmed:false});renderTDL();});
+document.getElementById('tdl-add').addEventListener('click',()=>{curRows().push({theme:'',task:'',confirmed:false});persistTdlIfBackfill();renderTDL();});
 
 // ── DIARY autosave ────────────────────────────────────
 ['hl','rf','gr','quote'].forEach(k=>{
@@ -1660,34 +1677,64 @@ function renderHighlight(cardId,elId,highlights){
   document.getElementById(elId).innerHTML=`<div class="highlight-quote-box">${pick.type} "${pick.text}"<span class="hq-date">${d.getMonth()+1}/${d.getDate()}</span></div>`;
 }
 function periodStats(dates){
-  let days=0,habits=0,tdlDoneSum=0,tdlTotalSum=0;
+  let days=0,habits=0,tdlDoneSum=0,tdlTotalSum=0,diaryDays=0;
   const habitCounts={};HABITS.forEach(h=>habitCounts[h.k]=0);
   const diaryHighlights=[];
   dates.forEach(ds=>{
-    const e=S.entries.find(x=>x.date===ds);
-    if(e){
+    const isToday=ds===today();
+    let ck,dia,tdlT,tdlD;
+    if(isToday){
+      // 今天一律用即時資料（不管是否已種下/草稿）
+      ck=Object.keys(S.checked);dia=S.diary;
+      tdlT=(S.todayTDL||[]).length;tdlD=Object.keys(S.tdlDone).length;
+      if(!(ck.length||dia.hl||dia.rf||dia.gr||S.lastPlant===today()))return;
       days++;
-      const ck=e.checked||[];habits+=ck.length;
-      ck.forEach(k=>{habitCounts[k]=(habitCounts[k]||0)+1;});
-      if(e.tdlTotal){tdlTotalSum+=e.tdlTotal;tdlDoneSum+=e.tdlDone||0;}
-      if(e.diary){
-        if(e.diary.hl)diaryHighlights.push({date:ds,text:e.diary.hl,type:'🌟'});
-        if(e.diary.rf)diaryHighlights.push({date:ds,text:e.diary.rf,type:'📖'});
-        if(e.diary.gr)diaryHighlights.push({date:ds,text:e.diary.gr,type:'🥹'});
-      }
-    }else if(ds===today()){
-      const ck=Object.keys(S.checked);
-      if(ck.length)days++;
-      habits+=ck.length;
-      ck.forEach(k=>{habitCounts[k]=(habitCounts[k]||0)+1;});
-      tdlTotalSum+=(S.todayTDL||[]).length;tdlDoneSum+=Object.keys(S.tdlDone).length;
-      const d=S.diary;
-      if(d.hl)diaryHighlights.push({date:ds,text:d.hl,type:'🌟'});
-      if(d.rf)diaryHighlights.push({date:ds,text:d.rf,type:'📖'});
-      if(d.gr)diaryHighlights.push({date:ds,text:d.gr,type:'🥹'});
+    }else{
+      const e=S.entries.find(x=>x.date===ds);
+      if(!e||(+e.streak||0)<1)return; // 沒紀錄或草稿(未種下) → 不計入
+      days++;
+      ck=e.checked||[];dia=e.diary||{};tdlT=e.tdlTotal||0;tdlD=e.tdlDone||0;
+    }
+    habits+=ck.length;ck.forEach(k=>{habitCounts[k]=(habitCounts[k]||0)+1;});
+    if(tdlT){tdlTotalSum+=tdlT;tdlDoneSum+=tdlD;}
+    if(dia&&(dia.hl||dia.rf||dia.gr))diaryDays++;
+    if(dia){
+      if(dia.hl)diaryHighlights.push({date:ds,text:dia.hl,type:'🌟'});
+      if(dia.rf)diaryHighlights.push({date:ds,text:dia.rf,type:'📖'});
+      if(dia.gr)diaryHighlights.push({date:ds,text:dia.gr,type:'🥹'});
     }
   });
-  return{days,habits,exp:habits*10+days*20,tdlDoneSum,tdlTotalSum,habitCounts,diaryHighlights};
+  return{days,habits,exp:habits*10+days*20,tdlDoneSum,tdlTotalSum,habitCounts,diaryHighlights,diaryDays};
+}
+// 溫柔見證小結
+function witnessText(cur,label){
+  if(!cur.days)return `${label}還沒有紀錄，隨時回來都可以，格蘭朵在這裡等妳 🌱`;
+  let topH=null,topN=0;
+  HABITS.forEach(h=>{const n=cur.habitCounts[h.k]||0;if(n>topN){topN=n;topH=h;}});
+  const tails=['妳正穩穩地在成為自己 🌱','每一天都算數，妳做得很好 💛','妳一直都在，這就很了不起 ✨','謝謝妳這樣照顧自己 🤍','光是願意記錄，就是溫柔 🌷'];
+  const parts=[`${label}妳記錄了 ${cur.days} 天`];
+  if(topH&&topN>0)parts.push(`最常投入的是「${topH.l}」（${topN}次）`);
+  if(cur.diaryDays>0)parts.push(`寫了 ${cur.diaryDays} 天小記`);
+  return '🌱 '+parts.join('、')+'。'+tails[cur.days%tails.length];
+}
+// TDL 完成率甜甜圈 + 小記書寫率
+function renderReviewDonut(elId,cur){
+  const el=document.getElementById(elId);if(!el)return;
+  const total=cur.tdlTotalSum,done=cur.tdlDoneSum;
+  const pct=total?Math.round(done/total*100):0;
+  const ring=total?`conic-gradient(#5DCAA5 ${pct*3.6}deg, rgba(200,196,247,.28) 0)`:'rgba(200,196,247,.28)';
+  el.innerHTML=`<div style="display:flex;align-items:center;gap:16px;">
+    <div style="width:94px;height:94px;border-radius:50%;background:${ring};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+      <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;">
+        <div style="font-family:'Baloo 2',sans-serif;font-size:20px;font-weight:800;color:#2A7A5A;">${total?pct+'%':'—'}</div>
+        <div style="font-size:9px;color:var(--tc3);">TDL完成</div>
+      </div>
+    </div>
+    <div style="flex:1;font-size:12px;color:var(--tc2);line-height:2;">
+      <div>✅ TDL 完成 <b style="color:var(--tc);">${done}</b> / ${total||0} 項</div>
+      <div>📖 小記：這段寫了 <b style="color:var(--tc);">${cur.diaryDays}</b> / ${cur.days} 天</div>
+    </div>
+  </div>`;
 }
 
 // ── WEEKLY ────────────────────────────────────────────
@@ -1709,6 +1756,8 @@ function renderWeekly(){
   document.getElementById('wk-flowers').textContent=cur.habits;
   document.getElementById('wk-tdlrate').textContent=cur.tdlTotalSum?`${cur.tdlDoneSum}/${cur.tdlTotalSum} (${Math.round(cur.tdlDoneSum/cur.tdlTotalSum*100)}%)`:'-';
 
+  document.getElementById('wk-witness').innerHTML=witnessText(cur,'這週');
+  renderReviewDonut('wk-donut',cur);
   renderFruitProgress('wk-fruit-progress');
   renderHabitDist('wk-dist',cur.habitCounts);
   renderIdentityProgress('wk-identity',cur.habitCounts);
@@ -1795,6 +1844,8 @@ function renderMonthly(){
   document.getElementById('mo-exp').textContent=cur.exp;
   document.getElementById('mo-tdlrate').textContent=cur.tdlTotalSum?`${cur.tdlDoneSum}/${cur.tdlTotalSum} (${Math.round(cur.tdlDoneSum/cur.tdlTotalSum*100)}%)`:'-';
 
+  document.getElementById('mo-witness').innerHTML=witnessText(cur,'這個月');
+  renderReviewDonut('mo-donut',cur);
   renderFruitProgress('mo-fruit-progress');
   renderHabitDist('mo-dist',cur.habitCounts);
   renderIdentityProgress('mo-identity',cur.habitCounts);
@@ -3198,6 +3249,7 @@ async function plantBackfill(){
   const e=getOrCreateEntry(ds);
   const hasContent=(e.checked&&e.checked.length)||e.diary.hl||e.diary.rf||e.diary.gr||(e.photos&&e.photos.length);
   if(!hasContent){alert('這一天還是空的，先勾個習慣或寫點小記再種下 📖');return;}
+  if(tdlEditCtx===ds)e.tdl=backfillRows.filter(r=>r.theme||r.task).map(r=>({theme:r.theme,task:r.task}));
   const planted=(+e.streak||0)>=1;
   if(planted&&!confirm('這一天已經種過了！要用目前內容更新這天的紀錄嗎？'))return;
   const oldExp=S.exp;
@@ -3228,7 +3280,12 @@ function applyViewDate(switchPage){
   const note=document.getElementById('sticky-note');
   if(note)note.style.display=isT?'':'none';
   const tdlCol=document.querySelector('.home-row2 .col-tdl');
-  if(tdlCol)tdlCol.style.display=isT?'':'none';
+  if(tdlCol)tdlCol.style.display=''; // TDL 卡今天與過去日期都可編輯
+  if(isT){tdlEditCtx='today';}
+  else{tdlEditCtx=viewDate;const _en=S.entries.find(x=>x.date===viewDate);backfillRows=(_en&&Array.isArray(_en.tdl)&&_en.tdl.length)?_en.tdl.map(r=>({theme:r.theme,task:r.task,confirmed:false})):[{theme:'',task:'',confirmed:false}];}
+  const tt=document.getElementById('tdl-title');
+  if(tt){if(isT)tt.textContent='明天 TDL';else{const _dd=new Date(viewDate+'T00:00:00');tt.textContent=`${_dd.getMonth()+1}/${_dd.getDate()} 的 TDL`;}}
+  if(typeof renderTDL==='function')renderTDL();
   const copyBtn=document.getElementById('copy-btn');
   if(copyBtn)copyBtn.style.display=isT?'':'none';
   const bn=document.getElementById('backfill-banner');
@@ -3252,6 +3309,24 @@ function applyViewDate(switchPage){
     window.scrollTo(0,0);
   }
 }
+async function saveDraft(){
+  if(!ctxIsToday())return;
+  const d=S.diary;
+  const all=tdlRows.filter(r=>r.theme||r.task);
+  S.tomorrowTDL=all.map(r=>({theme:r.theme,task:r.task}));
+  const existing=S.entries.find(e=>e.date===today());
+  const keepStreak=existing?(+existing.streak||0):0;
+  const entry={date:today(),checked:[...Object.keys(S.checked)],diary:{...d},exp:S.exp,streak:keepStreak,tdl:S.tomorrowTDL,tdlTotal:(S.todayTDL||[]).length,tdlDone:Object.keys(S.tdlDone).length,photos:(S.todayPhotos||[])};
+  const idx=S.entries.findIndex(e=>e.date===today());
+  if(idx>=0)S.entries[idx]=entry;else S.entries.push(entry);
+  sv(S);
+  const b=document.getElementById('draft-btn');const orig=b.innerHTML;
+  b.innerHTML='💾 草稿已存 ✓';b.disabled=true;
+  setTimeout(()=>{b.innerHTML=orig;b.disabled=false;},2000);
+  try{await syncEntryFor(today());await syncState();}catch(e){}
+}
+const _draftBtn=document.getElementById('draft-btn');
+if(_draftBtn)_draftBtn.addEventListener('click',saveDraft);
 document.getElementById('backfill-exit').addEventListener('click',()=>{
   viewDate=null;
   applyViewDate(true);
