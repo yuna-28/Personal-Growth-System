@@ -3636,14 +3636,14 @@ function renderTodayEvents(){
   if(!card)return;
   if(!calConnected){card.style.display='none';return;}
   card.style.display='';
-  const evs=calEvents[today()]||[];
+  const evs=(calEvents[today()]||[]).filter(ev=>!isReminderEvent(ev));
   document.getElementById('today-events-list').innerHTML=evs.length?evs.map(ev=>calEvRow(ev,false)).join(''):'<div style="font-size:12px;color:var(--tc3);padding:2px 0;">今天沒有安排，自由的一天 🌿</div>';
 }
 function renderCalDayPanel(ds){
   const form=document.getElementById('pop-cal-form');
   form.style.display='block';
   const d=new Date(ds+'T00:00:00');
-  const evs=calEvents[ds]||[];
+  const evs=(calEvents[ds]||[]).filter(ev=>!isReminderEvent(ev));
   const defRemind=localStorage.getItem('grandol_cal_remind')||'10';
   form.innerHTML='<div style="border-top:1px solid rgba(200,196,247,.3);margin:12px 0 0;padding-top:12px;">'+
     '<div style="font-family:\'Baloo 2\',sans-serif;font-size:13px;font-weight:800;color:var(--tc);margin-bottom:8px;">📅 '+(d.getMonth()+1)+'/'+d.getDate()+' 週'+wdArr[d.getDay()]+' 的行程</div>'+
