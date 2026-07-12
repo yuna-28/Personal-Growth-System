@@ -540,6 +540,10 @@ button{-webkit-tap-highlight-color:transparent;}
       </div>
       <p style="text-align:center;font-size:11px;color:var(--tc3);margin-top:6px;position:relative;z-index:1;">點小狗切換動態 · 小狗/花/便利貼都可拖移</p>
     </div>
+    <div class="gcard" id="today-events-card" style="display:none;">
+      <div class="sec-hd" style="justify-content:space-between;margin-bottom:8px;"><span>📅 今日行程</span><button id="today-event-add" title="新增今天的行程" style="width:26px;height:26px;border:none;border-radius:999px;background:rgba(139,127,232,.15);color:#534AB7;font-size:16px;cursor:pointer;line-height:1;">＋</button></div>
+      <div id="today-events-list"></div>
+    </div>
   </div>
   <div class="col-habits">
     <div class="gcard">
@@ -878,6 +882,24 @@ button{-webkit-tap-highlight-color:transparent;}
   <p style="font-size:11px;color:var(--tc3);line-height:1.7;margin-top:10px;">📱 iPhone 需 iOS 16.4 以上，且要先用 Safari 把格蘭朵「加入主畫面」安裝成 APP，從主畫面開啟才能使用通知。提醒在 APP 開著（或掛在背景）時最可靠，完全關閉太久系統可能不會觸發。</p>
 </div>
 
+<div class="gcard">
+  <div class="sec-hd">📅 Google 日曆</div>
+  <div class="set-row"><span style="flex:1;">預設提醒</span>
+    <select id="cal-remind-sel" class="time-in">
+      <option value="0">準時</option><option value="5">提前5分</option><option value="10">提前10分</option><option value="30">提前30分</option><option value="60">提前1小時</option><option value="1440">提前1天</option>
+    </select>
+  </div>
+  <div class="set-row"><span style="flex:1;">連線狀態</span><span id="cal-status" style="font-size:12px;color:var(--tc3);">尚未連線</span></div>
+  <div style="font-size:12px;font-weight:700;color:var(--tc2);margin:10px 0 4px;">通行碼（每台裝置輸入一次）</div>
+  <div style="display:flex;gap:8px;">
+    <input class="tdl-in" id="cal-code-input" type="password" placeholder="輸入 GAS 裡設定的通行碼" style="flex:1;min-width:0;"/>
+    <button class="mini-btn" id="cal-code-save" style="flex-shrink:0;">儲存</button>
+  </div>
+  <p style="font-size:11px;color:var(--tc3);line-height:1.7;margin-top:6px;">通行碼只存在這台裝置，需與 GAS 程式碼裡的 APP_CODE 相同（沒設定就留空）。</p>
+  <button class="liq-btn" id="cal-sync-reminders" style="margin-top:10px;font-size:13px;padding:11px;">🔔 把每日提醒同步到 Google 日曆</button>
+  <p style="font-size:11px;color:var(--tc3);line-height:1.7;margin-bottom:0;">按一次開始：提醒會建成日曆重複事件（App 關著也會響）。之後修改提醒時間會自動重新同步。</p>
+</div>
+
 <div class="gcard" id="set-account-card" style="display:none;">
   <div class="sec-hd">📊 帳號與資料</div>
   <div style="font-size:12px;font-weight:700;color:var(--tc2);margin-bottom:4px;">Google Sheet ID（唯讀）</div>
@@ -929,6 +951,7 @@ button{-webkit-tap-highlight-color:transparent;}
 const DEFAULT_GAS_URL='https://script.google.com/macros/s/AKfycbw_gbuZtYiZjBusfWTNHPlOB20PMJLcb700u6pd5MIqoX7pCOAnthTjxym66nHTOK8G/exec';
 let GAS_URL=localStorage.getItem('grandol_gas_url')||DEFAULT_GAS_URL;
 const SHEET_ID='***REMOVED***';
+function codeQ(){const c=localStorage.getItem('grandol_code')||'';return c?'&code='+encodeURIComponent(c):'';}
 const CDN='https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/';
 const fi=(c,s=20)=>`<img src="${CDN}${c}_3d.png" width="${s}" height="${s}" style="display:inline-block;vertical-align:middle;" onerror="this.style.display='none'"/>`;
 // 圖片讀取失敗時安全退回 emoji 圖（不能用字串拼 onerror，引號會炸出亂碼）
@@ -1035,7 +1058,7 @@ function setSync(state,msg){
   }
 }
 async function gasPost(action,payload){
-  return fetch(GAS_URL+'?action='+action,{method:'POST',body:JSON.stringify(payload),headers:{'Content-Type':'text/plain'}});
+  return fetch(GAS_URL+'?action='+action+codeQ(),{method:'POST',body:JSON.stringify(payload),headers:{'Content-Type':'text/plain'}});
 }
 async function syncEntry(entry){
   setSync('syncing','同步中...');
@@ -1069,10 +1092,15 @@ async function loadCloud(){
   setSync('syncing','載入雲端資料...');
   try{
     const [stRes,enRes]=await Promise.all([
-      fetch(GAS_URL+'?action=getState'),
-      fetch(GAS_URL+'?action=getEntries')
+      fetch(GAS_URL+'?action=getState'+codeQ()),
+      fetch(GAS_URL+'?action=getEntries'+codeQ())
     ]);
     const st=await stRes.json(),en=await enRes.json();
+    if(st&&st.ok===false&&/unauthorized/.test(st.error||'')){
+      setSync('error','需要通行碼：請到設定輸入');
+      if(typeof hideLoadSkeleton==='function')hideLoadSkeleton();
+      return;
+    }
     if(st.ok&&st.data&&Object.keys(st.data).length){
       const d=st.data;
       S.flowers=parseJ(d.flowers,S.flowers);
@@ -1571,7 +1599,7 @@ document.getElementById('copy-btn').addEventListener('click',()=>{
 let popCalYear=new Date().getFullYear(),popCalMonth=new Date().getMonth();
 function toggleCalPopup(){
   const popup=document.getElementById('cal-popup');
-  if(popup.style.display==='none'){popup.style.display='block';renderPopCal();}
+  if(popup.style.display==='none'){popup.style.display='block';renderPopCal();if(typeof fetchCalMonth==='function')fetchCalMonth(popCalYear,popCalMonth);}
   else{popup.style.display='none';document.getElementById('pop-cal-form').style.display='none';}
 }
 document.getElementById('cal-popup-btn').addEventListener('click',toggleCalPopup);
@@ -1591,6 +1619,7 @@ function renderPopCal(){
     html+=`<div class="cal-day${isToday?' today':''}${hasRecord?' has-record':''}" data-date="${ds}">
       ${day}${hasRecord?'<div class="cal-dot"></div>':''}
       ${hasNote?'<div style="position:absolute;top:2px;right:2px;width:4px;height:4px;border-radius:50%;background:#FAC775;"></div>':''}
+      ${(typeof calEvents!=='undefined'&&calEvents[ds]&&calEvents[ds].length)?'<div style="position:absolute;bottom:3px;right:3px;width:5px;height:5px;border-radius:50%;background:#7F77DD;"></div>':''}
     </div>`;
   }
   document.getElementById('pop-cal-grid').innerHTML=html;
@@ -1599,13 +1628,13 @@ function renderPopCal(){
   });
 }
 function selectPopCalDate(ds){
-  if(ds>today()){alert('還沒到那天喔 🌱');return;}
-  viewDate=(ds===today())?null:ds;
+  if(ds>=today()){renderCalDayPanel(ds);return;}
+  viewDate=ds;
   toggleCalPopup();
   applyViewDate(true);
 }
-document.getElementById('pop-cal-prev').addEventListener('click',()=>{popCalMonth--;if(popCalMonth<0){popCalMonth=11;popCalYear--;}renderPopCal();document.getElementById('pop-cal-form').style.display='none';});
-document.getElementById('pop-cal-next').addEventListener('click',()=>{popCalMonth++;if(popCalMonth>11){popCalMonth=0;popCalYear++;}renderPopCal();document.getElementById('pop-cal-form').style.display='none';});
+document.getElementById('pop-cal-prev').addEventListener('click',()=>{popCalMonth--;if(popCalMonth<0){popCalMonth=11;popCalYear--;}renderPopCal();document.getElementById('pop-cal-form').style.display='none';if(typeof fetchCalMonth==='function')fetchCalMonth(popCalYear,popCalMonth);});
+document.getElementById('pop-cal-next').addEventListener('click',()=>{popCalMonth++;if(popCalMonth>11){popCalMonth=0;popCalYear++;}renderPopCal();document.getElementById('pop-cal-form').style.display='none';if(typeof fetchCalMonth==='function')fetchCalMonth(popCalYear,popCalMonth);});
 
 // ── TDL RATE ──────────────────────────────────────────
 function calcTDLRate(dates){
@@ -2785,10 +2814,10 @@ function renderNotifLists(){
       <input type="time" class="time-in preset-time" data-i="${i}" value="${p.time}"/>
     </div>`).join('');
   pbox.querySelectorAll('.preset-tgl').forEach(el=>el.addEventListener('change',()=>{
-    n.presets[+el.dataset.i].on=el.checked;sv(S);syncStateDebounced();
+    n.presets[+el.dataset.i].on=el.checked;sv(S);syncStateDebounced();if(typeof scheduleRemindersSync==='function')scheduleRemindersSync();
   }));
   pbox.querySelectorAll('.preset-time').forEach(el=>el.addEventListener('change',()=>{
-    if(el.value){n.presets[+el.dataset.i].time=el.value;sv(S);syncStateDebounced();}
+    if(el.value){n.presets[+el.dataset.i].time=el.value;sv(S);syncStateDebounced();if(typeof scheduleRemindersSync==='function')scheduleRemindersSync();}
   }));
   const cbox=document.getElementById('notif-custom-list');
   cbox.innerHTML=n.custom.length?n.custom.map((c,i)=>{
@@ -2801,7 +2830,7 @@ function renderNotifLists(){
   }).join(''):`<div style="font-size:12px;color:var(--tc3);padding:4px 0;">還沒有自訂提醒</div>`;
   cbox.querySelectorAll('.notif-custom-del').forEach(b=>b.addEventListener('click',()=>{
     if(!confirm('刪除這個提醒？'))return;
-    n.custom.splice(+b.dataset.i,1);sv(S);syncStateDebounced();renderNotifLists();
+    n.custom.splice(+b.dataset.i,1);sv(S);syncStateDebounced();renderNotifLists();if(typeof scheduleRemindersSync==='function')scheduleRemindersSync();
   }));
 }
 function renderSettings(){
@@ -2812,6 +2841,9 @@ function renderSettings(){
   document.getElementById('set-sheet-id').value=SHEET_ID;
   document.getElementById('set-gas-url').value=GAS_URL;
   document.getElementById('set-last-sync').textContent=lastSyncText();
+  const crs=document.getElementById('cal-remind-sel');if(crs)crs.value=localStorage.getItem('grandol_cal_remind')||'10';
+  const cci=document.getElementById('cal-code-input');if(cci)cci.placeholder=localStorage.getItem('grandol_code')?'已設定（輸入可更改）':'輸入 GAS 裡設定的通行碼';
+  if(typeof updateCalStatus==='function')updateCalStatus();
 }
 
 // ── 通知：總開關 ──
@@ -2860,7 +2892,7 @@ document.getElementById('notif-custom-save').addEventListener('click',()=>{
   const days=[...document.querySelectorAll('#notif-new-days .day-chip.on')].map(ch=>+ch.dataset.d);
   ensureNotifDefaults();
   S.notifications.custom.push({id:'c'+Date.now(),icon:selNotifEmoji,label:label,time:time,days:days});
-  sv(S);syncStateDebounced();
+  sv(S);syncStateDebounced();if(typeof scheduleRemindersSync==='function')scheduleRemindersSync();
   document.getElementById('notif-new-name').value='';
   document.querySelectorAll('#notif-new-days .day-chip.on').forEach(ch=>ch.classList.remove('on'));
   document.getElementById('notif-custom-form').style.display='none';
@@ -3548,6 +3580,165 @@ function doExportCopy(kind,onlyNew){
 }
 document.querySelectorAll('.export-new-btn').forEach(b=>b.addEventListener('click',()=>doExportCopy(b.dataset.kind,true)));
 document.querySelectorAll('.export-all-btn').forEach(b=>b.addEventListener('click',()=>doExportCopy(b.dataset.kind,false)));
+</script>
+<script>
+// ═══ Google 日曆整合（v2.8）═══════════════════════════
+let calEvents={},calConnected=false,calFetchedMonths={};
+function updateCalStatus(){
+  const el=document.getElementById('cal-status');
+  if(!el)return;
+  el.textContent=calConnected?'✅ 已連上妳的日曆':'尚未連線（需 GAS v2.8＋日曆授權）';
+  el.style.color=calConnected?'#0F6E56':'var(--tc3)';
+}
+async function fetchCalMonth(y,m,force){
+  const key=y+'-'+m;
+  if(!force&&calFetchedMonths[key]){renderTodayEvents();return;}
+  const first=fmtLocal(new Date(y,m,1)),last=fmtLocal(new Date(y,m+1,0));
+  try{
+    const res=await fetch(GAS_URL+'?action=getCalEvents&start='+first+'&end='+last+codeQ());
+    const j=await res.json();
+    if(!j.ok)throw new Error(j.error||'');
+    Object.keys(calEvents).forEach(ds=>{if(ds>=first&&ds<=last)delete calEvents[ds];});
+    (j.data||[]).forEach(ev=>{(calEvents[ev.date]=calEvents[ev.date]||[]).push(ev);});
+    Object.values(calEvents).forEach(a=>a.sort((x,z)=>(x.allDay?'':x.time)<(z.allDay?'':z.time)?-1:1));
+    calFetchedMonths[key]=true;calConnected=true;
+  }catch(e){calConnected=false;}
+  updateCalStatus();
+  const popup=document.getElementById('cal-popup');
+  if(popup&&popup.style.display!=='none')renderPopCal();
+  renderTodayEvents();
+}
+function calEvRow(ev,delBtn){
+  const pill=ev.allDay?'<span style="background:rgba(250,199,117,.35);color:#854F0B;font-size:11px;font-weight:700;border-radius:999px;padding:2px 9px;flex-shrink:0;">全天</span>':'<span style="background:rgba(159,225,203,.4);color:#0F6E56;font-size:11px;font-weight:700;border-radius:999px;padding:2px 9px;flex-shrink:0;">'+ev.time+'</span>';
+  return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(200,196,247,.18);">'+pill+
+    '<span style="flex:1;font-size:13px;color:var(--tc);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(ev.title||'').replace(/</g,'&lt;')+'</span>'+
+    (delBtn?'<button class="cal-ev-del" data-id="'+ev.id+'" style="background:none;border:none;color:var(--tc3);cursor:pointer;font-size:12px;flex-shrink:0;">✕</button>':'')+
+  '</div>';
+}
+function renderTodayEvents(){
+  const card=document.getElementById('today-events-card');
+  if(!card)return;
+  if(!calConnected){card.style.display='none';return;}
+  card.style.display='';
+  const evs=calEvents[today()]||[];
+  document.getElementById('today-events-list').innerHTML=evs.length?evs.map(ev=>calEvRow(ev,false)).join(''):'<div style="font-size:12px;color:var(--tc3);padding:2px 0;">今天沒有安排，自由的一天 🌿</div>';
+}
+function renderCalDayPanel(ds){
+  const form=document.getElementById('pop-cal-form');
+  form.style.display='block';
+  const d=new Date(ds+'T00:00:00');
+  const evs=calEvents[ds]||[];
+  const defRemind=localStorage.getItem('grandol_cal_remind')||'10';
+  form.innerHTML='<div style="border-top:1px solid rgba(200,196,247,.3);margin:12px 0 0;padding-top:12px;">'+
+    '<div style="font-family:\'Baloo 2\',sans-serif;font-size:13px;font-weight:800;color:var(--tc);margin-bottom:8px;">📅 '+(d.getMonth()+1)+'/'+d.getDate()+' 週'+wdArr[d.getDay()]+' 的行程</div>'+
+    '<div id="cal-day-events">'+(evs.length?evs.map(ev=>calEvRow(ev,true)).join(''):'<div style="font-size:12px;color:var(--tc3);padding:2px 0 6px;">這天還沒有行程</div>')+'</div>'+
+    '<div style="border:1.5px solid rgba(200,190,240,.45);border-radius:12px;padding:9px 10px;margin-top:8px;">'+
+      '<input class="tdl-in" id="cal-new-title" placeholder="標題（例如：看牙醫）" style="width:100%;margin-bottom:7px;"/>'+
+      '<div style="display:flex;gap:8px;align-items:center;margin-bottom:7px;">'+
+        '<input type="time" class="time-in" id="cal-new-time" value="09:00"/>'+
+        '<label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--tc2);cursor:pointer;"><input type="checkbox" id="cal-new-allday"/> 全天</label>'+
+      '</div>'+
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:9px;">'+
+        '<span style="font-size:12px;color:var(--tc2);">🔔 提醒</span>'+
+        '<select id="cal-new-remind" class="time-in"><option value="0">準時</option><option value="5">提前5分</option><option value="10">提前10分</option><option value="30">提前30分</option><option value="60">提前1小時</option><option value="1440">提前1天</option></select>'+
+      '</div>'+
+      '<button class="mini-btn" id="cal-new-save" style="width:100%;">加進日曆</button>'+
+    '</div></div>';
+  document.getElementById('cal-new-remind').value=defRemind;
+  document.getElementById('cal-new-allday').addEventListener('change',e=>{document.getElementById('cal-new-time').disabled=e.target.checked;});
+  form.querySelectorAll('.cal-ev-del').forEach(b=>b.addEventListener('click',async()=>{
+    if(!confirm('刪除這個行程？'))return;
+    try{
+      const res=await gasPost('delCalEvent',{id:b.dataset.id});
+      const j=await res.json();
+      if(!j.ok)throw new Error(j.error||'');
+      calEvents[ds]=(calEvents[ds]||[]).filter(x=>x.id!==b.dataset.id);
+      renderPopCal();renderCalDayPanel(ds);renderTodayEvents();
+    }catch(e){alert('刪除失敗 🥲 請檢查網路與通行碼');}
+  }));
+  document.getElementById('cal-new-save').addEventListener('click',async()=>{
+    const title=document.getElementById('cal-new-title').value.trim();
+    if(!title){alert('先填標題喔');return;}
+    const allDay=document.getElementById('cal-new-allday').checked;
+    const time=document.getElementById('cal-new-time').value||'09:00';
+    const remind=document.getElementById('cal-new-remind').value;
+    const btn=document.getElementById('cal-new-save');
+    btn.disabled=true;btn.textContent='⏳ 加入中...';
+    try{
+      const res=await gasPost('addCalEvent',{title:title,date:ds,time:time,allDay:allDay,reminderMin:remind});
+      const j=await res.json();
+      if(!j.ok)throw new Error(j.error||'');
+      calEvents[ds]=calEvents[ds]||[];
+      calEvents[ds].push({id:j.id,title:title,allDay:allDay,time:allDay?'':time,date:ds});
+      calEvents[ds].sort((x,z)=>(x.allDay?'':x.time)<(z.allDay?'':z.time)?-1:1);
+      calConnected=true;updateCalStatus();
+      renderPopCal();renderCalDayPanel(ds);renderTodayEvents();
+      triggerBurst(document.getElementById('pop-cal-title')||btn);
+    }catch(e){
+      alert('新增失敗 🥲\n可能是 GAS 還沒更新到 v2.8、還沒執行 testCalAuth 授權日曆、或通行碼不對。');
+      btn.disabled=false;btn.textContent='加進日曆';
+    }
+  });
+}
+// 今日行程卡的＋：開月曆並直接展開今天面板
+(function(){
+  const b=document.getElementById('today-event-add');
+  if(b)b.addEventListener('click',()=>{
+    popCalYear=new Date().getFullYear();popCalMonth=new Date().getMonth();
+    const popup=document.getElementById('cal-popup');
+    if(popup.style.display==='none'){popup.style.display='block';renderPopCal();fetchCalMonth(popCalYear,popCalMonth);}
+    renderCalDayPanel(today());
+  });
+})();
+// ── 每日提醒 → 日曆重複事件（全自動）──
+let remSyncTimer=null;
+function scheduleRemindersSync(){
+  if(!S.notifications||!Array.isArray(S.notifications.calIds))return;
+  clearTimeout(remSyncTimer);
+  remSyncTimer=setTimeout(()=>syncRemindersToCal(false),2000);
+}
+async function syncRemindersToCal(manual){
+  ensureNotifDefaults();
+  const items=[];
+  S.notifications.presets.forEach(p=>{if(p.on)items.push({title:p.icon+' '+p.label,time:p.time,days:[]});});
+  (S.notifications.custom||[]).forEach(c=>items.push({title:c.icon+' '+c.label,time:c.time,days:c.days||[]}));
+  const btn=document.getElementById('cal-sync-reminders');
+  if(manual&&btn){btn.disabled=true;btn.innerHTML='⏳ 同步中...';}
+  try{
+    const res=await gasPost('syncReminders',{items:items,prevIds:S.notifications.calIds||[]});
+    const j=await res.json();
+    if(!j.ok)throw new Error(j.error||'');
+    S.notifications.calIds=j.ids||[];
+    sv(S);syncStateDebounced();
+    calConnected=true;updateCalStatus();
+    if(manual&&btn){btn.innerHTML='✅ 已同步（'+items.length+' 個提醒，之後自動更新）';setTimeout(()=>{btn.disabled=false;btn.innerHTML='🔔 把每日提醒同步到 Google 日曆';},3000);}
+  }catch(e){
+    if(manual){
+      alert('同步失敗 🥲\n請確認：① GAS 已更新到 v2.8 ② 編輯器執行過 testCalAuth 授權 ③ 通行碼正確。');
+      if(btn){btn.disabled=false;btn.innerHTML='🔔 把每日提醒同步到 Google 日曆';}
+    }
+  }
+}
+// 設定頁綁定
+(function(){
+  const crs=document.getElementById('cal-remind-sel');
+  if(crs)crs.addEventListener('change',e=>localStorage.setItem('grandol_cal_remind',e.target.value));
+  const ccs=document.getElementById('cal-code-save');
+  if(ccs)ccs.addEventListener('click',()=>{
+    const v=document.getElementById('cal-code-input').value.trim();
+    if(v)localStorage.setItem('grandol_code',v);else localStorage.removeItem('grandol_code');
+    document.getElementById('cal-code-input').value='';
+    alert(v?'通行碼已存在這台裝置 ✓ 馬上重新連線':'已清除通行碼');
+    calFetchedMonths={};
+    fetchCalMonth(new Date().getFullYear(),new Date().getMonth(),true);
+    loadCloud();
+    if(typeof renderSettings==='function')renderSettings();
+  });
+  const csr=document.getElementById('cal-sync-reminders');
+  if(csr)csr.addEventListener('click',()=>syncRemindersToCal(true));
+})();
+// 啟動時抓當月事件（GAS 未升級時安靜失敗、隱藏行程卡）
+fetchCalMonth(new Date().getFullYear(),new Date().getMonth());
 </script>
 </body>
 </html>

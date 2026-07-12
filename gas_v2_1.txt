@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════
-// 格蘭朵魔法森林 GAS v2.7（state 新增 expLog 欄：EXP 明細跨裝置同步）
+// 格蘭朵魔法森林 GAS v2.8（Google 日曆整合 + 通行碼保護）
 // ═══════════════════════════════════════════════════════
 // 【安裝步驟】
 // 1. 打開你的 Google Sheet（ID: ***REMOVED***）
@@ -20,15 +20,18 @@
 //    （用「編輯現有部署」網址不會變；如果選「新增部署」網址會變，
 //      要把新網址取代 index.html 裡的 GAS_URL）
 // 5. 權限確認：執行身分=我、存取權=所有人
-// 6. 【圖片上傳功能】這版需要 Google Drive 權限：
-//    部署新版本（或在編輯器手動執行一次 getDriveFolder_）時，
-//    Google 會跳出授權視窗 → 選妳的帳號 → 點「允許」。
-//    授權是在「這裡」完成的，APP 端不會跳授權視窗；
-//    授權一次之後就永遠不用再授權。
-//    上傳的圖片會存在 Drive 根目錄的「格蘭朵圖片庫」資料夾。
+// 6. 【圖片上傳功能】需要 Google Drive 權限：
+//    在編輯器手動執行一次 getDriveFolder_ → 跳授權視窗 → 允許。
+// 7. 【v2.8 日曆功能】需要 Google 日曆權限：
+//    在編輯器函式選單選 testCalAuth → 執行 → 跳授權視窗 → 允許
+//    （會列出 Drive+日曆權限，一次允許完）→ 再部署新版本。
+// 8. 【v2.8 通行碼】把下面的 APP_CODE 填入妳自己想的密碼
+//    （例如 'grandol520'）。填了之後，APP 的設定頁也要輸入同一組
+//    才能同步資料。留空 '' = 不啟用保護。
 // ═══════════════════════════════════════════════════════
 
 const SHEET_ID = '***REMOVED***';
+const APP_CODE = ''; // ← 通行碼：填入妳自己想的一串密碼；留空 = 不啟用
 
 const ENTRY_COLS = ['date','checked','hl','rf','gr','quote','tdl','exp','streak','tdlTotal','tdlDone','photos'];
 const STATE_COLS = ['flowers','apples','bigApples','goldFruits','seedlings','trees',
@@ -39,6 +42,17 @@ const STATE_COLS = ['flowers','apples','bigApples','goldFruits','seedlings','tre
 // 這個函式只是用來手動觸發 Google Drive 授權，之後留著也沒關係
 function testDriveAuth(){
   Logger.log('資料夾建立/找到成功：' + getDriveFolder_().getName());
+}
+
+// 手動觸發 Google 日曆授權（v2.8 部署前執行一次）
+function testCalAuth(){
+  Logger.log('日曆連線成功：' + CalendarApp.getDefaultCalendar().getName());
+}
+
+// 通行碼驗證（APP_CODE 留空時不啟用）
+function checkCode_(e){
+  if(!APP_CODE) return true;
+  return e && e.parameter && e.parameter.code === APP_CODE;
 }
 
 function getSheet(name){
@@ -61,8 +75,10 @@ function json(obj){
 function doGet(e){
   const action = (e.parameter.action||'').trim();
   try{
+    if(!checkCode_(e)) return json({ok:false,error:'unauthorized'});
     if(action==='getEntries') return json({ok:true,data:getEntries_()});
     if(action==='getState')   return json({ok:true,data:getState_()});
+    if(action==='getCalEvents') return json({ok:true,data:getCalEvents_(e.parameter.start, e.parameter.end)});
     return json({ok:false,error:'unknown action: '+action});
   }catch(err){
     return json({ok:false,error:String(err)});
@@ -102,11 +118,15 @@ function getState_(){
 function doPost(e){
   const action = (e.parameter.action||'').trim();
   try{
+    if(!checkCode_(e)) return json({ok:false,error:'unauthorized'});
     const payload = JSON.parse(e.postData.contents||'{}');
     if(action==='saveEntry') return json({ok:saveEntry_(payload)});
     if(action==='saveState') return json({ok:saveState_(payload)});
     if(action==='uploadImage') return json({ok:true,url:uploadImageToDrive_(payload)});
     if(action==='clearAll') return json({ok:clearAll_()});
+    if(action==='addCalEvent') return json({ok:true,id:addCalEvent_(payload)});
+    if(action==='delCalEvent') return json({ok:delCalEvent_(payload)});
+    if(action==='syncReminders') return json({ok:true,ids:syncReminders_(payload)});
     return json({ok:false,error:'unknown action: '+action});
   }catch(err){
     return json({ok:false,error:String(err)});
@@ -187,4 +207,78 @@ function clearAll_(){
   const st = getSheet('state');
   if(st.getLastRow() > 1) st.getRange(2, 1, st.getLastRow() - 1, st.getLastColumn()).clearContent();
   return true;
+}
+
+// ── Google 日曆（v2.8）─────────────────────────────────
+// 讀取 start~end（yyyy-mm-dd）之間的事件
+function getCalEvents_(startStr, endStr){
+  const cal = CalendarApp.getDefaultCalendar();
+  const tz = Session.getScriptTimeZone();
+  const start = new Date(startStr + 'T00:00:00');
+  const end = new Date(endStr + 'T23:59:59');
+  return cal.getEvents(start, end).map(function(ev){
+    const allDay = ev.isAllDayEvent();
+    return {
+      id: ev.getId(),
+      title: ev.getTitle(),
+      allDay: allDay,
+      date: Utilities.formatDate(allDay ? ev.getAllDayStartDate() : ev.getStartTime(), tz, 'yyyy-MM-dd'),
+      time: allDay ? '' : Utilities.formatDate(ev.getStartTime(), tz, 'HH:mm')
+    };
+  });
+}
+
+// 新增事件：{title, date, time, allDay, reminderMin}
+function addCalEvent_(p){
+  if(!p || !p.title || !p.date) throw new Error('missing title/date');
+  const cal = CalendarApp.getDefaultCalendar();
+  let ev;
+  if(p.allDay){
+    ev = cal.createAllDayEvent(p.title, new Date(p.date + 'T00:00:00'));
+  }else{
+    const start = new Date(p.date + 'T' + (p.time || '09:00') + ':00');
+    const end = new Date(start.getTime() + 60 * 60000);
+    ev = cal.createEvent(p.title, start, end);
+  }
+  ev.removeAllReminders();
+  const m = parseInt(p.reminderMin, 10);
+  if(!isNaN(m) && m >= 0) ev.addPopupReminder(m);
+  return ev.getId();
+}
+
+// 刪除事件：{id}
+function delCalEvent_(p){
+  const ev = CalendarApp.getEventById(p.id);
+  if(ev) ev.deleteEvent();
+  return true;
+}
+
+// 每日提醒同步：先刪 prevIds 的舊系列，再建新系列，回傳新 id 陣列
+// items: [{title, time:'HH:MM', days:[0-6]}]（days 空陣列 = 每天）
+function syncReminders_(p){
+  (p.prevIds || []).forEach(function(id){
+    try{ var s = CalendarApp.getEventSeriesById(id); if(s) s.deleteEventSeries(); }catch(err){}
+  });
+  var WD = [CalendarApp.Weekday.SUNDAY, CalendarApp.Weekday.MONDAY, CalendarApp.Weekday.TUESDAY,
+            CalendarApp.Weekday.WEDNESDAY, CalendarApp.Weekday.THURSDAY, CalendarApp.Weekday.FRIDAY,
+            CalendarApp.Weekday.SATURDAY];
+  var cal = CalendarApp.getDefaultCalendar();
+  var ids = [];
+  (p.items || []).forEach(function(it){
+    var hm = String(it.time || '09:00').split(':');
+    var start = new Date(); start.setHours(+hm[0], +hm[1], 0, 0);
+    var end = new Date(start.getTime() + 15 * 60000);
+    var rec;
+    var days = it.days || [];
+    if(days.length){
+      rec = CalendarApp.newRecurrence().addWeeklyRule().onlyOnWeekdays(days.map(function(d){ return WD[d]; }));
+    }else{
+      rec = CalendarApp.newRecurrence().addDailyRule();
+    }
+    var series = cal.createEventSeries(it.title, start, end, rec);
+    series.removeAllReminders();
+    series.addPopupReminder(0);
+    ids.push(series.getId());
+  });
+  return ids;
 }
