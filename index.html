@@ -1030,7 +1030,7 @@ function defaults(){
   return{exp:0,flowers:[],apples:[],bigApples:0,goldFruits:0,seedlings:0,trees:1,
     streak:0,lastStreak:'',checked:{},diary:{hl:'',rf:'',gr:'',quote:''},
     lastPlant:'',tomorrowTDL:[],todayTDL:[],tdlDone:{},entries:[],
-    achievements:[],quotes:[],calNotes:{},myPeople:[],treasures:[],gardenPos:{},notePos:null,notifications:null,todayPhotos:[],resourceCats:null,expLog:[]};
+    achievements:[],quotes:[],calNotes:{},myPeople:[],treasures:[],gardenPos:{},notePos:null,notifications:null,todayPhotos:[],resourceCats:null,expLog:[],tdlHist:{}};
 }
 function ld(){
   try{const r=localStorage.getItem(SK);if(r){const s=JSON.parse(r);return Object.assign(defaults(),s);}}catch(e){}
@@ -1051,6 +1051,10 @@ migQuotes();
 // New day rollover
 if(S.lastPlant!==today()&&S.lastStreak!==today()){
   if(S.dayKey!==today()){
+    S.tdlHist=S.tdlHist||{};
+    if(S.dayKey&&Object.keys(S.tdlDone||{}).length)S.tdlHist[S.dayKey]=S.tdlDone;
+    const _hk=Object.keys(S.tdlHist).sort();
+    while(_hk.length>60){delete S.tdlHist[_hk.shift()];}
     S.checked={};S.diary={hl:'',rf:'',gr:'',quote:''};S.todayPhotos=[];
     S.todayTDL=S.tomorrowTDL||[];S.tomorrowTDL=[];S.tdlDone={};
     S.dayKey=today();sv(S);
@@ -1092,7 +1096,7 @@ async function syncState(){
       supportCategories:JSON.stringify(S.supportCategories||[]),
       notifications:JSON.stringify(S.notifications||{}),
       supportResources:JSON.stringify(S.resourceCats||[]),
-      todaySession:JSON.stringify({date:today(),checked:S.checked||{},tdlDone:S.tdlDone||{},todayTDL:S.todayTDL||[]}),
+      todaySession:JSON.stringify({date:today(),checked:S.checked||{},tdlDone:S.tdlDone||{},todayTDL:S.todayTDL||[],tdlHist:S.tdlHist||{}}),
       expLog:JSON.stringify(S.expLog||[])
     });
     setSync('ok','已同步 ✓');
@@ -1133,6 +1137,7 @@ async function loadCloud(){
       if(d.supportResources){const rc=parseJ(d.supportResources,null);if(Array.isArray(rc))S.resourceCats=rc;}
       if(d.todaySession){
         const ts=parseJ(d.todaySession,null);
+        if(ts&&ts.tdlHist)S.tdlHist=Object.assign({},ts.tdlHist,S.tdlHist||{});
         if(ts&&ts.date===today()&&!Object.keys(S.checked||{}).length&&!Object.keys(S.tdlDone||{}).length){
           if(ts.checked&&Object.keys(ts.checked).length)S.checked={...ts.checked};
           if(ts.tdlDone&&Object.keys(ts.tdlDone).length)S.tdlDone={...ts.tdlDone};
@@ -1353,19 +1358,29 @@ function renderFruits(){
 
 <script>
 // ── STICKY NOTE (always visible, checkable, draggable) ──
+function stickyCtx(){
+  if(ctxIsToday())return{ds:today(),items:S.todayTDL||[],done:(S.tdlDone=S.tdlDone||{}),todayMode:true};
+  const ds=viewDate;
+  const prev=new Date(ds+'T00:00:00');prev.setDate(prev.getDate()-1);
+  const pe=S.entries.find(x=>x.date===fmtLocal(prev));
+  S.tdlHist=S.tdlHist||{};
+  if(!S.tdlHist[ds])S.tdlHist[ds]={};
+  return{ds:ds,items:(pe&&Array.isArray(pe.tdl))?pe.tdl:[],done:S.tdlHist[ds],todayMode:false};
+}
 function renderStickyNote(){
   const note=document.getElementById('sticky-note');
   applyNoteStyle();
-  const d=new Date();
-  document.getElementById('sticky-date').textContent=`${d.getMonth()+1}/${d.getDate()}`;
-  const items=S.todayTDL||[];
+  const ctx=stickyCtx();
+  const dd=new Date(ctx.ds+'T00:00:00');
+  document.getElementById('sticky-date').textContent=`${dd.getMonth()+1}/${dd.getDate()}`;
+  const items=ctx.items;
   const box=document.getElementById('sticky-items');
   if(!items.length){
-    box.innerHTML=`<div class="sticky-empty">今天還沒有計畫，<br/>去填明天TDL吧 ✨</div>`;
+    box.innerHTML=ctx.todayMode?`<div class="sticky-empty">今天還沒有計畫，<br/>去填明天TDL吧 ✨</div>`:`<div class="sticky-empty">前一天沒有規劃 TDL</div>`;
   }else{
     box.innerHTML=items.map((r,i)=>{
       const key='t'+i;
-      const done=!!S.tdlDone[key];
+      const done=!!ctx.done[key];
       return`<div class="sticky-item">
         <div class="sticky-check${done?' done':''}" data-k="${key}">${done?'✓':''}</div>
         <span style="${done?'text-decoration:line-through;opacity:.55;':''}">${r.theme?`<b>${r.theme}：</b>`:''}${r.task||''}</span>
@@ -1378,9 +1393,16 @@ function renderStickyNote(){
         ev.stopPropagation();
         const key=el.dataset.k;
         const oldExp=S.exp;
-        const _tt=(S.todayTDL||[])[+key.slice(1)]||{};const _tn=_tt.task||_tt.theme||'項目';
-        if(S.tdlDone[key]){delete S.tdlDone[key];S.exp=Math.max(0,S.exp-10);showExpPop(el,'-10 EXP');logExp(-10,'↩️ 取消 TDL：'+_tn);}
-        else{S.tdlDone[key]=true;S.exp+=10;showExpPop(el,'+10 EXP');triggerBurst(el);logExp(10,'📋 完成 TDL：'+_tn);}
+        const c2=stickyCtx();
+        const _tt=c2.items[+key.slice(1)]||{};const _tn=_tt.task||_tt.theme||'項目';
+        const tag=c2.todayMode?'':'('+c2.ds.slice(5).replace('-','/')+')';
+        if(c2.done[key]){delete c2.done[key];S.exp=Math.max(0,S.exp-10);showExpPop(el,'-10 EXP');logExp(-10,'↩️ 取消 TDL'+tag+'：'+_tn);}
+        else{c2.done[key]=true;S.exp+=10;showExpPop(el,'+10 EXP');triggerBurst(el);logExp(10,'📋 完成 TDL'+tag+'：'+_tn);}
+        if(!c2.todayMode){
+          const en=getOrCreateEntry(c2.ds);
+          en.tdlTotal=c2.items.length;en.tdlDone=Object.keys(c2.done).length;
+          syncEntryDebounced();
+        }
         sv(S);checkLevelUp(oldExp,S.exp);renderExpBar();renderStickyNote();syncStateDebounced();
       });
     });
@@ -1628,7 +1650,7 @@ function renderPopCal(){
     const hasRecord=!!S.entries.find(e=>e.date===ds);
     const hasNote=!!S.calNotes[ds];
     const _evs=(typeof calEvents!=='undefined'&&calEvents[ds])?calEvents[ds].filter(ev=>!(typeof isReminderEvent==='function'&&isReminderEvent(ev))):[];
-    const _chips=_evs.slice(0,2).map(ev=>`<div class="cal-ev-chip">${(ev.title||'').replace(/</g,'&lt;')}</div>`).join('')+(_evs.length>2?`<div class="cal-more">+${_evs.length-2}</div>`:'');
+    const _chips=_evs.slice(0,2).map(ev=>{const _c=(typeof CAL_COLORS!=='undefined'&&ev.color&&CAL_COLORS[ev.color])?CAL_COLORS[ev.color]:'';return `<div class="cal-ev-chip"${_c?` style="background:${_c}26;color:${_c};"`:''}>${(ev.title||'').replace(/</g,'&lt;')}</div>`;}).join('')+(_evs.length>2?`<div class="cal-more">+${_evs.length-2}</div>`:'');
     html+=`<div class="cal-day${isToday?' today':''}${hasRecord?' has-record':''}" data-date="${ds}">
       <div class="cd-num">${day}${hasRecord?'<span style="width:4px;height:4px;border-radius:50%;background:#5DCAA5;display:inline-block;"></span>':''}${hasNote?'<span style="width:4px;height:4px;border-radius:50%;background:#FAC775;display:inline-block;"></span>':''}</div>
       ${_chips}
@@ -3402,7 +3424,8 @@ async function plantBackfill(){
 function applyViewDate(switchPage){
   const isT=ctxIsToday();
   const note=document.getElementById('sticky-note');
-  if(note)note.style.display=isT?'':'none';
+  if(note)note.style.display='';
+  if(typeof renderStickyNote==='function')renderStickyNote();
   const tdlCol=document.querySelector('.home-row2 .col-tdl');
   if(tdlCol)tdlCol.style.display=''; // TDL 卡今天與過去日期都可編輯
   if(isT){tdlEditCtx='today';}
@@ -3596,6 +3619,8 @@ document.querySelectorAll('.export-all-btn').forEach(b=>b.addEventListener('clic
 <script>
 // ═══ Google 日曆整合（v2.8）═══════════════════════════
 let calEvents={},calConnected=false,calFetchedMonths={};
+const CAL_COLORS={'1':'#7986cb','2':'#33b679','3':'#8e24aa','4':'#e67c73','5':'#f6c026','6':'#f5511d','7':'#039be5','8':'#616161','9':'#3f51b5','10':'#0b8043','11':'#d60000'};
+let calNewColor='';
 function isReminderEvent(ev){
   const ids=(S.notifications&&S.notifications.calIds)||[];
   return ids.indexOf(ev.id)>=0;
@@ -3625,7 +3650,8 @@ async function fetchCalMonth(y,m,force){
   renderTodayEvents();
 }
 function calEvRow(ev,delBtn){
-  const pill=ev.allDay?'<span style="background:rgba(250,199,117,.35);color:#854F0B;font-size:11px;font-weight:700;border-radius:999px;padding:2px 9px;flex-shrink:0;">全天</span>':'<span style="background:rgba(159,225,203,.4);color:#0F6E56;font-size:11px;font-weight:700;border-radius:999px;padding:2px 9px;flex-shrink:0;">'+ev.time+'</span>';
+  const _c=(ev.color&&CAL_COLORS[ev.color])?'<span style="width:8px;height:8px;border-radius:50%;background:'+CAL_COLORS[ev.color]+';flex-shrink:0;"></span>':'';
+  const pill=_c+ev.allDay?'<span style="background:rgba(250,199,117,.35);color:#854F0B;font-size:11px;font-weight:700;border-radius:999px;padding:2px 9px;flex-shrink:0;">全天</span>':'<span style="background:rgba(159,225,203,.4);color:#0F6E56;font-size:11px;font-weight:700;border-radius:999px;padding:2px 9px;flex-shrink:0;">'+ev.time+'</span>';
   return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(200,196,247,.18);">'+pill+
     '<span style="flex:1;font-size:13px;color:var(--tc);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(ev.title||'').replace(/</g,'&lt;')+'</span>'+
     (delBtn?'<button class="cal-ev-del" data-id="'+ev.id+'" style="background:none;border:none;color:var(--tc3);cursor:pointer;font-size:12px;flex-shrink:0;">✕</button>':'')+
@@ -3654,16 +3680,40 @@ function renderCalDayPanel(ds){
         '<input type="time" class="time-in" id="cal-new-time" value="09:00"/>'+
         '<label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--tc2);cursor:pointer;"><input type="checkbox" id="cal-new-allday"/> 全天</label>'+
       '</div>'+
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:7px;">'+
+        '<span style="font-size:12px;color:var(--tc2);">🔁 重複</span>'+
+        '<select id="cal-new-repeat" class="time-in"><option value="none">不重複</option><option value="daily">每天</option><option value="weekly">每週</option></select>'+
+      '</div>'+
+      '<div id="cal-new-days" style="display:none;gap:6px;margin-bottom:7px;flex-wrap:wrap;">'+[1,2,3,4,5,6,0].map(dd=>'<div class="day-chip" data-d="'+dd+'">'+wdArr[dd]+'</div>').join('')+'</div>'+
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:7px;">'+
+        '<span style="font-size:12px;color:var(--tc2);">🎨 顏色</span>'+
+        '<div id="cal-new-colors" style="display:flex;gap:6px;flex-wrap:wrap;">'+['','1','4','5','2','7','3','11'].map(cc=>'<span class="cal-swatch" data-c="'+cc+'" style="width:20px;height:20px;border-radius:50%;cursor:pointer;border:2px solid '+(cc===calNewColor?'#3A2E5A':'rgba(255,255,255,.9)')+';background:'+(cc?CAL_COLORS[cc]:'linear-gradient(135deg,#C8C4F7,#9FE1CB)')+';box-shadow:0 1px 4px rgba(100,80,160,.25);"></span>').join('')+'</div>'+
+      '</div>'+
       '<div style="display:flex;align-items:center;gap:6px;margin-bottom:9px;">'+
         '<span style="font-size:12px;color:var(--tc2);">🔔 提醒</span>'+
-        '<select id="cal-new-remind" class="time-in"><option value="0">準時</option><option value="5">提前5分</option><option value="10">提前10分</option><option value="30">提前30分</option><option value="60">提前1小時</option><option value="1440">提前1天</option></select>'+
+        '<select id="cal-new-remind" class="time-in"><option value="0">準時</option><option value="5">提前5分</option><option value="10">提前10分</option><option value="30">提前30分</option><option value="60">提前1小時</option><option value="1440">提前1天</option><option value="custom">自訂…</option></select>'+
       '</div>'+
       '<button class="mini-btn" id="cal-new-save" style="width:100%;">加進日曆</button>'+
     '</div></div>';
   document.getElementById('cal-new-remind').value=defRemind;
   document.getElementById('cal-new-allday').addEventListener('change',e=>{document.getElementById('cal-new-time').disabled=e.target.checked;});
+  document.getElementById('cal-new-repeat').addEventListener('change',e=>{document.getElementById('cal-new-days').style.display=e.target.value==='weekly'?'flex':'none';});
+  document.querySelectorAll('#cal-new-days .day-chip').forEach(ch=>ch.addEventListener('click',()=>ch.classList.toggle('on')));
+  document.querySelectorAll('#cal-new-colors .cal-swatch').forEach(sw=>sw.addEventListener('click',()=>{
+    calNewColor=sw.dataset.c;
+    document.querySelectorAll('#cal-new-colors .cal-swatch').forEach(x=>x.style.borderColor=x.dataset.c===calNewColor?'#3A2E5A':'rgba(255,255,255,.9)');
+  }));
+  document.getElementById('cal-new-remind').addEventListener('change',e=>{
+    if(e.target.value==='custom'){
+      const m=prompt('提前幾分鐘通知？（輸入數字，例如 45）');
+      const n=parseInt(m,10);
+      const opt=e.target.querySelector('option[value="custom"]');
+      if(!isNaN(n)&&n>=0){opt.dataset.min=n;opt.textContent='自訂（提前'+n+'分）';}
+      else{e.target.value=localStorage.getItem('grandol_cal_remind')||'10';}
+    }
+  });
   form.querySelectorAll('.cal-ev-del').forEach(b=>b.addEventListener('click',async()=>{
-    if(!confirm('刪除這個行程？'))return;
+    if(!confirm('刪除這個行程？（重複行程會刪除整個系列）'))return;
     try{
       const res=await gasPost('delCalEvent',{id:b.dataset.id});
       const j=await res.json();
@@ -3677,17 +3727,25 @@ function renderCalDayPanel(ds){
     if(!title){alert('先填標題喔');return;}
     const allDay=document.getElementById('cal-new-allday').checked;
     const time=document.getElementById('cal-new-time').value||'09:00';
-    const remind=document.getElementById('cal-new-remind').value;
+    const rsel=document.getElementById('cal-new-remind');
+    const remind=rsel.value==='custom'?(+((rsel.querySelector('option[value="custom"]')||{}).dataset||{}).min||10):rsel.value;
+    const repeat=document.getElementById('cal-new-repeat').value;
+    const repeatDays=[...document.querySelectorAll('#cal-new-days .day-chip.on')].map(ch=>+ch.dataset.d);
     const btn=document.getElementById('cal-new-save');
     btn.disabled=true;btn.textContent='⏳ 加入中...';
     try{
-      const res=await gasPost('addCalEvent',{title:title,date:ds,time:time,allDay:allDay,reminderMin:remind});
+      const res=await gasPost('addCalEvent',{title:title,date:ds,time:time,allDay:allDay,reminderMin:remind,repeat:repeat,repeatDays:repeatDays,color:calNewColor});
       const j=await res.json();
       if(!j.ok)throw new Error(j.error||'');
-      calEvents[ds]=calEvents[ds]||[];
-      calEvents[ds].push({id:j.id,title:title,allDay:allDay,time:allDay?'':time,date:ds});
-      calEvents[ds].sort((x,z)=>(x.allDay?'':x.time)<(z.allDay?'':z.time)?-1:1);
       calConnected=true;updateCalStatus();
+      if(repeat!=='none'){
+        calFetchedMonths={};
+        await fetchCalMonth(popCalYear,popCalMonth,true);
+      }else{
+        calEvents[ds]=calEvents[ds]||[];
+        calEvents[ds].push({id:j.id,title:title,allDay:allDay,time:allDay?'':time,date:ds,color:calNewColor});
+        calEvents[ds].sort((x,z)=>(x.allDay?'':x.time)<(z.allDay?'':z.time)?-1:1);
+      }
       renderPopCal();renderCalDayPanel(ds);renderTodayEvents();
       triggerBurst(document.getElementById('pop-cal-title')||btn);
     }catch(e){
