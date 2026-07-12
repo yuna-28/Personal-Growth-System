@@ -139,7 +139,10 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
 /* CAL POPUP */
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
 .cal-dow{text-align:center;font-size:10px;font-weight:700;color:var(--tc3);padding:4px 0;}
-.cal-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;cursor:pointer;font-size:12px;font-weight:600;color:var(--tc);position:relative;background:rgba(255,255,255,.3);transition:all .15s;}
+.cal-day{min-height:56px;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;border-radius:10px;cursor:pointer;font-size:12px;font-weight:600;color:var(--tc);position:relative;background:rgba(255,255,255,.3);transition:all .15s;padding:3px 2px 4px;gap:2px;}
+.cal-day .cd-num{display:flex;align-items:center;justify-content:center;gap:3px;line-height:1.3;}
+.cal-ev-chip{font-size:9px;line-height:1.3;background:rgba(139,127,232,.18);color:#4A4090;border-radius:4px;padding:1px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;text-align:left;}
+.cal-more{font-size:9px;color:#7F77DD;font-weight:700;text-align:left;padding-left:3px;}
 .cal-day:hover{background:rgba(255,255,255,.6);}
 .cal-day.today{background:rgba(255,210,60,.4);border:1.5px solid rgba(255,200,60,.6);}
 .cal-day.has-record{color:#2A7A5A;}
@@ -448,7 +451,7 @@ button{-webkit-tap-highlight-color:transparent;}
 
 <!-- CALENDAR POPUP -->
 <div id="cal-popup" style="display:none;position:fixed;inset:0;z-index:9990;background:rgba(60,40,100,.35);backdrop-filter:blur(4px);">
-  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(255,255,255,.96);backdrop-filter:blur(20px);border-radius:24px;box-shadow:0 20px 60px rgba(80,60,180,.25);padding:1.2rem;width:min(400px,92vw);max-height:85vh;overflow-y:auto;">
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(255,255,255,.96);backdrop-filter:blur(20px);border-radius:24px;box-shadow:0 20px 60px rgba(80,60,180,.25);padding:1.2rem;width:min(540px,94vw);max-height:88vh;overflow-y:auto;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
       <button id="pop-cal-prev" class="mini-btn" style="background:rgba(255,255,255,.7);color:var(--tc);border:1.5px solid rgba(200,190,240,.5);">‹</button>
       <div id="pop-cal-title" style="font-family:'Baloo 2',sans-serif;font-size:15px;font-weight:800;color:var(--tc);"></div>
@@ -1616,10 +1619,11 @@ function renderPopCal(){
     const isToday=ds===today();
     const hasRecord=!!S.entries.find(e=>e.date===ds);
     const hasNote=!!S.calNotes[ds];
+    const _evs=(typeof calEvents!=='undefined'&&calEvents[ds])?calEvents[ds].filter(ev=>!(typeof isReminderEvent==='function'&&isReminderEvent(ev))):[];
+    const _chips=_evs.slice(0,2).map(ev=>`<div class="cal-ev-chip">${(ev.title||'').replace(/</g,'&lt;')}</div>`).join('')+(_evs.length>2?`<div class="cal-more">+${_evs.length-2}</div>`:'');
     html+=`<div class="cal-day${isToday?' today':''}${hasRecord?' has-record':''}" data-date="${ds}">
-      ${day}${hasRecord?'<div class="cal-dot"></div>':''}
-      ${hasNote?'<div style="position:absolute;top:2px;right:2px;width:4px;height:4px;border-radius:50%;background:#FAC775;"></div>':''}
-      ${(typeof calEvents!=='undefined'&&calEvents[ds]&&calEvents[ds].length)?'<div style="position:absolute;bottom:3px;right:3px;width:5px;height:5px;border-radius:50%;background:#7F77DD;"></div>':''}
+      <div class="cd-num">${day}${hasRecord?'<span style="width:4px;height:4px;border-radius:50%;background:#5DCAA5;display:inline-block;"></span>':''}${hasNote?'<span style="width:4px;height:4px;border-radius:50%;background:#FAC775;display:inline-block;"></span>':''}</div>
+      ${_chips}
     </div>`;
   }
   document.getElementById('pop-cal-grid').innerHTML=html;
@@ -3584,6 +3588,10 @@ document.querySelectorAll('.export-all-btn').forEach(b=>b.addEventListener('clic
 <script>
 // ═══ Google 日曆整合（v2.8）═══════════════════════════
 let calEvents={},calConnected=false,calFetchedMonths={};
+function isReminderEvent(ev){
+  const ids=(S.notifications&&S.notifications.calIds)||[];
+  return ids.indexOf(ev.id)>=0;
+}
 function updateCalStatus(){
   const el=document.getElementById('cal-status');
   if(!el)return;

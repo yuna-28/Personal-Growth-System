@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════
-// 格蘭朵魔法森林 GAS v2.8（Google 日曆整合 + 通行碼保護）
+// 格蘭朵魔法森林 GAS v2.8.1（日曆改讀所有擁有的日曆）
 // ═══════════════════════════════════════════════════════
 // 【安裝步驟】
 // 1. 打開你的 Google Sheet（ID: ***REMOVED***）
@@ -210,22 +210,25 @@ function clearAll_(){
 }
 
 // ── Google 日曆（v2.8）─────────────────────────────────
-// 讀取 start~end（yyyy-mm-dd）之間的事件
+// 讀取 start~end（yyyy-mm-dd）之間的事件（掃妳擁有的所有日曆，不只預設那本）
 function getCalEvents_(startStr, endStr){
-  const cal = CalendarApp.getDefaultCalendar();
   const tz = Session.getScriptTimeZone();
   const start = new Date(startStr + 'T00:00:00');
   const end = new Date(endStr + 'T23:59:59');
-  return cal.getEvents(start, end).map(function(ev){
-    const allDay = ev.isAllDayEvent();
-    return {
-      id: ev.getId(),
-      title: ev.getTitle(),
-      allDay: allDay,
-      date: Utilities.formatDate(allDay ? ev.getAllDayStartDate() : ev.getStartTime(), tz, 'yyyy-MM-dd'),
-      time: allDay ? '' : Utilities.formatDate(ev.getStartTime(), tz, 'HH:mm')
-    };
+  const out = [];
+  CalendarApp.getAllOwnedCalendars().forEach(function(cal){
+    cal.getEvents(start, end).forEach(function(ev){
+      const allDay = ev.isAllDayEvent();
+      out.push({
+        id: ev.getId(),
+        title: ev.getTitle(),
+        allDay: allDay,
+        date: Utilities.formatDate(allDay ? ev.getAllDayStartDate() : ev.getStartTime(), tz, 'yyyy-MM-dd'),
+        time: allDay ? '' : Utilities.formatDate(ev.getStartTime(), tz, 'HH:mm')
+      });
+    });
   });
+  return out;
 }
 
 // 新增事件：{title, date, time, allDay, reminderMin}
