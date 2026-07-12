@@ -1115,11 +1115,17 @@ async function loadCloud(){
       });
       S.entries.sort((a,b)=>a.date<b.date?-1:1);
     }
-    // 便利貼今日TDL：跨裝置時本機推算不到，改從昨天 entry.tdl 還原
-    if(!S.todayTDL||!S.todayTDL.length){
+    // 便利貼今日TDL：昨天紀錄的 tdl 是權威版本（補記修改過也會跟上）
+    {
       const _yd=new Date();_yd.setDate(_yd.getDate()-1);const _yds=fmtLocal(_yd);
       const _ye=S.entries.find(e=>e.date===_yds);
-      if(_ye&&Array.isArray(_ye.tdl)&&_ye.tdl.length)S.todayTDL=_ye.tdl.slice();
+      if(_ye&&Array.isArray(_ye.tdl)&&_ye.tdl.length){
+        const _new=_ye.tdl.map(r=>({theme:r.theme,task:r.task}));
+        if(JSON.stringify(_new)!==JSON.stringify((S.todayTDL||[]).map(r=>({theme:r.theme,task:r.task})))){
+          S.todayTDL=_new;
+          Object.keys(S.tdlDone||{}).forEach(k=>{const i=+String(k).slice(1);if(!(i<S.todayTDL.length))delete S.tdlDone[k];});
+        }
+      }
     }
     // restore today's session from cloud entry（草稿或已種下都還原，本機空才採用）
     const te=S.entries.find(e=>e.date===today());
@@ -1457,7 +1463,20 @@ function persistTdlIfBackfill(){
     const en=getOrCreateEntry(tdlEditCtx);
     en.tdl=backfillRows.filter(r=>r.theme||r.task).map(r=>({theme:r.theme,task:r.task}));
     sv(S);syncEntryDebounced();
+    mirrorYesterdayTdlToToday(tdlEditCtx);
   }
+}
+// 昨天的 TDL＝今天的計畫：補記改了昨天的 TDL，今天的便利貼要即時跟上
+function mirrorYesterdayTdlToToday(ds){
+  const _yd=new Date();_yd.setDate(_yd.getDate()-1);
+  if(ds!==fmtLocal(_yd))return;
+  const en=S.entries.find(x=>x.date===ds);
+  if(!en||!Array.isArray(en.tdl))return;
+  S.todayTDL=en.tdl.map(r=>({theme:r.theme,task:r.task}));
+  Object.keys(S.tdlDone||{}).forEach(k=>{const i=+String(k).slice(1);if(!(i<S.todayTDL.length))delete S.tdlDone[k];});
+  sv(S);
+  if(typeof renderStickyNote==='function')renderStickyNote();
+  syncStateDebounced();
 }
 function renderTDL(){
   const rows=curRows();const showConfirm=(tdlEditCtx==='today');
@@ -3310,6 +3329,7 @@ async function plantBackfill(){
   const hasContent=(e.checked&&e.checked.length)||e.diary.hl||e.diary.rf||e.diary.gr||(e.photos&&e.photos.length);
   if(!hasContent){alert('這一天還是空的，先勾個習慣或寫點小記再種下 📖');return;}
   if(tdlEditCtx===ds)e.tdl=backfillRows.filter(r=>r.theme||r.task).map(r=>({theme:r.theme,task:r.task}));
+  mirrorYesterdayTdlToToday(ds);
   const planted=(+e.streak||0)>=1;
   if(planted&&!confirm('這一天已經種過了！要用目前內容更新這天的紀錄嗎？'))return;
   const oldExp=S.exp;
