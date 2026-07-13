@@ -917,6 +917,9 @@ button{-webkit-tap-highlight-color:transparent;}
   <p style="font-size:11px;color:var(--tc3);line-height:1.7;margin-top:6px;">通行碼只存在這台裝置，需與 GAS 程式碼裡的 APP_CODE 相同（沒設定就留空）。</p>
   <button class="liq-btn" id="cal-sync-reminders" style="margin-top:10px;font-size:13px;padding:11px;">🔔 把每日提醒同步到 Google 日曆</button>
   <p style="font-size:11px;color:var(--tc3);line-height:1.7;margin-bottom:0;">按一次開始：提醒會建成日曆重複事件（App 關著也會響）。之後修改提醒時間會自動重新同步。</p>
+  <div style="font-size:12px;font-weight:700;color:var(--tc2);margin:14px 0 4px;">🏷️ 顏色標籤</div>
+  <div id="cal-tag-list"></div>
+  <p style="font-size:11px;color:var(--tc3);line-height:1.7;margin-top:4px;margin-bottom:0;">幫每個顏色取名字，新增行程時就能直接選標籤，不用再猜顏色代表什麼。留空＝不顯示標籤。</p>
 </div>
 
 <div class="gcard" id="set-account-card" style="display:none;">
@@ -1105,7 +1108,8 @@ async function syncState(){
       notifications:JSON.stringify(S.notifications||{}),
       supportResources:JSON.stringify(S.resourceCats||[]),
       todaySession:JSON.stringify({date:today(),checked:S.checked||{},tdlDone:S.tdlDone||{},todayTDL:S.todayTDL||[],tdlHist:S.tdlHist||{}}),
-      expLog:JSON.stringify(S.expLog||[])
+      expLog:JSON.stringify(S.expLog||[]),
+      calColorTags:JSON.stringify(S.calColorTags||{})
     });
     setSync('ok','已同步 ✓');
   }catch(e){setSync('error','同步失敗，資料在本機');}
@@ -1153,6 +1157,7 @@ async function loadCloud(){
         }
       }
       if(d.expLog){const _el=parseJ(d.expLog,null);if(Array.isArray(_el))S.expLog=_el;}
+      if(d.calColorTags){const _ct=parseJ(d.calColorTags,null);if(_ct&&typeof _ct==='object')S.calColorTags=_ct;}
     }
     if(en.ok&&Array.isArray(en.data)){
       en.data.forEach(row=>{
@@ -1629,18 +1634,52 @@ document.getElementById('plant-btn').addEventListener('click',async()=>{
 });
 
 // ── COPY BUTTONS ──────────────────────────────────────
+async function ensureCalMonthsLoaded(dates){
+  if(typeof calConnected==='undefined'||!calConnected)return;
+  const months=new Set();
+  dates.forEach(ds=>{const d=new Date(ds+'T00:00:00');months.add(d.getFullYear()+'-'+d.getMonth());});
+  for(const key of months){
+    if(calFetchedMonths[key])continue;
+    const[y,m]=key.split('-').map(Number);
+    await fetchCalMonth(y,m);
+  }
+}
+function calLinesForDates(dates){
+  if(typeof calEvents==='undefined')return[];
+  const seen={},lines=[];
+  dates.forEach(ds=>{
+    (calEvents[ds]||[]).forEach(ev=>{
+      if(isReminderEvent(ev)||seen[ev.id])return;
+      seen[ev.id]=true;
+      const tag=calTagOf(ev.color);
+      const isMulti=ev.endDate&&ev.endDate!==ev.date;
+      let when;
+      if(isMulti){
+        const s=new Date(ev.date+'T00:00:00'),e=new Date(ev.endDate+'T00:00:00');
+        when=(s.getMonth()+1)+'/'+s.getDate()+'–'+(e.getMonth()+1)+'/'+e.getDate();
+      }else{
+        when=ev.allDay?'全天':ev.time;
+      }
+      lines.push(`  📅 ${when}${tag?'['+tag+']':''} ${ev.title}`);
+    });
+  });
+  return lines;
+}
 function tdlText(tdl,tdlDone){
   return(tdl||[]).map((r,i)=>{
     const done=tdlDone?!!tdlDone['t'+i]:null;
     return`${done===null?'':done?'✅ ':'⬜ '}${r.theme?r.theme+'：':''}${r.task}`;
   }).join('\n');
 }
-document.getElementById('copy-btn').addEventListener('click',()=>{
+document.getElementById('copy-btn').addEventListener('click',async()=>{
+  const b=document.getElementById('copy-btn');
+  await ensureCalMonthsLoaded([today()]);
   const d=S.diary,c=HABITS.filter(h=>S.checked[h.k]).map(h=>h.l);
   const todayT=(S.todayTDL||[]).map((r,i)=>`${S.tdlDone['t'+i]?'✅':'⬜'} ${r.theme?r.theme+'：':''}${r.task}`).join('\n');
   const tomorrowT=tdlText(S.tomorrowTDL);
-  navigator.clipboard.writeText(`${today()} 紀錄\n做了：${c.join('、')||'無'}\n\n今日TDL：\n${todayT||'無'}\n\n🌟 Highlights：${d.hl||'無'}\n📖 Reflection：${d.rf||'無'}\n🥹 Gratitude：${d.gr||'無'}\n💬 金句：${d.quote||'無'}\n\n明天TDL：\n${tomorrowT||'無'}`).then(()=>{
-    const b=document.getElementById('copy-btn');b.innerHTML=`${fi('2705',15)} 已複製！`;setTimeout(()=>{b.innerHTML=`${fi('1f4cb',15)} 複製今日紀錄給 Claude`;},2000);
+  const calT=calLinesForDates([today()]).join('\n');
+  navigator.clipboard.writeText(`${today()} 紀錄\n做了：${c.join('、')||'無'}\n\n今日TDL：\n${todayT||'無'}\n\n📅 今日行程：\n${calT||'無'}\n\n🌟 Highlights：${d.hl||'無'}\n📖 Reflection：${d.rf||'無'}\n🥹 Gratitude：${d.gr||'無'}\n💬 金句：${d.quote||'無'}\n\n明天TDL：\n${tomorrowT||'無'}`).then(()=>{
+    b.innerHTML=`${fi('2705',15)} 已複製！`;setTimeout(()=>{b.innerHTML=`${fi('1f4cb',15)} 複製今日紀錄給 Claude`;},2000);
   });
 });
 
@@ -2024,8 +2063,9 @@ function renderWeekly(){
 document.getElementById('wk-prev').addEventListener('click',()=>{weekOffset--;renderWeekly();});
 document.getElementById('wk-next').addEventListener('click',()=>{weekOffset++;renderWeekly();});
 document.getElementById('wk-jump-today').addEventListener('click',()=>{weekOffset=0;renderWeekly();});
-document.getElementById('copy-week-btn').addEventListener('click',()=>{
+document.getElementById('copy-week-btn').addEventListener('click',async()=>{
   const dates=weekDates(weekOffset);
+  await ensureCalMonthsLoaded(dates);
   const lines=[`📊 ${weekLabel(weekOffset)}的格蘭朵紀錄（請幫我分析）`,''];
   dates.forEach(ds=>{
     const e=S.entries.find(x=>x.date===ds);
@@ -2042,6 +2082,8 @@ document.getElementById('copy-week-btn').addEventListener('click',()=>{
     if(e.tdl?.length)lines.push(`  📝 TDL：${e.tdl.map(r=>`${r.theme?r.theme+'：':''}${r.task}`).join('、')}`);
     lines.push('');
   });
+  const calT=calLinesForDates(dates);
+  if(calT.length){lines.push('📅 本週行程');lines.push(...calT);lines.push('');}
   navigator.clipboard.writeText(lines.join('\n')).then(()=>{
     const b=document.getElementById('copy-week-btn');b.innerHTML=`${fi('2705',15)} 已複製！`;setTimeout(()=>{b.innerHTML=`${fi('1f4cb',15)} 複製這週紀錄給 Claude`;},2000);
   });
@@ -2112,8 +2154,9 @@ function renderMonthly(){
 document.getElementById('mo-prev').addEventListener('click',()=>{monthOffset--;renderMonthly();});
 document.getElementById('mo-next').addEventListener('click',()=>{monthOffset++;renderMonthly();});
 document.getElementById('mo-jump-today').addEventListener('click',()=>{monthOffset=0;renderMonthly();});
-document.getElementById('copy-month-btn').addEventListener('click',()=>{
+document.getElementById('copy-month-btn').addEventListener('click',async()=>{
   const dates=monthDates(monthOffset);
+  await ensureCalMonthsLoaded(dates);
   const lines=[`📊 ${monthLabel(monthOffset)}的格蘭朵紀錄（請幫我分析）`,''];
   dates.forEach(ds=>{
     const e=S.entries.find(x=>x.date===ds);
@@ -2124,6 +2167,8 @@ document.getElementById('copy-month-btn').addEventListener('click',()=>{
     if(e.diary?.rf)lines.push(`  📖 ${e.diary.rf}`);
     if(e.diary?.gr)lines.push(`  🥹 ${e.diary.gr}`);
   });
+  const calT=calLinesForDates(dates);
+  if(calT.length){lines.push('');lines.push('📅 本月行程');lines.push(...calT);}
   navigator.clipboard.writeText(lines.join('\n')).then(()=>{
     const b=document.getElementById('copy-month-btn');b.innerHTML=`${fi('2705',15)} 已複製！`;setTimeout(()=>{b.innerHTML=`${fi('1f4cb',15)} 複製這月紀錄給 Claude`;},2000);
   });
@@ -2982,6 +3027,24 @@ function renderSettings(){
   const crs=document.getElementById('cal-remind-sel');if(crs)crs.value=localStorage.getItem('grandol_cal_remind')||'10';
   const cci=document.getElementById('cal-code-input');if(cci)cci.placeholder=localStorage.getItem('grandol_code')?'已設定（輸入可更改）':'輸入 GAS 裡設定的通行碼';
   if(typeof updateCalStatus==='function')updateCalStatus();
+  renderCalTagList();
+}
+function renderCalTagList(){
+  const box=document.getElementById('cal-tag-list');
+  if(!box)return;
+  ensureCalColorTagsDefaults();
+  box.innerHTML=Object.keys(CAL_COLORS).map(cid=>`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+      <span style="width:18px;height:18px;border-radius:50%;flex-shrink:0;background:${CAL_COLORS[cid]};"></span>
+      <input class="tdl-in cal-tag-in" data-c="${cid}" placeholder="標籤名稱（留空不顯示）" value="${(S.calColorTags[cid]||'').replace(/"/g,'&quot;')}" style="flex:1;min-width:0;"/>
+    </div>`).join('');
+  box.querySelectorAll('.cal-tag-in').forEach(inp=>{
+    inp.addEventListener('change',e=>{
+      const v=e.target.value.trim();
+      if(v)S.calColorTags[e.target.dataset.c]=v;else delete S.calColorTags[e.target.dataset.c];
+      sv(S);syncStateDebounced();
+    });
+  });
 }
 
 // ── 通知：總開關 ──
@@ -3727,6 +3790,17 @@ document.querySelectorAll('.export-all-btn').forEach(b=>b.addEventListener('clic
 let calEvents={},calConnected=false,calFetchedMonths={};
 const CAL_COLORS={'1':'#7986cb','2':'#33b679','3':'#8e24aa','4':'#e67c73','5':'#f6c026','6':'#f5511d','7':'#039be5','8':'#616161','9':'#3f51b5','10':'#0b8043','11':'#d60000'};
 let calNewColor='';
+let calEditingId=null;
+function ensureCalColorTagsDefaults(){
+  if(!S.calColorTags||typeof S.calColorTags!=='object'){
+    S.calColorTags={'4':'家人朋友','5':'創作','7':'講座','3':'跳舞/吉他'};
+    sv(S);
+  }
+}
+function calTagOf(colorId){
+  ensureCalColorTagsDefaults();
+  return (colorId&&S.calColorTags[colorId])||'';
+}
 function isReminderEvent(ev){
   const ids=(S.notifications&&S.notifications.calIds)||[];
   return ids.indexOf(ev.id)>=0;
@@ -3777,8 +3851,11 @@ function calEvRow(ev,delBtn){
     _pillTxt=ev.time;_pillBg='rgba(159,225,203,.4)';_pillColor='#0F6E56';
   }
   const pill=_c+'<span style="background:'+_pillBg+';color:'+_pillColor+';font-size:11px;font-weight:700;border-radius:999px;padding:2px 9px;flex-shrink:0;white-space:nowrap;">'+_pillTxt+'</span>';
-  return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(200,196,247,.18);">'+pill+
+  const _tag=calTagOf(ev.color);
+  const _tagChip=_tag?'<span style="font-size:10px;color:var(--tc3);flex-shrink:0;">🏷️'+_tag.replace(/</g,'&lt;')+'</span>':'';
+  return '<div class="cal-ev-row" data-id="'+ev.id+'" style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(200,196,247,.18);'+(delBtn?'cursor:pointer;':'')+'">'+pill+
     '<span style="flex:1;font-size:13px;color:var(--tc);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(ev.title||'').replace(/</g,'&lt;')+'</span>'+
+    _tagChip+
     (delBtn?'<button class="cal-ev-del" data-id="'+ev.id+'" style="background:none;border:none;color:var(--tc3);cursor:pointer;font-size:12px;flex-shrink:0;">✕</button>':'')+
   '</div>';
 }
@@ -3797,6 +3874,7 @@ function renderTodayEvents(){
 function renderCalDayPanel(ds){
   const form=document.getElementById('pop-cal-form');
   form.style.display='block';
+  calEditingId=null;
   const d=new Date(ds+'T00:00:00');
   const evs=(calEvents[ds]||[]).filter(ev=>!isReminderEvent(ev));
   const defRemind=localStorage.getItem('grandol_cal_remind')||'10';
@@ -3825,13 +3903,22 @@ function renderCalDayPanel(ds){
       '<div id="cal-new-days" style="display:none;gap:6px;margin-bottom:7px;flex-wrap:wrap;">'+[1,2,3,4,5,6,0].map(dd=>'<div class="day-chip" data-d="'+dd+'">'+wdArr[dd]+'</div>').join('')+'</div>'+
       '<div style="display:flex;align-items:center;gap:6px;margin-bottom:7px;">'+
         '<span style="font-size:12px;color:var(--tc2);">🎨 顏色</span>'+
-        '<div id="cal-new-colors" style="display:flex;gap:6px;flex-wrap:wrap;">'+['','1','4','5','2','7','3','11'].map(cc=>'<span class="cal-swatch" data-c="'+cc+'" style="width:20px;height:20px;border-radius:50%;cursor:pointer;border:2px solid '+(cc===calNewColor?'#3A2E5A':'rgba(255,255,255,.9)')+';background:'+(cc?CAL_COLORS[cc]:'linear-gradient(135deg,#C8C4F7,#9FE1CB)')+';box-shadow:0 1px 4px rgba(100,80,160,.25);"></span>').join('')+'</div>'+
+        '<div id="cal-new-colors" style="display:flex;gap:8px;flex-wrap:wrap;">'+['',...Object.keys(CAL_COLORS)].map(cc=>{
+          const _tag=cc?calTagOf(cc):'';
+          return '<div class="cal-swatch" data-c="'+cc+'" style="display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;width:36px;">'+
+            '<span class="cal-swatch-dot" style="width:20px;height:20px;border-radius:50%;display:block;border:2px solid '+(cc===calNewColor?'#3A2E5A':'rgba(255,255,255,.9)')+';background:'+(cc?CAL_COLORS[cc]:'linear-gradient(135deg,#C8C4F7,#9FE1CB)')+';box-shadow:0 1px 4px rgba(100,80,160,.25);"></span>'+
+            (_tag?'<span style="font-size:9px;color:var(--tc3);text-align:center;line-height:1.15;">'+_tag+'</span>':'')+
+          '</div>';
+        }).join('')+'</div>'+
       '</div>'+
       '<div style="display:flex;align-items:center;gap:6px;margin-bottom:9px;">'+
         '<span style="font-size:12px;color:var(--tc2);">🔔 提醒</span>'+
         '<select id="cal-new-remind" class="time-in"><option value="0">準時</option><option value="5">提前5分</option><option value="10">提前10分</option><option value="30">提前30分</option><option value="60">提前1小時</option><option value="1440">提前1天</option><option value="custom">自訂…</option></select>'+
       '</div>'+
-      '<button class="mini-btn" id="cal-new-save" style="width:100%;">加進日曆</button>'+
+      '<div style="display:flex;gap:8px;">'+
+        '<button class="mini-btn" id="cal-new-save" style="flex:1;">加進日曆</button>'+
+        '<button type="button" id="cal-edit-cancel" style="display:none;flex-shrink:0;background:rgba(200,196,247,.4);color:var(--tc2);border:none;border-radius:11px;padding:0 14px;font-family:\'Quicksand\',sans-serif;font-size:13px;cursor:pointer;">取消編輯</button>'+
+      '</div>'+
     '</div></div>';
   document.getElementById('cal-new-remind').value=defRemind;
   document.getElementById('cal-new-start-date').value=ds;
@@ -3857,6 +3944,33 @@ function renderCalDayPanel(ds){
     syncRepeatVsRange();
   });
   document.getElementById('cal-new-end-date').addEventListener('change',syncRepeatVsRange);
+  function startEditCalEvent(ev){
+    calEditingId=ev.id;
+    document.getElementById('cal-new-title').value=ev.title||'';
+    document.getElementById('cal-new-start-date').value=ev.date;
+    document.getElementById('cal-new-end-date').value=ev.endDate||ev.date;
+    document.getElementById('cal-new-allday').checked=!!ev.allDay;
+    document.getElementById('cal-new-start-time').value=ev.allDay?'09:00':(ev.time||'09:00');
+    document.getElementById('cal-new-start-time').disabled=!!ev.allDay;
+    document.getElementById('cal-new-end-time').disabled=!!ev.allDay;
+    calNewColor=ev.color||'';
+    document.querySelectorAll('#cal-new-colors .cal-swatch-dot').forEach(dot=>{
+      dot.style.borderColor=dot.closest('.cal-swatch').dataset.c===calNewColor?'#3A2E5A':'rgba(255,255,255,.9)';
+    });
+    syncRepeatVsRange();
+    const btn=document.getElementById('cal-new-save');
+    btn.textContent='💾 更新行程';
+    document.getElementById('cal-edit-cancel').style.display='inline-block';
+    document.getElementById('cal-new-title').scrollIntoView({behavior:'smooth',block:'center'});
+  }
+  form.querySelectorAll('.cal-ev-row').forEach(row=>{
+    row.addEventListener('click',e=>{
+      if(e.target.closest('.cal-ev-del'))return;
+      const ev=(calEvents[ds]||[]).find(x=>x.id===row.dataset.id);
+      if(ev)startEditCalEvent(ev);
+    });
+  });
+  document.getElementById('cal-edit-cancel').addEventListener('click',()=>renderCalDayPanel(ds));
   document.getElementById('cal-new-repeat').addEventListener('change',e=>{
     document.getElementById('cal-new-days').style.display=e.target.value==='weekly'?'flex':'none';
     const edInput=document.getElementById('cal-new-end-date');
@@ -3870,7 +3984,9 @@ function renderCalDayPanel(ds){
   document.querySelectorAll('#cal-new-days .day-chip').forEach(ch=>ch.addEventListener('click',()=>ch.classList.toggle('on')));
   document.querySelectorAll('#cal-new-colors .cal-swatch').forEach(sw=>sw.addEventListener('click',()=>{
     calNewColor=sw.dataset.c;
-    document.querySelectorAll('#cal-new-colors .cal-swatch').forEach(x=>x.style.borderColor=x.dataset.c===calNewColor?'#3A2E5A':'rgba(255,255,255,.9)');
+    document.querySelectorAll('#cal-new-colors .cal-swatch-dot').forEach(dot=>{
+      dot.style.borderColor=dot.closest('.cal-swatch').dataset.c===calNewColor?'#3A2E5A':'rgba(255,255,255,.9)';
+    });
   }));
   document.getElementById('cal-new-remind').addEventListener('change',e=>{
     if(e.target.value==='custom'){
@@ -3905,12 +4021,16 @@ function renderCalDayPanel(ds){
     const repeatDays=[...document.querySelectorAll('#cal-new-days .day-chip.on')].map(ch=>+ch.dataset.d);
     const btn=document.getElementById('cal-new-save');
     if(endDate<startDate){alert('結束日期不能早於開始日期喔');return;}
-    btn.disabled=true;btn.textContent='⏳ 加入中...';
+    const editingId=calEditingId;
+    btn.disabled=true;btn.textContent=editingId?'⏳ 更新中...':'⏳ 加入中...';
     try{
-      const res=await gasPost('addCalEvent',{title:title,date:startDate,endDate:endDate,time:time,endTime:endTime,allDay:allDay,reminderMin:remind,repeat:repeat,repeatDays:repeatDays,color:calNewColor});
+      const payload={title:title,date:startDate,endDate:endDate,time:time,endTime:endTime,allDay:allDay,reminderMin:remind,repeat:repeat,repeatDays:repeatDays,color:calNewColor};
+      if(editingId)payload.id=editingId;
+      const res=await gasPost(editingId?'editCalEvent':'addCalEvent',payload);
       const j=await res.json();
       if(!j.ok)throw new Error(j.error||'');
       calConnected=true;updateCalStatus();
+      if(editingId)Object.keys(calEvents).forEach(k=>{calEvents[k]=(calEvents[k]||[]).filter(x=>x.id!==editingId);});
       if(repeat!=='none'){
         calFetchedMonths={};
         await fetchCalMonth(popCalYear,popCalMonth,true);
@@ -3928,11 +4048,12 @@ function renderCalDayPanel(ds){
         calEvents[startDate].push({id:j.id,title:title,allDay:allDay,time:allDay?'':time,date:startDate,color:calNewColor});
         calEvents[startDate].sort((x,z)=>(x.allDay?'':x.time)<(z.allDay?'':z.time)?-1:1);
       }
+      calEditingId=null;
       renderPopCal();renderCalDayPanel(ds);renderTodayEvents();
       triggerBurst(document.getElementById('pop-cal-title')||btn);
     }catch(e){
-      alert('新增失敗 🥲\n可能是 GAS 還沒更新到 v2.8、還沒執行 testCalAuth 授權日曆、或通行碼不對。');
-      btn.disabled=false;btn.textContent='加進日曆';
+      alert((editingId?'更新失敗':'新增失敗')+' 🥲\n可能是 GAS 還沒更新到 v3.2、還沒執行 testCalAuth 授權日曆、或通行碼不對。');
+      btn.disabled=false;btn.textContent=editingId?'💾 更新行程':'加進日曆';
     }
   });
 }

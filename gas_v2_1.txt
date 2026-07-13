@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════
-// 格蘭朵魔法森林 GAS v3.1（新增：開始/結束時間可自訂）
+// 格蘭朵魔法森林 GAS v3.2（新增：編輯行程／顏色標籤同步）
 // ═══════════════════════════════════════════════════════
 // 【安裝步驟】
 // 1. 打開你的 Google Sheet（ID: ***REMOVED***）
@@ -13,6 +13,7 @@
 //       notifications | supportResources | todaySession | expLog
 //    ※ 從 v2.6 升級只要做一件事：
 //      state 分頁第1列最後面（todaySession 後面）補一欄標題 expLog
+//    ※ 從 v3.1 升級到 v3.2：state 分頁第1列最後面再補一欄標題 calColorTags
 //    ※ 從更舊版升級，state 尾端依序要有：supportResources、todaySession；
 //      entries 尾端要有 photos
 // 3. 擴充功能 → Apps Script → 全選刪掉舊程式碼 → 貼上這份 → 儲存
@@ -37,7 +38,7 @@ const ENTRY_COLS = ['date','checked','hl','rf','gr','quote','tdl','exp','streak'
 const STATE_COLS = ['flowers','apples','bigApples','goldFruits','seedlings','trees',
                     'achievements','quotes','calNotes','myPeople','treasures',
                     'lastPlant','lastStreak','streak','exp','gardenPos','supportCategories',
-                    'notifications','supportResources','todaySession','expLog'];
+                    'notifications','supportResources','todaySession','expLog','calColorTags'];
 
 // 這個函式只是用來手動觸發 Google Drive 授權，之後留著也沒關係
 function testDriveAuth(){
@@ -125,6 +126,7 @@ function doPost(e){
     if(action==='uploadImage') return json({ok:true,url:uploadImageToDrive_(payload)});
     if(action==='clearAll') return json({ok:clearAll_()});
     if(action==='addCalEvent') return json({ok:true,id:addCalEvent_(payload)});
+    if(action==='editCalEvent') return json({ok:true,id:editCalEvent_(payload)});
     if(action==='delCalEvent') return json({ok:delCalEvent_(payload)});
     if(action==='syncReminders') return json({ok:true,ids:syncReminders_(payload)});
     return json({ok:false,error:'unknown action: '+action});
@@ -290,6 +292,14 @@ function addCalEvent_(p){
   if(!isNaN(m) && m >= 0) ev.addPopupReminder(m);
   if(p.color && String(p.color).length) ev.setColor(String(p.color));
   return ev.getId();
+}
+
+// 編輯事件：跟 addCalEvent_ 用同一組參數（多帶 id）。做法是刪掉舊的再建一個新的，
+// 對重複系列來說語意跟刪除一致（整組換新），對單一事件來說最簡單也最不容易壞。
+function editCalEvent_(p){
+  if(!p || !p.id) throw new Error('missing id');
+  delCalEvent_({id:p.id});
+  return addCalEvent_(p);
 }
 
 // 刪除事件：{id}（重複系列會整組刪除）
