@@ -62,7 +62,7 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 
 /* GLASS CARDS */
 .gcard{background:var(--g1);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1.5px solid var(--gb);border-radius:24px;box-shadow:var(--gs);padding:1.1rem 1.15rem;margin-bottom:12px;position:relative;overflow:hidden;}
-.gcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(var(--primary-rgb),.35),rgba(var(--secondary-rgb),.35),transparent);pointer-events:none;}
+.gcard::before{content:'';position:absolute;top:0;left:0;right:0;height:1.5px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.95),transparent);pointer-events:none;}
 .gcard-scene{background:rgba(240,248,255,.58);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border:1.5px solid rgba(255,255,255,.8);border-radius:26px;box-shadow:var(--gs2);padding:1rem;margin-bottom:12px;position:relative;overflow:hidden;}
 .gcard-nb{background:rgba(255,252,235,.65);backdrop-filter:blur(18px);border:1.5px solid rgba(255,230,140,.5);border-radius:22px;box-shadow:0 8px 28px rgba(200,150,60,.1),inset 0 2px 0 rgba(255,255,255,.95);padding:1.1rem 1.15rem;margin-bottom:12px;}
 .sec-hd{font-family:'Baloo 2',sans-serif;font-size:14px;font-weight:800;color:var(--tc);margin-bottom:12px;display:flex;align-items:center;gap:7px;}
@@ -407,11 +407,19 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 /* ── 長按顯示註解（手機） ── */
 .gd-sprite{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none;}
 .gd-sprite.show-label .sprite-label{display:block;}
-/* ── 支持系統資源書 ── */
-.book-item{display:flex;flex-direction:column;align-items:center;width:46%;pointer-events:auto;cursor:pointer;}
-.book-item .bi-icon{font-size:32px;line-height:1.1;}
-.book-item img.bi-img{width:52px;height:52px;object-fit:contain;}
-.book-item .bi-title{font-size:11px;color:#6B5A3A;max-width:100%;text-align:center;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:3px;}
+/* ── 支持系統資源桌：便利貼卡片 ── */
+.book-item{display:flex;flex-direction:column;align-items:center;width:30%;pointer-events:auto;cursor:pointer;
+  background:linear-gradient(160deg,#FFF9E0,#FCEFB8);border-radius:4px 12px 12px 12px;padding:10px 8px 8px;
+  box-shadow:0 2px 4px rgba(35,35,30,.12),0 8px 16px -8px rgba(120,90,20,.35);position:relative;}
+.book-item::before{content:'';position:absolute;top:0;right:0;width:0;height:0;border-style:solid;border-width:0 11px 11px 0;border-color:transparent #F0DA8E transparent transparent;}
+.book-item:nth-child(3n+1){transform:rotate(-3deg);background:linear-gradient(160deg,#FFF9E0,#FCEFB8);}
+.book-item:nth-child(3n+2){transform:rotate(2deg);background:linear-gradient(160deg,#EAF6EE,#D3ECDC);}
+.book-item:nth-child(3n+2)::before{border-color:transparent #B9DFC7 transparent transparent;}
+.book-item:nth-child(3n+3){transform:rotate(-1.5deg);background:linear-gradient(160deg,#FDEDF2,#F7D6E2);}
+.book-item:nth-child(3n+3)::before{border-color:transparent #EFC1D3 transparent transparent;}
+.book-item .bi-icon{font-size:28px;line-height:1.1;}
+.book-item img.bi-img{width:44px;height:44px;object-fit:contain;border-radius:6px;}
+.book-item .bi-title{font-family:'Caveat',cursive;font-weight:700;font-size:15px;color:#5C4419;max-width:100%;text-align:center;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:4px;}
 .book-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:10;width:30px;height:30px;border-radius:50%;border:1.5px solid rgba(255,255,255,.9);background:rgba(255,255,255,.8);cursor:pointer;font-size:15px;color:#8A7048;display:none;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(120,90,40,.2);}
 .book-arrow.left{left:6px;}
 .book-arrow.right{right:6px;}
@@ -712,28 +720,20 @@ button{-webkit-tap-highlight-color:transparent;}
 <div class="page" id="page-support">
 <div class="gcard-scene" style="margin-top:4px;">
   <div class="sec-hd" style="position:relative;z-index:1;">📖 我的資源書</div>
-  <div id="book-stage" style="position:relative;height:380px;border-radius:18px;overflow:hidden;background:linear-gradient(180deg,#EAD9C4 0%,#DFC3A0 55%,#CBA97F 100%);">
-    <div style="position:absolute;top:10px;left:14px;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/2615_3d.png" width="30" height="30" onerror="this.outerHTML='☕'"/></div>
-    <div style="position:absolute;top:8px;right:16px;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1fab4_3d.png" width="32" height="32" onerror="this.outerHTML='🪴'"/></div>
-    <div style="position:absolute;bottom:8px;right:12px;transform:rotate(-16deg);"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/270f_3d.png" width="26" height="26" onerror="this.outerHTML='✏️'"/></div>
-    <div style="position:absolute;bottom:12px;left:12px;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4a1_3d.png" width="28" height="28" onerror="this.outerHTML='💡'"/></div>
-    <div style="position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);width:min(94%,600px);height:300px;filter:drop-shadow(0 8px 18px rgba(110,80,40,.3));display:flex;">
-      <div style="flex:1;background:linear-gradient(105deg,#FFFDF5 55%,#F2E8D2 100%);border-radius:14px 3px 3px 14px;border:1px solid #E4D6B8;position:relative;">
-        <div style="position:absolute;inset:0;border-radius:14px 3px 3px 14px;overflow:hidden;background:repeating-linear-gradient(180deg,transparent 0 26px,rgba(180,160,120,.14) 26px 27px);"></div>
-        <div id="book-page-l" style="position:absolute;inset:14px 8px 10px 14px;display:flex;flex-wrap:wrap;align-content:flex-start;justify-content:space-around;row-gap:8px;"></div>
-      </div>
-      <div style="width:9px;background:linear-gradient(90deg,#D8C8A8,#B09A74,#D8C8A8);flex-shrink:0;"></div>
-      <div style="flex:1;background:linear-gradient(255deg,#FFFDF5 55%,#F2E8D2 100%);border-radius:3px 14px 14px 3px;border:1px solid #E4D6B8;position:relative;">
-        <div style="position:absolute;inset:0;border-radius:3px 14px 14px 3px;overflow:hidden;background:repeating-linear-gradient(180deg,transparent 0 26px,rgba(180,160,120,.14) 26px 27px);"></div>
-        <div id="book-page-r" style="position:absolute;inset:14px 14px 10px 8px;display:flex;flex-wrap:wrap;align-content:flex-start;justify-content:space-around;row-gap:8px;"></div>
-      </div>
-    </div>
+  <div id="book-stage" style="position:relative;height:380px;border-radius:18px;overflow:hidden;background:linear-gradient(180deg,#B98255 0%,#9C6B41 55%,#7C5230 100%);">
+    <div style="position:absolute;inset:0;opacity:.5;background-image:repeating-linear-gradient(90deg,rgba(0,0,0,.05) 0 2px,transparent 2px 40px),repeating-linear-gradient(0deg,rgba(255,255,255,.04) 0 1px,transparent 1px 90px);pointer-events:none;"></div>
+    <div style="position:absolute;top:10px;left:14px;z-index:2;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/2615_3d.png" width="30" height="30" onerror="this.outerHTML='☕'"/></div>
+    <div style="position:absolute;top:8px;right:16px;z-index:2;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1fab4_3d.png" width="32" height="32" onerror="this.outerHTML='🪴'"/></div>
+    <div style="position:absolute;bottom:10px;right:14px;transform:rotate(24deg);z-index:2;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/270f_3d.png" width="60" height="60" onerror="this.outerHTML='✏️'"/></div>
+    <div style="position:absolute;bottom:14px;left:12px;z-index:2;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4a1_3d.png" width="28" height="28" onerror="this.outerHTML='💡'"/></div>
+    <div style="position:absolute;top:52px;left:16px;width:34px;height:14px;background:rgba(149,188,198,.55);border:1px solid rgba(255,255,255,.4);transform:rotate(-8deg);z-index:2;"></div>
+    <div id="book-page-l" style="position:absolute;inset:56px 18px 44px;display:flex;flex-wrap:wrap;align-content:flex-start;justify-content:space-around;gap:10px;overflow-y:auto;z-index:1;"></div>
     <button id="book-prev" class="book-arrow left">‹</button>
     <button id="book-next" class="book-arrow right">›</button>
-    <div id="book-empty" style="position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);font-size:12px;color:#A08858;display:none;white-space:nowrap;">書頁還是空的，從下面收進資源吧 ✨</div>
-    <div id="book-more" style="position:absolute;bottom:6px;left:50%;transform:translateX(-50%);font-size:10px;color:#8A7048;display:none;"></div>
+    <div id="book-empty" style="position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);font-size:12px;color:#FFF3DC;display:none;white-space:nowrap;z-index:2;">桌面還空空的，從下面收藏一些寶物吧 ✨</div>
+    <div id="book-more" style="position:absolute;bottom:6px;left:50%;transform:translateX(-50%);font-size:10px;color:#FFF3DC;display:none;z-index:2;"></div>
   </div>
-  <p style="text-align:center;font-size:11px;color:var(--tc3);margin-top:6px;position:relative;z-index:1;">妳收藏的書、音樂、影片、人...都會住進這本書裡</p>
+  <p style="text-align:center;font-size:11px;color:var(--tc3);margin-top:6px;position:relative;z-index:1;">妳收藏的書、音樂、影片、人...都會住進這張桌子裡</p>
 </div>
 <div id="resource-categories"></div>
 <div class="export-row" style="margin:0 0 16px;">
@@ -3323,10 +3323,10 @@ function renderBookItems(){
   bindBookGlobals();
   const all=[];
   (S.resourceCats||[]).forEach(cat=>(cat.items||[]).forEach(it=>all.push(it)));
-  const l=document.getElementById('book-page-l'),r=document.getElementById('book-page-r');
+  const l=document.getElementById('book-page-l');
   const empty=document.getElementById('book-empty'),ind=document.getElementById('book-more');
   if(!l)return;
-  const per=12,totalPages=Math.max(1,Math.ceil(all.length/per));
+  const per=9,totalPages=Math.max(1,Math.ceil(all.length/per));
   if(bookPage>=totalPages)bookPage=totalPages-1;
   if(bookPage<0)bookPage=0;
   const shown=all.slice(bookPage*per,bookPage*per+per);
@@ -3335,14 +3335,13 @@ function renderBookItems(){
     const icon=it.img?`<img class="bi-img" src="${it.img}"/>`:`<span class="bi-icon">${fi(it.emoji||'1f4da',40)}</span>`;
     return`<div class="book-item" data-rid="${it.id||''}" style="animation:${anim};cursor:grab;">${icon}<div class="bi-title">${it.title||''}</div></div>`;
   };
-  l.innerHTML=shown.slice(0,6).map((it,i)=>mk(it,i)).join('');
-  r.innerHTML=shown.slice(6,12).map((it,i)=>mk(it,i+6)).join('');
-  [l,r].forEach(pg=>pg.querySelectorAll('.book-item').forEach(el=>{
+  l.innerHTML=shown.map((it,i)=>mk(it,i)).join('');
+  l.querySelectorAll('.book-item').forEach(el=>{
     const it=all.find(x=>String(x.id)===el.dataset.rid);
     const tap=()=>{if(it)showResPopup(it);};
     el.addEventListener('mousedown',e=>bkStart(el,tap,e));
     el.addEventListener('touchstart',e=>bkStart(el,tap,e),{passive:false});
-  }));
+  });
   empty.style.display=all.length?'none':'block';
   const pv=document.getElementById('book-prev'),nx=document.getElementById('book-next');
   if(all.length>per){
