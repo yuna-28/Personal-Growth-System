@@ -1654,22 +1654,49 @@ function toggleCalPopup(){
 document.getElementById('cal-popup-btn').addEventListener('click',toggleCalPopup);
 document.getElementById('pop-cal-close').addEventListener('click',toggleCalPopup);
 document.getElementById('cal-popup').addEventListener('click',e=>{if(e.target.id==='cal-popup')toggleCalPopup();});
+const CAL_BAR_H=15,CAL_BAR_GAP=2;
+function isMultiDayEvent(ev){return ev.endDate&&ev.endDate!==ev.date;}
 function renderPopCal(){
   document.getElementById('pop-cal-title').textContent=`${popCalYear}年${popCalMonth+1}月`;
   const startDay=new Date(popCalYear,popCalMonth,1).getDay();
   const daysInMonth=new Date(popCalYear,popCalMonth+1,0).getDate();
+  // 先算出每一列(週)有幾條跨日橫幅要疊放(lane)，好預留高度
+  const rowDatesArr=[];
+  { let cur=[]; for(let i=0;i<startDay;i++)cur.push(''); for(let day=1;day<=daysInMonth;day++){cur.push(`${popCalYear}-${String(popCalMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`); if(cur.length===7){rowDatesArr.push(cur);cur=[];}} if(cur.length)rowDatesArr.push(cur); }
+  const seenMulti={};const multiEvs=[];
+  rowDatesArr.forEach(row=>row.forEach(ds=>{if(!ds)return;(calEvents[ds]||[]).forEach(ev=>{if(!isReminderEvent(ev)&&isMultiDayEvent(ev)&&!seenMulti[ev.id]){seenMulti[ev.id]=true;multiEvs.push(ev);}});}));
+  const rowLaneCount=rowDatesArr.map(row=>{
+    const segs=[];
+    multiEvs.forEach(ev=>{
+      let cs=-1,ce=-1;
+      row.forEach((ds,ci)=>{if(ds&&ds>=ev.date&&ds<=ev.endDate){if(cs===-1)cs=ci;ce=ci;}});
+      if(cs!==-1)segs.push({cs,ce});
+    });
+    segs.sort((a,b)=>a.cs-b.cs);
+    const lanes=[];
+    segs.forEach(seg=>{
+      let lane=lanes.findIndex(endCol=>endCol<seg.cs);
+      if(lane===-1){lane=lanes.length;lanes.push(-1);}
+      lanes[lane]=seg.ce;
+    });
+    return lanes.length;
+  });
   let html=wdArr.map(w=>`<div class="cal-dow">${w}</div>`).join('');
   for(let i=0;i<startDay;i++)html+=`<div class="cal-day empty"></div>`;
   for(let day=1;day<=daysInMonth;day++){
     const ds=`${popCalYear}-${String(popCalMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const rowIdx=Math.floor((startDay+day-1)/7);
     const isToday=ds===today();
     const hasRecord=!!S.entries.find(e=>e.date===ds);
     const hasNote=!!S.calNotes[ds];
-    const _evs=(typeof calEvents!=='undefined'&&calEvents[ds])?calEvents[ds].filter(ev=>!(typeof isReminderEvent==='function'&&isReminderEvent(ev))):[];
+    const _evs=(typeof calEvents!=='undefined'&&calEvents[ds])?calEvents[ds].filter(ev=>!(typeof isReminderEvent==='function'&&isReminderEvent(ev))&&!isMultiDayEvent(ev)):[];
     const _chips=_evs.slice(0,2).map(ev=>{const _c=(typeof CAL_COLORS!=='undefined'&&ev.color&&CAL_COLORS[ev.color])?CAL_COLORS[ev.color]:'';return `<div class="cal-ev-chip"${_c?` style="background:${_c}26;color:${_c};"`:''}>${(ev.title||'').replace(/</g,'&lt;')}</div>`;}).join('')+(_evs.length>2?`<div class="cal-more">+${_evs.length-2}</div>`:'');
+    const _laneN=rowLaneCount[rowIdx]||0;
+    const _spacer=_laneN?`<div class="cal-bar-spacer" style="height:${_laneN*(CAL_BAR_H+CAL_BAR_GAP)}px;flex-shrink:0;"></div>`:'';
     html+=`<div class="cal-day${isToday?' today':''}${hasRecord?' has-record':''}" data-date="${ds}">
       <div class="cal-add" data-add="${ds}" title="新增行程">＋</div>
       <div class="cd-num"><span class="cd-n">${day}</span>${hasRecord?'<span style="width:4px;height:4px;border-radius:50%;background:#5DCAA5;display:inline-block;"></span>':''}${hasNote?'<span style="width:4px;height:4px;border-radius:50%;background:#FAC775;display:inline-block;"></span>':''}</div>
+      ${_spacer}
       ${_chips}
     </div>`;
   }
@@ -1681,7 +1708,63 @@ function renderPopCal(){
     e.stopPropagation();
     if(typeof renderCalDayPanel==='function')renderCalDayPanel(b.dataset.add);
   }));
+  renderMultiDayBars();
 }
+function renderMultiDayBars(){
+  const grid=document.getElementById('pop-cal-grid');
+  if(!grid)return;
+  const old=grid.querySelector('.cal-bar-layer');if(old)old.remove();
+  const cells=[...grid.querySelectorAll('.cal-day')];
+  if(!cells.length)return;
+  const rows=[];for(let i=0;i<cells.length;i+=7)rows.push(cells.slice(i,i+7));
+  const seenMulti={};const events=[];
+  cells.forEach(el=>{if(!el.dataset.date)return;(calEvents[el.dataset.date]||[]).forEach(ev=>{if(!isReminderEvent(ev)&&isMultiDayEvent(ev)&&!seenMulti[ev.id]){seenMulti[ev.id]=true;events.push(ev);}});});
+  if(!events.length)return;
+  grid.style.position='relative';
+  const layer=document.createElement('div');
+  layer.className='cal-bar-layer';
+  layer.style.cssText='position:absolute;left:0;top:0;right:0;bottom:0;pointer-events:none;';
+  grid.appendChild(layer);
+  const gridRect=grid.getBoundingClientRect();
+  rows.forEach(rowCells=>{
+    const rowDates=rowCells.map(c=>c.dataset.date||'');
+    const segs=[];
+    events.forEach(ev=>{
+      let cs=-1,ce=-1;
+      rowDates.forEach((ds,ci)=>{if(ds&&ds>=ev.date&&ds<=ev.endDate){if(cs===-1)cs=ci;ce=ci;}});
+      if(cs!==-1)segs.push({ev,cs,ce});
+    });
+    if(!segs.length)return;
+    segs.sort((a,b)=>a.cs-b.cs);
+    const lanes=[];
+    segs.forEach(seg=>{
+      let lane=lanes.findIndex(endCol=>endCol<seg.cs);
+      if(lane===-1){lane=lanes.length;lanes.push(-1);}
+      lanes[lane]=seg.ce;
+      seg.lane=lane;
+    });
+    const firstReal=rowCells[segs[0].cs];
+    const numEl=firstReal.querySelector('.cd-num');
+    const numRect=numEl.getBoundingClientRect();
+    const barTop=numRect.bottom-gridRect.top+2;
+    segs.forEach(seg=>{
+      const leftCell=rowCells[seg.cs].getBoundingClientRect();
+      const rightCell=rowCells[seg.ce].getBoundingClientRect();
+      const leftPx=leftCell.left-gridRect.left;
+      const widthPx=rightCell.right-leftCell.left-3;
+      const c=(seg.ev.color&&CAL_COLORS[seg.ev.color])?CAL_COLORS[seg.ev.color]:'#7B6FE8';
+      const bar=document.createElement('div');
+      bar.style.cssText='position:absolute;left:'+leftPx+'px;top:'+(barTop+seg.lane*(CAL_BAR_H+CAL_BAR_GAP))+'px;width:'+widthPx+'px;height:'+CAL_BAR_H+'px;background:'+c+';color:#fff;border-radius:4px;font-size:9.5px;line-height:'+CAL_BAR_H+'px;padding:0 5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:700;pointer-events:auto;cursor:pointer;';
+      bar.textContent=seg.ev.title||'';
+      bar.addEventListener('click',e=>{e.stopPropagation();renderCalDayPanel(seg.ev.date);});
+      layer.appendChild(bar);
+    });
+  });
+}
+window.addEventListener('resize',()=>{
+  const popup=document.getElementById('cal-popup');
+  if(popup&&popup.style.display!=='none')renderMultiDayBars();
+});
 function selectPopCalDate(ds){
   if(ds>today()){renderCalDayPanel(ds);return;}
   viewDate=(ds===today())?null:ds;
@@ -3663,7 +3746,15 @@ async function fetchCalMonth(y,m,force){
     const j=await res.json();
     if(!j.ok)throw new Error(j.error||'');
     Object.keys(calEvents).forEach(ds=>{if(ds>=first&&ds<=last)delete calEvents[ds];});
-    (j.data||[]).forEach(ev=>{(calEvents[ev.date]=calEvents[ev.date]||[]).push(ev);});
+    (j.data||[]).forEach(ev=>{
+      const _s=ev.date,_e=ev.endDate||ev.date;
+      if(_e>_s){
+        let _cur=new Date(_s+'T00:00:00');const _end=new Date(_e+'T00:00:00');
+        while(_cur<=_end){const _k=fmtLocal(_cur);(calEvents[_k]=calEvents[_k]||[]).push(ev);_cur.setDate(_cur.getDate()+1);}
+      }else{
+        (calEvents[ev.date]=calEvents[ev.date]||[]).push(ev);
+      }
+    });
     Object.values(calEvents).forEach(a=>a.sort((x,z)=>(x.allDay?'':x.time)<(z.allDay?'':z.time)?-1:1));
     calFetchedMonths[key]=true;calConnected=true;calLastFetch=Date.now();
   }catch(e){calConnected=false;}
@@ -3674,7 +3765,18 @@ async function fetchCalMonth(y,m,force){
 }
 function calEvRow(ev,delBtn){
   const _c=(ev.color&&CAL_COLORS[ev.color])?'<span style="width:8px;height:8px;border-radius:50%;background:'+CAL_COLORS[ev.color]+';flex-shrink:0;"></span>':'';
-  const pill=_c+ev.allDay?'<span style="background:rgba(250,199,117,.35);color:#854F0B;font-size:11px;font-weight:700;border-radius:999px;padding:2px 9px;flex-shrink:0;">全天</span>':'<span style="background:rgba(159,225,203,.4);color:#0F6E56;font-size:11px;font-weight:700;border-radius:999px;padding:2px 9px;flex-shrink:0;">'+ev.time+'</span>';
+  const isMulti=ev.endDate&&ev.endDate!==ev.date;
+  let _pillTxt,_pillBg,_pillColor;
+  if(isMulti){
+    const _s=new Date(ev.date+'T00:00:00'),_e=new Date(ev.endDate+'T00:00:00');
+    _pillTxt=(_s.getMonth()+1)+'/'+_s.getDate()+'–'+(_e.getMonth()+1)+'/'+_e.getDate();
+    _pillBg='rgba(123,111,232,.18)';_pillColor='#534AB7';
+  }else if(ev.allDay){
+    _pillTxt='全天';_pillBg='rgba(250,199,117,.35)';_pillColor='#854F0B';
+  }else{
+    _pillTxt=ev.time;_pillBg='rgba(159,225,203,.4)';_pillColor='#0F6E56';
+  }
+  const pill=_c+'<span style="background:'+_pillBg+';color:'+_pillColor+';font-size:11px;font-weight:700;border-radius:999px;padding:2px 9px;flex-shrink:0;white-space:nowrap;">'+_pillTxt+'</span>';
   return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(200,196,247,.18);">'+pill+
     '<span style="flex:1;font-size:13px;color:var(--tc);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(ev.title||'').replace(/</g,'&lt;')+'</span>'+
     (delBtn?'<button class="cal-ev-del" data-id="'+ev.id+'" style="background:none;border:none;color:var(--tc3);cursor:pointer;font-size:12px;flex-shrink:0;">✕</button>':'')+
@@ -3713,6 +3815,13 @@ function renderCalDayPanel(ds){
       '</div>'+
       '<div id="cal-new-days" style="display:none;gap:6px;margin-bottom:7px;flex-wrap:wrap;">'+[1,2,3,4,5,6,0].map(dd=>'<div class="day-chip" data-d="'+dd+'">'+wdArr[dd]+'</div>').join('')+'</div>'+
       '<div style="display:flex;align-items:center;gap:6px;margin-bottom:7px;">'+
+        '<label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--tc2);cursor:pointer;"><input type="checkbox" id="cal-new-multiday"/> 跨日（例如出遊）</label>'+
+      '</div>'+
+      '<div id="cal-new-end-wrap" style="display:none;align-items:center;gap:6px;margin-bottom:7px;">'+
+        '<span style="font-size:12px;color:var(--tc2);">📅 到</span>'+
+        '<input type="date" id="cal-new-end" class="time-in"/>'+
+      '</div>'+
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:7px;">'+
         '<span style="font-size:12px;color:var(--tc2);">🎨 顏色</span>'+
         '<div id="cal-new-colors" style="display:flex;gap:6px;flex-wrap:wrap;">'+['','1','4','5','2','7','3','11'].map(cc=>'<span class="cal-swatch" data-c="'+cc+'" style="width:20px;height:20px;border-radius:50%;cursor:pointer;border:2px solid '+(cc===calNewColor?'#3A2E5A':'rgba(255,255,255,.9)')+';background:'+(cc?CAL_COLORS[cc]:'linear-gradient(135deg,#C8C4F7,#9FE1CB)')+';box-shadow:0 1px 4px rgba(100,80,160,.25);"></span>').join('')+'</div>'+
       '</div>'+
@@ -3724,7 +3833,28 @@ function renderCalDayPanel(ds){
     '</div></div>';
   document.getElementById('cal-new-remind').value=defRemind;
   document.getElementById('cal-new-allday').addEventListener('change',e=>{document.getElementById('cal-new-time').disabled=e.target.checked;});
-  document.getElementById('cal-new-repeat').addEventListener('change',e=>{document.getElementById('cal-new-days').style.display=e.target.value==='weekly'?'flex':'none';});
+  document.getElementById('cal-new-repeat').addEventListener('change',e=>{
+    document.getElementById('cal-new-days').style.display=e.target.value==='weekly'?'flex':'none';
+    const mdChk=document.getElementById('cal-new-multiday');
+    if(e.target.value!=='none'){
+      mdChk.checked=false;mdChk.disabled=true;
+      document.getElementById('cal-new-end-wrap').style.display='none';
+    }else{
+      mdChk.disabled=false;
+    }
+  });
+  document.getElementById('cal-new-multiday').addEventListener('change',e=>{
+    const on=e.target.checked;
+    document.getElementById('cal-new-end-wrap').style.display=on?'flex':'none';
+    const repSel=document.getElementById('cal-new-repeat');
+    if(on){
+      document.getElementById('cal-new-end').value=ds;
+      repSel.value='none';repSel.disabled=true;
+      document.getElementById('cal-new-days').style.display='none';
+    }else{
+      repSel.disabled=false;
+    }
+  });
   document.querySelectorAll('#cal-new-days .day-chip').forEach(ch=>ch.addEventListener('click',()=>ch.classList.toggle('on')));
   document.querySelectorAll('#cal-new-colors .cal-swatch').forEach(sw=>sw.addEventListener('click',()=>{
     calNewColor=sw.dataset.c;
@@ -3745,7 +3875,7 @@ function renderCalDayPanel(ds){
       const res=await gasPost('delCalEvent',{id:b.dataset.id});
       const j=await res.json();
       if(!j.ok)throw new Error(j.error||'');
-      calEvents[ds]=(calEvents[ds]||[]).filter(x=>x.id!==b.dataset.id);
+      Object.keys(calEvents).forEach(k=>{calEvents[k]=(calEvents[k]||[]).filter(x=>x.id!==b.dataset.id);});
       renderPopCal();renderCalDayPanel(ds);renderTodayEvents();
     }catch(e){alert('刪除失敗 🥲 請檢查網路與通行碼');}
   }));
@@ -3758,16 +3888,28 @@ function renderCalDayPanel(ds){
     const remind=rsel.value==='custom'?(+((rsel.querySelector('option[value="custom"]')||{}).dataset||{}).min||10):rsel.value;
     const repeat=document.getElementById('cal-new-repeat').value;
     const repeatDays=[...document.querySelectorAll('#cal-new-days .day-chip.on')].map(ch=>+ch.dataset.d);
+    const multiday=document.getElementById('cal-new-multiday').checked;
+    const endDate=multiday?document.getElementById('cal-new-end').value:ds;
     const btn=document.getElementById('cal-new-save');
+    if(multiday&&endDate<ds){alert('結束日期不能早於開始日期喔');return;}
     btn.disabled=true;btn.textContent='⏳ 加入中...';
     try{
-      const res=await gasPost('addCalEvent',{title:title,date:ds,time:time,allDay:allDay,reminderMin:remind,repeat:repeat,repeatDays:repeatDays,color:calNewColor});
+      const res=await gasPost('addCalEvent',{title:title,date:ds,endDate:endDate,time:time,allDay:allDay,reminderMin:remind,repeat:repeat,repeatDays:repeatDays,color:calNewColor});
       const j=await res.json();
       if(!j.ok)throw new Error(j.error||'');
       calConnected=true;updateCalStatus();
       if(repeat!=='none'){
         calFetchedMonths={};
         await fetchCalMonth(popCalYear,popCalMonth,true);
+      }else if(multiday&&endDate>ds){
+        const newEv={id:j.id,title:title,allDay:allDay,time:allDay?'':time,date:ds,endDate:endDate,color:calNewColor};
+        let cur=new Date(ds+'T00:00:00');const endD=new Date(endDate+'T00:00:00');
+        while(cur<=endD){
+          const k=fmtLocal(cur);
+          calEvents[k]=calEvents[k]||[];
+          calEvents[k].push(newEv);
+          cur.setDate(cur.getDate()+1);
+        }
       }else{
         calEvents[ds]=calEvents[ds]||[];
         calEvents[ds].push({id:j.id,title:title,allDay:allDay,time:allDay?'':time,date:ds,color:calNewColor});

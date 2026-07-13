@@ -3,7 +3,7 @@
 // 策略：network first，失敗才用快取（GAS API 一律不快取）
 // 更新版本時把 CACHE_NAME 的數字 +1，舊快取會自動清掉
 // ═══════════════════════════════════════════════════════
-const CACHE_NAME = 'grandol-cache-v23';
+const CACHE_NAME = 'grandol-cache-v24';
 
 const PRECACHE = [
   './',

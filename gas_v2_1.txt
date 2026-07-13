@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════
-// 格蘭朵魔法森林 GAS v2.9（日曆：顏色/重複/系列刪除＋讀所有日曆）
+// 格蘭朵魔法森林 GAS v3.0（新增：跨日行程／橫幅事件）
 // ═══════════════════════════════════════════════════════
 // 【安裝步驟】
 // 1. 打開你的 Google Sheet（ID: ***REMOVED***）
@@ -219,11 +219,21 @@ function getCalEvents_(startStr, endStr){
   CalendarApp.getAllOwnedCalendars().forEach(function(cal){
     cal.getEvents(start, end).forEach(function(ev){
       const allDay = ev.isAllDayEvent();
+      let endDate;
+      if(allDay){
+        const exclusiveEnd = ev.getAllDayEndDate();
+        const inclusiveEnd = new Date(exclusiveEnd);
+        inclusiveEnd.setDate(inclusiveEnd.getDate() - 1);
+        endDate = Utilities.formatDate(inclusiveEnd, tz, 'yyyy-MM-dd');
+      }else{
+        endDate = Utilities.formatDate(ev.getEndTime(), tz, 'yyyy-MM-dd');
+      }
       out.push({
         id: ev.getId(),
         title: ev.getTitle(),
         allDay: allDay,
         date: Utilities.formatDate(allDay ? ev.getAllDayStartDate() : ev.getStartTime(), tz, 'yyyy-MM-dd'),
+        endDate: endDate,
         time: allDay ? '' : Utilities.formatDate(ev.getStartTime(), tz, 'HH:mm'),
         color: ev.getColor() || ''
       });
@@ -232,15 +242,27 @@ function getCalEvents_(startStr, endStr){
   return out;
 }
 
-// 新增事件：{title, date, time, allDay, reminderMin, repeat:'none|daily|weekly', repeatDays:[0-6], color:'1'-'11'}
+// 新增事件：{title, date, time, allDay, reminderMin, repeat:'none|daily|weekly', repeatDays:[0-6], color:'1'-'11', endDate:'yyyy-mm-dd'（跨日用，repeat=none時才生效）}
 function addCalEvent_(p){
   if(!p || !p.title || !p.date) throw new Error('missing title/date');
   const cal = CalendarApp.getDefaultCalendar();
   const WD = [CalendarApp.Weekday.SUNDAY, CalendarApp.Weekday.MONDAY, CalendarApp.Weekday.TUESDAY,
               CalendarApp.Weekday.WEDNESDAY, CalendarApp.Weekday.THURSDAY, CalendarApp.Weekday.FRIDAY,
               CalendarApp.Weekday.SATURDAY];
+  const isMultiDay = p.endDate && p.endDate !== p.date && (!p.repeat || p.repeat === 'none');
   let ev;
-  if(p.repeat === 'daily' || p.repeat === 'weekly'){
+  if(isMultiDay){
+    if(p.allDay){
+      const endExclusive = new Date(p.endDate + 'T00:00:00');
+      endExclusive.setDate(endExclusive.getDate() + 1);
+      ev = cal.createAllDayEvent(p.title, new Date(p.date + 'T00:00:00'), endExclusive);
+    }else{
+      const start = new Date(p.date + 'T' + (p.time || '09:00') + ':00');
+      const end = new Date(p.endDate + 'T' + (p.time || '09:00') + ':00');
+      end.setTime(end.getTime() + 60 * 60000);
+      ev = cal.createEvent(p.title, start, end);
+    }
+  }else if(p.repeat === 'daily' || p.repeat === 'weekly'){
     var rec;
     if(p.repeat === 'weekly' && p.repeatDays && p.repeatDays.length){
       rec = CalendarApp.newRecurrence().addWeeklyRule().onlyOnWeekdays(p.repeatDays.map(function(d){ return WD[d]; }));
