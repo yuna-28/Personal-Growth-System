@@ -148,6 +148,19 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-image:url('
 .cal-add:hover{background:rgba(139,127,232,.3);opacity:1;}
 .cal-ev-chip{font-size:9.5px;line-height:1.45;background:#7B6FE8;color:#fff;border-radius:4px;padding:1.5px 5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;text-align:left;}
 .cal-more{font-size:9.5px;color:#7F77DD;font-weight:700;text-align:left;padding-left:4px;}
+/* 日曆下方面板：質感細節 */
+.cal-day-badge{width:40px;height:40px;border-radius:13px;background:linear-gradient(155deg,#8B7FE8,#6659C9);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;flex-shrink:0;box-shadow:0 6px 14px -6px rgba(100,80,200,.5);}
+.cal-day-badge .cdb-n{font-family:'Baloo 2',sans-serif;font-size:16px;font-weight:800;}
+.cal-day-badge .cdb-m{font-size:8.5px;letter-spacing:.05em;opacity:.85;margin-top:1px;}
+.cal-vine{height:13px;margin:12px 2px 8px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='14' viewBox='0 0 40 14'%3E%3Cpath d='M0 7 Q10 -2 20 7 T40 7' fill='none' stroke='%23C8BEEA' stroke-width='1.4'/%3E%3C/svg%3E");background-repeat:repeat-x;background-size:38px 13px;opacity:.8;}
+.cal-ev-row{border-radius:12px;transition:background .15s;}
+.cal-ev-row:hover{background:rgba(200,196,247,.16);}
+.cal-tag-chip{font-size:10.5px;font-weight:700;border-radius:999px;padding:3px 10px;background:rgba(200,196,247,.35);color:#5B4FA8;flex-shrink:0;white-space:nowrap;}
+.cal-swatch-dot{border-radius:52% 48% 55% 45%/48% 52% 48% 52%;transition:transform .15s;}
+.cal-swatch:hover .cal-swatch-dot{transform:translateY(-2px);}
+.cal-form-card{border:1.5px solid rgba(200,190,240,.4);border-radius:16px;padding:14px 14px 12px;margin-top:2px;background:rgba(255,255,255,.32);}
+.cal-lbl{font-size:11.5px;color:var(--tc2);font-weight:700;letter-spacing:.02em;}
+.cal-save-btn{box-shadow:0 10px 22px -10px rgba(100,80,200,.45);font-size:14px;padding:10px 14px;}
 @media(min-width:768px){
   .cal-day{min-height:92px;padding:4px 4px 5px;gap:2.5px;}
   .cal-day .cd-n{width:28px;height:28px;font-size:14.5px;}
@@ -3852,7 +3865,7 @@ function calEvRow(ev,delBtn){
   }
   const pill=_c+'<span style="background:'+_pillBg+';color:'+_pillColor+';font-size:11px;font-weight:700;border-radius:999px;padding:2px 9px;flex-shrink:0;white-space:nowrap;">'+_pillTxt+'</span>';
   const _tag=calTagOf(ev.color);
-  const _tagChip=_tag?'<span style="font-size:10px;color:var(--tc3);flex-shrink:0;">🏷️'+_tag.replace(/</g,'&lt;')+'</span>':'';
+  const _tagChip=_tag?'<span class="cal-tag-chip">'+_tag.replace(/</g,'&lt;')+'</span>':'';
   return '<div class="cal-ev-row" data-id="'+ev.id+'" style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(200,196,247,.18);'+(delBtn?'cursor:pointer;':'')+'">'+pill+
     '<span style="flex:1;font-size:13px;color:var(--tc);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(ev.title||'').replace(/</g,'&lt;')+'</span>'+
     _tagChip+
@@ -3878,45 +3891,50 @@ function renderCalDayPanel(ds){
   const d=new Date(ds+'T00:00:00');
   const evs=(calEvents[ds]||[]).filter(ev=>!isReminderEvent(ev));
   const defRemind=localStorage.getItem('grandol_cal_remind')||'10';
-  form.innerHTML='<div style="border-top:1px solid rgba(200,196,247,.3);margin:12px 0 0;padding-top:12px;">'+
-    '<div style="font-family:\'Baloo 2\',sans-serif;font-size:13px;font-weight:800;color:var(--tc);margin-bottom:8px;">📅 '+(d.getMonth()+1)+'/'+d.getDate()+' 週'+wdArr[d.getDay()]+' 的行程</div>'+
+  form.innerHTML='<div style="border-top:1px solid rgba(200,196,247,.3);margin:12px 0 0;padding-top:14px;">'+
+    '<div style="display:flex;align-items:center;gap:11px;margin-bottom:10px;">'+
+      '<div class="cal-day-badge"><span class="cdb-n">'+d.getDate()+'</span><span class="cdb-m">'+(d.getMonth()+1)+'月</span></div>'+
+      '<div><div style="font-family:\'Baloo 2\',sans-serif;font-size:15px;font-weight:800;color:var(--tc);">週'+wdArr[d.getDay()]+'的行程</div>'+
+      '<div style="font-size:11.5px;color:var(--tc3);margin-top:2px;">'+(evs.length?evs.length+' 項安排':'還沒有安排')+'</div></div>'+
+    '</div>'+
     '<div id="cal-day-events">'+(evs.length?evs.map(ev=>calEvRow(ev,true)).join(''):'<div style="font-size:12px;color:var(--tc3);padding:2px 0 6px;">這天還沒有行程</div>')+'</div>'+
-    '<div style="border:1.5px solid rgba(200,190,240,.45);border-radius:12px;padding:9px 10px;margin-top:8px;">'+
-      '<input class="tdl-in" id="cal-new-title" placeholder="標題（例如：看牙醫）" style="width:100%;margin-bottom:7px;"/>'+
+    '<div class="cal-vine"></div>'+
+    '<div class="cal-form-card">'+
+      '<input class="tdl-in" id="cal-new-title" placeholder="標題（例如：看牙醫）" style="width:100%;margin-bottom:9px;"/>'+
       '<div style="display:flex;gap:6px;align-items:center;margin-bottom:5px;">'+
-        '<span style="font-size:12px;color:var(--tc2);width:32px;flex-shrink:0;">開始</span>'+
+        '<span class="cal-lbl" style="width:32px;flex-shrink:0;">開始</span>'+
         '<input type="date" class="time-in" id="cal-new-start-date" style="flex:1;min-width:0;"/>'+
         '<input type="time" class="time-in" id="cal-new-start-time" value="09:00" style="flex:1;min-width:0;"/>'+
       '</div>'+
-      '<div style="display:flex;gap:6px;align-items:center;margin-bottom:7px;">'+
-        '<span style="font-size:12px;color:var(--tc2);width:32px;flex-shrink:0;">結束</span>'+
+      '<div style="display:flex;gap:6px;align-items:center;margin-bottom:9px;">'+
+        '<span class="cal-lbl" style="width:32px;flex-shrink:0;">結束</span>'+
         '<input type="date" class="time-in" id="cal-new-end-date" style="flex:1;min-width:0;"/>'+
         '<input type="time" class="time-in" id="cal-new-end-time" value="10:00" style="flex:1;min-width:0;"/>'+
       '</div>'+
-      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:7px;">'+
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:9px;">'+
         '<label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--tc2);cursor:pointer;"><input type="checkbox" id="cal-new-allday"/> 全天</label>'+
       '</div>'+
-      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:7px;">'+
-        '<span style="font-size:12px;color:var(--tc2);">🔁 重複</span>'+
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:9px;">'+
+        '<span class="cal-lbl">🔁 重複</span>'+
         '<select id="cal-new-repeat" class="time-in"><option value="none">不重複</option><option value="daily">每天</option><option value="weekly">每週</option></select>'+
       '</div>'+
-      '<div id="cal-new-days" style="display:none;gap:6px;margin-bottom:7px;flex-wrap:wrap;">'+[1,2,3,4,5,6,0].map(dd=>'<div class="day-chip" data-d="'+dd+'">'+wdArr[dd]+'</div>').join('')+'</div>'+
-      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:7px;">'+
-        '<span style="font-size:12px;color:var(--tc2);">🎨 顏色</span>'+
-        '<div id="cal-new-colors" style="display:flex;gap:8px;flex-wrap:wrap;">'+['',...Object.keys(CAL_COLORS)].map(cc=>{
+      '<div id="cal-new-days" style="display:none;gap:6px;margin-bottom:9px;flex-wrap:wrap;">'+[1,2,3,4,5,6,0].map(dd=>'<div class="day-chip" data-d="'+dd+'">'+wdArr[dd]+'</div>').join('')+'</div>'+
+      '<div style="margin-bottom:9px;">'+
+        '<div class="cal-lbl" style="margin-bottom:7px;">🎨 顏色標籤</div>'+
+        '<div id="cal-new-colors" style="display:flex;gap:10px;flex-wrap:wrap;">'+['',...Object.keys(CAL_COLORS)].map(cc=>{
           const _tag=cc?calTagOf(cc):'';
-          return '<div class="cal-swatch" data-c="'+cc+'" style="display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;width:36px;">'+
-            '<span class="cal-swatch-dot" style="width:20px;height:20px;border-radius:50%;display:block;border:2px solid '+(cc===calNewColor?'#3A2E5A':'rgba(255,255,255,.9)')+';background:'+(cc?CAL_COLORS[cc]:'linear-gradient(135deg,#C8C4F7,#9FE1CB)')+';box-shadow:0 1px 4px rgba(100,80,160,.25);"></span>'+
+          return '<div class="cal-swatch" data-c="'+cc+'" style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;width:36px;">'+
+            '<span class="cal-swatch-dot" style="width:22px;height:19px;display:block;border:2px solid '+(cc===calNewColor?'#3A2E5A':'rgba(255,255,255,.9)')+';background:'+(cc?CAL_COLORS[cc]:'linear-gradient(135deg,#C8C4F7,#9FE1CB)')+';box-shadow:0 2px 5px rgba(100,80,160,.25);"></span>'+
             (_tag?'<span style="font-size:9px;color:var(--tc3);text-align:center;line-height:1.15;">'+_tag+'</span>':'')+
           '</div>';
         }).join('')+'</div>'+
       '</div>'+
-      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:9px;">'+
-        '<span style="font-size:12px;color:var(--tc2);">🔔 提醒</span>'+
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">'+
+        '<span class="cal-lbl">🔔 提醒</span>'+
         '<select id="cal-new-remind" class="time-in"><option value="0">準時</option><option value="5">提前5分</option><option value="10">提前10分</option><option value="30">提前30分</option><option value="60">提前1小時</option><option value="1440">提前1天</option><option value="custom">自訂…</option></select>'+
       '</div>'+
       '<div style="display:flex;gap:8px;">'+
-        '<button class="mini-btn" id="cal-new-save" style="flex:1;">加進日曆</button>'+
+        '<button class="mini-btn cal-save-btn" id="cal-new-save" style="flex:1;">加進日曆</button>'+
         '<button type="button" id="cal-edit-cancel" style="display:none;flex-shrink:0;background:rgba(200,196,247,.4);color:var(--tc2);border:none;border-radius:11px;padding:0 14px;font-family:\'Quicksand\',sans-serif;font-size:13px;cursor:pointer;">取消編輯</button>'+
       '</div>'+
     '</div></div>';
