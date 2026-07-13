@@ -560,7 +560,7 @@ button{-webkit-tap-highlight-color:transparent;}
       <p style="text-align:center;font-size:11px;color:var(--tc3);margin-top:6px;position:relative;z-index:1;">點小狗切換動態 · 小狗/花/便利貼都可拖移</p>
     </div>
     <div class="gcard" id="today-events-card" style="display:none;">
-      <div class="sec-hd" style="justify-content:space-between;margin-bottom:8px;"><span>📅 今日行程</span><button id="today-event-add" title="新增今天的行程" style="width:26px;height:26px;border:none;border-radius:999px;background:rgba(139,127,232,.15);color:#534AB7;font-size:16px;cursor:pointer;line-height:1;">＋</button></div>
+      <div class="sec-hd" style="justify-content:space-between;margin-bottom:8px;"><span id="today-events-title">📅 今日行程</span><button id="today-event-add" title="新增今天的行程" style="width:26px;height:26px;border:none;border-radius:999px;background:rgba(139,127,232,.15);color:#534AB7;font-size:16px;cursor:pointer;line-height:1;">＋</button></div>
       <div id="today-events-list"></div>
     </div>
   </div>
@@ -1371,9 +1371,17 @@ function stickyCtx(){
   const ds=viewDate;
   const prev=new Date(ds+'T00:00:00');prev.setDate(prev.getDate()-1);
   const pe=S.entries.find(x=>x.date===fmtLocal(prev));
+  const items=(pe&&Array.isArray(pe.tdl))?pe.tdl:[];
   S.tdlHist=S.tdlHist||{};
-  if(!S.tdlHist[ds])S.tdlHist[ds]={};
-  return{ds:ds,items:(pe&&Array.isArray(pe.tdl))?pe.tdl:[],done:S.tdlHist[ds],todayMode:false};
+  if(!S.tdlHist[ds]){
+    S.tdlHist[ds]={};
+    // 舊資料救援：明細遺失但當天紀錄有「勾了幾項」→ 依數量還原勾選
+    const en=S.entries.find(x=>x.date===ds);
+    const cnt=Math.min((+((en||{}).tdlDone))||0,items.length);
+    for(let i=0;i<cnt;i++)S.tdlHist[ds]['t'+i]=true;
+    if(cnt)sv(S);
+  }
+  return{ds:ds,items:items,done:S.tdlHist[ds],todayMode:false};
 }
 function renderStickyNote(){
   const note=document.getElementById('sticky-note');
@@ -3461,6 +3469,8 @@ function applyViewDate(switchPage){
   if(noteEl)noteEl.value=S.calNotes[isT?today():viewDate]||'';
   renderTopDate();renderHabits();renderExpBar();renderPlantBtn();
   if(typeof renderTodayPhotos==='function')renderTodayPhotos();
+  if(typeof renderTodayEvents==='function')renderTodayEvents();
+  if(!isT&&typeof fetchCalMonth==='function'){const _vd=new Date(viewDate+'T00:00:00');fetchCalMonth(_vd.getFullYear(),_vd.getMonth());}
   if(switchPage){
     document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -3675,8 +3685,12 @@ function renderTodayEvents(){
   if(!card)return;
   if(!calConnected){card.style.display='none';return;}
   card.style.display='';
-  const evs=(calEvents[today()]||[]).filter(ev=>!isReminderEvent(ev));
-  document.getElementById('today-events-list').innerHTML=evs.length?evs.map(ev=>calEvRow(ev,false)).join(''):'<div style="font-size:12px;color:var(--tc3);padding:2px 0;">今天沒有安排，自由的一天 🌿</div>';
+  const isT=(typeof ctxIsToday!=='function')||ctxIsToday();
+  const ds=isT?today():viewDate;
+  const tt=document.getElementById('today-events-title');
+  if(tt){const dd=new Date(ds+'T00:00:00');tt.textContent=isT?'📅 今日行程':'📅 '+(dd.getMonth()+1)+'/'+dd.getDate()+' 行程';}
+  const evs=(calEvents[ds]||[]).filter(ev=>!isReminderEvent(ev));
+  document.getElementById('today-events-list').innerHTML=evs.length?evs.map(ev=>calEvRow(ev,false)).join(''):(isT?'<div style="font-size:12px;color:var(--tc3);padding:2px 0;">今天沒有安排，自由的一天 🌿</div>':'<div style="font-size:12px;color:var(--tc3);padding:2px 0;">這天沒有行程</div>');
 }
 function renderCalDayPanel(ds){
   const form=document.getElementById('pop-cal-form');
@@ -3771,10 +3785,12 @@ function renderCalDayPanel(ds){
 (function(){
   const b=document.getElementById('today-event-add');
   if(b)b.addEventListener('click',()=>{
-    popCalYear=new Date().getFullYear();popCalMonth=new Date().getMonth();
+    const ds=(typeof ctxIsToday==='function'&&!ctxIsToday())?viewDate:today();
+    const dd=new Date(ds+'T00:00:00');
+    popCalYear=dd.getFullYear();popCalMonth=dd.getMonth();
     const popup=document.getElementById('cal-popup');
     if(popup.style.display==='none'){popup.style.display='block';renderPopCal();fetchCalMonth(popCalYear,popCalMonth);}
-    renderCalDayPanel(today());
+    renderCalDayPanel(ds);
   });
 })();
 // ── 每日提醒 → 日曆重複事件（全自動）──
