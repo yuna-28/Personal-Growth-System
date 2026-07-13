@@ -3805,8 +3805,17 @@ function renderCalDayPanel(ds){
     '<div id="cal-day-events">'+(evs.length?evs.map(ev=>calEvRow(ev,true)).join(''):'<div style="font-size:12px;color:var(--tc3);padding:2px 0 6px;">這天還沒有行程</div>')+'</div>'+
     '<div style="border:1.5px solid rgba(200,190,240,.45);border-radius:12px;padding:9px 10px;margin-top:8px;">'+
       '<input class="tdl-in" id="cal-new-title" placeholder="標題（例如：看牙醫）" style="width:100%;margin-bottom:7px;"/>'+
-      '<div style="display:flex;gap:8px;align-items:center;margin-bottom:7px;">'+
-        '<input type="time" class="time-in" id="cal-new-time" value="09:00"/>'+
+      '<div style="display:flex;gap:6px;align-items:center;margin-bottom:5px;">'+
+        '<span style="font-size:12px;color:var(--tc2);width:32px;flex-shrink:0;">開始</span>'+
+        '<input type="date" class="time-in" id="cal-new-start-date" style="flex:1;min-width:0;"/>'+
+        '<input type="time" class="time-in" id="cal-new-start-time" value="09:00" style="flex:1;min-width:0;"/>'+
+      '</div>'+
+      '<div style="display:flex;gap:6px;align-items:center;margin-bottom:7px;">'+
+        '<span style="font-size:12px;color:var(--tc2);width:32px;flex-shrink:0;">結束</span>'+
+        '<input type="date" class="time-in" id="cal-new-end-date" style="flex:1;min-width:0;"/>'+
+        '<input type="time" class="time-in" id="cal-new-end-time" value="10:00" style="flex:1;min-width:0;"/>'+
+      '</div>'+
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:7px;">'+
         '<label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--tc2);cursor:pointer;"><input type="checkbox" id="cal-new-allday"/> 全天</label>'+
       '</div>'+
       '<div style="display:flex;align-items:center;gap:6px;margin-bottom:7px;">'+
@@ -3814,13 +3823,6 @@ function renderCalDayPanel(ds){
         '<select id="cal-new-repeat" class="time-in"><option value="none">不重複</option><option value="daily">每天</option><option value="weekly">每週</option></select>'+
       '</div>'+
       '<div id="cal-new-days" style="display:none;gap:6px;margin-bottom:7px;flex-wrap:wrap;">'+[1,2,3,4,5,6,0].map(dd=>'<div class="day-chip" data-d="'+dd+'">'+wdArr[dd]+'</div>').join('')+'</div>'+
-      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:7px;">'+
-        '<label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--tc2);cursor:pointer;"><input type="checkbox" id="cal-new-multiday"/> 跨日（例如出遊）</label>'+
-      '</div>'+
-      '<div id="cal-new-end-wrap" style="display:none;align-items:center;gap:6px;margin-bottom:7px;">'+
-        '<span style="font-size:12px;color:var(--tc2);">📅 到</span>'+
-        '<input type="date" id="cal-new-end" class="time-in"/>'+
-      '</div>'+
       '<div style="display:flex;align-items:center;gap:6px;margin-bottom:7px;">'+
         '<span style="font-size:12px;color:var(--tc2);">🎨 顏色</span>'+
         '<div id="cal-new-colors" style="display:flex;gap:6px;flex-wrap:wrap;">'+['','1','4','5','2','7','3','11'].map(cc=>'<span class="cal-swatch" data-c="'+cc+'" style="width:20px;height:20px;border-radius:50%;cursor:pointer;border:2px solid '+(cc===calNewColor?'#3A2E5A':'rgba(255,255,255,.9)')+';background:'+(cc?CAL_COLORS[cc]:'linear-gradient(135deg,#C8C4F7,#9FE1CB)')+';box-shadow:0 1px 4px rgba(100,80,160,.25);"></span>').join('')+'</div>'+
@@ -3832,27 +3834,37 @@ function renderCalDayPanel(ds){
       '<button class="mini-btn" id="cal-new-save" style="width:100%;">加進日曆</button>'+
     '</div></div>';
   document.getElementById('cal-new-remind').value=defRemind;
-  document.getElementById('cal-new-allday').addEventListener('change',e=>{document.getElementById('cal-new-time').disabled=e.target.checked;});
-  document.getElementById('cal-new-repeat').addEventListener('change',e=>{
-    document.getElementById('cal-new-days').style.display=e.target.value==='weekly'?'flex':'none';
-    const mdChk=document.getElementById('cal-new-multiday');
-    if(e.target.value!=='none'){
-      mdChk.checked=false;mdChk.disabled=true;
-      document.getElementById('cal-new-end-wrap').style.display='none';
-    }else{
-      mdChk.disabled=false;
-    }
-  });
-  document.getElementById('cal-new-multiday').addEventListener('change',e=>{
-    const on=e.target.checked;
-    document.getElementById('cal-new-end-wrap').style.display=on?'flex':'none';
+  document.getElementById('cal-new-start-date').value=ds;
+  document.getElementById('cal-new-end-date').value=ds;
+  function syncRepeatVsRange(){
+    const sd=document.getElementById('cal-new-start-date').value;
+    const ed=document.getElementById('cal-new-end-date').value;
     const repSel=document.getElementById('cal-new-repeat');
-    if(on){
-      document.getElementById('cal-new-end').value=ds;
+    if(ed&&sd&&ed!==sd){
       repSel.value='none';repSel.disabled=true;
       document.getElementById('cal-new-days').style.display='none';
     }else{
       repSel.disabled=false;
+    }
+  }
+  document.getElementById('cal-new-allday').addEventListener('change',e=>{
+    document.getElementById('cal-new-start-time').disabled=e.target.checked;
+    document.getElementById('cal-new-end-time').disabled=e.target.checked;
+  });
+  document.getElementById('cal-new-start-date').addEventListener('change',e=>{
+    const edInput=document.getElementById('cal-new-end-date');
+    if(edInput.value<e.target.value)edInput.value=e.target.value;
+    syncRepeatVsRange();
+  });
+  document.getElementById('cal-new-end-date').addEventListener('change',syncRepeatVsRange);
+  document.getElementById('cal-new-repeat').addEventListener('change',e=>{
+    document.getElementById('cal-new-days').style.display=e.target.value==='weekly'?'flex':'none';
+    const edInput=document.getElementById('cal-new-end-date');
+    if(e.target.value!=='none'){
+      edInput.value=document.getElementById('cal-new-start-date').value;
+      edInput.disabled=true;
+    }else{
+      edInput.disabled=false;
     }
   });
   document.querySelectorAll('#cal-new-days .day-chip').forEach(ch=>ch.addEventListener('click',()=>ch.classList.toggle('on')));
@@ -3883,27 +3895,28 @@ function renderCalDayPanel(ds){
     const title=document.getElementById('cal-new-title').value.trim();
     if(!title){alert('先填標題喔');return;}
     const allDay=document.getElementById('cal-new-allday').checked;
-    const time=document.getElementById('cal-new-time').value||'09:00';
+    const startDate=document.getElementById('cal-new-start-date').value||ds;
+    const endDate=document.getElementById('cal-new-end-date').value||startDate;
+    const time=document.getElementById('cal-new-start-time').value||'09:00';
+    const endTime=document.getElementById('cal-new-end-time').value||'';
     const rsel=document.getElementById('cal-new-remind');
     const remind=rsel.value==='custom'?(+((rsel.querySelector('option[value="custom"]')||{}).dataset||{}).min||10):rsel.value;
     const repeat=document.getElementById('cal-new-repeat').value;
     const repeatDays=[...document.querySelectorAll('#cal-new-days .day-chip.on')].map(ch=>+ch.dataset.d);
-    const multiday=document.getElementById('cal-new-multiday').checked;
-    const endDate=multiday?document.getElementById('cal-new-end').value:ds;
     const btn=document.getElementById('cal-new-save');
-    if(multiday&&endDate<ds){alert('結束日期不能早於開始日期喔');return;}
+    if(endDate<startDate){alert('結束日期不能早於開始日期喔');return;}
     btn.disabled=true;btn.textContent='⏳ 加入中...';
     try{
-      const res=await gasPost('addCalEvent',{title:title,date:ds,endDate:endDate,time:time,allDay:allDay,reminderMin:remind,repeat:repeat,repeatDays:repeatDays,color:calNewColor});
+      const res=await gasPost('addCalEvent',{title:title,date:startDate,endDate:endDate,time:time,endTime:endTime,allDay:allDay,reminderMin:remind,repeat:repeat,repeatDays:repeatDays,color:calNewColor});
       const j=await res.json();
       if(!j.ok)throw new Error(j.error||'');
       calConnected=true;updateCalStatus();
       if(repeat!=='none'){
         calFetchedMonths={};
         await fetchCalMonth(popCalYear,popCalMonth,true);
-      }else if(multiday&&endDate>ds){
-        const newEv={id:j.id,title:title,allDay:allDay,time:allDay?'':time,date:ds,endDate:endDate,color:calNewColor};
-        let cur=new Date(ds+'T00:00:00');const endD=new Date(endDate+'T00:00:00');
+      }else if(endDate>startDate){
+        const newEv={id:j.id,title:title,allDay:allDay,time:allDay?'':time,date:startDate,endDate:endDate,color:calNewColor};
+        let cur=new Date(startDate+'T00:00:00');const endD=new Date(endDate+'T00:00:00');
         while(cur<=endD){
           const k=fmtLocal(cur);
           calEvents[k]=calEvents[k]||[];
@@ -3911,9 +3924,9 @@ function renderCalDayPanel(ds){
           cur.setDate(cur.getDate()+1);
         }
       }else{
-        calEvents[ds]=calEvents[ds]||[];
-        calEvents[ds].push({id:j.id,title:title,allDay:allDay,time:allDay?'':time,date:ds,color:calNewColor});
-        calEvents[ds].sort((x,z)=>(x.allDay?'':x.time)<(z.allDay?'':z.time)?-1:1);
+        calEvents[startDate]=calEvents[startDate]||[];
+        calEvents[startDate].push({id:j.id,title:title,allDay:allDay,time:allDay?'':time,date:startDate,color:calNewColor});
+        calEvents[startDate].sort((x,z)=>(x.allDay?'':x.time)<(z.allDay?'':z.time)?-1:1);
       }
       renderPopCal();renderCalDayPanel(ds);renderTodayEvents();
       triggerBurst(document.getElementById('pop-cal-title')||btn);

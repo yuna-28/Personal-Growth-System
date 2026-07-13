@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════
-// 格蘭朵魔法森林 GAS v3.0（新增：跨日行程／橫幅事件）
+// 格蘭朵魔法森林 GAS v3.1（新增：開始/結束時間可自訂）
 // ═══════════════════════════════════════════════════════
 // 【安裝步驟】
 // 1. 打開你的 Google Sheet（ID: ***REMOVED***）
@@ -242,7 +242,7 @@ function getCalEvents_(startStr, endStr){
   return out;
 }
 
-// 新增事件：{title, date, time, allDay, reminderMin, repeat:'none|daily|weekly', repeatDays:[0-6], color:'1'-'11', endDate:'yyyy-mm-dd'（跨日用，repeat=none時才生效）}
+// 新增事件：{title, date, time, endTime, allDay, reminderMin, repeat:'none|daily|weekly', repeatDays:[0-6], color:'1'-'11', endDate:'yyyy-mm-dd'（跨日用，repeat=none時才生效）}
 function addCalEvent_(p){
   if(!p || !p.title || !p.date) throw new Error('missing title/date');
   const cal = CalendarApp.getDefaultCalendar();
@@ -250,6 +250,15 @@ function addCalEvent_(p){
               CalendarApp.Weekday.WEDNESDAY, CalendarApp.Weekday.THURSDAY, CalendarApp.Weekday.FRIDAY,
               CalendarApp.Weekday.SATURDAY];
   const isMultiDay = p.endDate && p.endDate !== p.date && (!p.repeat || p.repeat === 'none');
+  const start = new Date(p.date + 'T' + (p.time || '09:00') + ':00');
+  const endDateStr = isMultiDay ? p.endDate : p.date;
+  let end;
+  if(p.endTime){
+    end = new Date(endDateStr + 'T' + p.endTime + ':00');
+    if(end <= start) end = new Date(start.getTime() + 60 * 60000);
+  }else{
+    end = new Date(start.getTime() + 60 * 60000);
+  }
   let ev;
   if(isMultiDay){
     if(p.allDay){
@@ -257,9 +266,6 @@ function addCalEvent_(p){
       endExclusive.setDate(endExclusive.getDate() + 1);
       ev = cal.createAllDayEvent(p.title, new Date(p.date + 'T00:00:00'), endExclusive);
     }else{
-      const start = new Date(p.date + 'T' + (p.time || '09:00') + ':00');
-      const end = new Date(p.endDate + 'T' + (p.time || '09:00') + ':00');
-      end.setTime(end.getTime() + 60 * 60000);
       ev = cal.createEvent(p.title, start, end);
     }
   }else if(p.repeat === 'daily' || p.repeat === 'weekly'){
@@ -272,15 +278,11 @@ function addCalEvent_(p){
     if(p.allDay){
       ev = cal.createAllDayEventSeries(p.title, new Date(p.date + 'T00:00:00'), rec);
     }else{
-      const start = new Date(p.date + 'T' + (p.time || '09:00') + ':00');
-      const end = new Date(start.getTime() + 60 * 60000);
       ev = cal.createEventSeries(p.title, start, end, rec);
     }
   }else if(p.allDay){
     ev = cal.createAllDayEvent(p.title, new Date(p.date + 'T00:00:00'));
   }else{
-    const start = new Date(p.date + 'T' + (p.time || '09:00') + ':00');
-    const end = new Date(start.getTime() + 60 * 60000);
     ev = cal.createEvent(p.title, start, end);
   }
   ev.removeAllReminders();
