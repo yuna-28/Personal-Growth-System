@@ -3349,13 +3349,15 @@ function renderResCatTabs(){
 }
 let bookPage=0;
 let bkDragEl=null,bkSX=0,bkSY=0,bkMoved=false,bkTap=null,bkBound=false;
-let bkScrollEl=null,bkStartScrollTop=0,bkStartScrollLeft=0,bkPrevOverflowY='';
+let bkScrollEl=null,bkStartScrollTop=0,bkStartScrollLeft=0;
 function bkStart(el,onTap,e){
   bkDragEl=el;bkMoved=false;bkTap=onTap;
   const p=e.touches?e.touches[0]:e;bkSX=p.clientX;bkSY=p.clientY;
-  /* 拖曳期間鎖住外層捲動容器，避免手機慣性捲動讓卡片跟手指之間產生位移落差 */
+  /* 只記錄目前捲動位置，之後用差值補償殘留捲動——絕對不去動 overflow-y，
+     因為在部分瀏覽器（尤其手機 Safari）切成 hidden 會讓 scrollTop 立刻被歸零，
+     反而讓「補償」在拖曳一開始就把卡片彈飛一大段 */
   bkScrollEl=document.getElementById('book-page-l');
-  if(bkScrollEl){bkStartScrollTop=bkScrollEl.scrollTop;bkStartScrollLeft=bkScrollEl.scrollLeft;bkPrevOverflowY=bkScrollEl.style.overflowY;bkScrollEl.style.overflowY='hidden';}
+  if(bkScrollEl){bkStartScrollTop=bkScrollEl.scrollTop;bkStartScrollLeft=bkScrollEl.scrollLeft;}
   /* 記住手勢開始前的狀態：如果這次只是點擊（沒有真的拖），要恢復成「這個手勢開始前」的樣子，
      而不是強制清空——不然點一張先前被拖過的便利貼開 popup，會把它之前的拖曳位置洗掉 */
   el._prevTransform=el.style.transform;el._prevZIndex=el.style.zIndex;el._prevPosition=el.style.position;
@@ -3369,7 +3371,7 @@ function bkMove(e){
   const p=e.touches?e.touches[0]:e;
   const dx=p.clientX-bkSX,dy=p.clientY-bkSY;
   if(Math.abs(dx)>4||Math.abs(dy)>4)bkMoved=true;
-  /* 就算容器仍殘留一點捲動，也用捲動差值把它補回去，讓卡片視覺上永遠跟著手指/滑鼠走 */
+  /* 如果容器在拖曳期間真的被捲動了（例如手機慣性捲動），用差值補回去，卡片才會一直貼著手指 */
   const sdx=bkScrollEl?(bkScrollEl.scrollLeft-bkStartScrollLeft):0;
   const sdy=bkScrollEl?(bkScrollEl.scrollTop-bkStartScrollTop):0;
   bkDragEl.style.transform=`translate(${dx+sdx}px,${dy+sdy}px)`;
@@ -3377,7 +3379,7 @@ function bkMove(e){
 function bkEnd(){
   if(!bkDragEl)return;
   const el=bkDragEl,moved=bkMoved,tap=bkTap;bkDragEl=null;
-  if(bkScrollEl){bkScrollEl.style.overflowY=bkPrevOverflowY;bkScrollEl=null;}
+  bkScrollEl=null;
   const card=el.querySelector('.bi-card');if(card)card.style.transition='';
   if(!moved){el.style.transform=el._prevTransform||'';el.style.zIndex=el._prevZIndex||'';el.style.position=el._prevPosition||'';el.style.animation=el._anim||'';if(tap)tap();}
 }
