@@ -3358,6 +3358,9 @@ function bkStart(el,onTap,e){
   /* 拖曳期間鎖住外層捲動容器，避免手機慣性捲動讓卡片跟手指之間產生位移落差 */
   bkScrollEl=document.getElementById('book-page-l');
   if(bkScrollEl){bkStartScrollTop=bkScrollEl.scrollTop;bkStartScrollLeft=bkScrollEl.scrollLeft;bkPrevOverflowY=bkScrollEl.style.overflowY;bkScrollEl.style.overflowY='hidden';}
+  /* 記住手勢開始前的狀態：如果這次只是點擊（沒有真的拖），要恢復成「這個手勢開始前」的樣子，
+     而不是強制清空——不然點一張先前被拖過的便利貼開 popup，會把它之前的拖曳位置洗掉 */
+  el._prevTransform=el.style.transform;el._prevZIndex=el.style.zIndex;el._prevPosition=el.style.position;
   el._anim=el.style.animation;el.style.animation='none';el.style.transition='none';el.style.zIndex='6';el.style.position='relative';
   const card=el.querySelector('.bi-card');if(card)card.style.transition='none';
   e.preventDefault();
@@ -3378,7 +3381,7 @@ function bkEnd(){
   const el=bkDragEl,moved=bkMoved,tap=bkTap;bkDragEl=null;
   if(bkScrollEl){bkScrollEl.style.overflowY=bkPrevOverflowY;bkScrollEl=null;}
   const card=el.querySelector('.bi-card');if(card)card.style.transition='';
-  if(!moved){el.style.transform='';el.style.zIndex='';el.style.position='';el.style.animation=el._anim||'';if(tap)tap();}
+  if(!moved){el.style.transform=el._prevTransform||'';el.style.zIndex=el._prevZIndex||'';el.style.position=el._prevPosition||'';el.style.animation=el._anim||'';if(tap)tap();}
 }
 function bindBookGlobals(){
   if(bkBound)return;bkBound=true;
