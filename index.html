@@ -3351,9 +3351,35 @@ function renderResCatTabs(){
 }
 let bookPage=0;
 let bkDragEl=null,bkSX=0,bkSY=0,bkMoved=false,bkTap=null,bkBound=false;
-function bkStart(el,onTap,e){bkDragEl=el;bkMoved=false;bkTap=onTap;const p=e.touches?e.touches[0]:e;bkSX=p.clientX;bkSY=p.clientY;el._anim=el.style.animation;el.style.animation='none';el.style.transition='none';el.style.zIndex='6';el.style.position='relative';e.preventDefault();}
-function bkMove(e){if(!bkDragEl)return;if(e.cancelable)e.preventDefault();const p=e.touches?e.touches[0]:e;const dx=p.clientX-bkSX,dy=p.clientY-bkSY;if(Math.abs(dx)>4||Math.abs(dy)>4)bkMoved=true;bkDragEl.style.transform=`translate(${dx}px,${dy}px)`;}
-function bkEnd(){if(!bkDragEl)return;const el=bkDragEl,moved=bkMoved,tap=bkTap;bkDragEl=null;if(!moved){el.style.transform='';el.style.zIndex='';el.style.position='';el.style.animation=el._anim||'';if(tap)tap();}}
+let bkScrollEl=null,bkStartScrollTop=0,bkStartScrollLeft=0,bkPrevOverflowY='';
+function bkStart(el,onTap,e){
+  bkDragEl=el;bkMoved=false;bkTap=onTap;
+  const p=e.touches?e.touches[0]:e;bkSX=p.clientX;bkSY=p.clientY;
+  /* 拖曳期間鎖住外層捲動容器，避免手機慣性捲動讓卡片跟手指之間產生位移落差 */
+  bkScrollEl=document.getElementById('book-page-l');
+  if(bkScrollEl){bkStartScrollTop=bkScrollEl.scrollTop;bkStartScrollLeft=bkScrollEl.scrollLeft;bkPrevOverflowY=bkScrollEl.style.overflowY;bkScrollEl.style.overflowY='hidden';}
+  el._anim=el.style.animation;el.style.animation='none';el.style.transition='none';el.style.zIndex='6';el.style.position='relative';
+  const card=el.querySelector('.bi-card');if(card)card.style.transition='none';
+  e.preventDefault();
+}
+function bkMove(e){
+  if(!bkDragEl)return;
+  if(e.cancelable)e.preventDefault();
+  const p=e.touches?e.touches[0]:e;
+  const dx=p.clientX-bkSX,dy=p.clientY-bkSY;
+  if(Math.abs(dx)>4||Math.abs(dy)>4)bkMoved=true;
+  /* 就算容器仍殘留一點捲動，也用捲動差值把它補回去，讓卡片視覺上永遠跟著手指/滑鼠走 */
+  const sdx=bkScrollEl?(bkScrollEl.scrollLeft-bkStartScrollLeft):0;
+  const sdy=bkScrollEl?(bkScrollEl.scrollTop-bkStartScrollTop):0;
+  bkDragEl.style.transform=`translate(${dx+sdx}px,${dy+sdy}px)`;
+}
+function bkEnd(){
+  if(!bkDragEl)return;
+  const el=bkDragEl,moved=bkMoved,tap=bkTap;bkDragEl=null;
+  if(bkScrollEl){bkScrollEl.style.overflowY=bkPrevOverflowY;bkScrollEl=null;}
+  const card=el.querySelector('.bi-card');if(card)card.style.transition='';
+  if(!moved){el.style.transform='';el.style.zIndex='';el.style.position='';el.style.animation=el._anim||'';if(tap)tap();}
+}
 function bindBookGlobals(){
   if(bkBound)return;bkBound=true;
   window.addEventListener('mousemove',bkMove);window.addEventListener('touchmove',bkMove,{passive:false});
