@@ -34,6 +34,9 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;background-color:#E7E6
 body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.5;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");}
 .wrap{max-width:860px;margin:0 auto;}
 .bg{min-height:100vh;padding:0 0 calc(90px + env(safe-area-inset-bottom));}
+/* Web/桌面版：整體字級偏小，統一放大一點（改這個 --web-zoom 就能一次調整整體縮放） */
+:root{--web-zoom:1;}
+@media(min-width:768px){:root{--web-zoom:1.15;}.wrap{zoom:var(--web-zoom);}.bot-nav-wrap{zoom:var(--web-zoom);}}
 
 /* TOP BAR */
 .top-bar{padding:14px 1rem 8px;display:flex;align-items:center;justify-content:space-between;z-index:10;}
@@ -1306,12 +1309,15 @@ function checkAchievements(){
 
 // ── DRAG HELPER (generic) ─────────────────────────────
 function makeDraggable(el,stage,onEnd){
-  let drag=false,moved=false,sx,sy,ol,ot;
+  let drag=false,moved=false,sx,sy,ol,ot,zf=1;
   const xy=e=>e.touches?{x:e.touches[0].clientX,y:e.touches[0].clientY}:{x:e.clientX,y:e.clientY};
   const down=e=>{
     drag=true;moved=false;
     const p=xy(e),r=el.getBoundingClientRect(),sr=stage.getBoundingClientRect();
-    sx=p.x;sy=p.y;ol=r.left-sr.left+stage.scrollLeft||r.left-sr.left;ot=r.top-sr.top;
+    /* 若外層有 CSS zoom（web 版整體放大），getBoundingClientRect / clientX 都是「放大後」的視覺像素，
+       但 left/top 是元素本地像素，兩者比例差一個 zoom。用 stage 的實際縮放把視覺量換算回本地量，drag 才不會飄 */
+    zf=stage.clientWidth?(sr.width/stage.clientWidth):1;if(!zf)zf=1;
+    sx=p.x;sy=p.y;ol=(r.left-sr.left)/zf+stage.scrollLeft;ot=(r.top-sr.top)/zf;
     el.style.transition='none';
     if(el._onDragStart)el._onDragStart();
     e.preventDefault();e.stopPropagation();
@@ -1319,7 +1325,7 @@ function makeDraggable(el,stage,onEnd){
   const move=e=>{
     if(!drag)return;
     if(e.cancelable)e.preventDefault();
-    const p=xy(e),dx=p.x-sx,dy=p.y-sy;
+    const p=xy(e),dx=(p.x-sx)/zf,dy=(p.y-sy)/zf;
     if(Math.abs(dx)>4||Math.abs(dy)>4)moved=true;
     let nl=ol+dx,nt=ot+dy;
     nl=Math.max(0,Math.min(stage.clientWidth-el.offsetWidth,nl));
@@ -3349,10 +3355,13 @@ function renderResCatTabs(){
 }
 let bookPage=0;
 let bkDragEl=null,bkSX=0,bkSY=0,bkMoved=false,bkTap=null,bkBound=false;
-let bkScrollEl=null,bkStartScrollTop=0,bkStartScrollLeft=0,bkBaseX=0,bkBaseY=0;
+let bkScrollEl=null,bkStartScrollTop=0,bkStartScrollLeft=0,bkBaseX=0,bkBaseY=0,bkZoom=1;
 function bkStart(el,onTap,e){
   bkDragEl=el;bkMoved=false;bkTap=onTap;
   const p=e.touches?e.touches[0]:e;bkSX=p.clientX;bkSY=p.clientY;
+  /* web 版外層有 CSS zoom 時，clientX 是放大後的視覺像素、translate 卻是本地像素，
+     兩者差一個 zoom；量出這張卡片的實際縮放，move 時把游標位移換算回本地像素才不會飄 */
+  bkZoom=el.offsetWidth?(el.getBoundingClientRect().width/el.offsetWidth):1;if(!bkZoom)bkZoom=1;
   /* 只記錄目前捲動位置，之後用差值補償殘留捲動——絕對不去動 overflow-y，
      因為在部分瀏覽器（尤其手機 Safari）切成 hidden 會讓 scrollTop 立刻被歸零，
      反而讓「補償」在拖曳一開始就把卡片彈飛一大段 */
@@ -3373,7 +3382,8 @@ function bkMove(e){
   if(!bkDragEl)return;
   if(e.cancelable)e.preventDefault();
   const p=e.touches?e.touches[0]:e;
-  const dx=p.clientX-bkSX,dy=p.clientY-bkSY;
+  /* 游標位移換算回本地像素（除以 zoom），才不會在 web 放大時飄掉 */
+  const dx=(p.clientX-bkSX)/bkZoom,dy=(p.clientY-bkSY)/bkZoom;
   if(Math.abs(dx)>4||Math.abs(dy)>4)bkMoved=true;
   /* 如果容器在拖曳期間真的被捲動了（例如手機慣性捲動），用差值補回去，卡片才會一直貼著手指 */
   const sdx=bkScrollEl?(bkScrollEl.scrollLeft-bkStartScrollLeft):0;
