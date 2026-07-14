@@ -409,7 +409,7 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 .gd-sprite.show-label .sprite-label{display:block;}
 /* ── 支持系統資源書：拍立得便利貼拼貼 ── */
 /* .book-item 是拖曳用的外層（drag 系統直接操作它的 transform），旋轉/翻角視覺都放在內層 .bi-card 上，兩者互不干擾 */
-.book-item{display:inline-block;pointer-events:auto;cursor:pointer;}
+.book-item{display:inline-block;pointer-events:auto;cursor:pointer;touch-action:none;}
 .bi-card img.bi-img,.bi-card .bi-icon{-webkit-user-drag:none;user-select:none;-webkit-user-select:none;}
 .bi-card{
   display:flex;flex-direction:column;align-items:center;width:130px;
