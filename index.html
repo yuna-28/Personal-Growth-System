@@ -3349,7 +3349,7 @@ function renderResCatTabs(){
 }
 let bookPage=0;
 let bkDragEl=null,bkSX=0,bkSY=0,bkMoved=false,bkTap=null,bkBound=false;
-let bkScrollEl=null,bkStartScrollTop=0,bkStartScrollLeft=0;
+let bkScrollEl=null,bkStartScrollTop=0,bkStartScrollLeft=0,bkBaseX=0,bkBaseY=0;
 function bkStart(el,onTap,e){
   bkDragEl=el;bkMoved=false;bkTap=onTap;
   const p=e.touches?e.touches[0]:e;bkSX=p.clientX;bkSY=p.clientY;
@@ -3358,6 +3358,10 @@ function bkStart(el,onTap,e){
      反而讓「補償」在拖曳一開始就把卡片彈飛一大段 */
   bkScrollEl=document.getElementById('book-page-l');
   if(bkScrollEl){bkStartScrollTop=bkScrollEl.scrollTop;bkStartScrollLeft=bkScrollEl.scrollLeft;}
+  /* 關鍵：如果這張卡片先前已經被拖過、還帶著位移，要從「目前的位移」繼續累加，
+     不能每次都從 0 重算——否則抓一張已經移動過的卡片，第一個 move 就會把它拉回原位（看起來像瞬間飄走） */
+  const m=/translate\(\s*(-?[\d.]+)px\s*,\s*(-?[\d.]+)px/.exec(el.style.transform||'');
+  bkBaseX=m?parseFloat(m[1]):0;bkBaseY=m?parseFloat(m[2]):0;
   /* 記住手勢開始前的狀態：如果這次只是點擊（沒有真的拖），要恢復成「這個手勢開始前」的樣子，
      而不是強制清空——不然點一張先前被拖過的便利貼開 popup，會把它之前的拖曳位置洗掉 */
   el._prevTransform=el.style.transform;el._prevZIndex=el.style.zIndex;el._prevPosition=el.style.position;
@@ -3374,7 +3378,7 @@ function bkMove(e){
   /* 如果容器在拖曳期間真的被捲動了（例如手機慣性捲動），用差值補回去，卡片才會一直貼著手指 */
   const sdx=bkScrollEl?(bkScrollEl.scrollLeft-bkStartScrollLeft):0;
   const sdy=bkScrollEl?(bkScrollEl.scrollTop-bkStartScrollTop):0;
-  bkDragEl.style.transform=`translate(${dx+sdx}px,${dy+sdy}px)`;
+  bkDragEl.style.transform=`translate(${bkBaseX+dx+sdx}px,${bkBaseY+dy+sdy}px)`;
 }
 function bkEnd(){
   if(!bkDragEl)return;
