@@ -412,29 +412,30 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 .book-item{display:inline-block;pointer-events:auto;cursor:pointer;}
 .bi-card img.bi-img,.bi-card .bi-icon{-webkit-user-drag:none;user-select:none;-webkit-user-select:none;}
 .bi-card{
-  display:flex;flex-direction:column;align-items:center;width:176px;
-  background:#fff;padding:10px 10px 26px;position:relative;
-  box-shadow:0 10px 22px -10px rgba(0,0,0,.35),0 3px 6px rgba(0,0,0,.12);
+  display:flex;flex-direction:column;align-items:center;width:130px;
+  background:#fff;padding:7px 7px 19px;position:relative;
+  box-shadow:0 7px 17px -7px rgba(0,0,0,.35),0 2px 5px rgba(0,0,0,.12);
   transform:var(--bi-rot,rotate(0deg));
   transition:transform .15s ease,box-shadow .15s ease;
 }
 .bi-card::after{
   content:'';position:absolute;right:0;bottom:0;width:0;height:0;
-  border-style:solid;border-width:0 0 16px 16px;border-color:transparent transparent rgba(0,0,0,.14) transparent;
+  border-style:solid;border-width:0 0 12px 12px;border-color:transparent transparent rgba(0,0,0,.14) transparent;
   transition:border-width .2s ease,border-color .2s ease,filter .2s ease;
 }
-.book-item:hover .bi-card{transform:var(--bi-rot,rotate(0deg)) translateY(-5px) scale(1.06);box-shadow:0 19px 35px -13px rgba(0,0,0,.4),0 5px 10px rgba(0,0,0,.15);z-index:5;}
+.book-item:hover .bi-card{transform:var(--bi-rot,rotate(0deg)) translateY(-4px) scale(1.06);box-shadow:0 14px 26px -9px rgba(0,0,0,.4),0 4px 7px rgba(0,0,0,.15);z-index:5;}
 .book-item:hover .bi-card::after{
-  border-width:0 0 32px 32px;
+  border-width:0 0 24px 24px;
   border-color:transparent transparent rgba(0,0,0,.22) transparent;
-  filter:drop-shadow(-3px -3px 5px rgba(0,0,0,.18));
+  filter:drop-shadow(-2px -2px 4px rgba(0,0,0,.18));
 }
-.bi-card .tape{position:absolute;top:-13px;left:50%;width:51px;height:21px;border-radius:1px;box-shadow:0 2px 5px rgba(0,0,0,.15);border:1px solid rgba(255,255,255,.5);}
-.bi-card .bi-icon{font-size:42px;line-height:1.1;}
-.bi-card img.bi-img{width:64px;height:64px;object-fit:contain;}
-.bi-card .bi-title{font-size:15px;font-weight:700;color:#333;max-width:100%;text-align:center;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:8px;}
-.bi-card .bi-desc{font-family:'Courier New',ui-monospace,monospace;font-size:12px;color:#8a8a86;text-align:center;line-height:1.3;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-.bi-card .bi-link{font-family:'Courier New',ui-monospace,monospace;font-size:11px;color:var(--secondary);text-align:center;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;}
+.bi-card .tape{position:absolute;top:-9px;left:50%;width:38px;height:15px;border-radius:1px;box-shadow:0 1px 4px rgba(0,0,0,.15);border:1px solid rgba(255,255,255,.5);}
+.bi-card .bi-photo{width:100%;height:64px;border-radius:5px;background:#EEEDE6;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.bi-card .bi-icon{font-size:31px;line-height:1.1;}
+.bi-card img.bi-img{width:48px;height:48px;object-fit:contain;}
+.bi-card .bi-title{font-size:11px;font-weight:700;color:#333;max-width:100%;text-align:center;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:6px;}
+.bi-card .bi-desc{font-family:'Courier New',ui-monospace,monospace;font-size:9px;color:#8a8a86;text-align:center;line-height:1.3;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.bi-card .bi-link{font-family:'Courier New',ui-monospace,monospace;font-size:8px;color:var(--secondary);text-align:center;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;}
 .book-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:10;width:30px;height:30px;border-radius:50%;border:1.5px solid rgba(255,255,255,.9);background:rgba(255,255,255,.8);cursor:pointer;font-size:15px;color:#8A7048;display:none;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(120,90,40,.2);}
 .book-arrow.left{left:6px;}
 .book-arrow.right{right:6px;}
@@ -745,7 +746,7 @@ button{-webkit-tap-highlight-color:transparent;}
   <div id="res-cat-tabs" style="position:relative;z-index:1;display:flex;gap:6px;flex-wrap:wrap;margin-bottom:0;"></div>
   <div id="book-stage" style="position:relative;height:380px;border-radius:0 12px 12px 12px;overflow:hidden;background-image:url('pic/cloud%20bkg.jpg');background-size:cover;background-position:center;">
     <div style="position:absolute;inset:0;background:rgba(255,255,255,.16);pointer-events:none;"></div>
-    <div id="book-page-l" style="position:absolute;inset:10px;overflow-y:auto;display:flex;flex-wrap:wrap;align-content:flex-start;gap:10px 6px;padding:6px;"></div>
+    <div id="book-page-l" style="position:absolute;inset:10px;overflow-y:auto;display:flex;flex-wrap:wrap;align-content:flex-start;gap:7px 5px;padding:6px;"></div>
     <button id="book-prev" class="book-arrow left">‹</button>
     <button id="book-next" class="book-arrow right">›</button>
     <div id="book-empty" style="position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);font-size:12px;color:#3A3A3A;display:none;white-space:nowrap;">桌面還空空的，從下面收進資源吧 ✨</div>
@@ -3352,7 +3353,7 @@ let bookPage=0;
 let bkDragEl=null,bkSX=0,bkSY=0,bkMoved=false,bkTap=null,bkBound=false;
 function bkStart(el,onTap,e){bkDragEl=el;bkMoved=false;bkTap=onTap;const p=e.touches?e.touches[0]:e;bkSX=p.clientX;bkSY=p.clientY;el._anim=el.style.animation;el.style.animation='none';el.style.transition='none';el.style.zIndex='6';el.style.position='relative';e.preventDefault();}
 function bkMove(e){if(!bkDragEl)return;if(e.cancelable)e.preventDefault();const p=e.touches?e.touches[0]:e;const dx=p.clientX-bkSX,dy=p.clientY-bkSY;if(Math.abs(dx)>4||Math.abs(dy)>4)bkMoved=true;bkDragEl.style.transform=`translate(${dx}px,${dy}px)`;}
-function bkEnd(){if(!bkDragEl)return;const el=bkDragEl,moved=bkMoved,tap=bkTap;bkDragEl=null;el.style.transform='';el.style.zIndex='';el.style.position='';el.style.animation=el._anim||'';if(!moved&&tap)tap();}
+function bkEnd(){if(!bkDragEl)return;const el=bkDragEl,moved=bkMoved,tap=bkTap;bkDragEl=null;if(!moved){el.style.transform='';el.style.zIndex='';el.style.position='';el.style.animation=el._anim||'';if(tap)tap();}}
 function bindBookGlobals(){
   if(bkBound)return;bkBound=true;
   window.addEventListener('mousemove',bkMove);window.addEventListener('touchmove',bkMove,{passive:false});
@@ -3379,14 +3380,14 @@ function renderBookItems(){
   const shown=filtered.slice(bookPage*per,bookPage*per+per);
   const mk=(it,i)=>{
     const rot=((i*53)%17-8);
-    const mt=(i%3)*13;
+    const mt=(i%3)*9;
     const tapeColor=it._catColor||RCAT_PALETTE[i%RCAT_PALETTE.length];
-    const icon=it.img?`<img class="bi-img" src="${it.img}" draggable="false"/>`:`<span class="bi-icon">${fi(it.emoji||'1f4da',64)}</span>`;
+    const icon=it.img?`<img class="bi-img" src="${it.img}" draggable="false"/>`:`<span class="bi-icon">${fi(it.emoji||'1f4da',48)}</span>`;
     const desc=it.desc?`<div class="bi-desc">${it.desc.slice(0,26)}</div>`:'';
     const link=it.link?`<div class="bi-link">${shortLink(it.link)}</div>`:'';
     return`<div class="book-item" data-rid="${it.id||''}" style="margin-top:${mt}px;cursor:grab;">`+
       `<div class="bi-card" style="--bi-rot:rotate(${rot}deg);">`+
-      `<span class="tape" style="background:${tapeColor}99;"></span>${icon}<div class="bi-title">${it.title||''}</div>${desc}${link}</div></div>`;
+      `<span class="tape" style="background:${tapeColor}99;"></span><div class="bi-photo">${icon}</div><div class="bi-title">${it.title||''}</div>${desc}${link}</div></div>`;
   };
   l.innerHTML=shown.map((it,i)=>mk(it,i)).join('');
   l.querySelectorAll('.book-item').forEach(el=>{
