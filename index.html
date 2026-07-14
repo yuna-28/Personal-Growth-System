@@ -53,7 +53,7 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 .bot-nav{max-width:860px;margin:0 auto;display:flex;}
 .nav-btn{flex:1;padding:9px 0 7px;border:none;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:'Quicksand',sans-serif;font-size:10px;font-weight:600;color:var(--tc3);transition:color .15s;}
 .nav-btn{border-radius:16px;margin:0 2px;}
-.nav-btn.active{color:var(--primary);background:rgba(var(--primary-rgb),.1);}
+.nav-btn.active{color:var(--primary);}
 .nav-btn img{width:21px;height:21px;opacity:.5;transition:opacity .15s;}
 .nav-btn.active img{opacity:1;}
 
@@ -3492,17 +3492,19 @@ function renderResourcePage(){
   const box=document.getElementById('resource-categories');
   if(!box)return;
   const mode=getViewMode('res');
-  box.innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:4px;">${viewToggleHTML('res')}</div>`+S.resourceCats.map((cat,ci)=>`
-    <div class="gcard support-cat-card">
+  box.innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:4px;">${viewToggleHTML('res')}</div>`+S.resourceCats.map((cat,ci)=>{
+    const cc=cat.color||RCAT_PALETTE[ci%RCAT_PALETTE.length];
+    return`
+    <div class="gcard support-cat-card" style="border-left:4px solid ${cc};background:linear-gradient(135deg,${cc}16,transparent 60%),var(--g1);">
       <div class="support-cat-hd">
-        <div class="support-cat-title">📖 ${cat.label}</div>
+        <div class="support-cat-title" style="color:${cc};">📖 ${cat.label}</div>
         <button class="support-cat-del res-cat-del" data-ci="${ci}">✕ 刪除分類</button>
       </div>
       <div class="${mode==='grid'?'res-grid':''}">
         ${(cat.items||[]).map((it,ii)=>resItemHTML(it,ci,ii,mode)).join('')||`<div style="font-size:12px;color:var(--tc3);padding:4px 0;">還沒有收藏資源</div>`}
       </div>
       ${openResForm===ci?resFormHTML(ci):`<button class="mini-btn res-item-add" data-ci="${ci}" style="width:100%;margin-top:6px;background:rgba(var(--secondary-rgb),.35);color:#5A4A8A;">＋ 新增資源</button>`}
-    </div>`).join('');
+    </div>`;}).join('');
   bindViewToggle(box,renderResourcePage);
   bindResourceEvents();
 }
@@ -3977,7 +3979,8 @@ function calEvRow(ev,delBtn){
   }
   const pill=_c+'<span style="background:'+_pillBg+';color:'+_pillColor+';font-size:11px;font-weight:700;border-radius:999px;padding:4px 12px;flex-shrink:0;white-space:nowrap;">'+_pillTxt+'</span>';
   const _tag=calTagOf(ev.color);
-  const _tagChip=_tag?'<span class="cal-tag-chip">'+_tag.replace(/</g,'&lt;')+'</span>':'';
+  const _tagC=(ev.color&&CAL_COLORS[ev.color])||'';
+  const _tagChip=_tag?'<span class="cal-tag-chip"'+(_tagC?' style="background:'+_tagC+'26;color:'+_tagC+';"':'')+'>'+_tag.replace(/</g,'&lt;')+'</span>':'';
   return '<div class="cal-ev-row" data-id="'+ev.id+'" style="display:flex;align-items:center;gap:8px;padding:8px;border-bottom:1px solid rgba(var(--secondary-rgb),.18);'+(delBtn?'cursor:pointer;':'')+'">'+pill+
     '<span style="flex:1;font-size:13px;color:var(--tc);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(ev.title||'').replace(/</g,'&lt;')+'</span>'+
     _tagChip+
