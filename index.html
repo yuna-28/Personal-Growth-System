@@ -426,6 +426,12 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 @keyframes skPulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.06);opacity:.8;}}
 .res-chip{display:inline-flex;align-items:center;gap:4px;padding:6px 10px;background:rgba(255,255,255,.5);border:1.5px solid rgba(255,255,255,.8);border-radius:999px;cursor:pointer;font-size:12px;font-weight:600;color:var(--tc);}
 .res-chip.on{background:rgba(var(--tertiary-rgb),.35);border-color:rgba(var(--tertiary-rgb),.7);color:#2A7A5A;}
+.rcat-tab{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;border:1.5px solid transparent;color:#fff;opacity:.55;transition:opacity .15s,transform .1s;}
+.rcat-tab.on{opacity:1;box-shadow:0 3px 8px -2px rgba(35,35,30,.35);}
+.rcat-tab:active{transform:scale(.96);}
+.rcat-tab.rcat-add{background:rgba(var(--secondary-rgb),.12);color:var(--secondary);opacity:1;border:1.5px dashed rgba(var(--secondary-rgb),.4);}
+.rcat-swatch{width:24px;height:24px;border-radius:7px;cursor:pointer;border:2px solid rgba(255,255,255,.9);flex-shrink:0;}
+.rcat-swatch.picked{border-color:var(--primary);box-shadow:0 0 0 2px rgba(var(--primary-rgb),.25);}
 
 /* ── SETTINGS ── */
 .set-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(var(--secondary-rgb),.25);font-size:13px;color:var(--tc);}
@@ -712,6 +718,7 @@ button{-webkit-tap-highlight-color:transparent;}
 <div class="page" id="page-support">
 <div class="gcard-scene" style="margin-top:4px;">
   <div class="sec-hd" style="position:relative;z-index:1;">📖 我的資源書</div>
+  <div id="res-cat-tabs" style="position:relative;z-index:1;display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;"></div>
   <div id="book-stage" style="position:relative;height:380px;border-radius:18px;overflow:hidden;background:linear-gradient(180deg,#EAD9C4 0%,#DFC3A0 55%,#CBA97F 100%);">
     <div style="position:absolute;top:10px;left:14px;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/2615_3d.png" width="30" height="30" onerror="this.outerHTML='☕'"/></div>
     <div style="position:absolute;top:8px;right:16px;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1fab4_3d.png" width="32" height="32" onerror="this.outerHTML='🪴'"/></div>
@@ -744,6 +751,8 @@ button{-webkit-tap-highlight-color:transparent;}
   <button id="add-res-cat-btn" style="background:none;border:1.5px dashed rgba(var(--secondary-rgb),.35);border-radius:11px;padding:9px;font-family:'Quicksand',sans-serif;font-size:12px;color:var(--tc3);cursor:pointer;width:100%;text-align:center;">＋ 新增一個資源分類</button>
   <div id="res-cat-form" style="display:none;margin-top:8px;">
     <input class="tdl-in" id="res-cat-name" placeholder="分類名稱（例如：焦慮的時候）" style="width:100%;margin-bottom:8px;"/>
+    <div style="font-size:11px;color:var(--tc2);margin-bottom:6px;">選一個顏色</div>
+    <div id="res-cat-colors" style="display:flex;gap:8px;margin-bottom:9px;flex-wrap:wrap;"></div>
     <div style="display:flex;gap:8px;">
       <button class="mini-btn" id="res-cat-save" style="flex:1;">新增</button>
       <button class="mini-btn" id="res-cat-cancel" style="flex:1;background:rgba(var(--secondary-rgb),.4);color:var(--tc2);">取消</button>
@@ -3295,16 +3304,38 @@ const RESOURCE_TYPES=[
   {id:'course',chip:'1f393',labelText:'課程',emojis:['1f3eb','270f','1f393']},
   {id:'person',chip:'1f9d1',labelText:'人',emojis:PERSON_EMOJIS},
 ];
+const RCAT_PALETTE=['#283E7C','#3F80B2','#95BCC6','#E2AFC1','#FAC775','#5B7FD4'];
 function ensureResourceDefaults(){
   if(!Array.isArray(S.resourceCats)){
     S.resourceCats=[
-      {id:'sad',label:'難過的時候',items:[]},
-      {id:'nomo',label:'沒有動力的時候',items:[]},
-      {id:'inspire',label:'需要靈感的時候',items:[]},
-      {id:'relax',label:'想放鬆充電的時候',items:[]},
+      {id:'sad',label:'難過的時候',color:RCAT_PALETTE[0],items:[]},
+      {id:'nomo',label:'沒有動力的時候',color:RCAT_PALETTE[1],items:[]},
+      {id:'inspire',label:'需要靈感的時候',color:RCAT_PALETTE[2],items:[]},
+      {id:'relax',label:'想放鬆充電的時候',color:RCAT_PALETTE[3],items:[]},
     ];
     sv(S);
   }
+  let changed=false;
+  S.resourceCats.forEach((cat,i)=>{if(!cat.color){cat.color=RCAT_PALETTE[i%RCAT_PALETTE.length];changed=true;}});
+  if(changed)sv(S);
+}
+let selectedResCat='all';
+function renderResCatTabs(){
+  const box=document.getElementById('res-cat-tabs');
+  if(!box)return;
+  const all=`<div class="rcat-tab${selectedResCat==='all'?' on':''}" data-rc="all" style="background:${selectedResCat==='all'?'var(--primary)':'#B4B2A9'};">全部</div>`;
+  const tabs=S.resourceCats.map(cat=>`<div class="rcat-tab${selectedResCat===cat.id?' on':''}" data-rc="${cat.id}" style="background:${cat.color||'#95BCC6'};">${cat.label}</div>`).join('');
+  box.innerHTML=all+tabs+`<div class="rcat-tab rcat-add" id="rcat-add-btn">＋ 新增分類</div>`;
+  box.querySelectorAll('.rcat-tab[data-rc]').forEach(el=>el.addEventListener('click',()=>{
+    selectedResCat=el.dataset.rc;bookPage=0;renderBookItems();
+  }));
+  const addBtn=document.getElementById('rcat-add-btn');
+  if(addBtn)addBtn.addEventListener('click',()=>{
+    document.getElementById('add-res-cat-btn').style.display='none';
+    document.getElementById('res-cat-form').style.display='block';
+    if(typeof renderResCatColorPicker==='function')renderResCatColorPicker();
+    document.getElementById('res-cat-form').scrollIntoView({behavior:'smooth',block:'center'});
+  });
 }
 let bookPage=0;
 let bkDragEl=null,bkSX=0,bkSY=0,bkMoved=false,bkTap=null,bkBound=false;
@@ -3321,15 +3352,17 @@ function bindBookGlobals(){
 }
 function renderBookItems(){
   bindBookGlobals();
+  renderResCatTabs();
   const all=[];
-  (S.resourceCats||[]).forEach(cat=>(cat.items||[]).forEach(it=>all.push(it)));
+  (S.resourceCats||[]).forEach(cat=>(cat.items||[]).forEach(it=>all.push(Object.assign({_catId:cat.id},it))));
+  const filtered=selectedResCat==='all'?all:all.filter(it=>it._catId===selectedResCat);
   const l=document.getElementById('book-page-l'),r=document.getElementById('book-page-r');
   const empty=document.getElementById('book-empty'),ind=document.getElementById('book-more');
   if(!l)return;
-  const per=12,totalPages=Math.max(1,Math.ceil(all.length/per));
+  const per=12,totalPages=Math.max(1,Math.ceil(filtered.length/per));
   if(bookPage>=totalPages)bookPage=totalPages-1;
   if(bookPage<0)bookPage=0;
-  const shown=all.slice(bookPage*per,bookPage*per+per);
+  const shown=filtered.slice(bookPage*per,bookPage*per+per);
   const mk=(it,i)=>{
     const anim=it.type==='person'?`gdFloat ${2.2+(i%3)*.35}s ease-in-out infinite ${i*.18}s`:`objBounce ${2+(i%4)*.35}s ease-in-out infinite ${i*.22}s`;
     const icon=it.img?`<img class="bi-img" src="${it.img}"/>`:`<span class="bi-icon">${fi(it.emoji||'1f4da',40)}</span>`;
@@ -3343,9 +3376,9 @@ function renderBookItems(){
     el.addEventListener('mousedown',e=>bkStart(el,tap,e));
     el.addEventListener('touchstart',e=>bkStart(el,tap,e),{passive:false});
   }));
-  empty.style.display=all.length?'none':'block';
+  empty.style.display=filtered.length?'none':'block';
   const pv=document.getElementById('book-prev'),nx=document.getElementById('book-next');
-  if(all.length>per){
+  if(filtered.length>per){
     pv.style.display=bookPage>0?'flex':'none';
     nx.style.display=bookPage<totalPages-1?'flex':'none';
     ind.style.display='block';ind.textContent=`第 ${bookPage+1} / ${totalPages} 頁`;
@@ -3431,7 +3464,9 @@ function bindResourceEvents(){
   const box=document.getElementById('resource-categories');
   box.querySelectorAll('.res-cat-del').forEach(b=>b.addEventListener('click',()=>{
     if(!confirm('確定刪除這個資源分類嗎？裡面的資源也會一起刪除'))return;
+    const delId=(S.resourceCats[+b.dataset.ci]||{}).id;
     S.resourceCats.splice(+b.dataset.ci,1);sv(S);syncStateDebounced();
+    if(selectedResCat===delId)selectedResCat='all';
     openResForm=-1;renderResourcePage();
   }));
   box.querySelectorAll('.res-item-del').forEach(b=>b.addEventListener('click',()=>{
@@ -3508,9 +3543,20 @@ function bindResourceEvents(){
     });
   }
 }
+let newResCatColor=RCAT_PALETTE[0];
+function renderResCatColorPicker(){
+  const box=document.getElementById('res-cat-colors');
+  if(!box)return;
+  box.innerHTML=RCAT_PALETTE.map(c=>`<div class="rcat-swatch${c===newResCatColor?' picked':''}" data-c="${c}" style="background:${c};"></div>`).join('');
+  box.querySelectorAll('.rcat-swatch').forEach(sw=>sw.addEventListener('click',()=>{
+    newResCatColor=sw.dataset.c;
+    box.querySelectorAll('.rcat-swatch').forEach(x=>x.classList.toggle('picked',x.dataset.c===newResCatColor));
+  }));
+}
 document.getElementById('add-res-cat-btn').addEventListener('click',()=>{
   document.getElementById('res-cat-form').style.display='block';
   document.getElementById('add-res-cat-btn').style.display='none';
+  renderResCatColorPicker();
 });
 document.getElementById('res-cat-cancel').addEventListener('click',()=>{
   document.getElementById('res-cat-form').style.display='none';
@@ -3520,9 +3566,10 @@ document.getElementById('res-cat-save').addEventListener('click',()=>{
   const name=document.getElementById('res-cat-name').value.trim();
   if(!name)return;
   ensureResourceDefaults();
-  S.resourceCats.push({id:'rc'+Date.now(),label:name,items:[]});
+  S.resourceCats.push({id:'rc'+Date.now(),label:name,color:newResCatColor,items:[]});
   sv(S);syncStateDebounced();
   document.getElementById('res-cat-name').value='';
+  newResCatColor=RCAT_PALETTE[0];
   document.getElementById('res-cat-form').style.display='none';
   document.getElementById('add-res-cat-btn').style.display='block';
   renderResourcePage();
