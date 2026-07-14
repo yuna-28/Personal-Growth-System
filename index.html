@@ -49,12 +49,12 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 .sync-dot.error{background:#F09595;}
 
 /* NAV */
-.bot-nav-wrap{position:fixed;bottom:0;left:0;width:100vw;z-index:100;background:rgba(255,255,255,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1.5px solid rgba(255,255,255,.85);box-shadow:0 -4px 20px rgba(var(--primary-rgb),.1);padding-bottom:env(safe-area-inset-bottom);}
-.bot-nav{max-width:860px;margin:0 auto;display:flex;}
-.nav-btn{flex:1;padding:9px 0 7px;border:none;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:'Quicksand',sans-serif;font-size:10px;font-weight:600;color:var(--tc3);transition:color .15s;}
-.nav-btn{border-radius:16px;margin:0 2px;}
-.nav-btn.active{color:var(--primary);}
-.nav-btn img{width:21px;height:21px;opacity:.5;transition:opacity .15s;}
+.bot-nav-wrap{position:fixed;left:14px;right:14px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:100;}
+.bot-nav{max-width:860px;margin:0 auto;display:flex;align-items:center;gap:2px;background:rgba(255,255,255,.72);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border:1.5px solid rgba(255,255,255,.9);border-radius:999px;padding:7px 8px;box-shadow:0 14px 30px -10px rgba(var(--primary-rgb),.35),0 2px 6px rgba(0,0,0,.06),inset 0 1px 0 rgba(255,255,255,.95);}
+.nav-btn{flex:1;padding:6px 2px;border:none;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:'Quicksand',sans-serif;font-size:9.5px;font-weight:700;color:var(--tc3);transition:color .15s,background .15s;}
+.nav-btn{border-radius:999px;margin:0;}
+.nav-btn.active{color:#fff;background:linear-gradient(135deg,var(--primary),var(--secondary));box-shadow:0 6px 14px -4px rgba(var(--primary-rgb),.55);}
+.nav-btn img{width:19px;height:19px;opacity:.48;transition:opacity .15s;}
 .nav-btn.active img{opacity:1;}
 
 .page{padding:0 .9rem;display:none;}
@@ -500,10 +500,8 @@ button{-webkit-tap-highlight-color:transparent;}
 .liq-btn:active,.ghost-btn:active,.mini-btn:active,.export-new-btn:active,.export-all-btn:active,.neo-chip:active,.period-arrow:active,.sn-btn:active,.book-arrow:active,.garden-arrow:active{transform:scale(.96);}
 .liq-btn:active{transform:scale(.97) translateY(0);}
 .diary-ta:focus,.tdl-in:focus,.quote-input:focus,.time-in:focus{border-color:rgba(var(--primary-rgb),.55)!important;box-shadow:0 0 0 3px rgba(var(--primary-rgb),.14),var(--nm-in);outline:none;}
-/* 導覽列 active 膠囊 */
+/* 導覽列 active 膠囊：改成整顆按鈕實色底，不再疊加額外的 ::before 高亮 */
 .nav-btn{position:relative;}
-.nav-btn img,.nav-btn span{position:relative;z-index:1;}
-.nav-btn.active::before{content:'';position:absolute;top:4px;left:50%;transform:translateX(-50%);width:46px;height:29px;border-radius:999px;background:linear-gradient(135deg,rgba(var(--primary-rgb),.16),rgba(var(--tertiary-rgb),.16));}
 /* 切頁淡入 */
 @keyframes pageIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
 .page.active{animation:pageIn .22s ease;}
