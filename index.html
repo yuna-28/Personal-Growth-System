@@ -192,14 +192,19 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
   .cal-add{width:20px;height:20px;font-size:14px;line-height:20px;}
 }
 .cal-day:hover{background:rgba(var(--primary-rgb),.08);}
-.cal-day.today{background:rgba(var(--primary-rgb),.05);}
+/* 日曆格子的三種狀態，各自負責一件事，疊在一起也不會打架：
+   ① 有紀錄的那天 → 整格淺藍綠底（一眼看出「這天寫過東西」）
+   ② 今天 → 數字實心深色圓（不靠底色，跟其他底色狀態都能共存）
+   ③ 補記中正在看的那一天 → 整格淡黃底＋數字變深黃色（不再用外框圈，跟「已有紀錄」的
+      藍綠底疊在一起時，淡黃底優先顯示——你正在看的那天，比它有沒有紀錄更重要） */
+.cal-day.has-record{background:rgba(var(--tertiary-rgb),.24);}
+.cal-day.has-record:hover{background:rgba(var(--tertiary-rgb),.34);}
+.cal-day.has-record .cd-n{color:#1F6B54;}
 .cal-day.today .cd-n{background:var(--primary);color:#fff;font-weight:800;}
-/* 補記中正在看的那一天：跟「今天」的實心圓區分開，用外框＋淡色底標出「你現在在這」 */
-.cal-day.viewing{background:rgba(var(--secondary-rgb),.12);}
-.cal-day.viewing .cd-n{border:2px solid var(--secondary);color:var(--secondary);font-weight:800;}
-.cal-day.viewing.today .cd-n{border-color:#fff;}
-.cal-day.has-record .cd-n{color:#2A7A5A;}
 .cal-day.today.has-record .cd-n{color:#fff;}
+.cal-day.viewing{background:rgba(var(--gold-rgb),.38);}
+.cal-day.viewing:hover{background:rgba(var(--gold-rgb),.46);}
+.cal-day.viewing .cd-n{color:#7A5A00;font-weight:800;}
 .cal-day.empty{pointer-events:none;background:rgba(230,238,244,.3);}
 .cal-day.empty .cal-add{display:none;}
 .cal-dot{width:5px;height:5px;border-radius:50%;background:var(--tertiary);position:absolute;bottom:3px;}
