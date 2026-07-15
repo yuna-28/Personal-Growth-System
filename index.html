@@ -3924,7 +3924,9 @@ async function saveDraft(){
   S.tomorrowTDL=all.map(r=>({theme:r.theme,task:r.task}));
   const existing=S.entries.find(e=>e.date===today());
   const keepStreak=existing?(+existing.streak||0):0;
-  const entry={date:today(),checked:[...Object.keys(S.checked)],diary:{...d},exp:S.exp,streak:keepStreak,tdl:S.tomorrowTDL,tdlTotal:(S.todayTDL||[]).length,tdlDone:Object.keys(S.tdlDone).length,photos:(S.todayPhotos||[])};
+  // 存草稿一樣要帶當天的 TDL 快照：這裡是整筆覆蓋 entry，漏掉 tdlItems 會把已存的明細清空，
+  // 接著 syncEntryFor 又會把空的明細推上雲端，等於把紀錄洗掉
+  const entry={date:today(),checked:[...Object.keys(S.checked)],diary:{...d},exp:S.exp,streak:keepStreak,tdl:S.tomorrowTDL,tdlTotal:(S.todayTDL||[]).length,tdlDone:Object.keys(S.tdlDone).length,tdlItems:buildTdlSnapshot(S.todayTDL,S.tdlDone),photos:(S.todayPhotos||[])};
   const idx=S.entries.findIndex(e=>e.date===today());
   if(idx>=0)S.entries[idx]=entry;else S.entries.push(entry);
   sv(S);
