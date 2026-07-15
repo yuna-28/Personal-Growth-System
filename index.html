@@ -2094,6 +2094,23 @@ function periodStats(dates){
   });
   return{days,habits,exp:habits*10+days*20,tdlDoneSum,tdlTotalSum,habitCounts,diaryHighlights,diaryDays,themeAgg,tdlDetail,tdlNoDetailDays};
 }
+// 「複製給 Claude」用的 TDL 總結：整體達成率＋各主題達成率
+function tdlSummaryLines(st,label){
+  const lines=[];
+  const agg=st.themeAgg||{};
+  const rows=Object.keys(agg).map(k=>({theme:k,done:agg[k].done,total:agg[k].total}))
+    .sort((a,b)=>(b.total-a.total)||(a.theme<b.theme?-1:1));
+  if(!st.tdlTotalSum&&!rows.length)return lines;
+  lines.push(`📈 ${label} TDL 總結`);
+  if(st.tdlTotalSum)lines.push(`  整體達成：${st.tdlDoneSum}/${st.tdlTotalSum}（${Math.round(st.tdlDoneSum/st.tdlTotalSum*100)}%）`);
+  if(rows.length){
+    lines.push('  各主題達成率：');
+    rows.forEach(r=>lines.push(`    ${r.theme} ${r.done}/${r.total}（${Math.round(r.done/r.total*100)}%）`));
+  }
+  if(st.tdlNoDetailDays)lines.push(`  ※另有 ${st.tdlNoDetailDays} 天是舊資料，只有完成數量、沒有逐項明細，未列入主題統計`);
+  lines.push('');
+  return lines;
+}
 // 各主題達成率：任務文字每天都不一樣，主題才是能跨天比較的軸
 function renderThemeRates(cardId,boxId,st){
   const card=document.getElementById(cardId),box=document.getElementById(boxId);
@@ -2236,19 +2253,31 @@ document.getElementById('copy-week-btn').addEventListener('click',async()=>{
   const lines=[`📊 ${weekLabel(weekOffset)}的格蘭朵紀錄（請幫我分析）`,''];
   dates.forEach(ds=>{
     const e=S.entries.find(x=>x.date===ds);
+    const isT=ds===today();
+    // 今天可能還沒「種下」而沒有 entry，但即時資料要照樣帶進分析
+    const checkedArr=isT?Object.keys(S.checked||{}):(e?.checked||[]);
+    const diary=(isT?S.diary:e?.diary)||{};
+    const items=tdlItemsOf(ds);
     const d=new Date(ds+'T00:00:00');
     const dl=`${d.getMonth()+1}/${d.getDate()} 週${wdArr[d.getDay()]}`;
-    if(!e){lines.push(`${dl}：無紀錄`);return;}
-    const names=HABITS.filter(h=>e.checked?.includes(h.k)).map(h=>h.l);
+    if(!e&&!checkedArr.length&&!(items&&items.length)){lines.push(`${dl}：無紀錄`);return;}
+    const names=HABITS.filter(h=>checkedArr.includes(h.k)).map(h=>h.l);
     lines.push(`📅 ${dl}`);
     lines.push(`  ✅ 完成習慣：${names.join('、')||'無'}`);
-    if(e.diary?.hl)lines.push(`  🌟 Highlights：${e.diary.hl}`);
-    if(e.diary?.rf)lines.push(`  📖 Reflection：${e.diary.rf}`);
-    if(e.diary?.gr)lines.push(`  🥹 Gratitude：${e.diary.gr}`);
-    if(e.diary?.quote)lines.push(`  💬 金句：${e.diary.quote}`);
-    if(e.tdl?.length)lines.push(`  📝 TDL：${e.tdl.map(r=>`${r.theme?r.theme+'：':''}${r.task}`).join('、')}`);
+    if(diary.hl)lines.push(`  🌟 Highlights：${diary.hl}`);
+    if(diary.rf)lines.push(`  📖 Reflection：${diary.rf}`);
+    if(diary.gr)lines.push(`  🥹 Gratitude：${diary.gr}`);
+    if(diary.quote)lines.push(`  💬 金句：${diary.quote}`);
+    // 當天真正的 TDL 與完成狀態（entry.tdl 存的是「規劃給隔天」的，不能當成這天的 TDL）
+    if(items&&items.length){
+      lines.push(`  📝 TDL（${items.filter(x=>x.done).length}/${items.length}）：`);
+      items.forEach(x=>lines.push(`    ${x.done?'✅':'⬜'} ${x.theme?x.theme+'：':''}${x.task}`));
+    }else if(e&&e.tdlTotal){
+      lines.push(`  📝 TDL：完成 ${e.tdlDone||0}/${e.tdlTotal}（舊資料，無逐項明細）`);
+    }
     lines.push('');
   });
+  lines.push(...tdlSummaryLines(periodStats(dates),weekLabel(weekOffset)));
   const calT=calLinesForDates(dates);
   if(calT.length){lines.push('📅 本週行程');lines.push(...calT);lines.push('');}
   navigator.clipboard.writeText(lines.join('\n')).then(()=>{
@@ -2327,13 +2356,22 @@ document.getElementById('copy-month-btn').addEventListener('click',async()=>{
   const lines=[`📊 ${monthLabel(monthOffset)}的格蘭朵紀錄（請幫我分析）`,''];
   dates.forEach(ds=>{
     const e=S.entries.find(x=>x.date===ds);
-    if(!e)return;
-    const names=HABITS.filter(h=>e.checked?.includes(h.k)).map(h=>h.l);
-    lines.push(`📅 ${ds}：${names.join('、')||'無'}`);
-    if(e.diary?.hl)lines.push(`  🌟 ${e.diary.hl}`);
-    if(e.diary?.rf)lines.push(`  📖 ${e.diary.rf}`);
-    if(e.diary?.gr)lines.push(`  🥹 ${e.diary.gr}`);
+    const isT=ds===today();
+    const checkedArr=isT?Object.keys(S.checked||{}):(e?.checked||[]);
+    const diary=(isT?S.diary:e?.diary)||{};
+    const items=tdlItemsOf(ds);
+    if(!e&&!checkedArr.length&&!(items&&items.length))return;
+    const names=HABITS.filter(h=>checkedArr.includes(h.k)).map(h=>h.l);
+    // 一個月逐項列會太長，這裡每天只給 TDL 完成比例，逐項明細留給週複製
+    const tdlPart=(items&&items.length)?`｜TDL ${items.filter(x=>x.done).length}/${items.length}`
+                 :((e&&e.tdlTotal)?`｜TDL ${e.tdlDone||0}/${e.tdlTotal}`:'');
+    lines.push(`📅 ${ds}：${names.join('、')||'無'}${tdlPart}`);
+    if(diary.hl)lines.push(`  🌟 ${diary.hl}`);
+    if(diary.rf)lines.push(`  📖 ${diary.rf}`);
+    if(diary.gr)lines.push(`  🥹 ${diary.gr}`);
   });
+  lines.push('');
+  lines.push(...tdlSummaryLines(periodStats(dates),monthLabel(monthOffset)));
   const calT=calLinesForDates(dates);
   if(calT.length){lines.push('');lines.push('📅 本月行程');lines.push(...calT);}
   navigator.clipboard.writeText(lines.join('\n')).then(()=>{
