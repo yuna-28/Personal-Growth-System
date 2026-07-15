@@ -240,6 +240,15 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 .dist-bar-bg{flex:1;height:14px;background:rgba(var(--secondary-rgb),.2);border-radius:7px;overflow:hidden;}
 .dist-bar-fill{height:100%;border-radius:7px;background:linear-gradient(90deg,var(--secondary),var(--tertiary));}
 .dist-count{font-size:11px;color:var(--tc3);width:32px;text-align:right;flex-shrink:0;font-family:'Baloo 2',sans-serif;font-weight:700;}
+/* TDL 主題達成率 / 逐項明細 */
+.theme-label{width:78px;flex-shrink:0;font-size:12px;color:var(--tc2);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tdl-day-hd{font-family:'Baloo 2',sans-serif;font-size:11.5px;font-weight:800;color:var(--tc2);margin:11px 0 3px;}
+.tdl-day-hd:first-child{margin-top:0;}
+.tdl-det-row{display:flex;align-items:flex-start;gap:6px;font-size:12px;line-height:1.55;padding:1.5px 0;color:var(--tc);}
+.tdl-det-row .mk{flex-shrink:0;}
+.tdl-det-row.undone{color:var(--tc3);}
+.tdl-det-row .th{color:var(--secondary);font-weight:700;}
+.tdl-note{font-size:11px;color:var(--tc3);margin-top:8px;line-height:1.5;}
 
 /* TREND CHART */
 .trend-chart{display:flex;align-items:flex-end;gap:5px;height:90px;padding-top:6px;}
@@ -694,6 +703,8 @@ button{-webkit-tap-highlight-color:transparent;}
 
 <div class="gcard"><div class="sec-hd">🍯 距離下一階段</div><div id="wk-fruit-progress"></div></div>
 <div class="gcard"><div class="sec-hd">🍩 TDL 完成率</div><div id="wk-donut"></div></div>
+<div class="gcard" id="wk-theme-card" style="display:none;"><div class="sec-hd">📋 各主題達成率</div><div id="wk-themes"></div></div>
+<div class="gcard" id="wk-tdldetail-card" style="display:none;"><div class="sec-hd">🗒 這週 TDL 明細</div><div id="wk-tdldetail"></div></div>
 <div class="gcard"><div class="sec-hd">📈 每日 TDL 達成率</div><div id="wk-trend"></div></div>
 <div class="gcard"><div class="sec-hd">🌿 習慣分佈</div><div id="wk-dist"></div></div>
 <div class="gcard"><div class="sec-hd">✨ 身份進度</div><div id="wk-identity"></div></div>
@@ -1115,6 +1126,12 @@ if(S.lastPlant!==today()&&S.lastStreak!==today()){
   if(S.dayKey!==today()){
     S.tdlHist=S.tdlHist||{};
     if(S.dayKey&&Object.keys(S.tdlDone||{}).length)S.tdlHist[S.dayKey]=S.tdlDone;
+    // 跨日前先替「剛結束的那天」存下 TDL 快照：這裡是唯一還同時握有當天項目與勾選狀態的時機，
+    // 而且不管有沒有按「種下今天」都會留下紀錄
+    if(S.dayKey&&(S.todayTDL||[]).length){
+      const _snap=buildTdlSnapshot(S.todayTDL,S.tdlDone);
+      if(_snap.length){const _en=getOrCreateEntry(S.dayKey);_en.tdlItems=_snap;}
+    }
     const _hk=Object.keys(S.tdlHist).sort();
     while(_hk.length>60){delete S.tdlHist[_hk.shift()];}
     S.checked={};S.diary={hl:'',rf:'',gr:'',quote:''};S.todayPhotos=[];
@@ -1217,9 +1234,15 @@ async function loadCloud(){
         const entry={date:dateStr,checked:parseJ(row.checked,[]),
           diary:{hl:row.hl||'',rf:row.rf||'',gr:row.gr||'',quote:row.quote||''},
           tdl:parseJ(row.tdl,[]),exp:+row.exp||0,streak:+row.streak||0,
-          tdlTotal:+row.tdlTotal||0,tdlDone:+row.tdlDone||0,photos:parseJ(row.photos,[])};
+          tdlTotal:+row.tdlTotal||0,tdlDone:+row.tdlDone||0,
+          tdlItems:parseJ(row.tdlItems,null),photos:parseJ(row.photos,[])};
         const idx=S.entries.findIndex(e=>e.date===dateStr);
-        if(idx>=0)S.entries[idx]=entry;else S.entries.push(entry);
+        if(idx>=0){
+          // 雲端還沒有這天的 TDL 明細（舊資料列）時，不要用空值蓋掉本機已經有的快照
+          const _old=S.entries[idx];
+          if(!Array.isArray(entry.tdlItems)&&_old&&Array.isArray(_old.tdlItems))entry.tdlItems=_old.tdlItems;
+          S.entries[idx]=entry;
+        }else S.entries.push(entry);
       });
       S.entries.sort((a,b)=>a.date<b.date?-1:1);
     }
@@ -1428,19 +1451,54 @@ function renderFruits(){
 function stickyCtx(){
   if(ctxIsToday())return{ds:today(),items:S.todayTDL||[],done:(S.tdlDone=S.tdlDone||{}),todayMode:true};
   const ds=viewDate;
-  const prev=new Date(ds+'T00:00:00');prev.setDate(prev.getDate()-1);
-  const pe=S.entries.find(x=>x.date===fmtLocal(prev));
-  const items=(pe&&Array.isArray(pe.tdl))?pe.tdl:[];
+  const en=S.entries.find(x=>x.date===ds);
+  // 當天自己的快照是權威版本；沒有快照才回頭用「前一天規劃的 tdl」
+  let items;
+  if(en&&Array.isArray(en.tdlItems)&&en.tdlItems.length){
+    items=en.tdlItems.map(x=>({theme:x.theme,task:x.task}));
+  }else{
+    const prev=new Date(ds+'T00:00:00');prev.setDate(prev.getDate()-1);
+    const pe=S.entries.find(x=>x.date===fmtLocal(prev));
+    items=(pe&&Array.isArray(pe.tdl))?pe.tdl:[];
+  }
   S.tdlHist=S.tdlHist||{};
   if(!S.tdlHist[ds]){
     S.tdlHist[ds]={};
-    // 舊資料救援：明細遺失但當天紀錄有「勾了幾項」→ 依數量還原勾選
-    const en=S.entries.find(x=>x.date===ds);
-    const cnt=Math.min((+((en||{}).tdlDone))||0,items.length);
-    for(let i=0;i<cnt;i++)S.tdlHist[ds]['t'+i]=true;
-    if(cnt)sv(S);
+    // 只從快照還原「真正勾了哪幾項」。沒有快照就留空——不再用「完成數量」假裝前 N 項有完成，
+    // 那會把猜測寫成紀錄，讓之後的逐項分析說謊
+    if(en&&Array.isArray(en.tdlItems)){
+      en.tdlItems.forEach((x,i)=>{if(x.done)S.tdlHist[ds]['t'+i]=true;});
+      sv(S);
+    }
   }
   return{ds:ds,items:items,done:S.tdlHist[ds],todayMode:false};
+}
+// ── TDL 逐日快照 ──────────────────────────────────────
+// 舊做法把「項目文字」放在前一天的 entry.tdl、「完成狀態」用位置編號放在 tdlHist（只留 60 天），
+// 兩者分離又靠位置對應，改順序就錯位、久了明細還會被裁掉。
+// 這裡改成每天在自己的 entry 存一份自足快照 [{theme,task,done}]，分析直接讀它。
+function buildTdlSnapshot(items,doneMap){
+  const dm=doneMap||{};
+  return (items||[]).map((r,i)=>({
+    theme:((r&&r.theme)||'').trim(),
+    task:((r&&r.task)||'').trim(),
+    done:!!dm['t'+i]
+  })).filter(x=>x.theme||x.task);
+}
+// 這天實際的 TDL 明細：今天讀即時狀態，過去讀當天快照
+function tdlItemsOf(ds){
+  if(ds===today())return buildTdlSnapshot(S.todayTDL,S.tdlDone);
+  const e=(S.entries||[]).find(x=>x.date===ds);
+  return (e&&Array.isArray(e.tdlItems))?e.tdlItems:null;
+}
+// 目前用過的主題（依使用次數排序）→ 給輸入框做快選
+function usedThemes(){
+  const c=new Map();
+  const add=t=>{t=((t||'')+'').trim();if(t)c.set(t,(c.get(t)||0)+1);};
+  (S.entries||[]).forEach(e=>{(e.tdlItems||[]).forEach(x=>add(x.theme));(e.tdl||[]).forEach(r=>add(r.theme));});
+  (S.todayTDL||[]).forEach(r=>add(r.theme));
+  (S.tomorrowTDL||[]).forEach(r=>add(r.theme));
+  return [...c.entries()].sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
 }
 function renderStickyNote(){
   const note=document.getElementById('sticky-note');
@@ -1476,6 +1534,7 @@ function renderStickyNote(){
         if(!c2.todayMode){
           const en=getOrCreateEntry(c2.ds);
           en.tdlTotal=c2.items.length;en.tdlDone=Object.keys(c2.done).length;
+          en.tdlItems=buildTdlSnapshot(c2.items,c2.done);
           syncEntryDebounced();
         }
         sv(S);checkLevelUp(oldExp,S.exp);renderExpBar();renderStickyNote();syncStateDebounced();
@@ -1616,9 +1675,12 @@ function mirrorYesterdayTdlToToday(ds){
 }
 function renderTDL(){
   const rows=curRows();const showConfirm=(tdlEditCtx==='today');
-  document.getElementById('tdl-rows').innerHTML=rows.map((r,i)=>`
+  // 主題快選：列出用過的主題（仍可自由輸入新主題）。主題是週分析的統計軸，
+  // 打成「英文」「英文課」會裂成兩類，所以盡量從既有的挑
+  const themeList=`<datalist id="tdl-theme-list">${usedThemes().map(t=>`<option value="${t.replace(/"/g,'&quot;')}"></option>`).join('')}</datalist>`;
+  document.getElementById('tdl-rows').innerHTML=themeList+rows.map((r,i)=>`
     <div class="tdl-row-wrap${r.confirmed?' confirmed-row':''}">
-      <input class="tdl-in" placeholder="主題" value="${(r.theme||'').replace(/"/g,'&quot;')}" data-i="${i}" data-f="theme" style="width:75px;flex-shrink:0;"/>
+      <input class="tdl-in" list="tdl-theme-list" placeholder="主題" value="${(r.theme||'').replace(/"/g,'&quot;')}" data-i="${i}" data-f="theme" style="width:75px;flex-shrink:0;"/>
       <input class="tdl-in" placeholder="${showConfirm?'明日目標':'目標'}" value="${(r.task||'').replace(/"/g,'&quot;')}" data-i="${i}" data-f="task" style="flex:1;min-width:0;"/>
       ${showConfirm?`<button class="tdl-confirm-btn${r.confirmed?' confirmed':''}" data-i="${i}" title="確認加入明天">${r.confirmed?'⭐':'✓'}</button>`:''}
       <button class="tdl-del-btn" data-i="${i}" title="刪除">✕</button>
@@ -1668,7 +1730,7 @@ document.getElementById('plant-btn').addEventListener('click',async()=>{
     while(S.seedlings>=2){S.seedlings-=2;S.trees++;}
   }
 
-  const entry={date:today(),checked:[...Object.keys(S.checked)],diary:{...d},exp:S.exp,streak:S.streak,tdl:S.tomorrowTDL,tdlTotal:(S.todayTDL||[]).length,tdlDone:Object.keys(S.tdlDone).length,photos:(S.todayPhotos||[])};
+  const entry={date:today(),checked:[...Object.keys(S.checked)],diary:{...d},exp:S.exp,streak:S.streak,tdl:S.tomorrowTDL,tdlTotal:(S.todayTDL||[]).length,tdlDone:Object.keys(S.tdlDone).length,tdlItems:buildTdlSnapshot(S.todayTDL,S.tdlDone),photos:(S.todayPhotos||[])};
   const idx=S.entries.findIndex(e=>e.date===today());
   if(idx>=0)S.entries[idx]=entry;else S.entries.push(entry);
 
@@ -1683,7 +1745,7 @@ document.getElementById('plant-btn').addEventListener('click',async()=>{
   renderPlantBtn();
   triggerBurst(btn);if(!replant)showExpPop(btn,'+20 EXP 🌱');
 
-  await syncEntry({date:today(),checked:Object.keys(S.checked),hl:d.hl,rf:d.rf,gr:d.gr,quote:d.quote||'',tdl:S.tomorrowTDL,exp:S.exp,streak:S.streak,tdlTotal:entry.tdlTotal,tdlDone:entry.tdlDone,photos:S.todayPhotos||[]});
+  await syncEntry({date:today(),checked:Object.keys(S.checked),hl:d.hl,rf:d.rf,gr:d.gr,quote:d.quote||'',tdl:S.tomorrowTDL,exp:S.exp,streak:S.streak,tdlTotal:entry.tdlTotal,tdlDone:entry.tdlDone,tdlItems:entry.tdlItems||[],photos:S.todayPhotos||[]});
   await syncState();
 });
 
@@ -1994,13 +2056,16 @@ function periodStats(dates){
   let days=0,habits=0,tdlDoneSum=0,tdlTotalSum=0,diaryDays=0;
   const habitCounts={};HABITS.forEach(h=>habitCounts[h.k]=0);
   const diaryHighlights=[];
+  // TDL 逐項明細與主題聚合：主題是唯一能跨天比較的軸（任務文字每天都不同）
+  const themeAgg={};const tdlDetail=[];let tdlNoDetailDays=0;
   dates.forEach(ds=>{
     const isToday=ds===today();
-    let ck,dia,tdlT,tdlD;
+    let ck,dia,tdlT,tdlD,items=null;
     if(isToday){
       // 今天一律用即時資料（不管是否已種下/草稿）
       ck=Object.keys(S.checked);dia=S.diary;
       tdlT=(S.todayTDL||[]).length;tdlD=Object.keys(S.tdlDone).length;
+      items=buildTdlSnapshot(S.todayTDL,S.tdlDone);
       if(!(ck.length||dia.hl||dia.rf||dia.gr||S.lastPlant===today()))return;
       days++;
     }else{
@@ -2008,9 +2073,18 @@ function periodStats(dates){
       if(!e||(+e.streak||0)<1)return; // 沒紀錄或草稿(未種下) → 不計入
       days++;
       ck=e.checked||[];dia=e.diary||{};tdlT=e.tdlTotal||0;tdlD=e.tdlDone||0;
+      items=Array.isArray(e.tdlItems)?e.tdlItems:null;
     }
     habits+=ck.length;ck.forEach(k=>{habitCounts[k]=(habitCounts[k]||0)+1;});
     if(tdlT){tdlTotalSum+=tdlT;tdlDoneSum+=tdlD;}
+    if(items&&items.length){
+      items.forEach(x=>{
+        const th=((x.theme||'')+'').trim()||'未分類';
+        if(!themeAgg[th])themeAgg[th]={done:0,total:0};
+        themeAgg[th].total++;if(x.done)themeAgg[th].done++;
+        tdlDetail.push({date:ds,theme:th,task:(x.task||''),done:!!x.done});
+      });
+    }else if(tdlT){tdlNoDetailDays++;} // 舊資料只有數量、沒有明細
     if(dia&&(dia.hl||dia.rf||dia.gr))diaryDays++;
     if(dia){
       if(dia.hl)diaryHighlights.push({date:ds,text:dia.hl,type:'🌟'});
@@ -2018,7 +2092,44 @@ function periodStats(dates){
       if(dia.gr)diaryHighlights.push({date:ds,text:dia.gr,type:'🥹'});
     }
   });
-  return{days,habits,exp:habits*10+days*20,tdlDoneSum,tdlTotalSum,habitCounts,diaryHighlights,diaryDays};
+  return{days,habits,exp:habits*10+days*20,tdlDoneSum,tdlTotalSum,habitCounts,diaryHighlights,diaryDays,themeAgg,tdlDetail,tdlNoDetailDays};
+}
+// 各主題達成率：任務文字每天都不一樣，主題才是能跨天比較的軸
+function renderThemeRates(cardId,boxId,st){
+  const card=document.getElementById(cardId),box=document.getElementById(boxId);
+  if(!card||!box)return;
+  const agg=st.themeAgg||{};
+  const rows=Object.keys(agg).map(k=>({theme:k,done:agg[k].done,total:agg[k].total}))
+    .sort((a,b)=>(b.total-a.total)||(b.done/b.total-a.done/a.total)||(a.theme<b.theme?-1:1));
+  if(!rows.length){card.style.display='none';return;}
+  card.style.display='';
+  box.innerHTML=rows.map(r=>{
+    const pct=r.total?Math.round(r.done/r.total*100):0;
+    const t=String(r.theme).replace(/</g,'&lt;');
+    return`<div class="dist-row">
+      <div class="theme-label" title="${t}">${t}</div>
+      <div class="dist-bar-bg"><div class="dist-bar-fill" style="width:${pct}%;"></div></div>
+      <div class="dist-count">${r.done}/${r.total}</div>
+    </div>`;
+  }).join('')+(st.tdlNoDetailDays?`<div class="tdl-note">＊另有 ${st.tdlNoDetailDays} 天是舊資料，只留下完成「數量」沒有逐項明細，因此不計入主題統計</div>`:'');
+}
+// 逐項明細：哪些做到、哪些沒做到
+function renderTdlDetail(cardId,boxId,st){
+  const card=document.getElementById(cardId),box=document.getElementById(boxId);
+  if(!card||!box)return;
+  const det=st.tdlDetail||[];
+  if(!det.length){card.style.display='none';return;}
+  card.style.display='';
+  const byDay={};det.forEach(x=>{(byDay[x.date]=byDay[x.date]||[]).push(x);});
+  box.innerHTML=Object.keys(byDay).sort().map(ds=>{
+    const d=new Date(ds+'T00:00:00'),list=byDay[ds],dn=list.filter(x=>x.done).length;
+    return`<div class="tdl-day-hd">${d.getMonth()+1}/${d.getDate()} 週${wdArr[d.getDay()]} · ${dn}/${list.length}</div>`+
+      list.map(x=>{
+        const th=String(x.theme||'').replace(/</g,'&lt;');
+        const tk=String(x.task||'').replace(/</g,'&lt;');
+        return`<div class="tdl-det-row${x.done?'':' undone'}"><span class="mk">${x.done?'✅':'⬜'}</span><span>${th&&th!=='未分類'?`<b class="th">${th}：</b>`:''}${tk||'（未填目標）'}</span></div>`;
+      }).join('');
+  }).join('');
 }
 // 溫柔見證小結
 function witnessText(cur,label){
@@ -2072,6 +2183,8 @@ function renderWeekly(){
 
   document.getElementById('wk-witness').innerHTML=witnessText(cur,'這週');
   renderReviewDonut('wk-donut',cur);
+  renderThemeRates('wk-theme-card','wk-themes',cur);
+  renderTdlDetail('wk-tdldetail-card','wk-tdldetail',cur);
   renderFruitProgress('wk-fruit-progress');
   renderHabitDist('wk-dist',cur.habitCounts);
   renderIdentityProgress('wk-identity',cur.habitCounts);
@@ -3280,7 +3393,7 @@ function syncTodayPhotosIfPlanted(){
   const e=S.entries.find(x=>x.date===today());
   if(!e)return;
   e.photos=(S.todayPhotos||[]).slice();sv(S);
-  syncEntry({date:today(),checked:e.checked||[],hl:e.diary?.hl||'',rf:e.diary?.rf||'',gr:e.diary?.gr||'',quote:e.diary?.quote||'',tdl:e.tdl||[],exp:e.exp||0,streak:e.streak||0,tdlTotal:e.tdlTotal||0,tdlDone:e.tdlDone||0,photos:e.photos});
+  syncEntry({date:today(),checked:e.checked||[],hl:e.diary?.hl||'',rf:e.diary?.rf||'',gr:e.diary?.gr||'',quote:e.diary?.quote||'',tdl:e.tdl||[],exp:e.exp||0,streak:e.streak||0,tdlTotal:e.tdlTotal||0,tdlDone:e.tdlDone||0,tdlItems:e.tdlItems||[],photos:e.photos});
 }
 document.getElementById('photo-add-btn').addEventListener('click',()=>{
   if(getCtxPhotosArr(false).length>=3){alert('一天最多3張照片喔');return;}
@@ -3647,7 +3760,7 @@ renderSettings();
 function getOrCreateEntry(ds){
   let e=S.entries.find(x=>x.date===ds);
   if(!e){
-    e={date:ds,checked:[],diary:{hl:'',rf:'',gr:'',quote:''},tdl:[],exp:0,streak:0,tdlTotal:0,tdlDone:0,photos:[]};
+    e={date:ds,checked:[],diary:{hl:'',rf:'',gr:'',quote:''},tdl:[],exp:0,streak:0,tdlTotal:0,tdlDone:0,tdlItems:null,photos:[]};
     S.entries.push(e);
     S.entries.sort((a,b)=>a.date<b.date?-1:1);
   }
@@ -3676,7 +3789,7 @@ let entryTimer=null;
 function syncEntryFor(ds){
   const e=S.entries.find(x=>x.date===ds);
   if(!e)return Promise.resolve();
-  return syncEntry({date:e.date,checked:e.checked||[],hl:e.diary?.hl||'',rf:e.diary?.rf||'',gr:e.diary?.gr||'',quote:e.diary?.quote||'',tdl:e.tdl||[],exp:e.exp||0,streak:e.streak||0,tdlTotal:e.tdlTotal||0,tdlDone:e.tdlDone||0,photos:e.photos||[]});
+  return syncEntry({date:e.date,checked:e.checked||[],hl:e.diary?.hl||'',rf:e.diary?.rf||'',gr:e.diary?.gr||'',quote:e.diary?.quote||'',tdl:e.tdl||[],exp:e.exp||0,streak:e.streak||0,tdlTotal:e.tdlTotal||0,tdlDone:e.tdlDone||0,tdlItems:e.tdlItems||[],photos:e.photos||[]});
 }
 function syncEntryDebounced(){
   const ds=ctxIsToday()?today():viewDate;

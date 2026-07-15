@@ -34,7 +34,7 @@
 const SHEET_ID = '***REMOVED***';
 const APP_CODE = ''; // ← 通行碼：填入妳自己想的一串密碼；留空 = 不啟用
 
-const ENTRY_COLS = ['date','checked','hl','rf','gr','quote','tdl','exp','streak','tdlTotal','tdlDone','photos'];
+const ENTRY_COLS = ['date','checked','hl','rf','gr','quote','tdl','exp','streak','tdlTotal','tdlDone','tdlItems','photos'];
 const STATE_COLS = ['flowers','apples','bigApples','goldFruits','seedlings','trees',
                     'achievements','quotes','calNotes','myPeople','treasures',
                     'lastPlant','lastStreak','streak','exp','gardenPos','supportCategories',
@@ -63,9 +63,25 @@ function getSheet(name){
     sh = ss.insertSheet(name);
     if(name==='entries') sh.appendRow(ENTRY_COLS);
     if(name==='state')   sh.appendRow(STATE_COLS);
+  }else{
+    // 既有試算表升級：把後來新增的欄位補到表頭最右邊
+    if(name==='entries') ensureCols_(sh, ENTRY_COLS);
+    if(name==='state')   ensureCols_(sh, STATE_COLS);
   }
   return sh;
 }
+
+// 只補「表頭缺少的欄位」，既有資料列完全不動（saveEntry_ 是照表頭對應欄位的，
+// 表頭有這一欄，新資料才存得進去）
+function ensureCols_(sh, cols){
+  const lastCol = sh.getLastColumn();
+  if(lastCol < 1){ sh.appendRow(cols); return; }
+  const header = sh.getRange(1,1,1,lastCol).getValues()[0].map(String);
+  const missing = cols.filter(c => header.indexOf(c) < 0);
+  if(!missing.length) return;
+  sh.getRange(1, lastCol+1, 1, missing.length).setValues([missing]);
+}
+
 
 function json(obj){
   return ContentService.createTextOutput(JSON.stringify(obj))
