@@ -520,6 +520,11 @@ button{-webkit-tap-highlight-color:transparent;}
 </style>
 </head>
 <body>
+<!-- 跨日提示：頁面開著跨過午夜時，畫面還停在昨天，這裡明確講清楚現在會存到哪一天 -->
+<div id="dayroll-banner" style="display:none;position:fixed;left:12px;right:12px;top:calc(10px + env(safe-area-inset-top));z-index:9993;align-items:center;gap:10px;background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;border-radius:14px;padding:11px 13px;box-shadow:0 12px 28px -8px rgba(var(--primary-rgb),.6);font-size:12.5px;line-height:1.5;">
+  <span style="flex:1;">🌅 <b>已經跨到新的一天了</b><br/><span id="dayroll-msg" style="opacity:.92;"></span></span>
+  <button id="dayroll-go" style="flex-shrink:0;border:none;border-radius:10px;padding:8px 13px;background:rgba(255,255,255,.95);color:var(--primary);font-family:'Quicksand',sans-serif;font-weight:800;font-size:12px;cursor:pointer;">切換</button>
+</div>
 <div id="pwa-splash"><img src="puppy_icon.png" alt="格蘭朵"/><div class="splash-name">格蘭朵魔法森林</div></div>
 <div id="load-skeleton">
   <img class="sk-puppy" src="puppy_icon.png" onerror="this.style.display='none'"/>
@@ -1050,7 +1055,12 @@ function grFallback(el,code,size){
 const SK='grandol_v7';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
-function ctxIsToday(){return !viewDate||viewDate===today();}
+// 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
+// 絕對不要用 today()（即時時鐘）當寫入目標：跨日處理只在開啟頁面時跑一次，
+// 頁面跨過午夜還開著時，畫面和資料都還停在昨天、today() 卻已經跳到新的一天，
+// 於是「畫面顯示 7/15、按儲存卻存進 7/16」。用 curDay() 就能保證所見即所存。
+function curDay(){return S.dayKey||today();}
+function ctxIsToday(){return !viewDate||viewDate===curDay();}
 
 const HABITS=[
   {k:'wakeup',l:'早起',c:'1f305',fc:'1fab7',phrase:'妳是一個善待自己的人'},
@@ -1126,11 +1136,22 @@ if(S.lastPlant!==today()&&S.lastStreak!==today()){
   if(S.dayKey!==today()){
     S.tdlHist=S.tdlHist||{};
     if(S.dayKey&&Object.keys(S.tdlDone||{}).length)S.tdlHist[S.dayKey]=S.tdlDone;
-    // 跨日前先替「剛結束的那天」存下 TDL 快照：這裡是唯一還同時握有當天項目與勾選狀態的時機，
-    // 而且不管有沒有按「種下今天」都會留下紀錄
-    if(S.dayKey&&(S.todayTDL||[]).length){
+    // 跨日前先把「剛結束那天」的紀錄落地到它自己的 entry：下面幾行就會把 checked/diary/todayTDL
+    // 全部清空，沒按過「種下今天」的那天，這些資料會就此消失。已經有內容的欄位不覆蓋
+    // （已種下的那天，entry 裡的才是權威版本）
+    if(S.dayKey){
       const _snap=buildTdlSnapshot(S.todayTDL,S.tdlDone);
-      if(_snap.length){const _en=getOrCreateEntry(S.dayKey);_en.tdlItems=_snap;}
+      const _ck=Object.keys(S.checked||{});
+      const _dy=S.diary||{};
+      const _hasDiary=!!(_dy.hl||_dy.rf||_dy.gr||_dy.quote);
+      if(_snap.length||_ck.length||_hasDiary){
+        const _en=getOrCreateEntry(S.dayKey);
+        if(_snap.length&&!(_en.tdlItems&&_en.tdlItems.length)){
+          _en.tdlItems=_snap;_en.tdlTotal=_snap.length;_en.tdlDone=_snap.filter(x=>x.done).length;
+        }
+        if(_ck.length&&!(_en.checked||[]).length)_en.checked=_ck;
+        if(_hasDiary&&!(_en.diary&&(_en.diary.hl||_en.diary.rf||_en.diary.gr||_en.diary.quote)))_en.diary={..._dy};
+      }
     }
     const _hk=Object.keys(S.tdlHist).sort();
     while(_hk.length>60){delete S.tdlHist[_hk.shift()];}
@@ -1175,7 +1196,7 @@ async function syncState(){
       supportCategories:JSON.stringify(S.supportCategories||[]),
       notifications:JSON.stringify(S.notifications||{}),
       supportResources:JSON.stringify(S.resourceCats||[]),
-      todaySession:JSON.stringify({date:today(),checked:S.checked||{},tdlDone:S.tdlDone||{},todayTDL:S.todayTDL||[],tdlHist:S.tdlHist||{}}),
+      todaySession:JSON.stringify({date:curDay(),checked:S.checked||{},tdlDone:S.tdlDone||{},todayTDL:S.todayTDL||[],tdlHist:S.tdlHist||{}}),
       expLog:JSON.stringify(S.expLog||[]),
       calColorTags:JSON.stringify(S.calColorTags||{})
     });
@@ -1259,7 +1280,7 @@ async function loadCloud(){
       }
     }
     // restore today's session from cloud entry（草稿或已種下都還原，本機空才採用）
-    const te=S.entries.find(e=>e.date===today());
+    const te=S.entries.find(e=>e.date===curDay());
     if(te){
       if(!Object.keys(S.checked).length&&Array.isArray(te.checked))te.checked.forEach(k=>S.checked[k]=true);
       if(!S.diary.hl&&!S.diary.rf&&!S.diary.gr&&te.diary)S.diary={...te.diary};
@@ -1371,7 +1392,9 @@ function makeDraggable(el,stage,onEnd){
 // ── TOP / EXP RENDER ──────────────────────────────────
 function renderTopDate(){
   const isT=ctxIsToday();
-  const d=isT?new Date():new Date(viewDate+'T00:00:00');
+  // 顯示的日期要跟寫入目標同一個來源（curDay），不能用即時的 new Date()，
+  // 否則跨午夜後畫面寫的日期會跟實際存進去的那天不一致
+  const d=new Date((isT?curDay():viewDate)+'T00:00:00');
   document.getElementById('top-date-main').innerHTML=`${fi('1f4c5',17)} ${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日${isT?'':' ✏️'}`;
   document.getElementById('top-date-sub').textContent=isT?`週${wdArr[d.getDay()]} · 點日期補記過去`:`週${wdArr[d.getDay()]} · 補記模式`;
   document.getElementById('streak-num').textContent=S.streak||0;
@@ -1388,10 +1411,10 @@ function renderExpBar(){
 // ── FLOWERS (unlimited, absolute, draggable, persistent) ──
 function migrateFlowers(){
   S.flowers=S.flowers.map((f,i)=>{
-    if(typeof f==='string')return{f:f,x:6+(i*47)%86,y:(i*13)%36,d:today()};
+    if(typeof f==='string')return{f:f,x:6+(i*47)%86,y:(i*13)%36,d:curDay()};
     return f;
   });
-  S.flowers.forEach(f=>{if(!f.d)f.d=today();});
+  S.flowers.forEach(f=>{if(!f.d)f.d=curDay();});
 }
 function renderFlowers(){
   const layer=document.getElementById('flower-layer');
@@ -1419,7 +1442,7 @@ function renderFlowers(){
 }
 function addFlower(fc,ds){
   const x=4+Math.random()*88,y=Math.random()*40;
-  S.flowers.push({f:fc,x:x,y:y,d:ds||today()});
+  S.flowers.push({f:fc,x:x,y:y,d:ds||curDay()});
 }
 function removeFlower(fc,ds){
   if(ds){
@@ -1449,7 +1472,7 @@ function renderFruits(){
 <script>
 // ── STICKY NOTE (always visible, checkable, draggable) ──
 function stickyCtx(){
-  if(ctxIsToday())return{ds:today(),items:S.todayTDL||[],done:(S.tdlDone=S.tdlDone||{}),todayMode:true};
+  if(ctxIsToday())return{ds:curDay(),items:S.todayTDL||[],done:(S.tdlDone=S.tdlDone||{}),todayMode:true};
   const ds=viewDate;
   const en=S.entries.find(x=>x.date===ds);
   // 當天自己的快照是權威版本；沒有快照才回頭用「前一天規劃的 tdl」
@@ -1487,7 +1510,7 @@ function buildTdlSnapshot(items,doneMap){
 }
 // 這天實際的 TDL 明細：今天讀即時狀態，過去讀當天快照
 function tdlItemsOf(ds){
-  if(ds===today())return buildTdlSnapshot(S.todayTDL,S.tdlDone);
+  if(ds===curDay())return buildTdlSnapshot(S.todayTDL,S.tdlDone);
   const e=(S.entries||[]).find(x=>x.date===ds);
   return (e&&Array.isArray(e.tdlItems))?e.tdlItems:null;
 }
@@ -1643,7 +1666,7 @@ function renderHabits(){
       setTimeout(()=>showIdPhrase(h.phrase),600);
     }
     // 種下後編輯：同步更新當天紀錄
-    if(S.lastPlant===today()){const en=S.entries.find(x=>x.date===today());if(en){en.checked=Object.keys(S.checked);en.exp=S.exp;syncEntryDebounced();}}
+    if(S.lastPlant===curDay()){const en=S.entries.find(x=>x.date===curDay());if(en){en.checked=Object.keys(S.checked);en.exp=S.exp;syncEntryDebounced();}}
     sv(S);checkLevelUp(oldExp,S.exp);
     renderHabits();renderFlowers();renderExpBar();checkAchievements();syncStateDebounced();
   }));
@@ -1704,7 +1727,7 @@ document.getElementById('tdl-add').addEventListener('click',()=>{curRows().push(
 // ── PLANT TODAY ───────────────────────────────────────
 document.getElementById('plant-btn').addEventListener('click',async()=>{
   if(!ctxIsToday()){await plantBackfill();return;}
-  const replant=S.lastPlant===today();
+  const replant=S.lastPlant===curDay();
   if(replant&&!confirm('今天已經種過了！要覆蓋今天的紀錄嗎？'))return;
   const d=S.diary;
   if(!d.hl&&!d.rf&&!d.gr){alert('今日小記還是空的，先寫一點再種下今天 📖');return;}
@@ -1716,10 +1739,10 @@ document.getElementById('plant-btn').addEventListener('click',async()=>{
   const yd=new Date();yd.setDate(yd.getDate()-1);const yesterday=fmtLocal(yd);
   if(!replant){
     S.streak=(S.lastStreak===yesterday)?S.streak+1:1;
-    S.lastStreak=today();
+    S.lastStreak=curDay();
   }
   S.tomorrowTDL=toSave.map(r=>({theme:r.theme,task:r.task}));
-  S.lastPlant=today();
+  S.lastPlant=curDay();
 
   const oldExp=S.exp;
   if(!replant){
@@ -1730,8 +1753,8 @@ document.getElementById('plant-btn').addEventListener('click',async()=>{
     while(S.seedlings>=2){S.seedlings-=2;S.trees++;}
   }
 
-  const entry={date:today(),checked:[...Object.keys(S.checked)],diary:{...d},exp:S.exp,streak:S.streak,tdl:S.tomorrowTDL,tdlTotal:(S.todayTDL||[]).length,tdlDone:Object.keys(S.tdlDone).length,tdlItems:buildTdlSnapshot(S.todayTDL,S.tdlDone),photos:(S.todayPhotos||[])};
-  const idx=S.entries.findIndex(e=>e.date===today());
+  const entry={date:curDay(),checked:[...Object.keys(S.checked)],diary:{...d},exp:S.exp,streak:S.streak,tdl:S.tomorrowTDL,tdlTotal:(S.todayTDL||[]).length,tdlDone:Object.keys(S.tdlDone).length,tdlItems:buildTdlSnapshot(S.todayTDL,S.tdlDone),photos:(S.todayPhotos||[])};
+  const idx=S.entries.findIndex(e=>e.date===curDay());
   if(idx>=0)S.entries[idx]=entry;else S.entries.push(entry);
 
   if(d.quote&&d.quote.trim()&&!S.quotes.some(q=>qText(q)===d.quote.trim()))S.quotes.push({text:d.quote.trim(),desc:'',link:'',exported:false});
@@ -1745,7 +1768,7 @@ document.getElementById('plant-btn').addEventListener('click',async()=>{
   renderPlantBtn();
   triggerBurst(btn);if(!replant)showExpPop(btn,'+20 EXP 🌱');
 
-  await syncEntry({date:today(),checked:Object.keys(S.checked),hl:d.hl,rf:d.rf,gr:d.gr,quote:d.quote||'',tdl:S.tomorrowTDL,exp:S.exp,streak:S.streak,tdlTotal:entry.tdlTotal,tdlDone:entry.tdlDone,tdlItems:entry.tdlItems||[],photos:S.todayPhotos||[]});
+  await syncEntry({date:curDay(),checked:Object.keys(S.checked),hl:d.hl,rf:d.rf,gr:d.gr,quote:d.quote||'',tdl:S.tomorrowTDL,exp:S.exp,streak:S.streak,tdlTotal:entry.tdlTotal,tdlDone:entry.tdlDone,tdlItems:entry.tdlItems||[],photos:S.todayPhotos||[]});
   await syncState();
 });
 
@@ -1789,12 +1812,12 @@ function tdlText(tdl,tdlDone){
 }
 document.getElementById('copy-btn').addEventListener('click',async()=>{
   const b=document.getElementById('copy-btn');
-  await ensureCalMonthsLoaded([today()]);
+  await ensureCalMonthsLoaded([curDay()]);
   const d=S.diary,c=HABITS.filter(h=>S.checked[h.k]).map(h=>h.l);
   const todayT=(S.todayTDL||[]).map((r,i)=>`${S.tdlDone['t'+i]?'✅':'⬜'} ${r.theme?r.theme+'：':''}${r.task}`).join('\n');
   const tomorrowT=tdlText(S.tomorrowTDL);
-  const calT=calLinesForDates([today()]).join('\n');
-  navigator.clipboard.writeText(`${today()} 紀錄\n做了：${c.join('、')||'無'}\n\n今日TDL：\n${todayT||'無'}\n\n📅 今日行程：\n${calT||'無'}\n\n🌟 Highlights：${d.hl||'無'}\n📖 Reflection：${d.rf||'無'}\n🥹 Gratitude：${d.gr||'無'}\n💬 金句：${d.quote||'無'}\n\n明天TDL：\n${tomorrowT||'無'}`).then(()=>{
+  const calT=calLinesForDates([curDay()]).join('\n');
+  navigator.clipboard.writeText(`${curDay()} 紀錄\n做了：${c.join('、')||'無'}\n\n今日TDL：\n${todayT||'無'}\n\n📅 今日行程：\n${calT||'無'}\n\n🌟 Highlights：${d.hl||'無'}\n📖 Reflection：${d.rf||'無'}\n🥹 Gratitude：${d.gr||'無'}\n💬 金句：${d.quote||'無'}\n\n明天TDL：\n${tomorrowT||'無'}`).then(()=>{
     b.innerHTML=`${fi('2705',15)} 已複製！`;setTimeout(()=>{b.innerHTML=`${fi('1f4cb',15)} 複製今日紀錄給 Claude`;},2000);
   });
 });
@@ -1841,7 +1864,7 @@ function renderPopCal(){
   for(let day=1;day<=daysInMonth;day++){
     const ds=`${popCalYear}-${String(popCalMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
     const rowIdx=Math.floor((startDay+day-1)/7);
-    const isToday=ds===today();
+    const isToday=ds===curDay();
     const hasRecord=!!S.entries.find(e=>e.date===ds);
     const hasNote=!!S.calNotes[ds];
     const _evs=(typeof calEvents!=='undefined'&&calEvents[ds])?calEvents[ds].filter(ev=>!(typeof isReminderEvent==='function'&&isReminderEvent(ev))&&!isMultiDayEvent(ev)):[];
@@ -1922,7 +1945,7 @@ window.addEventListener('resize',()=>{
 });
 function selectPopCalDate(ds){
   if(ds>today()){renderCalDayPanel(ds);return;}
-  viewDate=(ds===today())?null:ds;
+  viewDate=(ds===curDay())?null:ds;
   toggleCalPopup();
   applyViewDate(true);
 }
@@ -1941,7 +1964,7 @@ function calcTDLRate(dates){
     const e=S.entries.find(x=>x.date===ds);
     if(e&&e.tdlDoneCount!==undefined)done+=e.tdlDoneCount;
   });
-  if(dates.includes(today())){done+=Object.keys(S.tdlDone).length;total+=(S.todayTDL||[]).length- (S.entries.find(x=>x.date===today())?.tdl?.length||0)>0?0:0;}
+  if(dates.includes(curDay())){done+=Object.keys(S.tdlDone).length;total+=(S.todayTDL||[]).length- (S.entries.find(x=>x.date===curDay())?.tdl?.length||0)>0?0:0;}
   if(!total)return'-';
   return`${done}/${total} (${Math.round(done/total*100)}%)`;
 }
@@ -2059,14 +2082,14 @@ function periodStats(dates){
   // TDL 逐項明細與主題聚合：主題是唯一能跨天比較的軸（任務文字每天都不同）
   const themeAgg={};const tdlDetail=[];let tdlNoDetailDays=0;
   dates.forEach(ds=>{
-    const isToday=ds===today();
+    const isToday=ds===curDay();
     let ck,dia,tdlT,tdlD,items=null;
     if(isToday){
       // 今天一律用即時資料（不管是否已種下/草稿）
       ck=Object.keys(S.checked);dia=S.diary;
       tdlT=(S.todayTDL||[]).length;tdlD=Object.keys(S.tdlDone).length;
       items=buildTdlSnapshot(S.todayTDL,S.tdlDone);
-      if(!(ck.length||dia.hl||dia.rf||dia.gr||S.lastPlant===today()))return;
+      if(!(ck.length||dia.hl||dia.rf||dia.gr||S.lastPlant===curDay()))return;
       days++;
     }else{
       const e=S.entries.find(x=>x.date===ds);
@@ -2210,7 +2233,7 @@ function renderWeekly(){
 
   document.getElementById('wk-trend').innerHTML=`<div class="trend-chart">${dates.map(ds=>{
     const e=S.entries.find(x=>x.date===ds);
-    const isToday=ds===today();
+    const isToday=ds===curDay();
     let rate=null;
     if(e&&e.tdlTotal)rate=e.tdlDone/e.tdlTotal;
     else if(isToday&&(S.todayTDL||[]).length)rate=Object.keys(S.tdlDone).length/S.todayTDL.length;
@@ -2225,13 +2248,13 @@ function renderWeekly(){
   document.getElementById('week-heatmap').innerHTML=HABITS.map(h=>`
     <div class="heatmap-row">
       <div class="heatmap-label">${h.l}</div>
-      <div class="heatmap-cells">${dates.map(ds=>{const e=S.entries.find(x=>x.date===ds);const done=e?e.checked&&e.checked.includes(h.k):(ds===today()&&S.checked[h.k]);return`<div class="heatmap-cell ${done?'done':'miss'}" title="${ds}"></div>`;}).join('')}</div>
+      <div class="heatmap-cells">${dates.map(ds=>{const e=S.entries.find(x=>x.date===ds);const done=e?e.checked&&e.checked.includes(h.k):(ds===curDay()&&S.checked[h.k]);return`<div class="heatmap-cell ${done?'done':'miss'}" title="${ds}"></div>`;}).join('')}</div>
     </div>`).join('');
 
   if(cur.days===0){document.getElementById('week-entries').innerHTML=`<div class="empty-state">${fi('1f331',32)}<br/>這週還沒有紀錄</div>`;return;}
   document.getElementById('week-entries').innerHTML=dates.map(ds=>{
     const d=new Date(ds+'T00:00:00');
-    const isToday=ds===today();
+    const isToday=ds===curDay();
     const e=S.entries.find(x=>x.date===ds);
     if(!e)return`<div class="week-card" style="opacity:.4;"><div class="week-day-hd"><span>${d.getMonth()+1}/${d.getDate()} 週${wdArr[d.getDay()]}</span><span style="font-size:11px;color:var(--tc3);">無紀錄</span></div></div>`;
     const ck=e.checked||[];
@@ -2253,7 +2276,7 @@ document.getElementById('copy-week-btn').addEventListener('click',async()=>{
   const lines=[`📊 ${weekLabel(weekOffset)}的格蘭朵紀錄（請幫我分析）`,''];
   dates.forEach(ds=>{
     const e=S.entries.find(x=>x.date===ds);
-    const isT=ds===today();
+    const isT=ds===curDay();
     // 今天可能還沒「種下」而沒有 entry，但即時資料要照樣帶進分析
     const checkedArr=isT?Object.keys(S.checked||{}):(e?.checked||[]);
     const diary=(isT?S.diary:e?.diary)||{};
@@ -2316,7 +2339,7 @@ function renderMonthly(){
     const d=new Date(ds+'T00:00:00');const wd=(d.getDay()+6)%7; // 0=一...6=日
     const e=S.entries.find(x=>x.date===ds);
     if(e){weekdayTotals[wd]++;weekdayCounts[wd]+=(e.checked||[]).length;}
-    else if(ds===today()){weekdayTotals[wd]++;weekdayCounts[wd]+=Object.keys(S.checked).length;}
+    else if(ds===curDay()){weekdayTotals[wd]++;weekdayCounts[wd]+=Object.keys(S.checked).length;}
   });
   const wdLabels=['一','二','三','四','五','六','日'];
   const maxWd=Math.max(1,...weekdayCounts);
@@ -2329,7 +2352,7 @@ function renderMonthly(){
   document.getElementById('month-heatmap').innerHTML=HABITS.map(h=>`
     <div class="heatmap-row">
       <div class="heatmap-label" style="font-size:10px;">${h.l}</div>
-      <div class="heatmap-cells">${dates.map(ds=>{const e=S.entries.find(x=>x.date===ds);const done=e?e.checked&&e.checked.includes(h.k):(ds===today()&&S.checked[h.k]);return`<div class="heatmap-cell ${done?'done':'miss'}" title="${ds}"></div>`;}).join('')}</div>
+      <div class="heatmap-cells">${dates.map(ds=>{const e=S.entries.find(x=>x.date===ds);const done=e?e.checked&&e.checked.includes(h.k):(ds===curDay()&&S.checked[h.k]);return`<div class="heatmap-cell ${done?'done':'miss'}" title="${ds}"></div>`;}).join('')}</div>
     </div>`).join('');
 
   const weeks=[];for(let i=0;i<dates.length;i+=7)weeks.push(dates.slice(i,i+7));
@@ -2356,7 +2379,7 @@ document.getElementById('copy-month-btn').addEventListener('click',async()=>{
   const lines=[`📊 ${monthLabel(monthOffset)}的格蘭朵紀錄（請幫我分析）`,''];
   dates.forEach(ds=>{
     const e=S.entries.find(x=>x.date===ds);
-    const isT=ds===today();
+    const isT=ds===curDay();
     const checkedArr=isT?Object.keys(S.checked||{}):(e?.checked||[]);
     const diary=(isT?S.diary:e?.diary)||{};
     const items=tdlItemsOf(ds);
@@ -3105,7 +3128,7 @@ function renderAll(){
   renderStickyNote();renderTDL();renderAchievements();
   if(typeof renderTodayPhotos==='function')renderTodayPhotos();
   if(typeof renderPlantBtn==='function')renderPlantBtn();
-  else if(S.lastPlant===today()){
+  else if(S.lastPlant===curDay()){
     const b=document.getElementById('plant-btn');
     b.innerHTML=`${fi('1f389',17)} 今天種下了！`;b.disabled=true;
   }
@@ -3427,11 +3450,11 @@ function renderTodayPhotos(){
   btn.textContent=`📷 新增照片（${ps.length}/3）`;
 }
 function syncTodayPhotosIfPlanted(){
-  if(S.lastPlant!==today())return;
-  const e=S.entries.find(x=>x.date===today());
+  if(S.lastPlant!==curDay())return;
+  const e=S.entries.find(x=>x.date===curDay());
   if(!e)return;
   e.photos=(S.todayPhotos||[]).slice();sv(S);
-  syncEntry({date:today(),checked:e.checked||[],hl:e.diary?.hl||'',rf:e.diary?.rf||'',gr:e.diary?.gr||'',quote:e.diary?.quote||'',tdl:e.tdl||[],exp:e.exp||0,streak:e.streak||0,tdlTotal:e.tdlTotal||0,tdlDone:e.tdlDone||0,tdlItems:e.tdlItems||[],photos:e.photos});
+  syncEntry({date:curDay(),checked:e.checked||[],hl:e.diary?.hl||'',rf:e.diary?.rf||'',gr:e.diary?.gr||'',quote:e.diary?.quote||'',tdl:e.tdl||[],exp:e.exp||0,streak:e.streak||0,tdlTotal:e.tdlTotal||0,tdlDone:e.tdlDone||0,tdlItems:e.tdlItems||[],photos:e.photos});
 }
 document.getElementById('photo-add-btn').addEventListener('click',()=>{
   if(getCtxPhotosArr(false).length>=3){alert('一天最多3張照片喔');return;}
@@ -3447,7 +3470,7 @@ document.getElementById('photo-file').addEventListener('change',async()=>{
   btn.disabled=true;btn.textContent='⏳ 上傳中...';
   try{
     const caption=desc.trim();
-    const pds=ctxIsToday()?today():viewDate;
+    const pds=ctxIsToday()?curDay():viewDate;
     const url=await uploadImageToGAS(f,`${pds}_${sanitizeFilePart(caption)||'photo'}.jpg`);
     getCtxPhotosArr(true).push({url:url,caption:caption});
     sv(S);
@@ -3830,7 +3853,7 @@ function syncEntryFor(ds){
   return syncEntry({date:e.date,checked:e.checked||[],hl:e.diary?.hl||'',rf:e.diary?.rf||'',gr:e.diary?.gr||'',quote:e.diary?.quote||'',tdl:e.tdl||[],exp:e.exp||0,streak:e.streak||0,tdlTotal:e.tdlTotal||0,tdlDone:e.tdlDone||0,tdlItems:e.tdlItems||[],photos:e.photos||[]});
 }
 function syncEntryDebounced(){
-  const ds=ctxIsToday()?today():viewDate;
+  const ds=ctxIsToday()?curDay():viewDate;
   clearTimeout(entryTimer);
   entryTimer=setTimeout(()=>{syncEntryFor(ds);},1200);
 }
@@ -3838,7 +3861,7 @@ function renderPlantBtn(){
   const b=document.getElementById('plant-btn');
   if(!b)return;
   if(ctxIsToday()){
-    if(S.lastPlant===today()){b.innerHTML=`${fi('1f389',17)} 已種下 · 可更新`;b.disabled=false;}
+    if(S.lastPlant===curDay()){b.innerHTML=`${fi('1f389',17)} 已種下 · 可更新`;b.disabled=false;}
     else{b.innerHTML=`${fi('2728',17)} 種下今天`;b.disabled=false;}
   }else{
     const e=S.entries.find(x=>x.date===viewDate);
@@ -3904,7 +3927,7 @@ function applyViewDate(switchPage){
   const dv=isT?S.diary:((S.entries.find(x=>x.date===viewDate)||{}).diary||{hl:'',rf:'',gr:'',quote:''});
   ['hl','rf','gr','quote'].forEach(k=>{document.getElementById('d-'+k).value=dv[k]||'';});
   const noteEl=document.getElementById('d-note');
-  if(noteEl)noteEl.value=S.calNotes[isT?today():viewDate]||'';
+  if(noteEl)noteEl.value=S.calNotes[isT?curDay():viewDate]||'';
   renderTopDate();renderHabits();renderExpBar();renderPlantBtn();
   if(typeof renderTodayPhotos==='function')renderTodayPhotos();
   if(typeof renderTodayEvents==='function')renderTodayEvents();
@@ -3922,19 +3945,46 @@ async function saveDraft(){
   const d=S.diary;
   const all=tdlRows.filter(r=>r.theme||r.task);
   S.tomorrowTDL=all.map(r=>({theme:r.theme,task:r.task}));
-  const existing=S.entries.find(e=>e.date===today());
+  const existing=S.entries.find(e=>e.date===curDay());
   const keepStreak=existing?(+existing.streak||0):0;
   // 存草稿一樣要帶當天的 TDL 快照：這裡是整筆覆蓋 entry，漏掉 tdlItems 會把已存的明細清空，
   // 接著 syncEntryFor 又會把空的明細推上雲端，等於把紀錄洗掉
-  const entry={date:today(),checked:[...Object.keys(S.checked)],diary:{...d},exp:S.exp,streak:keepStreak,tdl:S.tomorrowTDL,tdlTotal:(S.todayTDL||[]).length,tdlDone:Object.keys(S.tdlDone).length,tdlItems:buildTdlSnapshot(S.todayTDL,S.tdlDone),photos:(S.todayPhotos||[])};
-  const idx=S.entries.findIndex(e=>e.date===today());
+  const entry={date:curDay(),checked:[...Object.keys(S.checked)],diary:{...d},exp:S.exp,streak:keepStreak,tdl:S.tomorrowTDL,tdlTotal:(S.todayTDL||[]).length,tdlDone:Object.keys(S.tdlDone).length,tdlItems:buildTdlSnapshot(S.todayTDL,S.tdlDone),photos:(S.todayPhotos||[])};
+  const idx=S.entries.findIndex(e=>e.date===curDay());
   if(idx>=0)S.entries[idx]=entry;else S.entries.push(entry);
   sv(S);
   const b=document.getElementById('draft-btn');const orig=b.innerHTML;
   b.innerHTML='💾 草稿已存 ✓';b.disabled=true;
   setTimeout(()=>{b.innerHTML=orig;b.disabled=false;},2000);
-  try{await syncEntryFor(today());await syncState();}catch(e){}
+  try{await syncEntryFor(curDay());await syncState();}catch(e){}
 }
+// ── 午夜看門狗 ────────────────────────────────────────
+// 頁面跨過午夜還開著時，畫面與資料都還停在昨天。寫入已經被 curDay() 釘在畫面顯示的那天，
+// 所以不理它資料也不會跑錯天；但還是要明白告訴使用者「現在會存到哪一天」，
+// 並提供切換。這裡刻意不自動清空重設——她可能正在寫東西，不能突然把畫面清掉。
+let _dayWatchT=null;
+function checkDayRollover(){
+  const b=document.getElementById('dayroll-banner');
+  if(!b)return;
+  if(today()!==curDay()){
+    const real=new Date(today()+'T00:00:00'),cur=new Date(curDay()+'T00:00:00');
+    const rl=`${real.getMonth()+1}/${real.getDate()}`,cl=`${cur.getMonth()+1}/${cur.getDate()}`;
+    const m=document.getElementById('dayroll-msg');
+    if(m)m.textContent=`現在已經是 ${rl}，但這頁還停在 ${cl}。你現在記錄的東西都會存到 ${cl}。`;
+    b.style.display='flex';
+  }else b.style.display='none';
+}
+function startDayWatch(){
+  if(_dayWatchT)return;
+  checkDayRollover();
+  _dayWatchT=setInterval(checkDayRollover,20000);
+  // 手機把 APP 切到背景再回來，最常撞到跨日，回來時立刻重驗
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkDayRollover();});
+}
+const _dayGo=document.getElementById('dayroll-go');
+if(_dayGo)_dayGo.addEventListener('click',()=>{location.reload();});
+startDayWatch();
+
 const _draftBtn=document.getElementById('draft-btn');
 if(_draftBtn)_draftBtn.addEventListener('click',saveDraft);
 document.getElementById('backfill-exit').addEventListener('click',()=>{
@@ -3944,9 +3994,9 @@ document.getElementById('backfill-exit').addEventListener('click',()=>{
 // 備註欄（今天與補記日期都能填，日曆黃點沿用 calNotes）
 (function(){
   const noteEl=document.getElementById('d-note');
-  noteEl.value=S.calNotes[today()]||'';
+  noteEl.value=S.calNotes[curDay()]||'';
   noteEl.addEventListener('input',()=>{
-    const ds=ctxIsToday()?today():viewDate;
+    const ds=ctxIsToday()?curDay():viewDate;
     const v=noteEl.value.trim();
     if(v)S.calNotes[ds]=v;else delete S.calNotes[ds];
     sv(S);syncStateDebounced();
@@ -4163,7 +4213,7 @@ function renderTodayEvents(){
   if(!calConnected){card.style.display='none';return;}
   card.style.display='';
   const isT=(typeof ctxIsToday!=='function')||ctxIsToday();
-  const ds=isT?today():viewDate;
+  const ds=isT?curDay():viewDate;
   const tt=document.getElementById('today-events-title');
   if(tt){const dd=new Date(ds+'T00:00:00');tt.textContent=isT?'📅 今日行程':'📅 '+(dd.getMonth()+1)+'/'+dd.getDate()+' 行程';}
   const evs=(calEvents[ds]||[]).filter(ev=>!isReminderEvent(ev));
@@ -4364,7 +4414,7 @@ function renderCalDayPanel(ds){
 (function(){
   const b=document.getElementById('today-event-add');
   if(b)b.addEventListener('click',()=>{
-    const ds=(typeof ctxIsToday==='function'&&!ctxIsToday())?viewDate:today();
+    const ds=(typeof ctxIsToday==='function'&&!ctxIsToday())?viewDate:curDay();
     const dd=new Date(ds+'T00:00:00');
     popCalYear=dd.getFullYear();popCalMonth=dd.getMonth();
     const popup=document.getElementById('cal-popup');
