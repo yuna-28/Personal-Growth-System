@@ -1161,6 +1161,35 @@ function migQuotes(){if(Array.isArray(S.quotes))S.quotes=S.quotes.map(q=>typeof 
 let S=ld();
 migQuotes();
 
+// 這兩個函式提前搬到這裡定義：rolloverToToday() 在頁面載入時就會被同步呼叫（見下面），
+// 而它們原本定義在後面的 <script> 區塊——瀏覽器是一個 <script> 標籤執行完才執行下一個，
+// 所以放在後面會讓 rolloverToToday() 呼叫到「還沒定義」的函式而丟出例外，導致換日邏輯
+// 整個中斷、dayKey 永遠停在舊的那天（這正是重新整理後「今天」還是顯示舊日期的成因）。
+// ── TDL 逐日快照 ──────────────────────────────────────
+// 舊做法把「項目文字」放在前一天的 entry.tdl、「完成狀態」用位置編號放在 tdlHist（只留 60 天），
+// 兩者分離又靠位置對應，改順序就錯位、久了明細還會被裁掉。
+// 這裡改成每天在自己的 entry 存一份自足快照 [{theme,task,done}]，分析直接讀它。
+function buildTdlSnapshot(items,doneMap){
+  const dm=doneMap||{};
+  return (items||[]).map((r,i)=>({
+    theme:((r&&r.theme)||'').trim(),
+    task:((r&&r.task)||'').trim(),
+    done:!!dm['t'+i]
+  })).filter(x=>x.theme||x.task);
+}
+
+function getOrCreateEntry(ds){
+  let e=S.entries.find(x=>x.date===ds);
+  if(!e){
+    e={date:ds,checked:[],diary:{hl:'',rf:'',gr:'',quote:''},tdl:[],exp:0,streak:0,tdlTotal:0,tdlDone:0,tdlItems:null,photos:[]};
+    S.entries.push(e);
+    S.entries.sort((a,b)=>a.date<b.date?-1:1);
+  }
+  if(!Array.isArray(e.checked))e.checked=[];
+  if(!e.diary)e.diary={hl:'',rf:'',gr:'',quote:''};
+  return e;
+}
+
 // 把「剛結束的那天」落地，然後前進到真正的今天。
 // 開頁時、以及使用者主動按「回到今天」都走這一份（不能只在開頁時跑，
 // 否則頁面一直開著就會永遠卡在舊的那天，連「回到今天」都回不去）。
@@ -1532,18 +1561,6 @@ function stickyCtx(){
     }
   }
   return{ds:ds,items:items,done:S.tdlHist[ds],todayMode:false};
-}
-// ── TDL 逐日快照 ──────────────────────────────────────
-// 舊做法把「項目文字」放在前一天的 entry.tdl、「完成狀態」用位置編號放在 tdlHist（只留 60 天），
-// 兩者分離又靠位置對應，改順序就錯位、久了明細還會被裁掉。
-// 這裡改成每天在自己的 entry 存一份自足快照 [{theme,task,done}]，分析直接讀它。
-function buildTdlSnapshot(items,doneMap){
-  const dm=doneMap||{};
-  return (items||[]).map((r,i)=>({
-    theme:((r&&r.theme)||'').trim(),
-    task:((r&&r.task)||'').trim(),
-    done:!!dm['t'+i]
-  })).filter(x=>x.theme||x.task);
 }
 // 這天實際的 TDL 明細：今天讀即時狀態，過去讀當天快照
 function tdlItemsOf(ds){
@@ -3917,17 +3934,6 @@ renderSettings();
 </script>
 <script>
 // ═══ 補記模式（日期頁）核心 ═══════════════════════════
-function getOrCreateEntry(ds){
-  let e=S.entries.find(x=>x.date===ds);
-  if(!e){
-    e={date:ds,checked:[],diary:{hl:'',rf:'',gr:'',quote:''},tdl:[],exp:0,streak:0,tdlTotal:0,tdlDone:0,tdlItems:null,photos:[]};
-    S.entries.push(e);
-    S.entries.sort((a,b)=>a.date<b.date?-1:1);
-  }
-  if(!Array.isArray(e.checked))e.checked=[];
-  if(!e.diary)e.diary={hl:'',rf:'',gr:'',quote:''};
-  return e;
-}
 // 已種下的定義：entry.streak >= 1（當天種下與補種都會設；舊式補記為0，可再補種領蘋果）
 function plantedSet(){
   // 只認 yyyy-mm-dd 格式的日期（Sheet 裡的範例列等雜訊排除）
