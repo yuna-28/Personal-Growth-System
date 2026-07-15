@@ -1,34 +1,36 @@
 // ═══════════════════════════════════════════════════════
-// 格蘭朵魔法森林 GAS v3.2（新增：編輯行程／顏色標籤同步）
+// 格蘭朵魔法森林 GAS v3.3（新增：TDL 逐項明細 tdlItems）
 // ═══════════════════════════════════════════════════════
-// 【安裝步驟】
-// 1. 打開你的 Google Sheet（ID: ***REMOVED***）
-// 2. 確認有兩個分頁（沒有的話手動建立，名字要一模一樣）：
-//    ① entries — 第1列標題（12欄）：
-//       date | checked | hl | rf | gr | quote | tdl | exp | streak | tdlTotal | tdlDone | photos
-//    ② state — 第1列標題（21欄）：
+// 【從舊版升級：只要這兩步】
+// 1. 擴充功能 → Apps Script → 全選刪掉舊程式碼 → 貼上這份 → 儲存
+// 2. 部署 → 管理部署 → 編輯（鉛筆）→ 版本選「新版本」→ 部署
+//    （用「編輯現有部署」網址不會變；如果選「新增部署」網址會變，
+//      要把新網址取代 index.html 裡的 GAS_URL）
+//
+// ※ v3.3 開始，Sheet 欄位不用再自己手動補。
+//   程式會自動檢查表頭、把缺少的欄位加到最右邊
+//   （只加欄位，既有資料一列都不會被動到）。
+//
+// 【只有第一次安裝才需要看下面】
+// ・Sheet ID: ***REMOVED***
+// ・權限確認：執行身分=我、存取權=所有人
+// ・【圖片上傳】需 Google Drive 權限：
+//   在編輯器手動執行一次 getDriveFolder_ → 跳授權視窗 → 允許
+// ・【日曆功能】需 Google 日曆權限：
+//   函式選單選 testCalAuth → 執行 → 允許（Drive+日曆會一次列出）→ 再部署
+// ・【通行碼】APP_CODE 填自己的密碼，APP 設定頁要輸入同一組；留空 '' = 不啟用
+//
+// 【參考】自動維護的欄位（不需手動建立）
+//    ① entries 分頁（13欄）：
+//       date | checked | hl | rf | gr | quote | tdl | exp | streak |
+//       tdlTotal | tdlDone | tdlItems | photos
+//       └ tdlItems = v3.3 新增，存當天 TDL 的逐項明細 [{theme,task,done}]，
+//         週回顧的「各主題達成率／TDL 明細」就是讀這一欄
+//    ② state 分頁（22欄）：
 //       flowers | apples | bigApples | goldFruits | seedlings | trees |
 //       achievements | quotes | calNotes | myPeople | treasures |
 //       lastPlant | lastStreak | streak | exp | gardenPos | supportCategories |
-//       notifications | supportResources | todaySession | expLog
-//    ※ 從 v2.6 升級只要做一件事：
-//      state 分頁第1列最後面（todaySession 後面）補一欄標題 expLog
-//    ※ 從 v3.1 升級到 v3.2：state 分頁第1列最後面再補一欄標題 calColorTags
-//    ※ 從更舊版升級，state 尾端依序要有：supportResources、todaySession；
-//      entries 尾端要有 photos
-// 3. 擴充功能 → Apps Script → 全選刪掉舊程式碼 → 貼上這份 → 儲存
-// 4. 部署 → 管理部署 → 編輯（鉛筆）→ 版本選「新版本」→ 部署
-//    （用「編輯現有部署」網址不會變；如果選「新增部署」網址會變，
-//      要把新網址取代 index.html 裡的 GAS_URL）
-// 5. 權限確認：執行身分=我、存取權=所有人
-// 6. 【圖片上傳功能】需要 Google Drive 權限：
-//    在編輯器手動執行一次 getDriveFolder_ → 跳授權視窗 → 允許。
-// 7. 【v2.8 日曆功能】需要 Google 日曆權限：
-//    在編輯器函式選單選 testCalAuth → 執行 → 跳授權視窗 → 允許
-//    （會列出 Drive+日曆權限，一次允許完）→ 再部署新版本。
-// 8. 【v2.8 通行碼】把下面的 APP_CODE 填入妳自己想的密碼
-//    （例如 'grandol520'）。填了之後，APP 的設定頁也要輸入同一組
-//    才能同步資料。留空 '' = 不啟用保護。
+//       notifications | supportResources | todaySession | expLog | calColorTags
 // ═══════════════════════════════════════════════════════
 
 const SHEET_ID = '***REMOVED***';
