@@ -194,6 +194,10 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 .cal-day:hover{background:rgba(var(--primary-rgb),.08);}
 .cal-day.today{background:rgba(var(--primary-rgb),.05);}
 .cal-day.today .cd-n{background:var(--primary);color:#fff;font-weight:800;}
+/* 補記中正在看的那一天：跟「今天」的實心圓區分開，用外框＋淡色底標出「你現在在這」 */
+.cal-day.viewing{background:rgba(var(--secondary-rgb),.12);}
+.cal-day.viewing .cd-n{border:2px solid var(--secondary);color:var(--secondary);font-weight:800;}
+.cal-day.viewing.today .cd-n{border-color:#fff;}
 .cal-day.has-record .cd-n{color:#2A7A5A;}
 .cal-day.today.has-record .cd-n{color:#fff;}
 .cal-day.empty{pointer-events:none;background:rgba(230,238,244,.3);}
@@ -343,6 +347,9 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 .person-note{font-size:11px;color:var(--tc2);}
 .card-del{background:none;border:none;cursor:pointer;color:var(--tc3);font-size:16px;}
 .emoji-picker{display:flex;flex-wrap:wrap;gap:8px;padding:10px;background:rgba(255,255,255,.7);border-radius:14px;margin:8px 0;}
+/* 資源書便利貼 popup 右上角的小圖示鈕 */
+.rp-icon-btn{width:26px;height:26px;flex-shrink:0;border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;line-height:1;cursor:pointer;background:rgba(255,255,255,.9);box-shadow:0 2px 6px rgba(35,35,30,.15);text-decoration:none;}
+.rp-icon-btn:active{transform:scale(.92);}
 .emoji-opt{cursor:pointer;padding:4px;border-radius:8px;transition:all .15s;border:2px solid transparent;}
 .emoji-opt:hover{background:rgba(var(--secondary-rgb),.3);}
 .emoji-opt.sel{border-color:var(--primary);background:rgba(var(--secondary-rgb),.25);}
@@ -555,15 +562,37 @@ button{-webkit-tap-highlight-color:transparent;}
 
 <!-- 資源彈窗 -->
 <div id="res-popup" style="display:none;position:fixed;inset:0;z-index:9991;background:rgba(25,35,70,.35);backdrop-filter:blur(4px);">
-  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-1.5deg);background:linear-gradient(160deg,#fff,#FBFAF3);border-radius:3px 16px 16px 16px;box-shadow:0 2px 4px rgba(35,35,30,.1),0 26px 50px -20px rgba(0,0,0,.45);padding:1.5rem 1.4rem 1.4rem;width:min(320px,88vw);text-align:center;position:relative;">
-    <span style="position:absolute;top:0;right:0;width:0;height:0;border-style:solid;border-width:0 20px 20px 0;border-color:transparent #E4E0CC transparent transparent;"></span>
-    <div id="res-popup-visual" style="margin-bottom:10px;"></div>
-    <div id="res-popup-type" style="margin-bottom:6px;"></div>
-    <div id="res-popup-title" style="font-family:'Baloo 2',sans-serif;font-size:16px;font-weight:800;color:var(--tc);margin-bottom:8px;"></div>
-    <div id="res-popup-desc" style="font-family:'Courier New',ui-monospace,monospace;font-size:12px;color:var(--tc2);line-height:1.7;margin-bottom:12px;white-space:pre-wrap;"></div>
-    <a id="res-popup-link" target="_blank" rel="noopener" style="display:none;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,var(--primary),var(--tertiary));color:#fff;border-radius:14px;padding:10px;font-family:'Baloo 2',sans-serif;font-weight:700;font-size:14px;text-decoration:none;margin-bottom:8px;">🔗 前往連結</a>
-    <button id="res-popup-edit" style="display:none;width:100%;padding:9px;border:none;border-radius:12px;background:rgba(var(--primary-rgb),.14);color:var(--primary);font-family:'Quicksand',sans-serif;font-weight:700;font-size:13px;cursor:pointer;margin-bottom:8px;">✏️ 編輯這一項</button>
-    <button id="res-popup-close" style="width:100%;padding:9px;border:none;border-radius:12px;background:rgba(var(--secondary-rgb),.3);color:var(--tc2);font-family:'Quicksand',sans-serif;font-weight:600;font-size:13px;cursor:pointer;">關閉</button>
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-1.5deg);background:linear-gradient(160deg,#fff,#FBFAF3);border-radius:3px 16px 16px 16px;box-shadow:0 2px 4px rgba(35,35,30,.1),0 26px 50px -20px rgba(0,0,0,.45);padding:1.5rem 1.4rem 1.4rem;width:min(320px,88vw);max-height:85vh;overflow-y:auto;text-align:center;position:relative;">
+    <span style="position:absolute;top:0;right:0;width:0;height:0;border-style:solid;border-width:0 14px 14px 0;border-color:transparent #E4E0CC transparent transparent;"></span>
+    <!-- 小圖示鈕：取代原本三顆整排的大按鈕 -->
+    <div id="res-popup-actions" style="position:absolute;top:9px;right:9px;display:flex;gap:6px;z-index:2;">
+      <a id="res-popup-link" target="_blank" rel="noopener" class="rp-icon-btn" style="display:none;color:var(--primary);" title="前往連結">🔗</a>
+      <button id="res-popup-edit" class="rp-icon-btn" style="display:none;color:var(--primary);" title="編輯這一項">✏️</button>
+      <button id="res-popup-close" class="rp-icon-btn" style="color:var(--tc3);" title="關閉">✕</button>
+    </div>
+    <div id="res-popup-view">
+      <div id="res-popup-visual" style="margin-top:14px;margin-bottom:10px;"></div>
+      <div id="res-popup-type" style="margin-bottom:6px;"></div>
+      <div id="res-popup-title" style="font-family:'Baloo 2',sans-serif;font-size:16px;font-weight:800;color:var(--tc);margin-bottom:8px;"></div>
+      <div id="res-popup-desc" style="font-family:'Courier New',ui-monospace,monospace;font-size:12px;color:var(--tc2);line-height:1.7;white-space:pre-wrap;"></div>
+    </div>
+    <!-- 原地編輯：點✏️直接把整個 popup 換成編輯表單，存了就同步回下面的資源區，不用跳頁 -->
+    <div id="res-popup-editform" style="display:none;text-align:left;margin-top:16px;">
+      <div style="font-size:11px;color:var(--tc2);margin-bottom:5px;">類型</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;" id="rp-type-chips"></div>
+      <div style="font-size:11px;color:var(--tc2);margin-bottom:4px;">選一個 icon（或下面上傳圖片取代）</div>
+      <div class="emoji-picker" id="rp-emoji-picker"></div>
+      <input class="tdl-in" id="rp-title" placeholder="標題" style="width:100%;margin:7px 0;"/>
+      <input class="tdl-in" id="rp-desc" placeholder="敘述（選填）" style="width:100%;margin-bottom:7px;"/>
+      <input class="tdl-in" id="rp-link" placeholder="連結網址（選填，https://...）" style="width:100%;margin-bottom:7px;"/>
+      <input type="file" id="rp-file" accept="image/*" style="display:none;"/>
+      <button type="button" class="mini-btn" id="rp-upload-btn" style="width:100%;margin-bottom:7px;background:rgba(var(--tertiary-rgb),.55);color:#2A7A5A;">📷 上傳圖片（選填）</button>
+      <img id="rp-upload-preview" style="display:none;width:56px;height:56px;object-fit:cover;border-radius:10px;margin-bottom:7px;"/>
+      <div style="display:flex;justify-content:flex-end;gap:8px;">
+        <button id="rp-cancel" class="rp-icon-btn" style="color:var(--tc3);" title="取消">✕</button>
+        <button id="rp-save" class="rp-icon-btn" style="color:#2A7A5A;background:rgba(var(--tertiary-rgb),.55);" title="儲存修改">✓</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1878,7 +1907,11 @@ document.getElementById('copy-btn').addEventListener('click',async()=>{
 let popCalYear=new Date().getFullYear(),popCalMonth=new Date().getMonth();
 function toggleCalPopup(){
   const popup=document.getElementById('cal-popup');
-  if(popup.style.display==='none'){popup.style.display='block';renderPopCal();if(typeof fetchCalMonth==='function')fetchCalMonth(popCalYear,popCalMonth,true);}
+  if(popup.style.display==='none'){
+    // 補記中就先跳到「正在看的那一天」所在的月份，開起來就看得到高亮，不用自己翻月
+    if(viewDate){const vd=new Date(viewDate+'T00:00:00');popCalYear=vd.getFullYear();popCalMonth=vd.getMonth();}
+    popup.style.display='block';renderPopCal();if(typeof fetchCalMonth==='function')fetchCalMonth(popCalYear,popCalMonth,true);
+  }
   else{popup.style.display='none';document.getElementById('pop-cal-form').style.display='none';}
 }
 document.getElementById('cal-popup-btn').addEventListener('click',toggleCalPopup);
@@ -1917,13 +1950,14 @@ function renderPopCal(){
     const ds=`${popCalYear}-${String(popCalMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
     const rowIdx=Math.floor((startDay+day-1)/7);
     const isToday=ds===curDay();
+    const isViewing=!!viewDate&&ds===viewDate; // 補記中正在看的那一天，跟「今天」分開標示
     const hasRecord=!!S.entries.find(e=>e.date===ds);
     const hasNote=!!S.calNotes[ds];
     const _evs=(typeof calEvents!=='undefined'&&calEvents[ds])?calEvents[ds].filter(ev=>!(typeof isReminderEvent==='function'&&isReminderEvent(ev))&&!isMultiDayEvent(ev)):[];
     const _chips=_evs.slice(0,2).map(ev=>{const _c=(typeof CAL_COLORS!=='undefined'&&ev.color&&CAL_COLORS[ev.color])?CAL_COLORS[ev.color]:'';return `<div class="cal-ev-chip"${_c?` style="background:${_c}26;color:${_c};"`:''}>${(ev.title||'').replace(/</g,'&lt;')}</div>`;}).join('')+(_evs.length>2?`<div class="cal-more">+${_evs.length-2}</div>`:'');
     const _laneN=rowLaneCount[rowIdx]||0;
     const _spacer=_laneN?`<div class="cal-bar-spacer" style="height:${_laneN*(CAL_BAR_H+CAL_BAR_GAP)}px;flex-shrink:0;"></div>`:'';
-    html+=`<div class="cal-day${isToday?' today':''}${hasRecord?' has-record':''}" data-date="${ds}">
+    html+=`<div class="cal-day${isToday?' today':''}${isViewing?' viewing':''}${hasRecord?' has-record':''}" data-date="${ds}">
       <div class="cal-add" data-add="${ds}" title="新增行程">＋</div>
       <div class="cd-num"><span class="cd-n">${day}</span>${hasRecord?'<span style="width:4px;height:4px;border-radius:50%;background:var(--tertiary);display:inline-block;"></span>':''}${hasNote?'<span style="width:4px;height:4px;border-radius:50%;background:var(--gold);display:inline-block;"></span>':''}</div>
       ${_spacer}
@@ -4102,29 +4136,93 @@ function showResPopup(it){
   if(it.link){a.href=it.link;a.style.display='flex';}else{a.style.display='none';}
   // 記住這是哪一筆，編輯鈕才知道要開哪一項（便利貼上的物件帶著 _catId）
   const eb=document.getElementById('res-popup-edit');
+  const ci=(S.resourceCats||[]).findIndex(c=>c.id===it._catId);
+  const ii=ci>=0?(S.resourceCats[ci].items||[]).findIndex(x=>String(x.id)===String(it.id)):-1;
   if(eb){
-    const ci=(S.resourceCats||[]).findIndex(c=>c.id===it._catId);
-    const ii=ci>=0?(S.resourceCats[ci].items||[]).findIndex(x=>String(x.id)===String(it.id)):-1;
-    if(ci>=0&&ii>=0){eb.style.display='block';eb.dataset.ci=ci;eb.dataset.ii=ii;}
+    if(ci>=0&&ii>=0){eb.style.display='flex';eb.dataset.ci=ci;eb.dataset.ii=ii;}
     else eb.style.display='none';
   }
+  closeResPopupEdit(); // 每次開都先確定是檢視模式，不是留在上次沒存完的編輯畫面
   document.getElementById('res-popup').style.display='block';
 }
-// 便利貼 popup 直接編輯：省得還要捲到下面的管理區找同一筆
-const _resEditBtn=document.getElementById('res-popup-edit');
-if(_resEditBtn)_resEditBtn.addEventListener('click',()=>{
-  const ci=+_resEditBtn.dataset.ci,ii=+_resEditBtn.dataset.ii;
+// ── 便利貼 popup 原地編輯：直接把 popup 換成編輯表單，不用跳去下面找 ──
+let rpEditCi=-1,rpEditIi=-1,rpEditType='book',rpEditEmoji='1f4da',rpEditUpload='';
+function renderRpEmojiPicker(){
+  const t=RESOURCE_TYPES.find(x=>x.id===rpEditType)||RESOURCE_TYPES[0];
+  if(!t.emojis.includes(rpEditEmoji))rpEditEmoji=t.emojis[0];
+  const picker=document.getElementById('rp-emoji-picker');
+  if(!picker)return;
+  picker.innerHTML=t.emojis.map(e=>`<div class="emoji-opt${e===rpEditEmoji?' sel':''}" data-e="${e}">${fi(e,26)}</div>`).join('');
+  picker.querySelectorAll('.emoji-opt').forEach(o=>o.addEventListener('click',()=>{
+    rpEditEmoji=o.dataset.e;
+    picker.querySelectorAll('.emoji-opt').forEach(x=>x.classList.remove('sel'));
+    o.classList.add('sel');
+  }));
+}
+function openResPopupEdit(ci,ii){
   const it=((S.resourceCats[ci]||{}).items||[])[ii];
   if(!it)return;
-  document.getElementById('res-popup').style.display='none';
-  openResForm=ci;editResIdx=ii;
-  selResType=it.type||'book';selResEmoji=it.emoji||'1f4da';resUploadUrl='';
-  renderResourcePage();
-  // 捲到剛打開的編輯表單，不然使用者不知道畫面哪裡變了
-  setTimeout(()=>{
-    const f=document.getElementById('res-title');
-    if(f){f.scrollIntoView({behavior:'smooth',block:'center'});f.focus({preventScroll:true});}
-  },60);
+  rpEditCi=ci;rpEditIi=ii;rpEditType=it.type||'book';rpEditEmoji=it.emoji||'1f4da';rpEditUpload='';
+  document.getElementById('res-popup-view').style.display='none';
+  document.getElementById('res-popup-actions').style.display='none';
+  const chips=document.getElementById('rp-type-chips');
+  chips.innerHTML=RESOURCE_TYPES.map(t=>`<div class="res-chip${t.id===rpEditType?' on':''}" data-t="${t.id}">${fi(t.chip,15)} ${t.labelText}</div>`).join('');
+  chips.querySelectorAll('.res-chip').forEach(ch=>ch.addEventListener('click',()=>{
+    rpEditType=ch.dataset.t;
+    chips.querySelectorAll('.res-chip').forEach(x=>x.classList.remove('on'));
+    ch.classList.add('on');
+    renderRpEmojiPicker();
+  }));
+  renderRpEmojiPicker();
+  document.getElementById('rp-title').value=it.title||'';
+  document.getElementById('rp-desc').value=it.desc||'';
+  document.getElementById('rp-link').value=it.link||'';
+  const pv=document.getElementById('rp-upload-preview');
+  if(it.img){pv.src=it.img;pv.style.display='block';}else{pv.style.display='none';pv.src='';}
+  document.getElementById('rp-upload-btn').textContent='📷 上傳圖片（選填）';
+  document.getElementById('res-popup-editform').style.display='block';
+}
+function closeResPopupEdit(){
+  document.getElementById('res-popup-editform').style.display='none';
+  document.getElementById('res-popup-view').style.display='block';
+  document.getElementById('res-popup-actions').style.display='flex';
+}
+const _resEditBtn=document.getElementById('res-popup-edit');
+if(_resEditBtn)_resEditBtn.addEventListener('click',()=>openResPopupEdit(+_resEditBtn.dataset.ci,+_resEditBtn.dataset.ii));
+document.getElementById('rp-cancel').addEventListener('click',closeResPopupEdit);
+document.getElementById('rp-upload-btn').addEventListener('click',()=>document.getElementById('rp-file').click());
+document.getElementById('rp-file').addEventListener('change',async()=>{
+  const fEl=document.getElementById('rp-file');
+  const f=fEl.files&&fEl.files[0];
+  if(!f)return;
+  const btn=document.getElementById('rp-upload-btn');
+  btn.disabled=true;btn.textContent='⏳ 上傳中...';
+  try{
+    rpEditUpload=await uploadImageToGAS(f);
+    const pv=document.getElementById('rp-upload-preview');
+    pv.src=rpEditUpload;pv.style.display='block';
+    btn.textContent='✅ 已上傳！';
+  }catch(e){
+    btn.textContent='📷 上傳圖片（選填）';
+    alert('上傳失敗 🥲 再試一次，或檢查一下網路');
+  }
+  btn.disabled=false;fEl.value='';
+});
+document.getElementById('rp-save').addEventListener('click',()=>{
+  const title=document.getElementById('rp-title').value.trim();
+  if(!title){alert('先填標題喔');return;}
+  let link=document.getElementById('rp-link').value.trim();
+  if(link&&!/^https?:\/\//i.test(link))link='https://'+link;
+  const desc=document.getElementById('rp-desc').value.trim();
+  const cat=S.resourceCats[rpEditCi];
+  const old=cat&&cat.items[rpEditIi];
+  if(!old)return;
+  const updated={id:old.id,type:rpEditType,emoji:rpEditEmoji,title,desc,link,img:rpEditUpload||old.img||''};
+  cat.items[rpEditIi]=updated;
+  sv(S);syncStateDebounced();
+  closeResPopupEdit();
+  showResPopup(Object.assign({_catId:cat.id},updated)); // 用存好的內容刷新檢視畫面
+  renderResourcePage(); // 同步下面的資源管理區，不用手動捲下去看
 });
 document.getElementById('res-popup-close').addEventListener('click',()=>{document.getElementById('res-popup').style.display='none';});
 document.getElementById('res-popup').addEventListener('click',e=>{if(e.target.id==='res-popup')document.getElementById('res-popup').style.display='none';});
