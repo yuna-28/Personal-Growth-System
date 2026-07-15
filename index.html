@@ -108,6 +108,11 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 .sticky-check{width:var(--sn-cb,20px);height:var(--sn-cb,20px);flex-shrink:0;border:1.5px solid rgba(160,130,60,.55);border-radius:5px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:calc(var(--sn-cb,20px)*0.62);color:#3A8A6A;background:rgba(255,255,255,.7);}
 .sticky-check.done{background:rgba(var(--tertiary-rgb),.4);border-color:rgba(var(--tertiary-rgb),.8);}
 .sticky-empty{font-size:1em;color:#B09850;line-height:1.6;text-align:center;padding:4px 0;}
+.sticky-item .sticky-txt{flex:1;min-width:0;}
+/* 一律淡淡顯示就好：只在 hover 出現的話，手機上等於找不到 */
+.sticky-del{flex-shrink:0;width:16px;height:16px;border:none;padding:0;border-radius:4px;background:none;color:#B79A55;font-size:11px;line-height:1;cursor:pointer;opacity:.45;transition:opacity .15s,background .15s,color .15s;}
+.sticky-item:hover .sticky-del{opacity:.8;}
+.sticky-del:hover,.sticky-del:active{background:rgba(200,60,60,.15);color:#C03A3A;opacity:1;}
 .sticky-ctrls{display:flex;gap:3px;flex-shrink:0;}
 .sn-btn{width:18px;height:18px;border:none;border-radius:5px;background:rgba(180,140,40,.18);color:#8A6A20;font-size:12px;font-weight:700;cursor:pointer;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;}
 .sn-btn:active{background:rgba(180,140,40,.35);}
@@ -562,6 +567,7 @@ button{-webkit-tap-highlight-color:transparent;}
     <div id="res-popup-title" style="font-family:'Baloo 2',sans-serif;font-size:16px;font-weight:800;color:var(--tc);margin-bottom:8px;"></div>
     <div id="res-popup-desc" style="font-family:'Courier New',ui-monospace,monospace;font-size:12px;color:var(--tc2);line-height:1.7;margin-bottom:12px;white-space:pre-wrap;"></div>
     <a id="res-popup-link" target="_blank" rel="noopener" style="display:none;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,var(--primary),var(--tertiary));color:#fff;border-radius:14px;padding:10px;font-family:'Baloo 2',sans-serif;font-weight:700;font-size:14px;text-decoration:none;margin-bottom:8px;">🔗 前往連結</a>
+    <button id="res-popup-edit" style="display:none;width:100%;padding:9px;border:none;border-radius:12px;background:rgba(var(--primary-rgb),.14);color:var(--primary);font-family:'Quicksand',sans-serif;font-weight:700;font-size:13px;cursor:pointer;margin-bottom:8px;">✏️ 編輯這一項</button>
     <button id="res-popup-close" style="width:100%;padding:9px;border:none;border-radius:12px;background:rgba(var(--secondary-rgb),.3);color:var(--tc2);font-family:'Quicksand',sans-serif;font-weight:600;font-size:13px;cursor:pointer;">關閉</button>
   </div>
 </div>
@@ -1523,6 +1529,43 @@ function usedThemes(){
   (S.tomorrowTDL||[]).forEach(r=>add(r.theme));
   return [...c.entries()].sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
 }
+// 刪掉第 i 項後，完成狀態要跟著重新對位。
+// tdlDone 的 key 是位置編號（t0/t1…），少一項之後所有在它後面的都要往前移一格，
+// 不重算的話會變成「刪了 A，B 卻繼承了 A 的打勾」
+function remapDoneAfterDelete(doneMap,idx,len){
+  const nd={};
+  for(let j=0;j<len;j++){
+    if(j===idx)continue;
+    if(doneMap['t'+j])nd['t'+(j>idx?j-1:j)]=true;
+  }
+  return nd;
+}
+function deleteTdlItem(i){
+  const c=stickyCtx();
+  const item=c.items[i];
+  if(!item)return;
+  const label=item.task||item.theme||'這一項';
+  const wasDone=!!c.done['t'+i];
+  if(!confirm(`刪除「${label}」？\n刪掉後就不會列入 TDL 分析。${wasDone?'\n（這項已完成，會一併退回 10 EXP）':''}`))return;
+  const len=c.items.length;
+  const nd=remapDoneAfterDelete(c.done,i,len);
+  const oldExp=S.exp;
+  if(wasDone){S.exp=Math.max(0,S.exp-10);logExp(-10,'🗑️ 刪除已完成 TDL：'+label);}
+  if(c.todayMode){
+    S.todayTDL.splice(i,1);
+    S.tdlDone=nd;
+    sv(S);
+    autoDraftDebounced(); // 讓刪除也即時落地，跨日不會復活
+  }else{
+    const next=c.items.slice();next.splice(i,1);
+    S.tdlHist[c.ds]=nd;
+    const en=getOrCreateEntry(c.ds);
+    en.tdlItems=buildTdlSnapshot(next,nd);
+    en.tdlTotal=en.tdlItems.length;en.tdlDone=en.tdlItems.filter(x=>x.done).length;
+    sv(S);syncEntryDebounced();
+  }
+  renderExpBar();renderStickyNote();syncStateDebounced();
+}
 function renderStickyNote(){
   const note=document.getElementById('sticky-note');
   applyNoteStyle();
@@ -1539,9 +1582,15 @@ function renderStickyNote(){
       const done=!!ctx.done[key];
       return`<div class="sticky-item">
         <div class="sticky-check${done?' done':''}" data-k="${key}">${done?'✓':''}</div>
-        <span style="${done?'text-decoration:line-through;opacity:.55;':''}">${r.theme?`<b>${r.theme}：</b>`:''}${r.task||''}</span>
+        <span class="sticky-txt" style="${done?'text-decoration:line-through;opacity:.55;':''}">${r.theme?`<b>${r.theme}：</b>`:''}${r.task||''}</span>
+        <button class="sticky-del" data-i="${i}" title="刪除這一項">✕</button>
       </div>`;
     }).join('');
+    box.querySelectorAll('.sticky-del').forEach(el=>{
+      el.addEventListener('mousedown',e=>e.stopPropagation());
+      el.addEventListener('touchstart',e=>e.stopPropagation(),{passive:true});
+      el.addEventListener('click',ev=>{ev.stopPropagation();deleteTdlItem(+el.dataset.i);});
+    });
     box.querySelectorAll('.sticky-check').forEach(el=>{
       el.addEventListener('mousedown',e=>e.stopPropagation());
       el.addEventListener('touchstart',e=>e.stopPropagation(),{passive:true});
@@ -1559,7 +1608,7 @@ function renderStickyNote(){
           en.tdlTotal=c2.items.length;en.tdlDone=Object.keys(c2.done).length;
           en.tdlItems=buildTdlSnapshot(c2.items,c2.done);
           syncEntryDebounced();
-        }
+        }else autoDraftDebounced(); // 勾選也即時落地，跨日不會白勾
         sv(S);checkLevelUp(oldExp,S.exp);renderExpBar();renderStickyNote();syncStateDebounced();
       });
     });
@@ -1667,6 +1716,7 @@ function renderHabits(){
     }
     // 種下後編輯：同步更新當天紀錄
     if(S.lastPlant===curDay()){const en=S.entries.find(x=>x.date===curDay());if(en){en.checked=Object.keys(S.checked);en.exp=S.exp;syncEntryDebounced();}}
+    else if(ctxIsToday())autoDraftDebounced(); // 還沒種下 → 自動存草稿，跨日才不會被清掉
     sv(S);checkLevelUp(oldExp,S.exp);
     renderHabits();renderFlowers();renderExpBar();checkAchievements();syncStateDebounced();
   }));
@@ -1719,7 +1769,7 @@ document.getElementById('tdl-add').addEventListener('click',()=>{curRows().push(
   const el=document.getElementById('d-'+k);
   el.value=S.diary[k]||'';
   el.addEventListener('input',()=>{
-    if(ctxIsToday()){S.diary[k]=el.value;sv(S);}
+    if(ctxIsToday()){S.diary[k]=el.value;sv(S);autoDraftDebounced();}
     else{const en=getOrCreateEntry(viewDate);en.diary[k]=el.value;sv(S);syncEntryDebounced();}
   });
 });
@@ -3689,7 +3739,10 @@ function renderResourcePage(){
     <div class="gcard support-cat-card" style="border-left:4px solid ${cc};background:linear-gradient(135deg,${cc}16,transparent 60%),var(--g1);">
       <div class="support-cat-hd">
         <div class="support-cat-title" style="color:${cc};">📖 ${cat.label}</div>
-        <button class="support-cat-del res-cat-del" data-ci="${ci}">✕ 刪除分類</button>
+        <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+          <button class="support-cat-del res-cat-rename" data-ci="${ci}" title="改名">✏️ 改名</button>
+          <button class="support-cat-del res-cat-del" data-ci="${ci}">✕ 刪除分類</button>
+        </div>
       </div>
       <div class="${mode==='grid'?'res-grid':''}">
         ${(cat.items||[]).map((it,ii)=>resItemHTML(it,ci,ii,mode)).join('')||`<div style="font-size:12px;color:var(--tc3);padding:4px 0;">還沒有收藏資源</div>`}
@@ -3701,6 +3754,16 @@ function renderResourcePage(){
 }
 function bindResourceEvents(){
   const box=document.getElementById('resource-categories');
+  box.querySelectorAll('.res-cat-rename').forEach(b=>b.addEventListener('click',()=>{
+    const cat=S.resourceCats[+b.dataset.ci];
+    if(!cat)return;
+    const name=prompt('分類名稱：',cat.label||'');
+    if(name===null)return;                 // 按取消 → 不動
+    const t=name.trim();
+    if(!t||t===cat.label)return;           // 空的或沒改 → 不動
+    cat.label=t;sv(S);syncStateDebounced();
+    renderResourcePage();                  // 上方標籤也會跟著更新
+  }));
   box.querySelectorAll('.res-cat-del').forEach(b=>b.addEventListener('click',()=>{
     if(!confirm('確定刪除這個資源分類嗎？裡面的資源也會一起刪除'))return;
     const delId=(S.resourceCats[+b.dataset.ci]||{}).id;
@@ -3940,8 +4003,9 @@ function applyViewDate(switchPage){
     window.scrollTo(0,0);
   }
 }
-async function saveDraft(){
-  if(!ctxIsToday())return;
+// 把當天內容寫進 entry（純資料，不碰按鈕動畫）。手動存草稿與自動存草稿共用這一份。
+function writeDraftEntry(){
+  if(!ctxIsToday())return false;
   const d=S.diary;
   const all=tdlRows.filter(r=>r.theme||r.task);
   S.tomorrowTDL=all.map(r=>({theme:r.theme,task:r.task}));
@@ -3953,7 +4017,26 @@ async function saveDraft(){
   const idx=S.entries.findIndex(e=>e.date===curDay());
   if(idx>=0)S.entries[idx]=entry;else S.entries.push(entry);
   sv(S);
-  const b=document.getElementById('draft-btn');const orig=b.innerHTML;
+  return true;
+}
+// 自動存草稿：常常是半夜在填，只靠手動按鈕的話，跨日重設會把還沒存的內容清掉。
+// 一有變動就自動落地到當天的 entry，不必等使用者記得按儲存。
+let _autoDraftT=null;
+function autoDraftDebounced(){
+  if(!ctxIsToday())return;
+  clearTimeout(_autoDraftT);
+  _autoDraftT=setTimeout(()=>{
+    if(!writeDraftEntry())return;
+    const b=document.getElementById('draft-btn');
+    if(b&&!b.disabled){b.dataset.auto='1';b.innerHTML='💾 已自動存草稿 ✓';
+      setTimeout(()=>{if(b.dataset.auto==='1'){b.innerHTML='💾 儲存草稿（先存不種）';delete b.dataset.auto;}},1800);}
+    syncEntryFor(curDay()).catch(()=>{});
+  },2000);
+}
+async function saveDraft(){
+  if(!writeDraftEntry())return;
+  const b=document.getElementById('draft-btn');const orig='💾 儲存草稿（先存不種）';
+  delete b.dataset.auto;
   b.innerHTML='💾 草稿已存 ✓';b.disabled=true;
   setTimeout(()=>{b.innerHTML=orig;b.disabled=false;},2000);
   try{await syncEntryFor(curDay());await syncState();}catch(e){}
@@ -4029,8 +4112,32 @@ function showResPopup(it){
   de.style.display=it.desc?'block':'none';
   const a=document.getElementById('res-popup-link');
   if(it.link){a.href=it.link;a.style.display='flex';}else{a.style.display='none';}
+  // 記住這是哪一筆，編輯鈕才知道要開哪一項（便利貼上的物件帶著 _catId）
+  const eb=document.getElementById('res-popup-edit');
+  if(eb){
+    const ci=(S.resourceCats||[]).findIndex(c=>c.id===it._catId);
+    const ii=ci>=0?(S.resourceCats[ci].items||[]).findIndex(x=>String(x.id)===String(it.id)):-1;
+    if(ci>=0&&ii>=0){eb.style.display='block';eb.dataset.ci=ci;eb.dataset.ii=ii;}
+    else eb.style.display='none';
+  }
   document.getElementById('res-popup').style.display='block';
 }
+// 便利貼 popup 直接編輯：省得還要捲到下面的管理區找同一筆
+const _resEditBtn=document.getElementById('res-popup-edit');
+if(_resEditBtn)_resEditBtn.addEventListener('click',()=>{
+  const ci=+_resEditBtn.dataset.ci,ii=+_resEditBtn.dataset.ii;
+  const it=((S.resourceCats[ci]||{}).items||[])[ii];
+  if(!it)return;
+  document.getElementById('res-popup').style.display='none';
+  openResForm=ci;editResIdx=ii;
+  selResType=it.type||'book';selResEmoji=it.emoji||'1f4da';resUploadUrl='';
+  renderResourcePage();
+  // 捲到剛打開的編輯表單，不然使用者不知道畫面哪裡變了
+  setTimeout(()=>{
+    const f=document.getElementById('res-title');
+    if(f){f.scrollIntoView({behavior:'smooth',block:'center'});f.focus({preventScroll:true});}
+  },60);
+});
 document.getElementById('res-popup-close').addEventListener('click',()=>{document.getElementById('res-popup').style.display='none';});
 document.getElementById('res-popup').addEventListener('click',e=>{if(e.target.id==='res-popup')document.getElementById('res-popup').style.display='none';});
 
