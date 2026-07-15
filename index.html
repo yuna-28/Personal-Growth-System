@@ -1132,35 +1132,42 @@ function migQuotes(){if(Array.isArray(S.quotes))S.quotes=S.quotes.map(q=>typeof 
 let S=ld();
 migQuotes();
 
-// New day rollover
-if(S.lastPlant!==today()&&S.lastStreak!==today()){
-  if(S.dayKey!==today()){
-    S.tdlHist=S.tdlHist||{};
-    if(S.dayKey&&Object.keys(S.tdlDone||{}).length)S.tdlHist[S.dayKey]=S.tdlDone;
-    // 跨日前先把「剛結束那天」的紀錄落地到它自己的 entry：下面幾行就會把 checked/diary/todayTDL
-    // 全部清空，沒按過「種下今天」的那天，這些資料會就此消失。已經有內容的欄位不覆蓋
-    // （已種下的那天，entry 裡的才是權威版本）
-    if(S.dayKey){
-      const _snap=buildTdlSnapshot(S.todayTDL,S.tdlDone);
-      const _ck=Object.keys(S.checked||{});
-      const _dy=S.diary||{};
-      const _hasDiary=!!(_dy.hl||_dy.rf||_dy.gr||_dy.quote);
-      if(_snap.length||_ck.length||_hasDiary){
-        const _en=getOrCreateEntry(S.dayKey);
-        if(_snap.length&&!(_en.tdlItems&&_en.tdlItems.length)){
-          _en.tdlItems=_snap;_en.tdlTotal=_snap.length;_en.tdlDone=_snap.filter(x=>x.done).length;
-        }
-        if(_ck.length&&!(_en.checked||[]).length)_en.checked=_ck;
-        if(_hasDiary&&!(_en.diary&&(_en.diary.hl||_en.diary.rf||_en.diary.gr||_en.diary.quote)))_en.diary={..._dy};
+// 把「剛結束的那天」落地，然後前進到真正的今天。
+// 開頁時、以及使用者主動按「回到今天」都走這一份（不能只在開頁時跑，
+// 否則頁面一直開著就會永遠卡在舊的那天，連「回到今天」都回不去）。
+// 回傳：有沒有真的換日。
+function rolloverToToday(){
+  const t=today();
+  if(S.dayKey===t)return false;
+  // 今天已經種下／記錄過 → 現在記憶體裡的就是今天的資料，只要把 dayKey 對齊，不可以清空
+  if(S.lastPlant===t||S.lastStreak===t){S.dayKey=t;sv(S);return true;}
+  S.tdlHist=S.tdlHist||{};
+  if(S.dayKey&&Object.keys(S.tdlDone||{}).length)S.tdlHist[S.dayKey]=S.tdlDone;
+  // 先把舊那天的紀錄落地到它自己的 entry：下面就會把 checked/diary/todayTDL 全部清空，
+  // 沒按過「種下今天」的那天，這些資料會就此消失。已有內容的欄位不覆蓋
+  // （已種下的那天，entry 裡的才是權威版本）
+  if(S.dayKey){
+    const _snap=buildTdlSnapshot(S.todayTDL,S.tdlDone);
+    const _ck=Object.keys(S.checked||{});
+    const _dy=S.diary||{};
+    const _hasDiary=!!(_dy.hl||_dy.rf||_dy.gr||_dy.quote);
+    if(_snap.length||_ck.length||_hasDiary){
+      const _en=getOrCreateEntry(S.dayKey);
+      if(_snap.length&&!(_en.tdlItems&&_en.tdlItems.length)){
+        _en.tdlItems=_snap;_en.tdlTotal=_snap.length;_en.tdlDone=_snap.filter(x=>x.done).length;
       }
+      if(_ck.length&&!(_en.checked||[]).length)_en.checked=_ck;
+      if(_hasDiary&&!(_en.diary&&(_en.diary.hl||_en.diary.rf||_en.diary.gr||_en.diary.quote)))_en.diary={..._dy};
     }
-    const _hk=Object.keys(S.tdlHist).sort();
-    while(_hk.length>60){delete S.tdlHist[_hk.shift()];}
-    S.checked={};S.diary={hl:'',rf:'',gr:'',quote:''};S.todayPhotos=[];
-    S.todayTDL=S.tomorrowTDL||[];S.tomorrowTDL=[];S.tdlDone={};
-    S.dayKey=today();sv(S);
   }
-}else if(S.dayKey!==today()){S.dayKey=today();sv(S);}
+  const _hk=Object.keys(S.tdlHist).sort();
+  while(_hk.length>60){delete S.tdlHist[_hk.shift()];}
+  S.checked={};S.diary={hl:'',rf:'',gr:'',quote:''};S.todayPhotos=[];
+  S.todayTDL=S.tomorrowTDL||[];S.tomorrowTDL=[];S.tdlDone={};
+  S.dayKey=t;sv(S);
+  return true;
+}
+rolloverToToday();
 
 // ── SYNC ──────────────────────────────────────────────
 function setSync(state,msg){
@@ -4040,7 +4047,20 @@ const _draftBtn=document.getElementById('draft-btn');
 if(_draftBtn)_draftBtn.addEventListener('click',saveDraft);
 document.getElementById('backfill-exit').addEventListener('click',()=>{
   viewDate=null;
+  // 「回到今天」就是要回到真正的今天。頁面跨過午夜還開著時，這個階段可能還停在昨天，
+  // 這裡要主動前進，不然按了只會回到那個舊的「今天」
+  rolloverToToday();
   applyViewDate(true);
+});
+// 從背景切回 APP 時對齊日期：重新打開卻停在昨天最不合理。
+// 在前景使用中（例如正在半夜寫東西）不會主動換日，避免畫面被清掉打斷。
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden)return;
+  if(!rolloverToToday())return;
+  viewDate=null;
+  applyViewDate(false);
+  if(typeof renderFlowers==='function')renderFlowers();
+  if(typeof renderFruits==='function')renderFruits();
 });
 // 備註欄（今天與補記日期都能填，日曆黃點沿用 calNotes）
 (function(){
