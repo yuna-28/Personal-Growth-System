@@ -525,11 +525,6 @@ button{-webkit-tap-highlight-color:transparent;}
 </style>
 </head>
 <body>
-<!-- 跨日提示：頁面開著跨過午夜時，畫面還停在昨天，這裡明確講清楚現在會存到哪一天 -->
-<div id="dayroll-banner" style="display:none;position:fixed;left:12px;right:12px;top:calc(10px + env(safe-area-inset-top));z-index:9993;align-items:center;gap:10px;background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;border-radius:14px;padding:11px 13px;box-shadow:0 12px 28px -8px rgba(var(--primary-rgb),.6);font-size:12.5px;line-height:1.5;">
-  <span style="flex:1;">🌅 <b>已經跨到新的一天了</b><br/><span id="dayroll-msg" style="opacity:.92;"></span></span>
-  <button id="dayroll-go" style="flex-shrink:0;border:none;border-radius:10px;padding:8px 13px;background:rgba(255,255,255,.95);color:var(--primary);font-family:'Quicksand',sans-serif;font-weight:800;font-size:12px;cursor:pointer;">切換</button>
-</div>
 <div id="pwa-splash"><img src="puppy_icon.png" alt="格蘭朵"/><div class="splash-name">格蘭朵魔法森林</div></div>
 <div id="load-skeleton">
   <img class="sk-puppy" src="puppy_icon.png" onerror="this.style.display='none'"/>
@@ -4041,33 +4036,6 @@ async function saveDraft(){
   setTimeout(()=>{b.innerHTML=orig;b.disabled=false;},2000);
   try{await syncEntryFor(curDay());await syncState();}catch(e){}
 }
-// ── 午夜看門狗 ────────────────────────────────────────
-// 頁面跨過午夜還開著時，畫面與資料都還停在昨天。寫入已經被 curDay() 釘在畫面顯示的那天，
-// 所以不理它資料也不會跑錯天；但還是要明白告訴使用者「現在會存到哪一天」，
-// 並提供切換。這裡刻意不自動清空重設——她可能正在寫東西，不能突然把畫面清掉。
-let _dayWatchT=null;
-function checkDayRollover(){
-  const b=document.getElementById('dayroll-banner');
-  if(!b)return;
-  if(today()!==curDay()){
-    const real=new Date(today()+'T00:00:00'),cur=new Date(curDay()+'T00:00:00');
-    const rl=`${real.getMonth()+1}/${real.getDate()}`,cl=`${cur.getMonth()+1}/${cur.getDate()}`;
-    const m=document.getElementById('dayroll-msg');
-    if(m)m.textContent=`現在已經是 ${rl}，但這頁還停在 ${cl}。你現在記錄的東西都會存到 ${cl}。`;
-    b.style.display='flex';
-  }else b.style.display='none';
-}
-function startDayWatch(){
-  if(_dayWatchT)return;
-  checkDayRollover();
-  _dayWatchT=setInterval(checkDayRollover,20000);
-  // 手機把 APP 切到背景再回來，最常撞到跨日，回來時立刻重驗
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkDayRollover();});
-}
-const _dayGo=document.getElementById('dayroll-go');
-if(_dayGo)_dayGo.addEventListener('click',()=>{location.reload();});
-startDayWatch();
-
 const _draftBtn=document.getElementById('draft-btn');
 if(_draftBtn)_draftBtn.addEventListener('click',saveDraft);
 document.getElementById('backfill-exit').addEventListener('click',()=>{
