@@ -92,7 +92,6 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 .scene-stage{position:relative;height:300px;z-index:1;border-radius:18px;overflow:hidden;}
 .sky-bg{position:absolute;inset:0;background:linear-gradient(180deg,#87CEEB 0%,#B8E4F9 45%,#C8EED8 75%,#A8D8A8 100%);}
 .ground-el{position:absolute;bottom:0;left:0;right:0;height:48px;background:linear-gradient(180deg,#7EC87E,#5BA85B);border-radius:50% 50% 0 0/30% 30% 0 0;}
-.ground-el::before{content:'';position:absolute;top:0;left:0;right:0;height:8px;background:linear-gradient(180deg,#90D890,#7EC87E);border-radius:50% 50% 0 0/80% 80% 0 0;}
 .floor-flowers{position:absolute;inset:0;pointer-events:none;z-index:3;}
 .floor-flower-item{position:absolute;cursor:grab;touch-action:none;pointer-events:all;z-index:3;}
 .floor-flower-item:active{cursor:grabbing;}
@@ -543,21 +542,14 @@ button{-webkit-tap-highlight-color:transparent;}
 </style>
 </head>
 <body>
-<div id="pwa-splash"><img src="puppy_icon.png" alt="格蘭朵"/><div class="splash-name">格蘭朵魔法森林</div></div>
-<div id="load-skeleton">
-  <img class="sk-puppy" src="puppy_icon.png" onerror="this.style.display='none'"/>
-  <div class="sk-bar"></div>
-  <div class="sk-bar short"></div>
-  <div class="sk-bar"></div>
-  <div class="sk-txt">載入中... 🌱</div>
-</div>
-<div class="wrap"><div class="bg">
-<div id="burst-overlay" class="burst-overlay" style="display:none;"></div>
-<button class="support-quick-btn" id="settings-quick-btn" title="設定" style="background:none;border:none;box-shadow:none;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/2699_3d.png" width="42" height="42" style="filter:drop-shadow(0 3px 8px rgba(var(--primary-rgb),.4));" onerror="this.outerHTML='⚙️'"/></button>
-<div id="levelup-overlay" class="levelup-overlay" style="display:none;"><div class="levelup-card"><div style="font-size:32px;margin-bottom:8px;">🎉✨🌟</div><div style="font-family:'Baloo 2',sans-serif;font-size:64px;font-weight:800;color:#fff;" id="levelup-num">2</div><div style="font-family:'Baloo 2',sans-serif;font-size:18px;font-weight:700;color:rgba(255,255,255,.9);">格蘭朵樹升級了！</div></div></div>
-<div id="achieve-popup" class="achieve-popup" style="display:none;"><div style="font-size:36px;margin-bottom:4px;" id="achieve-icon">🏆</div><div style="font-family:'Baloo 2',sans-serif;font-size:15px;font-weight:800;color:#5A3800;" id="achieve-name"></div><div style="font-size:12px;color:#7A5000;margin-top:2px;" id="achieve-desc"></div></div>
-
-<!-- CALENDAR POPUP -->
+<!-- 這四個彈窗特意放在 <body> 最前面、所有 <script> 之前：
+     ① 不能放進 .wrap 裡——desktop 版 .wrap 有 CSS zoom 放大整體介面，但 position:fixed
+        的彈窗如果還在 zoom 的容器裡，各瀏覽器對「fixed 定位要不要跟著 zoom 縮放」處理不一致，
+        會讓彈窗整個被壓縮、位置跑掉。
+     ② 也不能放在所有 <script> 之後（例如 </body> 前）——後面好幾個 <script> 區塊在載入當下就會
+        對這幾個彈窗裡的按鈕呼叫 addEventListener，如果那時候瀏覽器還沒解析到這幾個 <div>，
+        會抓到 null 直接丟例外，把該區塊「這一行之後」的程式全部中斷執行——包括跟彈窗完全無關的
+        設定齒輪按鈕、清除資料收合鈕等，通通失靈。放在最前面同時避開這兩個問題。 -->
 <div id="cal-popup" style="display:none;position:fixed;inset:0;z-index:9990;background:rgba(25,35,70,.35);backdrop-filter:blur(4px);">
   <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(255,255,255,.96);backdrop-filter:blur(20px);border-radius:24px;box-shadow:0 20px 60px rgba(var(--primary-rgb),.25);padding:1.3rem 1.4rem 1.4rem;width:min(680px,95vw);max-height:90vh;overflow-y:auto;">
     <!-- 月曆檢視：跟「單日檢視」互斥切換，點某一天或按＋就整個換成那天的內容，
@@ -577,8 +569,6 @@ button{-webkit-tap-highlight-color:transparent;}
     <button id="pop-cal-close" style="width:100%;padding:9px;border:none;border-radius:12px;background:rgba(var(--secondary-rgb),.3);color:var(--tc2);font-family:'Quicksand',sans-serif;font-weight:600;font-size:13px;cursor:pointer;margin-top:6px;">關閉</button>
   </div>
 </div>
-
-<!-- 資源彈窗 -->
 <div id="res-popup" style="display:none;position:fixed;inset:0;z-index:9991;background:rgba(25,35,70,.35);backdrop-filter:blur(4px);">
   <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-1.5deg);background:linear-gradient(160deg,#fff,#FBFAF3);border-radius:3px 16px 16px 16px;box-shadow:0 2px 4px rgba(35,35,30,.1),0 26px 50px -20px rgba(0,0,0,.45);padding:1.5rem 1.4rem 1.4rem;width:min(320px,88vw);max-height:85vh;overflow-y:auto;text-align:center;position:relative;">
     <span style="position:absolute;top:0;right:0;width:0;height:0;border-style:solid;border-width:0 14px 14px 0;border-color:transparent #E4E0CC transparent transparent;"></span>
@@ -613,7 +603,6 @@ button{-webkit-tap-highlight-color:transparent;}
     </div>
   </div>
 </div>
-
 <div id="quote-popup" style="display:none;position:fixed;inset:0;z-index:9992;background:rgba(25,35,70,.4);backdrop-filter:blur(4px);flex-direction:column;align-items:center;justify-content:center;padding:24px;">
   <div style="background:rgba(255,255,255,.98);border-radius:22px;box-shadow:0 20px 60px rgba(var(--primary-rgb),.3);padding:1.6rem 1.4rem;width:min(360px,92vw);max-height:70vh;display:flex;flex-direction:column;">
     <div style="font-size:26px;margin-bottom:8px;text-align:center;">💬</div>
@@ -626,6 +615,29 @@ button{-webkit-tap-highlight-color:transparent;}
   <img id="lightbox-img" style="max-width:94%;max-height:82%;object-fit:contain;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.5);"/>
   <div id="lightbox-cap" style="color:#fff;font-size:14px;text-align:center;max-width:90%;"></div>
 </div>
+
+<div id="pwa-splash"><img src="puppy_icon.png" alt="格蘭朵"/><div class="splash-name">格蘭朵魔法森林</div></div>
+<div id="load-skeleton">
+  <img class="sk-puppy" src="puppy_icon.png" onerror="this.style.display='none'"/>
+  <div class="sk-bar"></div>
+  <div class="sk-bar short"></div>
+  <div class="sk-bar"></div>
+  <div class="sk-txt">載入中... 🌱</div>
+</div>
+<div class="wrap"><div class="bg">
+<div id="burst-overlay" class="burst-overlay" style="display:none;"></div>
+<button class="support-quick-btn" id="settings-quick-btn" title="設定" style="background:none;border:none;box-shadow:none;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/2699_3d.png" width="42" height="42" style="filter:drop-shadow(0 3px 8px rgba(var(--primary-rgb),.4));" onerror="this.outerHTML='⚙️'"/></button>
+<div id="levelup-overlay" class="levelup-overlay" style="display:none;"><div class="levelup-card"><div style="font-size:32px;margin-bottom:8px;">🎉✨🌟</div><div style="font-family:'Baloo 2',sans-serif;font-size:64px;font-weight:800;color:#fff;" id="levelup-num">2</div><div style="font-family:'Baloo 2',sans-serif;font-size:18px;font-weight:700;color:rgba(255,255,255,.9);">格蘭朵樹升級了！</div></div></div>
+<div id="achieve-popup" class="achieve-popup" style="display:none;"><div style="font-size:36px;margin-bottom:4px;" id="achieve-icon">🏆</div><div style="font-family:'Baloo 2',sans-serif;font-size:15px;font-weight:800;color:#5A3800;" id="achieve-name"></div><div style="font-size:12px;color:#7A5000;margin-top:2px;" id="achieve-desc"></div></div>
+
+<!-- CALENDAR POPUP -->
+
+
+<!-- 資源彈窗 -->
+
+
+
+
 <div class="top-bar">
   <button class="date-btn" id="cal-popup-btn">
     <div class="top-date" id="top-date-main"></div>
@@ -680,7 +692,6 @@ button{-webkit-tap-highlight-color:transparent;}
         </div>
         <div id="puppy" style="position:absolute;left:56px;bottom:44px;cursor:pointer;touch-action:none;z-index:5;"></div>
       </div>
-      <p style="text-align:center;font-size:11px;color:var(--tc3);margin-top:6px;position:relative;z-index:1;">點小狗切換動態 · 小狗/花/便利貼都可拖移</p>
     </div>
     <div class="gcard" id="today-events-card" style="display:none;">
       <div class="sec-hd" style="justify-content:space-between;margin-bottom:8px;"><span id="today-events-title">📅 今日行程</span><button id="today-event-add" title="新增今天的行程" style="width:26px;height:26px;border:none;border-radius:999px;background:rgba(var(--primary-rgb),.15);color:var(--primary);font-size:16px;cursor:pointer;line-height:1;">＋</button></div>
@@ -869,7 +880,6 @@ button{-webkit-tap-highlight-color:transparent;}
       </div>
     </div>
   </div>
-  <p style="text-align:center;font-size:11px;color:var(--tc3);margin-top:6px;">← 左右滑動探索 → · 小狗/身份/我的人/收藏都可拖移</p>
 </div>
 
 <div class="gcard">
@@ -1058,10 +1068,15 @@ button{-webkit-tap-highlight-color:transparent;}
 </div>
 
 <div class="gcard" style="border-color:rgba(240,150,150,.4);">
-  <div class="sec-hd">🧹 清除測試資料</div>
-  <p style="font-size:12px;color:var(--tc3);line-height:1.7;margin-bottom:10px;">會清除<b>這台裝置</b>上的所有本機資料（花朵、果實、EXP、紀錄等）。<br/>⚠️ 注意：Google Sheet 上已同步的資料<b>不會</b>被刪除，而且重新載入後會自動同步回來。要「完全歸零」請直接用下面第二顆深紅色按鈕，會連 Google Sheet 一起清空。<br/>（兩種清除都不會刪掉 Google Drive「格蘭朵圖片庫」裡的圖片檔，要刪請自己去 Drive 刪）</p>
-  <button id="reset-data-btn" style="width:100%;padding:10px;border:1.5px solid rgba(240,120,120,.5);border-radius:13px;background:rgba(255,235,235,.7);color:#C05050;font-family:'Baloo 2',sans-serif;font-weight:700;font-size:13px;cursor:pointer;">清除本機測試資料</button>
-  <button id="reset-cloud-btn" style="width:100%;padding:10px;margin-top:8px;border:1.5px solid rgba(200,40,40,.6);border-radius:13px;background:rgba(255,215,215,.85);color:#A02020;font-family:'Baloo 2',sans-serif;font-weight:700;font-size:13px;cursor:pointer;">🗑️ 清除雲端＋本機資料（完全歸零）</button>
+  <button type="button" id="danger-zone-toggle" style="width:100%;display:flex;align-items:center;justify-content:space-between;background:none;border:none;padding:0;cursor:pointer;font-family:inherit;">
+    <span class="sec-hd" style="margin:0;">🧹 清除測試資料</span>
+    <span id="danger-zone-arrow" style="font-size:12px;color:var(--tc3);">▸ 點開</span>
+  </button>
+  <div id="danger-zone-body" style="display:none;margin-top:10px;">
+    <p style="font-size:12px;color:var(--tc3);line-height:1.7;margin-bottom:10px;">會清除<b>這台裝置</b>上的所有本機資料（花朵、果實、EXP、紀錄等）。<br/>⚠️ 注意：Google Sheet 上已同步的資料<b>不會</b>被刪除，而且重新載入後會自動同步回來。要「完全歸零」請直接用下面第二顆深紅色按鈕，會連 Google Sheet 一起清空。<br/>（兩種清除都不會刪掉 Google Drive「格蘭朵圖片庫」裡的圖片檔，要刪請自己去 Drive 刪）<br/>🔒 兩顆按鈕都要輸入通關密碼「1228」才會真的執行。</p>
+    <button id="reset-data-btn" style="width:100%;padding:10px;border:1.5px solid rgba(240,120,120,.5);border-radius:13px;background:rgba(255,235,235,.7);color:#C05050;font-family:'Baloo 2',sans-serif;font-weight:700;font-size:13px;cursor:pointer;">清除本機測試資料</button>
+    <button id="reset-cloud-btn" style="width:100%;padding:10px;margin-top:8px;border:1.5px solid rgba(200,40,40,.6);border-radius:13px;background:rgba(255,215,215,.85);color:#A02020;font-family:'Baloo 2',sans-serif;font-weight:700;font-size:13px;cursor:pointer;">🗑️ 清除雲端＋本機資料（完全歸零）</button>
+  </div>
 </div>
 
 <div class="gcard">
@@ -2577,8 +2592,22 @@ document.getElementById('settings-quick-btn').addEventListener('click',()=>{
   renderSettings();
 });
 
-// ── RESET TEST DATA ───────────────────────────────────
+// ── RESET TEST DATA（預設收合＋要輸入通關密碼才會執行，避免手滑點到）──
+const _dzToggle=document.getElementById('danger-zone-toggle');
+if(_dzToggle)_dzToggle.addEventListener('click',()=>{
+  const body=document.getElementById('danger-zone-body');
+  const arrow=document.getElementById('danger-zone-arrow');
+  const open=body.style.display==='none';
+  body.style.display=open?'block':'none';
+  arrow.textContent=open?'▾ 收起':'▸ 點開';
+});
+function verifyDangerCode(){
+  const code=prompt('這是無法復原的操作。請輸入通關密碼「1228」確認：');
+  if(code!=='1228'){if(code!==null)alert('密碼不對，已取消，什麼都沒有刪 🌱');return false;}
+  return true;
+}
 document.getElementById('reset-data-btn').addEventListener('click',()=>{
+  if(!verifyDangerCode())return;
   if(!confirm('確定要清除這台裝置上的所有本機資料嗎？'))return;
   if(!confirm('再確認一次：花朵、果實、EXP、本機紀錄都會歸零（Google Sheet 不受影響）。真的要清除嗎？'))return;
   localStorage.removeItem(SK);
@@ -3336,6 +3365,20 @@ function renderNotifLists(){
     n.custom.splice(+b.dataset.i,1);sv(S);syncStateDebounced();renderNotifLists();if(typeof scheduleRemindersSync==='function')scheduleRemindersSync();
   }));
 }
+// ensureCalColorTagsDefaults 提前搬到這裡定義：renderSettings() 在頁面載入時會被同步呼叫
+// （見檔案後面單獨一行的 renderSettings();），它會經過 renderCalTagList() 用到這個函式，
+// 原本定義在後面的 <script> 區塊，跟 rolloverToToday 那次是同一種 bug——前面的區塊呼叫到
+// 後面區塊還沒執行到的函式，丟出例外會把「這一行之後」的程式全部中斷，殃及無關的功能。
+// CAL_COLORS 也提前搬到這裡：跟上面 ensureCalColorTagsDefaults 同一個原因，
+// renderCalTagList() 會用到它，原本定義在後面的 <script> 區塊。
+const CAL_COLORS={'1':'#7986cb','2':'#33b679','3':'#8e24aa','4':'#e67c73','5':'#f6c026','6':'#f5511d','7':'#039be5','8':'#616161','9':'#3f51b5','10':'#0b8043','11':'#d60000'};
+function ensureCalColorTagsDefaults(){
+  if(!S.calColorTags||typeof S.calColorTags!=='object'){
+    S.calColorTags={'4':'家人朋友','5':'創作','7':'講座','3':'跳舞/吉他'};
+    sv(S);
+  }
+}
+
 function renderSettings(){
   ensureNotifDefaults();
   document.getElementById('notif-master').checked=!!S.notifications.enabled;
@@ -4224,10 +4267,9 @@ document.getElementById('res-popup').addEventListener('click',e=>{if(e.target.id
 
 // ═══ 清除雲端＋本機（完全歸零） ═══
 document.getElementById('reset-cloud-btn').addEventListener('click',async()=>{
+  if(!verifyDangerCode())return;
   if(!confirm('⚠️ 這會把 Google Sheet 上的所有紀錄和本機資料「全部清空」，完全歸零且無法復原。確定嗎？'))return;
   if(!confirm('再確認一次：所有日記、習慣紀錄、花朵果實、收藏都會永久消失。真的要繼續嗎？'))return;
-  const word=prompt('最後一步：請輸入「歸零」兩個字確認');
-  if(word!=='歸零'){alert('已取消，什麼都沒有刪 🌱');return;}
   const b=document.getElementById('reset-cloud-btn');
   b.disabled=true;b.textContent='⏳ 清除中...';
   try{
@@ -4320,18 +4362,11 @@ document.querySelectorAll('.export-all-btn').forEach(b=>b.addEventListener('clic
 <script>
 // ═══ Google 日曆整合（v2.8）═══════════════════════════
 let calEvents={},calConnected=false,calFetchedMonths={};
-const CAL_COLORS={'1':'#7986cb','2':'#33b679','3':'#8e24aa','4':'#e67c73','5':'#f6c026','6':'#f5511d','7':'#039be5','8':'#616161','9':'#3f51b5','10':'#0b8043','11':'#d60000'};
 const ICON_REPEAT='<svg width="13" height="13" viewBox="0 0 16 16"><path d="M4 7a4 4 0 0 1 4-4h4M12 3l-2-2m2 2l-2 2M12 9a4 4 0 0 1-4 4H4M4 13l2 2m-2-2l2-2" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const ICON_SWATCH='<svg width="13" height="13" viewBox="0 0 16 16"><rect x="2" y="3" width="5" height="5" rx="1.2" stroke="currentColor" stroke-width="1.3" fill="none"/><rect x="9" y="3" width="5" height="5" rx="1.2" stroke="currentColor" stroke-width="1.3" fill="none"/><rect x="2" y="10" width="5" height="5" rx="1.2" stroke="currentColor" stroke-width="1.3" fill="none"/></svg>';
 const ICON_BELL='<svg width="13" height="13" viewBox="0 0 16 16"><path d="M8 2.5a3 3 0 0 0-3 3v1.2c0 1-.3 2-.9 2.8L3 11h10l-1.1-1.5c-.6-.8-.9-1.8-.9-2.8V5.5a3 3 0 0 0-3-3z" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/><path d="M6.5 13a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round"/></svg>';
 let calNewColor='';
 let calEditingId=null;
-function ensureCalColorTagsDefaults(){
-  if(!S.calColorTags||typeof S.calColorTags!=='object'){
-    S.calColorTags={'4':'家人朋友','5':'創作','7':'講座','3':'跳舞/吉他'};
-    sv(S);
-  }
-}
 function calTagOf(colorId){
   ensureCalColorTagsDefaults();
   return (colorId&&S.calColorTags[colorId])||'';
@@ -4673,5 +4708,9 @@ document.addEventListener('visibilitychange',()=>{
   }
 });
 </script>
+
+
+
+
 </body>
 </html>
