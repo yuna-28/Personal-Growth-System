@@ -295,6 +295,8 @@ function addCalEvent_(p){
     }else{
       rec = CalendarApp.newRecurrence().addDailyRule();
     }
+    var repeatCount = parseInt(p.repeatCount, 10);
+    if(!isNaN(repeatCount) && repeatCount > 0) rec = rec.times(repeatCount);
     if(p.allDay){
       ev = cal.createAllDayEventSeries(p.title, new Date(p.date + 'T00:00:00'), rec);
     }else{
