@@ -205,6 +205,57 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
   .cal-dow{font-size:12.5px;}
   .cal-add{width:20px;height:20px;font-size:14px;line-height:20px;}
 }
+/* ── 週回顧／月回顧 桌面版儀表板：分區 bento 排版 ──────
+   手機版完全不受影響（沒有這個 media query 就是原本單欄堆疊）。
+   用 grid-template-areas 把「本來就是同一件事」的卡片分進同一欄：
+   週回顧左欄＝TDL 相關（完成率／主題／明細），右欄＝習慣相關（趨勢／分佈／身份）；
+   月回顧同理。條件式卡片（主題/明細/關鍵詞/金句）沒內容時原本就會被藏起來，
+   那一列在 grid 裡就自然留一點點空隙，不影響版面。 */
+@media(min-width:768px){
+  .review-dash{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .review-dash>*{margin-bottom:0;}
+  #page-week .review-dash{grid-template-areas:
+    "witness stats"
+    "donut trend"
+    "themes dist"
+    "tdldetail identity"
+    "fruit fruit"
+    "keywords highlight"
+    "heatmap heatmap"
+    "entries entries"
+    "copybtn copybtn";}
+  #page-month .review-dash{grid-template-areas:
+    "witness stats"
+    "donut weekday"
+    "fruit dist"
+    "identity identity"
+    "keywords highlight"
+    "heatmap heatmap"
+    "weeksum weeksum"
+    "entries entries"
+    "copybtn copybtn";}
+  .rd-witness{grid-area:witness;}
+  .rd-stats{grid-area:stats;}
+  .rd-donut{grid-area:donut;}
+  .rd-trend{grid-area:trend;}
+  .rd-themes{grid-area:themes;}
+  .rd-tdldetail{grid-area:tdldetail;}
+  .rd-fruit{grid-area:fruit;}
+  .rd-dist{grid-area:dist;}
+  .rd-identity{grid-area:identity;}
+  .rd-weekday{grid-area:weekday;}
+  .rd-keywords{grid-area:keywords;}
+  .rd-highlight{grid-area:highlight;}
+  .rd-heatmap{grid-area:heatmap;}
+  .rd-weeksum{grid-area:weeksum;}
+  .rd-entries{grid-area:entries;}
+  .rd-copybtn{grid-area:copybtn;}
+  /* 每日／每週卡片桌面版兩欄，不再整條滿版 */
+  #week-entries.rd-entries,#month-entries.rd-entries,#month-week-summaries.rd-weeksum{
+    display:grid;grid-template-columns:repeat(2,1fr);gap:10px;align-items:start;
+  }
+  #week-entries.rd-entries .week-card,#month-entries.rd-entries .week-card,#month-week-summaries.rd-weeksum .week-card{margin-bottom:0;}
+}
 .cal-day:hover{background:rgba(var(--primary-rgb),.08);}
 /* 日曆格子的三種狀態，各自負責一件事，疊在一起也不會打架：
    ① 有紀錄的那天 → 整格淺藍綠底（一眼看出「這天寫過東西」）
@@ -228,8 +279,11 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 /* HEATMAP */
 .heatmap-row{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
 .heatmap-label{font-size:11px;color:var(--tc2);width:44px;flex-shrink:0;font-weight:600;}
-.heatmap-cells{display:flex;gap:2px;flex:1;}
-.heatmap-cell{width:100%;aspect-ratio:1;border-radius:3px;}
+/* 格子用 flex-basis 撐滿寬度、只有 flex-shrink 允許縮小，卻沒有上限——欄數少（週檢視只有7欄）
+   時，寬螢幕容器分一分還是很大塊，這是那個問題的根源。改成有上限的 flex-basis，
+   剩餘寬度就留白置左，不會再被撐大。 */
+.heatmap-cells{display:flex;gap:2px;flex:1;justify-content:flex-start;}
+.heatmap-cell{flex:0 1 30px;max-width:30px;aspect-ratio:1;border-radius:3px;}
 .heatmap-cell.done{background:linear-gradient(135deg,var(--tertiary),var(--tertiary));box-shadow:0 0 4px rgba(var(--tertiary-rgb),.4);}
 .heatmap-cell.miss{background:rgba(var(--secondary-rgb),.2);}
 
@@ -758,9 +812,11 @@ button{-webkit-tap-highlight-color:transparent;}
   <button class="period-arrow" id="wk-next">›</button>
 </div>
 <div id="wk-jump-today" class="jump-today-btn" style="display:none;">回到本週</div>
-<div class="witness-card" id="wk-witness"></div>
 
-<div class="gcard">
+<div class="review-dash">
+<div class="witness-card rd-witness" id="wk-witness"></div>
+
+<div class="gcard rd-stats">
   <div class="sec-hd"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4c5_3d.png" width="19" height="19"/> 週回顧</div>
   <div class="stat-grid">
     <div class="stat-card"><div class="stat-num" style="color:var(--primary);" id="wk-days">0</div><div class="stat-lbl">記錄天數<span class="cmp" id="wk-days-cmp"></span></div></div>
@@ -774,18 +830,19 @@ button{-webkit-tap-highlight-color:transparent;}
   </div>
 </div>
 
-<div class="gcard"><div class="sec-hd">🍯 距離下一階段</div><div id="wk-fruit-progress"></div></div>
-<div class="gcard"><div class="sec-hd">🍩 TDL 完成率</div><div id="wk-donut"></div></div>
-<div class="gcard" id="wk-theme-card" style="display:none;"><div class="sec-hd">📋 各主題達成率</div><div id="wk-themes"></div></div>
-<div class="gcard" id="wk-tdldetail-card" style="display:none;"><div class="sec-hd">🗒 這週 TDL 明細</div><div id="wk-tdldetail"></div></div>
-<div class="gcard"><div class="sec-hd">📈 每日 TDL 達成率</div><div id="wk-trend"></div></div>
-<div class="gcard"><div class="sec-hd">🌿 習慣分佈</div><div id="wk-dist"></div></div>
-<div class="gcard"><div class="sec-hd">✨ 身份進度</div><div id="wk-identity"></div></div>
-<div class="gcard" id="wk-keyword-card" style="display:none;"><div class="sec-hd">💭 這週常出現的詞</div><div id="wk-keywords"></div></div>
-<div class="gcard" id="wk-highlight-card" style="display:none;"><div class="sec-hd">🌟 這週的一句話</div><div id="wk-highlight"></div></div>
-<div class="gcard"><div class="sec-hd">習慣熱力圖</div><div id="week-heatmap"></div></div>
-<div id="week-entries"></div>
-<button class="ghost-btn" id="copy-week-btn" style="margin-top:4px;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4cb_3d.png" width="15" height="15"/> 複製這週紀錄給 Claude</button>
+<div class="gcard rd-donut"><div class="sec-hd">🍩 TDL 完成率</div><div id="wk-donut"></div></div>
+<div class="gcard rd-trend"><div class="sec-hd">📈 每日 TDL 達成率</div><div id="wk-trend"></div></div>
+<div class="gcard rd-themes" id="wk-theme-card" style="display:none;"><div class="sec-hd">📋 各主題達成率</div><div id="wk-themes"></div></div>
+<div class="gcard rd-dist"><div class="sec-hd">🌿 習慣分佈</div><div id="wk-dist"></div></div>
+<div class="gcard rd-tdldetail" id="wk-tdldetail-card" style="display:none;"><div class="sec-hd">🗒 這週 TDL 明細</div><div id="wk-tdldetail"></div></div>
+<div class="gcard rd-identity"><div class="sec-hd">✨ 身份進度</div><div id="wk-identity"></div></div>
+<div class="gcard rd-fruit"><div class="sec-hd">🍯 距離下一階段</div><div id="wk-fruit-progress"></div></div>
+<div class="gcard rd-keywords" id="wk-keyword-card" style="display:none;"><div class="sec-hd">💭 這週常出現的詞</div><div id="wk-keywords"></div></div>
+<div class="gcard rd-highlight" id="wk-highlight-card" style="display:none;"><div class="sec-hd">🌟 這週的一句話</div><div id="wk-highlight"></div></div>
+<div class="gcard rd-heatmap"><div class="sec-hd">習慣熱力圖</div><div id="week-heatmap"></div></div>
+<div id="week-entries" class="rd-entries"></div>
+<button class="ghost-btn rd-copybtn" id="copy-week-btn" style="margin-top:4px;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4cb_3d.png" width="15" height="15"/> 複製這週紀錄給 Claude</button>
+</div>
 </div>
 
 <!-- ══════ MONTH ══════ -->
@@ -796,9 +853,11 @@ button{-webkit-tap-highlight-color:transparent;}
   <button class="period-arrow" id="mo-next">›</button>
 </div>
 <div id="mo-jump-today" class="jump-today-btn" style="display:none;">回到本月</div>
-<div class="witness-card" id="mo-witness"></div>
 
-<div class="gcard">
+<div class="review-dash">
+<div class="witness-card rd-witness" id="mo-witness"></div>
+
+<div class="gcard rd-stats">
   <div class="sec-hd"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4c6_3d.png" width="19" height="19"/> 月回顧</div>
   <div class="stat-grid">
     <div class="stat-card"><div class="stat-num" style="color:var(--primary);" id="mo-days">0</div><div class="stat-lbl">記錄天數<span class="cmp" id="mo-days-cmp"></span></div></div>
@@ -811,17 +870,18 @@ button{-webkit-tap-highlight-color:transparent;}
   </div>
 </div>
 
-<div class="gcard"><div class="sec-hd">🍩 TDL 完成率</div><div id="mo-donut"></div></div>
-<div class="gcard"><div class="sec-hd">🍯 距離下一階段</div><div id="mo-fruit-progress"></div></div>
-<div class="gcard"><div class="sec-hd">📅 星期幾比較容易完成？</div><div id="mo-weekday-dist"></div></div>
-<div class="gcard"><div class="sec-hd">🌿 習慣分佈</div><div id="mo-dist"></div></div>
-<div class="gcard"><div class="sec-hd">✨ 身份進度</div><div id="mo-identity"></div></div>
-<div class="gcard" id="mo-keyword-card" style="display:none;"><div class="sec-hd">💭 這個月常出現的詞</div><div id="mo-keywords"></div></div>
-<div class="gcard" id="mo-highlight-card" style="display:none;"><div class="sec-hd">🌟 這個月的一句話</div><div id="mo-highlight"></div></div>
-<div class="gcard"><div class="sec-hd">習慣熱力圖</div><div id="month-heatmap"></div></div>
-<div id="month-week-summaries"></div>
-<div id="month-entries"></div>
-<button class="ghost-btn" id="copy-month-btn"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4cb_3d.png" width="15" height="15"/> 複製這月紀錄給 Claude</button>
+<div class="gcard rd-donut"><div class="sec-hd">🍩 TDL 完成率</div><div id="mo-donut"></div></div>
+<div class="gcard rd-weekday"><div class="sec-hd">📅 星期幾比較容易完成？</div><div id="mo-weekday-dist"></div></div>
+<div class="gcard rd-fruit"><div class="sec-hd">🍯 距離下一階段</div><div id="mo-fruit-progress"></div></div>
+<div class="gcard rd-dist"><div class="sec-hd">🌿 習慣分佈</div><div id="mo-dist"></div></div>
+<div class="gcard rd-identity"><div class="sec-hd">✨ 身份進度</div><div id="mo-identity"></div></div>
+<div class="gcard rd-keywords" id="mo-keyword-card" style="display:none;"><div class="sec-hd">💭 這個月常出現的詞</div><div id="mo-keywords"></div></div>
+<div class="gcard rd-highlight" id="mo-highlight-card" style="display:none;"><div class="sec-hd">🌟 這個月的一句話</div><div id="mo-highlight"></div></div>
+<div class="gcard rd-heatmap"><div class="sec-hd">習慣熱力圖</div><div id="month-heatmap"></div></div>
+<div id="month-week-summaries" class="rd-weeksum"></div>
+<div id="month-entries" class="rd-entries"></div>
+<button class="ghost-btn rd-copybtn" id="copy-month-btn"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4cb_3d.png" width="15" height="15"/> 複製這月紀錄給 Claude</button>
+</div>
 </div>
 
 <!-- ══════ SUPPORT SYSTEM ══════ -->
