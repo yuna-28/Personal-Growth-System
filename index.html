@@ -158,10 +158,18 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 .cal-dow{text-align:center;font-size:11.5px;font-weight:700;color:var(--tc3);padding:9px 0 7px;letter-spacing:2px;border-bottom:1px solid rgba(var(--secondary-rgb),.25);background:rgba(255,255,255,.55);}
 .cal-day{min-height:76px;min-width:0;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;cursor:pointer;font-size:13px;font-weight:600;color:var(--tc);position:relative;background:transparent;transition:background .15s;padding:3px 3px 4px;gap:2px;border-right:1px solid rgba(var(--secondary-rgb),.15);border-bottom:1px solid rgba(var(--secondary-rgb),.15);overflow:hidden;}
 .cal-grid > :nth-child(7n){border-right:none;}
-.cal-day .cd-num{display:flex;align-items:center;justify-content:center;gap:3px;line-height:1;margin-bottom:1px;}
-.cal-day .cd-n{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12.5px;}
-.cal-add{position:absolute;top:2px;right:2px;width:17px;height:17px;border-radius:50%;background:rgba(var(--primary-rgb),.1);color:var(--primary);font-size:12px;font-weight:700;line-height:17px;text-align:center;cursor:pointer;z-index:2;opacity:.75;}
+/* 日期數字靠左（不再置中），跟「+」各占一角，格子再窄也不會擠在一起；
+   右邊保留固定寬度給「+」，數字/圓點永遠留在安全區內 */
+.cal-day .cd-num{display:flex;align-items:center;justify-content:flex-start;line-height:1;margin-bottom:1px;padding-right:19px;}
+.cal-day .cd-n{width:22px;height:22px;flex-shrink:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;}
+/* 備註小圓點獨立放右下角，不擠進日期數字那一列——跟「+」（右上）、數字（左上）三個角落互不相干 */
+.cd-note-dot{position:absolute;bottom:4px;right:4px;width:5px;height:5px;border-radius:50%;background:var(--gold);z-index:1;}
+.cal-add{position:absolute;top:3px;right:3px;width:15px;height:15px;border-radius:50%;background:rgba(var(--primary-rgb),.12);color:var(--primary);font-size:10.5px;font-weight:700;line-height:15px;text-align:center;cursor:pointer;z-index:2;opacity:.55;}
+.cal-day:hover .cal-add{opacity:1;}
 .cal-add:hover{background:rgba(var(--primary-rgb),.3);opacity:1;}
+.cal-add:active{opacity:1;transform:scale(.92);}
+/* 手機沒有 hover，「+」直接稍微淡淡常駐顯示，不用等點過才看得到 */
+@media(hover:none){.cal-add{opacity:.7;}}
 .cal-ev-chip{min-width:0;font-size:9.5px;line-height:1.45;background:var(--primary);color:#fff;border-radius:4px;padding:1.5px 5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;text-align:left;margin-bottom:1.5px;}
 .cal-more{font-size:9.5px;color:var(--secondary);font-weight:700;text-align:left;padding-left:4px;}
 /* 跨日行程橫幅：每一天各自渲染自己那一小段，同一列裡沒有橫幅的格子補一個等高透明佔位——
@@ -190,6 +198,7 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 .cal-save-btn:active{transform:translateY(1px) scale(.99);box-shadow:0 1px 2px rgba(var(--primary-rgb),.35);}
 @media(min-width:768px){
   .cal-day{min-height:92px;padding:4px 4px 5px;gap:2.5px;}
+  .cal-day .cd-num{padding-right:22px;}
   .cal-day .cd-n{width:28px;height:28px;font-size:14.5px;}
   .cal-ev-chip{font-size:11px;padding:2px 7px;}
   .cal-more{font-size:10.5px;}
@@ -2032,7 +2041,7 @@ function renderPopCal(){
     }
     html+=`<div class="cal-day${isToday?' today':''}${isViewing?' viewing':''}${hasRecord?' has-record':''}" data-date="${ds}">
       <div class="cal-add" data-add="${ds}" title="新增行程">＋</div>
-      <div class="cd-num"><span class="cd-n">${day}</span>${hasRecord?'<span style="width:4px;height:4px;border-radius:50%;background:var(--tertiary);display:inline-block;"></span>':''}${hasNote?'<span style="width:4px;height:4px;border-radius:50%;background:var(--gold);display:inline-block;"></span>':''}</div>
+      <div class="cd-num"><span class="cd-n">${day}</span>${hasNote?'<span class="cd-note-dot"></span>':''}</div>
       ${laneCount?`<div class="cal-bars">${_bars}</div>`:''}
       ${_chips}
     </div>`;
