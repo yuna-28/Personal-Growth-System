@@ -212,7 +212,11 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
    月回顧同理。條件式卡片（主題/明細/關鍵詞/金句）沒內容時原本就會被藏起來，
    那一列在 grid 裡就自然留一點點空隙，不影響版面。 */
 @media(min-width:768px){
-  .review-dash{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  /* align-items:start 是關鍵：預設 grid 會把同一列的兩張卡拉成一樣高，
+     內容天生比較短的那張（例如「各主題達成率」筆數每週不同、vs 固定9列的「習慣分佈」）
+     就會被拉出一大塊空白內部空間。改成 start 後每張卡就照自己內容高度顯示，
+     不夠高就讓卡片下面自然留白，不會撐開卡片本身。 */
+  .review-dash{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
   .review-dash>*{margin-bottom:0;}
   #page-week .review-dash{grid-template-areas:
     "witness stats"
