@@ -1,0 +1,364 @@
+// ═══════════════════════════════════════════════════════
+// 魔法小森林 GAS v3.4（新增：日曆重複次數 repeatCount）
+// ═══════════════════════════════════════════════════════
+// 【從舊版升級：只要這兩步】
+// 1. 擴充功能 → Apps Script → 全選刪掉舊程式碼 → 貼上這份 → 儲存
+// 2. 部署 → 管理部署 → 編輯（鉛筆）→ 版本選「新版本」→ 部署
+//    （用「編輯現有部署」網址不會變；如果選「新增部署」網址會變，
+//      要把新網址取代 index.html 裡的 GAS_URL）
+//
+// ※ v3.3 開始，Sheet 欄位不用再自己手動補。
+//   程式會自動檢查表頭、把缺少的欄位加到最右邊
+//   （只加欄位，既有資料一列都不會被動到）。
+//
+// 【只有第一次安裝才需要看下面】
+// ・Sheet ID: ***REMOVED***
+// ・權限確認：執行身分=我、存取權=所有人
+// ・【圖片上傳】需 Google Drive 權限：
+//   在編輯器手動執行一次 getDriveFolder_ → 跳授權視窗 → 允許
+// ・【日曆功能】需 Google 日曆權限：
+//   函式選單選 testCalAuth → 執行 → 允許（Drive+日曆會一次列出）→ 再部署
+// ・【通行碼】APP_CODE 填自己的密碼，APP 設定頁要輸入同一組；留空 '' = 不啟用
+//
+// 【參考】自動維護的欄位（不需手動建立）
+//    ① entries 分頁（13欄）：
+//       date | checked | hl | rf | gr | quote | tdl | exp | streak |
+//       tdlTotal | tdlDone | tdlItems | photos
+//       └ tdlItems = v3.3 新增，存當天 TDL 的逐項明細 [{theme,task,done}]，
+//         週回顧的「各主題達成率／TDL 明細」就是讀這一欄
+//    ② state 分頁（22欄）：
+//       flowers | apples | bigApples | goldFruits | seedlings | trees |
+//       achievements | quotes | calNotes | myPeople | treasures |
+//       lastPlant | lastStreak | streak | exp | gardenPos | supportCategories |
+//       notifications | supportResources | todaySession | expLog | calColorTags
+// ═══════════════════════════════════════════════════════
+
+const SHEET_ID = '';  // ← 請貼上你自己的 Google Sheet ID（看 README 步驟 3）
+const APP_CODE = ''; // ← 通行碼：填入你自己想的一串密碼；留空 = 不啟用
+
+const ENTRY_COLS = ['date','checked','hl','rf','gr','quote','tdl','exp','streak','tdlTotal','tdlDone','tdlItems','photos'];
+const STATE_COLS = ['flowers','apples','bigApples','goldFruits','seedlings','trees',
+                    'achievements','quotes','calNotes','myPeople','treasures',
+                    'lastPlant','lastStreak','streak','exp','gardenPos','supportCategories',
+                    'notifications','supportResources','todaySession','expLog','calColorTags'];
+
+// 這個函式只是用來手動觸發 Google Drive 授權，之後留著也沒關係
+function testDriveAuth(){
+  Logger.log('資料夾建立/找到成功：' + getDriveFolder_().getName());
+}
+
+// 手動觸發 Google 日曆授權（v2.8 部署前執行一次）
+function testCalAuth(){
+  Logger.log('日曆連線成功：' + CalendarApp.getDefaultCalendar().getName());
+}
+
+// 通行碼驗證（APP_CODE 留空時不啟用）
+function checkCode_(e){
+  if(!APP_CODE) return true;
+  return e && e.parameter && e.parameter.code === APP_CODE;
+}
+
+function getSheet(name){
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  let sh = ss.getSheetByName(name);
+  if(!sh){
+    sh = ss.insertSheet(name);
+    if(name==='entries') sh.appendRow(ENTRY_COLS);
+    if(name==='state')   sh.appendRow(STATE_COLS);
+  }else{
+    // 既有試算表升級：把後來新增的欄位補到表頭最右邊
+    if(name==='entries') ensureCols_(sh, ENTRY_COLS);
+    if(name==='state')   ensureCols_(sh, STATE_COLS);
+  }
+  return sh;
+}
+
+// 只補「表頭缺少的欄位」，既有資料列完全不動（saveEntry_ 是照表頭對應欄位的，
+// 表頭有這一欄，新資料才存得進去）
+function ensureCols_(sh, cols){
+  const lastCol = sh.getLastColumn();
+  if(lastCol < 1){ sh.appendRow(cols); return; }
+  const header = sh.getRange(1,1,1,lastCol).getValues()[0].map(String);
+  const missing = cols.filter(c => header.indexOf(c) < 0);
+  if(!missing.length) return;
+  sh.getRange(1, lastCol+1, 1, missing.length).setValues([missing]);
+}
+
+
+function json(obj){
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ── GET ──────────────────────────────────────────────
+function doGet(e){
+  const action = (e.parameter.action||'').trim();
+  try{
+    if(!checkCode_(e)) return json({ok:false,error:'unauthorized'});
+    if(action==='getEntries') return json({ok:true,data:getEntries_()});
+    if(action==='getState')   return json({ok:true,data:getState_()});
+    if(action==='getCalEvents') return json({ok:true,data:getCalEvents_(e.parameter.start, e.parameter.end)});
+    return json({ok:false,error:'unknown action: '+action});
+  }catch(err){
+    return json({ok:false,error:String(err)});
+  }
+}
+
+function getEntries_(){
+  const sh = getSheet('entries');
+  const values = sh.getDataRange().getValues();
+  if(values.length<2) return [];
+  const header = values[0].map(String);
+  return values.slice(1).map(row=>{
+    const o = {};
+    header.forEach((h,i)=>{
+      let v = row[i];
+      if(h==='date' && v instanceof Date){
+        v = Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+      }
+      o[h] = v;
+    });
+    return o;
+  }).filter(o=>o.date);
+}
+
+function getState_(){
+  const sh = getSheet('state');
+  const values = sh.getDataRange().getValues();
+  if(values.length<2) return {};
+  const header = values[0].map(String);
+  const row = values[1];
+  const o = {};
+  header.forEach((h,i)=>{ o[h] = row[i]; });
+  return o;
+}
+
+// ── POST ─────────────────────────────────────────────
+function doPost(e){
+  const action = (e.parameter.action||'').trim();
+  try{
+    if(!checkCode_(e)) return json({ok:false,error:'unauthorized'});
+    const payload = JSON.parse(e.postData.contents||'{}');
+    if(action==='saveEntry') return json({ok:saveEntry_(payload)});
+    if(action==='saveState') return json({ok:saveState_(payload)});
+    if(action==='uploadImage') return json({ok:true,url:uploadImageToDrive_(payload)});
+    if(action==='clearAll') return json({ok:clearAll_()});
+    if(action==='addCalEvent') return json({ok:true,id:addCalEvent_(payload)});
+    if(action==='editCalEvent') return json({ok:true,id:editCalEvent_(payload)});
+    if(action==='delCalEvent') return json({ok:delCalEvent_(payload)});
+    if(action==='syncReminders') return json({ok:true,ids:syncReminders_(payload)});
+    return json({ok:false,error:'unknown action: '+action});
+  }catch(err){
+    return json({ok:false,error:String(err)});
+  }
+}
+
+function saveEntry_(p){
+  const sh = getSheet('entries');
+  const values = sh.getDataRange().getValues();
+  const header = values[0].map(String);
+  const dateCol = header.indexOf('date');
+  const dateStr = String(p.date).slice(0,10);
+
+  const rowData = header.map(h=>{
+    let v = p[h];
+    if(v===undefined||v===null) v = '';
+    if(typeof v==='object') v = JSON.stringify(v);
+    return v;
+  });
+
+  // 找同日期列 → 覆蓋；沒有 → 新增
+  for(let r=1; r<values.length; r++){
+    let cell = values[r][dateCol];
+    if(cell instanceof Date){
+      cell = Utilities.formatDate(cell, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+    }
+    if(String(cell).slice(0,10)===dateStr){
+      sh.getRange(r+1,1,1,rowData.length).setValues([rowData]);
+      return true;
+    }
+  }
+  sh.appendRow(rowData);
+  return true;
+}
+
+function saveState_(p){
+  const sh = getSheet('state');
+  const values = sh.getDataRange().getValues();
+  const header = values[0].map(String);
+  const rowData = header.map(h=>{
+    let v = p[h];
+    if(v===undefined||v===null) v = '';
+    if(typeof v==='object') v = JSON.stringify(v);
+    return v;
+  });
+  sh.getRange(2,1,1,rowData.length).setValues([rowData]);
+  return true;
+}
+
+// ── 圖片上傳到 Google Drive ──────────────────────────
+// p.data = base64 圖片資料（不含 data:xxx;base64, 前綴）
+// p.filename = 檔案名稱、p.mimeType = image/jpeg 等
+// 回傳 thumbnail 直連網址（在 <img> 裡最穩定能顯示的格式）
+function uploadImageToDrive_(p){
+  if(!p || !p.data) throw new Error('no image data');
+  const folder = getDriveFolder_();
+  const blob = Utilities.newBlob(
+    Utilities.base64Decode(p.data),
+    p.mimeType || 'image/jpeg',
+    p.filename || ('grandol_' + Date.now() + '.jpg')
+  );
+  const file = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return 'https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w800';
+}
+
+function getDriveFolder_(){
+  const folderName = '小森林圖片庫';
+  const folders = DriveApp.getFoldersByName(folderName);
+  return folders.hasNext() ? folders.next() : DriveApp.createFolder(folderName);
+}
+
+// ── 完全歸零：清空 entries 資料列（保留標題）＋ state 第2列 ──
+// 注意：不會刪 Drive「小森林圖片庫」裡的圖片檔
+function clearAll_(){
+  const en = getSheet('entries');
+  if(en.getLastRow() > 1) en.deleteRows(2, en.getLastRow() - 1);
+  const st = getSheet('state');
+  if(st.getLastRow() > 1) st.getRange(2, 1, st.getLastRow() - 1, st.getLastColumn()).clearContent();
+  return true;
+}
+
+// ── Google 日曆（v2.8）─────────────────────────────────
+// 讀取 start~end（yyyy-mm-dd）之間的事件（掃你擁有的所有日曆，不只預設那本）
+function getCalEvents_(startStr, endStr){
+  const tz = Session.getScriptTimeZone();
+  const start = new Date(startStr + 'T00:00:00');
+  const end = new Date(endStr + 'T23:59:59');
+  const out = [];
+  CalendarApp.getAllOwnedCalendars().forEach(function(cal){
+    cal.getEvents(start, end).forEach(function(ev){
+      const allDay = ev.isAllDayEvent();
+      let endDate;
+      if(allDay){
+        const exclusiveEnd = ev.getAllDayEndDate();
+        const inclusiveEnd = new Date(exclusiveEnd);
+        inclusiveEnd.setDate(inclusiveEnd.getDate() - 1);
+        endDate = Utilities.formatDate(inclusiveEnd, tz, 'yyyy-MM-dd');
+      }else{
+        endDate = Utilities.formatDate(ev.getEndTime(), tz, 'yyyy-MM-dd');
+      }
+      out.push({
+        id: ev.getId(),
+        title: ev.getTitle(),
+        allDay: allDay,
+        date: Utilities.formatDate(allDay ? ev.getAllDayStartDate() : ev.getStartTime(), tz, 'yyyy-MM-dd'),
+        endDate: endDate,
+        time: allDay ? '' : Utilities.formatDate(ev.getStartTime(), tz, 'HH:mm'),
+        color: ev.getColor() || ''
+      });
+    });
+  });
+  return out;
+}
+
+// 新增事件：{title, date, time, endTime, allDay, reminderMin, repeat:'none|daily|weekly', repeatDays:[0-6], color:'1'-'11', endDate:'yyyy-mm-dd'（跨日用，repeat=none時才生效）}
+function addCalEvent_(p){
+  if(!p || !p.title || !p.date) throw new Error('missing title/date');
+  const cal = CalendarApp.getDefaultCalendar();
+  const WD = [CalendarApp.Weekday.SUNDAY, CalendarApp.Weekday.MONDAY, CalendarApp.Weekday.TUESDAY,
+              CalendarApp.Weekday.WEDNESDAY, CalendarApp.Weekday.THURSDAY, CalendarApp.Weekday.FRIDAY,
+              CalendarApp.Weekday.SATURDAY];
+  const isMultiDay = p.endDate && p.endDate !== p.date && (!p.repeat || p.repeat === 'none');
+  const start = new Date(p.date + 'T' + (p.time || '09:00') + ':00');
+  const endDateStr = isMultiDay ? p.endDate : p.date;
+  let end;
+  if(p.endTime){
+    end = new Date(endDateStr + 'T' + p.endTime + ':00');
+    if(end <= start) end = new Date(start.getTime() + 60 * 60000);
+  }else{
+    end = new Date(start.getTime() + 60 * 60000);
+  }
+  let ev;
+  if(isMultiDay){
+    if(p.allDay){
+      const endExclusive = new Date(p.endDate + 'T00:00:00');
+      endExclusive.setDate(endExclusive.getDate() + 1);
+      ev = cal.createAllDayEvent(p.title, new Date(p.date + 'T00:00:00'), endExclusive);
+    }else{
+      ev = cal.createEvent(p.title, start, end);
+    }
+  }else if(p.repeat === 'daily' || p.repeat === 'weekly'){
+    var rec;
+    if(p.repeat === 'weekly' && p.repeatDays && p.repeatDays.length){
+      rec = CalendarApp.newRecurrence().addWeeklyRule().onlyOnWeekdays(p.repeatDays.map(function(d){ return WD[d]; }));
+    }else{
+      rec = CalendarApp.newRecurrence().addDailyRule();
+    }
+    var repeatCount = parseInt(p.repeatCount, 10);
+    if(!isNaN(repeatCount) && repeatCount > 0) rec = rec.times(repeatCount);
+    if(p.allDay){
+      ev = cal.createAllDayEventSeries(p.title, new Date(p.date + 'T00:00:00'), rec);
+    }else{
+      ev = cal.createEventSeries(p.title, start, end, rec);
+    }
+  }else if(p.allDay){
+    ev = cal.createAllDayEvent(p.title, new Date(p.date + 'T00:00:00'));
+  }else{
+    ev = cal.createEvent(p.title, start, end);
+  }
+  ev.removeAllReminders();
+  const m = parseInt(p.reminderMin, 10);
+  if(!isNaN(m) && m >= 0) ev.addPopupReminder(m);
+  if(p.color && String(p.color).length) ev.setColor(String(p.color));
+  return ev.getId();
+}
+
+// 編輯事件：跟 addCalEvent_ 用同一組參數（多帶 id）。做法是刪掉舊的再建一個新的，
+// 對重複系列來說語意跟刪除一致（整組換新），對單一事件來說最簡單也最不容易壞。
+function editCalEvent_(p){
+  if(!p || !p.id) throw new Error('missing id');
+  delCalEvent_({id:p.id});
+  return addCalEvent_(p);
+}
+
+// 刪除事件：{id}（重複系列會整組刪除）
+function delCalEvent_(p){
+  try{
+    var s = CalendarApp.getEventSeriesById(p.id);
+    if(s){ s.deleteEventSeries(); return true; }
+  }catch(err){}
+  const ev = CalendarApp.getEventById(p.id);
+  if(ev) ev.deleteEvent();
+  return true;
+}
+
+// 每日提醒同步：先刪 prevIds 的舊系列，再建新系列，回傳新 id 陣列
+// items: [{title, time:'HH:MM', days:[0-6]}]（days 空陣列 = 每天）
+function syncReminders_(p){
+  (p.prevIds || []).forEach(function(id){
+    try{ var s = CalendarApp.getEventSeriesById(id); if(s) s.deleteEventSeries(); }catch(err){}
+  });
+  var WD = [CalendarApp.Weekday.SUNDAY, CalendarApp.Weekday.MONDAY, CalendarApp.Weekday.TUESDAY,
+            CalendarApp.Weekday.WEDNESDAY, CalendarApp.Weekday.THURSDAY, CalendarApp.Weekday.FRIDAY,
+            CalendarApp.Weekday.SATURDAY];
+  var cal = CalendarApp.getDefaultCalendar();
+  var ids = [];
+  (p.items || []).forEach(function(it){
+    var hm = String(it.time || '09:00').split(':');
+    var start = new Date(); start.setHours(+hm[0], +hm[1], 0, 0);
+    var end = new Date(start.getTime() + 15 * 60000);
+    var rec;
+    var days = it.days || [];
+    if(days.length){
+      rec = CalendarApp.newRecurrence().addWeeklyRule().onlyOnWeekdays(days.map(function(d){ return WD[d]; }));
+    }else{
+      rec = CalendarApp.newRecurrence().addDailyRule();
+    }
+    var series = cal.createEventSeries(it.title, start, end, rec);
+    series.removeAllReminders();
+    series.addPopupReminder(0);
+    ids.push(series.getId());
+  });
+  return ids;
+}

@@ -1,7 +1,7 @@
 {
-  "name": "格蘭朵魔法森林",
-  "short_name": "格蘭朵",
-  "description": "妳正在成為自己的見證者",
+  "name": "魔法小森林",
+  "short_name": "小森林",
+  "description": "你正在成為自己的見證者",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

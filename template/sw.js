@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════
-// 格蘭朵魔法森林 Service Worker
+// 魔法小森林 Service Worker
 // 策略：network first，失敗才用快取（GAS API 一律不快取）
 // 更新版本時把 CACHE_NAME 的數字 +1，舊快取會自動清掉
 // ═══════════════════════════════════════════════════════
-const CACHE_NAME = 'my-app-cache-v1'; // 之後每次更新靜態檔案，把這個數字 +1
+const CACHE_NAME = 'forest-cache-v1';
 
 const PRECACHE = [
   './',
