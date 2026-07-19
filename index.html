@@ -22,6 +22,7 @@
   --tertiary:#95BCC6;--tertiary-rgb:149,188,198;
   --pink:#E2AFC1;--pink-rgb:226,175,193;
   --gold:#FAC775;--gold-rgb:250,199,117;
+  --ok:#3A8A6A;
   --g1:rgba(255,255,255,.55);--gb:rgba(255,255,255,.78);
   --gs:0 1px 2px rgba(35,35,30,.05),0 8px 20px -12px rgba(var(--primary-rgb),.22),0 10px 24px -14px rgba(var(--pink-rgb),.16),inset 0 1.5px 0 rgba(255,255,255,.92);
   --gs2:0 1px 2px rgba(35,35,30,.06),0 10px 26px -12px rgba(var(--primary-rgb),.26),0 14px 30px -14px rgba(var(--tertiary-rgb),.2),inset 0 2px 0 rgba(255,255,255,.95);
@@ -54,7 +55,7 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 /* NAV */
 .bot-nav-wrap{position:fixed;left:14px;right:14px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:100;}
 .bot-nav{max-width:860px;margin:0 auto;display:flex;align-items:center;gap:2px;background:rgba(255,255,255,.72);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border:1.5px solid rgba(255,255,255,.9);border-radius:999px;padding:7px 8px;box-shadow:0 14px 30px -10px rgba(var(--primary-rgb),.35),0 2px 6px rgba(0,0,0,.06),inset 0 1px 0 rgba(255,255,255,.95);}
-.nav-btn{flex:1;padding:6px 2px;border:none;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:'Quicksand',sans-serif;font-size:9.5px;font-weight:700;color:var(--tc3);transition:color .15s,background .15s;}
+.nav-btn{flex:1;padding:6px 2px;border:none;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:'Quicksand',sans-serif;font-size:10px;font-weight:700;color:var(--tc3);transition:color .15s,background .15s;}
 .nav-btn{border-radius:999px;margin:0;}
 .nav-btn.active{color:#fff;background:linear-gradient(135deg,var(--primary),var(--secondary));box-shadow:0 6px 14px -4px rgba(var(--primary-rgb),.55);}
 .nav-btn img{width:19px;height:19px;opacity:.48;transition:opacity .15s;}
@@ -104,7 +105,7 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 .sticky-top{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:3px;}
 .sticky-header{font-weight:700;font-size:1em;color:#A08030;white-space:nowrap;}
 .sticky-item{display:flex;align-items:center;gap:6px;margin-bottom:5px;font-size:1em;line-height:1.4;}
-.sticky-check{width:var(--sn-cb,20px);height:var(--sn-cb,20px);flex-shrink:0;border:1.5px solid rgba(160,130,60,.55);border-radius:5px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:calc(var(--sn-cb,20px)*0.62);color:#3A8A6A;background:rgba(255,255,255,.7);}
+.sticky-check{width:var(--sn-cb,20px);height:var(--sn-cb,20px);flex-shrink:0;border:1.5px solid rgba(160,130,60,.55);border-radius:5px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:calc(var(--sn-cb,20px)*0.62);color:var(--ok);background:rgba(255,255,255,.7);}
 .sticky-check.done{background:rgba(var(--tertiary-rgb),.4);border-color:rgba(var(--tertiary-rgb),.8);}
 .sticky-empty{font-size:1em;color:#B09850;line-height:1.6;text-align:center;padding:4px 0;}
 .sticky-item .sticky-txt{flex:1;min-width:0;}
@@ -149,9 +150,9 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 .tdl-row-wrap{display:flex;gap:6px;margin-bottom:7px;align-items:center;}
 .tdl-in{background:rgba(255,255,255,.72);border:1.5px solid rgba(255,255,255,.85);border-radius:11px;padding:7px 9px;font-family:'Quicksand',sans-serif;font-size:13px;color:var(--tc);outline:none;box-shadow:var(--nm-in);}
 .tdl-confirm-btn{background:rgba(255,255,255,.55);border:1.5px solid rgba(255,255,255,.8);border-radius:9px;cursor:pointer;padding:5px 8px;font-size:13px;color:var(--tc3);flex-shrink:0;transition:all .15s;}
-.tdl-confirm-btn.confirmed{background:rgba(var(--tertiary-rgb),.35);border-color:rgba(var(--tertiary-rgb),.7);color:#3A8A6A;}
+.tdl-confirm-btn.confirmed{background:rgba(var(--tertiary-rgb),.35);border-color:rgba(var(--tertiary-rgb),.7);color:var(--ok);}
 .tdl-del-btn{background:rgba(255,255,255,.45);border:1.5px solid rgba(255,255,255,.7);border-radius:9px;cursor:pointer;padding:5px 8px;font-size:13px;color:var(--tc3);flex-shrink:0;}
-.tdl-row-wrap.confirmed-row .tdl-in{color:#3A8A6A;font-weight:600;}
+.tdl-row-wrap.confirmed-row .tdl-in{color:var(--ok);font-weight:600;}
 
 /* CAL POPUP */
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:0;border:1px solid rgba(var(--secondary-rgb),.3);border-radius:16px;overflow:hidden;background:rgba(255,255,255,.6);}
@@ -170,18 +171,18 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 .cal-add:active{opacity:1;transform:scale(.92);}
 /* 手機沒有 hover，「+」直接稍微淡淡常駐顯示，不用等點過才看得到 */
 @media(hover:none){.cal-add{opacity:.7;}}
-.cal-ev-chip{min-width:0;font-size:9.5px;line-height:1.45;background:var(--primary);color:#fff;border-radius:4px;padding:1.5px 5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;text-align:left;margin-bottom:1.5px;}
-.cal-more{font-size:9.5px;color:var(--secondary);font-weight:700;text-align:left;padding-left:4px;}
+.cal-ev-chip{min-width:0;font-size:10px;line-height:1.45;background:var(--primary);color:#fff;border-radius:4px;padding:1.5px 5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;text-align:left;margin-bottom:1.5px;}
+.cal-more{font-size:10px;color:var(--secondary);font-weight:700;text-align:left;padding-left:4px;}
 /* 跨日行程橫幅：每一天各自渲染自己那一小段，同一列裡沒有橫幅的格子補一個等高透明佔位——
    靠 CSS Grid 每列自動同高對齊，不用量 DOM 座標，縮放/換字級都不會跑位或疊住下面的行程 */
 .cal-bars{display:flex;flex-direction:column;gap:2px;margin:1px 0 3px;min-width:0;}
-.cal-bar-seg{min-width:0;border-radius:4px;font-size:9px;line-height:1;color:#fff;font-weight:700;padding:0 4px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:pointer;}
+.cal-bar-seg{min-width:0;border-radius:4px;font-size:10px;line-height:1;color:#fff;font-weight:700;padding:0 4px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:pointer;}
 .cal-bar-seg:active{filter:brightness(.92);}
 .cal-bar-seg.empty{background:transparent;cursor:default;pointer-events:none;}
 /* 日曆下方面板：質感細節 */
 .cal-day-badge{width:40px;height:40px;border-radius:12px;background:linear-gradient(155deg,var(--primary),#1B2C58);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;flex-shrink:0;box-shadow:0 1px 2px rgba(var(--primary-rgb),.3),0 8px 16px -8px rgba(var(--primary-rgb),.55);}
 .cal-day-badge .cdb-n{font-family:'Baloo 2',sans-serif;font-size:16px;font-weight:800;}
-.cal-day-badge .cdb-m{font-size:8px;letter-spacing:.05em;opacity:.85;margin-top:4px;}
+.cal-day-badge .cdb-m{font-size:10px;letter-spacing:.05em;opacity:.85;margin-top:4px;}
 .cal-vine{height:12px;margin:16px 0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='14' viewBox='0 0 40 14'%3E%3Cpath d='M0 7 Q10 -2 20 7 T40 7' fill='none' stroke='%23C8BEEA' stroke-width='1.4'/%3E%3C/svg%3E");background-repeat:repeat-x;background-size:36px 12px;opacity:.8;}
 .cal-ev-row{border-radius:12px;transition:background .15s;}
 .cal-ev-row:hover{background:rgba(var(--secondary-rgb),.16);}
@@ -238,7 +239,7 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 .stat-card{background:rgba(255,255,255,.5);border-radius:14px;padding:10px;text-align:center;box-shadow:var(--nm-in);}
 .stat-num{font-family:'Baloo 2',sans-serif;font-size:22px;font-weight:800;}
 .stat-lbl{font-size:10px;color:var(--tc3);margin-top:2px;}
-.exp-badge{background:linear-gradient(135deg,rgba(var(--tertiary-rgb),.4),rgba(var(--tertiary-rgb),.3));border:1.5px solid rgba(var(--tertiary-rgb),.5);border-radius:999px;padding:2px 10px;font-family:'Baloo 2',sans-serif;font-size:12px;font-weight:700;color:#2A7A5A;}
+.exp-badge{background:linear-gradient(135deg,rgba(var(--tertiary-rgb),.4),rgba(var(--tertiary-rgb),.3));border:1.5px solid rgba(var(--tertiary-rgb),.5);border-radius:999px;padding:2px 10px;font-family:'Baloo 2',sans-serif;font-size:12px;font-weight:700;color:var(--ok);}
 .week-card{background:rgba(255,255,255,.5);border:1.5px solid rgba(255,255,255,.75);border-radius:18px;box-shadow:var(--gs);padding:.9rem 1rem;margin-bottom:10px;}
 .week-day-hd{font-family:'Baloo 2',sans-serif;font-size:13px;font-weight:800;color:var(--tc);margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;}
 .habit-dots{display:flex;gap:4px;flex-wrap:wrap;}
@@ -258,9 +259,18 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 
 /* COMPARE */
 .cmp{font-size:10px;margin-left:4px;font-weight:700;}
-.cmp.up{color:#3A8A6A;}
+.cmp.up{color:var(--ok);}
 .cmp.down{color:#B8724A;}
 .cmp.same{color:var(--tc3);}
+/* 監督模式（唯讀）：把會寫入的操作全部藏起來；文字輸入由 JS 設 readOnly */
+body.viewer-mode #plant-btn,body.viewer-mode #draft-btn,
+body.viewer-mode .cal-add,body.viewer-mode .cal-save-btn,body.viewer-mode .tdl-confirm-btn,
+body.viewer-mode .mini-btn,body.viewer-mode .support-item-del,body.viewer-mode .support-cat-del,
+body.viewer-mode .support-add-row,body.viewer-mode .quote-del,body.viewer-mode .quote-edit,
+body.viewer-mode .card-del,body.viewer-mode .card-edit,body.viewer-mode .exp-toggle,
+body.viewer-mode #danger-zone-toggle,body.viewer-mode #danger-zone-body,
+body.viewer-mode #habit-archive-list,body.viewer-mode #draft-btn{display:none!important;}
+body.viewer-mode .neo-chip,body.viewer-mode .sticky-check,body.viewer-mode .habit-dot{pointer-events:none;}
 
 /* DISTRIBUTION BARS */
 .dist-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
@@ -283,7 +293,7 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 .trend-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;}
 .trend-bar{width:100%;max-width:26px;border-radius:6px 6px 3px 3px;background:linear-gradient(180deg,var(--tertiary),var(--tertiary));transition:height .3s;min-height:3px;}
 .trend-bar.empty{background:rgba(var(--secondary-rgb),.2);}
-.trend-lbl{font-size:9px;color:var(--tc3);}
+.trend-lbl{font-size:10px;color:var(--tc3);}
 
 /* FRUIT PROGRESS */
 .fp-row{display:flex;align-items:center;gap:8px;margin-bottom:9px;}
@@ -326,7 +336,7 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 .hg-c.on{background:rgba(var(--secondary-rgb),.75);box-shadow:0 0 3px rgba(var(--secondary-rgb),.3);}
 .hg-n{width:36px;text-align:right;font-size:11px;color:var(--tc3);flex-shrink:0;font-family:'Baloo 2',sans-serif;font-weight:800;}
 .hg-n.hot{color:#D4750A;}
-.hg-dow{flex:1 1 19px;max-width:30px;min-width:3px;text-align:center;font-size:9.5px;color:var(--tc3);}
+.hg-dow{flex:1 1 19px;max-width:30px;min-width:3px;text-align:center;font-size:10px;color:var(--tc3);}
 /* 身份進度圓環：比長條更有「集滿」感；進度低於一半用粉色（弱點色） */
 .id-rings{display:flex;flex-wrap:wrap;justify-content:space-around;gap:8px 4px;padding-top:2px;}
 .id-ring{text-align:center;width:74px;}
@@ -341,11 +351,11 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 .fp-node.dim{filter:grayscale(1);opacity:.4;font-size:18px;}
 .fp-seg{flex:1;height:9px;border-radius:5px;background:rgba(var(--secondary-rgb),.18);margin:0 5px;position:relative;}
 .fp-seg-fill{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:linear-gradient(90deg,var(--gold),#F090B0);}
-.fp-seg-n{position:absolute;top:12px;left:50%;transform:translateX(-50%);font-size:9.5px;color:var(--tc3);font-weight:700;font-family:'Baloo 2',sans-serif;}
+.fp-seg-n{position:absolute;top:12px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--tc3);font-weight:700;font-family:'Baloo 2',sans-serif;}
 .fp-cap{text-align:center;font-size:11.5px;color:var(--tc2);font-weight:700;margin-top:2px;line-height:1.6;}
 .fp-cap b{color:var(--primary);font-family:'Baloo 2',sans-serif;}
 /* 每日達成率長條：頂上標數值，最強的一天 🏆、最弱的一天粉色 */
-.trend-val{font-size:9px;color:var(--tc3);font-weight:700;height:12px;line-height:12px;}
+.trend-val{font-size:10px;color:var(--tc3);font-weight:700;height:12px;line-height:12px;}
 .trend-bar.weakday{background:linear-gradient(180deg,#F0B9C8,#E28FA9);}
 .dist-bar-fill.weak{background:linear-gradient(90deg,#F0B9C8,#E28FA9);}
 /* 洞察卡：把資料變成行動的那一張 */
@@ -381,7 +391,7 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 .support-item-row{display:flex;align-items:flex-start;gap:8px;background:rgba(255,255,255,.45);border-radius:12px;padding:9px 11px;margin-bottom:7px;font-size:13px;color:var(--tc);line-height:1.6;}
 .support-item-del{background:none;border:none;color:var(--tc3);font-size:13px;cursor:pointer;flex-shrink:0;}
 .support-add-row{display:flex;gap:8px;margin-top:4px;}
-.support-quick-link{display:inline-flex;align-items:center;gap:5px;background:rgba(var(--tertiary-rgb),.3);border:1px solid rgba(var(--tertiary-rgb),.55);border-radius:999px;padding:5px 13px;font-size:12px;color:#2A7A5A;cursor:pointer;margin-top:2px;}
+.support-quick-link{display:inline-flex;align-items:center;gap:5px;background:rgba(var(--tertiary-rgb),.3);border:1px solid rgba(var(--tertiary-rgb),.55);border-radius:999px;padding:5px 13px;font-size:12px;color:var(--ok);cursor:pointer;margin-top:2px;}
 .support-quick-btn{position:fixed;right:14px;bottom:calc(82px + env(safe-area-inset-bottom));z-index:90;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--pink),var(--secondary));border:2px solid rgba(255,255,255,.9);box-shadow:0 6px 18px rgba(var(--primary-rgb),.35);display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;}
 
 /* IDENTITY CHIPS */
@@ -446,7 +456,7 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 .treasure-desc{font-size:12px;color:var(--tc2);line-height:1.5;}
 .treasure-type{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:999px;font-size:10px;font-weight:700;margin-bottom:6px;}
 .treasure-type.person{background:rgba(var(--secondary-rgb),.4);color:#5A4A8A;}
-.treasure-type.object{background:rgba(var(--tertiary-rgb),.4);color:#2A7A5A;}
+.treasure-type.object{background:rgba(var(--tertiary-rgb),.4);color:var(--ok);}
 .quote-item{display:flex;align-items:flex-start;gap:8px;padding:10px;background:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.6);border-radius:12px;margin-bottom:8px;}
 .quote-text{flex:1;font-size:13px;color:var(--tc);font-style:italic;line-height:1.5;}
 .quote-del{background:none;border:none;cursor:pointer;color:var(--tc3);font-size:14px;flex-shrink:0;}
@@ -545,8 +555,8 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 .bi-card .bi-icon{font-size:31px;line-height:1.1;}
 .bi-card img.bi-img{width:48px;height:48px;object-fit:contain;}
 .bi-card .bi-title{font-size:11px;font-weight:700;color:#333;max-width:100%;text-align:center;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:6px;}
-.bi-card .bi-desc{font-family:'Courier New',ui-monospace,monospace;font-size:9px;color:#8a8a86;text-align:center;line-height:1.3;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-.bi-card .bi-link{font-family:'Courier New',ui-monospace,monospace;font-size:8px;color:var(--secondary);text-align:center;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;}
+.bi-card .bi-desc{font-family:'Courier New',ui-monospace,monospace;font-size:10px;color:#8a8a86;text-align:center;line-height:1.3;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.bi-card .bi-link{font-family:'Courier New',ui-monospace,monospace;font-size:10px;color:var(--secondary);text-align:center;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;}
 .book-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:10;width:30px;height:30px;border-radius:50%;border:1.5px solid rgba(255,255,255,.9);background:rgba(255,255,255,.8);cursor:pointer;font-size:15px;color:#8A7048;display:none;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(120,90,40,.2);}
 .book-arrow.left{left:6px;}
 .book-arrow.right{right:6px;}
@@ -559,7 +569,7 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 @keyframes skShimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
 @keyframes skPulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.06);opacity:.8;}}
 .res-chip{display:inline-flex;align-items:center;gap:4px;padding:6px 10px;background:rgba(255,255,255,.5);border:1.5px solid rgba(255,255,255,.8);border-radius:999px;cursor:pointer;font-size:12px;font-weight:600;color:var(--tc);}
-.res-chip.on{background:rgba(var(--tertiary-rgb),.35);border-color:rgba(var(--tertiary-rgb),.7);color:#2A7A5A;}
+.res-chip.on{background:rgba(var(--tertiary-rgb),.35);border-color:rgba(var(--tertiary-rgb),.7);color:var(--ok);}
 #res-cat-tabs{padding-left:0;}
 .rcat-tab{display:inline-flex;align-items:center;gap:5px;padding:7px 16px 7px 13px;border-radius:8px 12px 0 0;font-size:11px;font-weight:800;cursor:pointer;color:#fff;opacity:.6;transition:opacity .15s,transform .1s;margin-right:-7px;clip-path:polygon(0 0,88% 0,100% 100%,0 100%);position:relative;}
 .rcat-tab.on{opacity:1;z-index:3;box-shadow:0 3px 8px -2px rgba(35,35,30,.35);}
@@ -579,7 +589,7 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 .tgl input:checked+.knob::before{transform:translateX(19px);}
 .time-in{background:rgba(255,255,255,.75);border:1.5px solid rgba(255,255,255,.88);border-radius:9px;padding:4px 7px;font-family:'Quicksand',sans-serif;font-size:12px;color:var(--tc);outline:none;}
 .day-chip{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.5);border:1.5px solid rgba(255,255,255,.8);font-size:11px;font-weight:700;color:var(--tc3);cursor:pointer;user-select:none;}
-.day-chip.on{background:rgba(var(--tertiary-rgb),.4);border-color:rgba(var(--tertiary-rgb),.7);color:#2A7A5A;}
+.day-chip.on{background:rgba(var(--tertiary-rgb),.4);border-color:rgba(var(--tertiary-rgb),.7);color:var(--ok);}
 
 
 /* ── 清單/格狀切換 ── */
@@ -671,11 +681,11 @@ button{-webkit-tap-highlight-color:transparent;}
       <input class="tdl-in" id="rp-desc" placeholder="敘述（選填）" style="width:100%;margin-bottom:7px;"/>
       <input class="tdl-in" id="rp-link" placeholder="連結網址（選填，https://...）" style="width:100%;margin-bottom:7px;"/>
       <input type="file" id="rp-file" accept="image/*" style="display:none;"/>
-      <button type="button" class="mini-btn" id="rp-upload-btn" style="width:100%;margin-bottom:7px;background:rgba(var(--tertiary-rgb),.55);color:#2A7A5A;">📷 上傳圖片（選填）</button>
+      <button type="button" class="mini-btn" id="rp-upload-btn" style="width:100%;margin-bottom:7px;background:rgba(var(--tertiary-rgb),.55);color:var(--ok);">📷 上傳圖片（選填）</button>
       <img id="rp-upload-preview" style="display:none;width:56px;height:56px;object-fit:cover;border-radius:10px;margin-bottom:7px;"/>
       <div style="display:flex;justify-content:flex-end;gap:8px;">
         <button id="rp-cancel" class="rp-icon-btn" style="color:var(--tc3);" title="取消">✕</button>
-        <button id="rp-save" class="rp-icon-btn" style="color:#2A7A5A;background:rgba(var(--tertiary-rgb),.55);" title="儲存修改">✓</button>
+        <button id="rp-save" class="rp-icon-btn" style="color:var(--ok);background:rgba(var(--tertiary-rgb),.55);" title="儲存修改">✓</button>
       </div>
     </div>
   </div>
@@ -998,7 +1008,7 @@ button{-webkit-tap-highlight-color:transparent;}
     <input class="tdl-in" id="person-name" placeholder="名字" style="width:100%;margin-bottom:7px;"/>
     <input class="tdl-in" id="person-note" placeholder="一句話（TA 對妳的意義）" style="width:100%;margin-bottom:7px;"/>
     <input type="file" id="person-file" accept="image/*" style="display:none;"/>
-    <button type="button" class="mini-btn" id="person-upload-btn" style="width:100%;margin-bottom:7px;background:rgba(var(--tertiary-rgb),.55);color:#2A7A5A;">📷 上傳圖片</button>
+    <button type="button" class="mini-btn" id="person-upload-btn" style="width:100%;margin-bottom:7px;background:rgba(var(--tertiary-rgb),.55);color:var(--ok);">📷 上傳圖片</button>
     <img id="person-upload-preview" style="display:none;width:64px;height:64px;object-fit:cover;border-radius:12px;margin-bottom:7px;"/>
     <input class="tdl-in" id="person-img" placeholder="或貼上圖片網址（選填，會取代 emoji）" style="width:100%;margin-bottom:8px;"/>
     <div style="display:flex;gap:8px;">
@@ -1019,14 +1029,14 @@ button{-webkit-tap-highlight-color:transparent;}
   </div>
   <div id="treasure-form" style="display:none;">
     <div style="display:flex;gap:8px;margin-bottom:7px;">
-      <button class="mini-btn treasure-type-btn" data-t="object" style="flex:1;background:rgba(var(--tertiary-rgb),.5);color:#2A7A5A;">🎁 物</button>
+      <button class="mini-btn treasure-type-btn" data-t="object" style="flex:1;background:rgba(var(--tertiary-rgb),.5);color:var(--ok);">🎁 物</button>
       <button class="mini-btn treasure-type-btn" data-t="person" style="flex:1;background:rgba(var(--secondary-rgb),.5);color:#5A4A8A;">🫂 人</button>
     </div>
     <input class="tdl-in" id="treasure-emoji" placeholder="代表 emoji（如 🎸 🏡 ☕）" style="width:100%;margin-bottom:7px;"/>
     <input class="tdl-in" id="treasure-title" placeholder="標題" style="width:100%;margin-bottom:7px;"/>
     <input class="tdl-in" id="treasure-desc" placeholder="描述（為什麼重要）" style="width:100%;margin-bottom:7px;"/>
     <input type="file" id="treasure-file" accept="image/*" style="display:none;"/>
-    <button type="button" class="mini-btn" id="treasure-upload-btn" style="width:100%;margin-bottom:7px;background:rgba(var(--tertiary-rgb),.55);color:#2A7A5A;">📷 上傳圖片</button>
+    <button type="button" class="mini-btn" id="treasure-upload-btn" style="width:100%;margin-bottom:7px;background:rgba(var(--tertiary-rgb),.55);color:var(--ok);">📷 上傳圖片</button>
     <img id="treasure-upload-preview" style="display:none;width:64px;height:64px;object-fit:cover;border-radius:12px;margin-bottom:7px;"/>
     <input class="tdl-in" id="treasure-img" placeholder="或貼上圖片網址（選填）" style="width:100%;margin-bottom:8px;"/>
     <div style="display:flex;gap:8px;">
@@ -1075,6 +1085,7 @@ button{-webkit-tap-highlight-color:transparent;}
     <p style="margin-bottom:10px;"><b>系統A：地上的花 🌸</b><br/>每打勾一個習慣 → +10 EXP → 草地立刻長一朵花（顏色對應習慣、可拖移、每天累計不會消失）。取消打勾花會收回。</p>
     <p style="margin-bottom:10px;"><b>系統B：樹上的果實 🍎</b><br/>按下「種下今天」→ 樹上長1顆小蘋果 → 7顆小蘋果=1個大蘋果 → 4個大蘋果=1個金色果實 → 3個金色果實=樹苗 → 2個樹苗=新樹。</p>
     <p style="margin-bottom:10px;"><b>種下今天的條件 ✨</b><br/>今日小記至少填一區塊 + 明天TDL至少一條。種下 +20 EXP，當天已種會先確認是否覆蓋。</p>
+    <p style="margin-bottom:10px;"><b>休息日不斷鏈 🍃</b><br/>每週可以有 1 天空白，連續天數不會歸零（那天不計數，但鏈不斷）。連空 2 天以上才會重新開始——中斷不是歸零，是暫停。</p>
     <p style="margin-bottom:10px;"><b>便利貼 TDL 📋</b><br/>昨天填的明天TDL會變成今天場景裡的便利貼，打勾一項 +10 EXP（取消 -10）。</p>
     <p style="margin-bottom:10px;"><b>EXP 與升級 ⬆️</b><br/>每100 EXP升一級，升級有全屏特效慶祝！</p>
     <p style="margin-bottom:10px;"><b>連續天數 🔥</b><br/>每天種下就+1天，中斷歸零。</p>
@@ -1157,6 +1168,12 @@ button{-webkit-tap-highlight-color:transparent;}
   <button class="ghost-btn" id="export-txt-btn" style="margin-bottom:0;">📄 匯出全部紀錄成文字檔</button>
 </div>
 
+<div class="gcard">
+  <div class="sec-hd">🗂 習慣管理</div>
+  <p style="font-size:12px;color:var(--tc3);line-height:1.7;margin-bottom:8px;">封存＝暫時收起來：不再出現在打卡清單和分析裡，歷史紀錄全部保留，隨時可以解封。專注在當季真正想養的習慣就好 🌱</p>
+  <div id="habit-archive-list"></div>
+</div>
+
 <div class="gcard" style="border-color:rgba(240,150,150,.4);">
   <button type="button" id="danger-zone-toggle" style="width:100%;display:flex;align-items:center;justify-content:space-between;background:none;border:none;padding:0;cursor:pointer;font-family:inherit;">
     <span class="sec-hd" style="margin:0;">🧹 清除測試資料</span>
@@ -1192,6 +1209,22 @@ button{-webkit-tap-highlight-color:transparent;}
 <script>
 const DEFAULT_GAS_URL='https://script.google.com/macros/s/AKfycbw_gbuZtYiZjBusfWTNHPlOB20PMJLcb700u6pd5MIqoX7pCOAnthTjxym66nHTOK8G/exec';
 let GAS_URL=localStorage.getItem('grandol_gas_url')||DEFAULT_GAS_URL;
+// 監督模式（唯讀）：用 VIEW_CODE 登入時後端會回 role:'viewer'，
+// 前端進入唯讀（隱藏編輯 UI＋不發任何寫入）。真正的防線在 GAS：
+// viewer 的任何寫入都會被後端拒絕，這裡只是讓畫面誠實。
+let VIEWER_MODE=false;
+function enterViewerMode(){
+  if(document.getElementById('viewer-banner'))return;
+  document.body.classList.add('viewer-mode');
+  const b=document.createElement('div');
+  b.id='viewer-banner';
+  b.textContent='👀 監督模式：只能看，不能改';
+  b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9998;background:linear-gradient(90deg,rgba(var(--tertiary-rgb),.95),rgba(var(--secondary-rgb),.9));color:#fff;font-size:12px;font-weight:800;text-align:center;padding:6px 10px;letter-spacing:.5px;';
+  document.body.appendChild(b);
+  document.body.style.paddingTop='30px';
+  // 文字輸入全部唯讀（按鈕類靠 CSS 隱藏）
+  document.querySelectorAll('textarea,input').forEach(el=>{el.readOnly=true;el.disabled=el.type==='checkbox'||el.type==='radio';});
+}
 const SHEET_ID='';
 function codeQ(){const c=localStorage.getItem('grandol_code')||'';return c?'&code='+encodeURIComponent(c):'';}
 const CDN='https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/';
@@ -1227,6 +1260,10 @@ const HABITS=[
   {k:'guitar',l:'學音樂',c:'1fa95',fc:'1fabb',phrase:'妳是一個培養音樂的人'},
 ];
 
+// 封存的習慣：不出現在打卡清單/分析，但歷史紀錄保留，隨時可解封
+function isArchived(k){return (S.archivedHabits||[]).includes(k);}
+function activeHabits(){return HABITS.filter(h=>!isArchived(h.k));}
+
 const IDENTITY_TAGS=[
   {id:'grow',emoji:'1f331',label:'成長中的人',habits:[],always:true},
   {id:'health',emoji:'1f305',label:'健康的人',habits:['wakeup','sleep']},
@@ -1245,7 +1282,7 @@ const ACHIEVEMENTS=[
   {id:'streak_7',icon:'🔥🔥',name:'一週不中斷',desc:'連續種下7天'},
   {id:'streak_30',icon:'💫',name:'一個月的妳',desc:'連續種下30天'},
   {id:'streak_100',icon:'👑',name:'百日勇者',desc:'連續種下100天'},
-  {id:'all_habits',icon:'⭐',name:'全勤日',desc:'單日9個習慣全勾'},
+  {id:'all_habits',icon:'⭐',name:'全勤日',desc:'單日所有習慣全勾'},
   {id:'first_apple',icon:'🍎',name:'第一顆蘋果',desc:'樹上長出第一顆蘋果'},
   {id:'first_tree',icon:'🌳',name:'森林誕生',desc:'長出第一棵新樹'},
   {id:'lv5',icon:'🌿',name:'魔法學徒',desc:'升到 Lv.5'},
@@ -1260,13 +1297,26 @@ const ACHIEVEMENTS=[
 const PERSON_EMOJIS=['1f436','1f431','1f430','1f43b','1f428','1f98a','1f439','1f42f','1f981','1f438','1f427','1f426','1f989','1f422','1f41d','1f98b','1f41f','1f42c','1f433','1f984'];
 const BURST_E=['🌸','✨','🌟','💫','🌈','🎉','🌺','💐','⭐','🎊'];
 
+// 使用者輸入的文字要進 innerHTML 前一律先過這裡：
+// 不跳脫的話，內容裡的「<」會被當成 HTML 標籤開頭，後面整段被吃掉
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fmtLocal(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+// 某天所屬的週（以週一為一週的開始），休息日機制用它判斷「這週用過緩衝了沒」
+function weekKeyOf(ds){const d=new Date(ds+'T00:00:00');const dow=(d.getDay()+6)%7;d.setDate(d.getDate()-dow);return fmtLocal(d);}
+// 輕量提示條（自動消失），比 alert 溫柔
+function softToast(msg,ms){
+  const t=document.createElement('div');
+  t.textContent=msg;
+  t.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom));z-index:9999;background:rgba(255,255,255,.95);border:1.5px solid rgba(var(--tertiary-rgb),.6);border-radius:16px;padding:10px 16px;font-size:13px;font-weight:700;color:var(--tc);box-shadow:0 8px 24px -8px rgba(var(--primary-rgb),.35);max-width:86vw;text-align:center;line-height:1.6;';
+  document.body.appendChild(t);
+  setTimeout(()=>{t.style.transition='opacity .4s';t.style.opacity='0';setTimeout(()=>t.remove(),400);},ms||4200);
+}
 function today(){return fmtLocal(new Date());}
 function defaults(){
   return{exp:0,flowers:[],apples:[],bigApples:0,goldFruits:0,seedlings:0,trees:1,
     streak:0,lastStreak:'',checked:{},diary:{hl:'',rf:'',gr:'',quote:''},
     lastPlant:'',tomorrowTDL:[],todayTDL:[],tdlDone:{},entries:[],
-    achievements:[],quotes:[],calNotes:{},myPeople:[],treasures:[],gardenPos:{},notePos:null,notifications:null,todayPhotos:[],resourceCats:null,expLog:[],tdlHist:{}};
+    achievements:[],quotes:[],calNotes:{},myPeople:[],treasures:[],gardenPos:{},notePos:null,notifications:null,todayPhotos:[],resourceCats:null,expLog:[],tdlHist:{},archivedHabits:[]};
 }
 function ld(){
   try{const r=localStorage.getItem(SK);if(r){const s=JSON.parse(r);return Object.assign(defaults(),s);}}catch(e){}
@@ -1362,9 +1412,11 @@ function setSync(state,msg){
   }
 }
 async function gasPost(action,payload){
+  if(VIEWER_MODE)throw new Error('viewer-readonly');
   return fetch(GAS_URL+'?action='+action+codeQ(),{method:'POST',body:JSON.stringify(payload),headers:{'Content-Type':'text/plain'}});
 }
 async function syncEntry(entry){
+  if(VIEWER_MODE){setSync('ok','👀 監督模式（唯讀）');return;}
   setSync('syncing','同步中...');
   try{await gasPost('saveEntry',entry);setSync('ok','已同步 ✓');}
   catch(e){setSync('error','同步失敗，資料在本機');}
@@ -1372,9 +1424,15 @@ async function syncEntry(entry){
 let stateTimer=null;
 function syncStateDebounced(){clearTimeout(stateTimer);stateTimer=setTimeout(syncState,1500);}
 async function syncState(){
+  if(VIEWER_MODE){setSync('ok','👀 監督模式（唯讀）');return;}
   setSync('syncing','同步中...');
   try{
-    await gasPost('saveState',{
+    // 多裝置防護：帶上「這台裝置上次看到的雲端版本戳」，
+    // 雲端若已被另一台裝置寫過會拒絕覆蓋（回 conflict）
+    const _now=Date.now();
+    const _res=await gasPost('saveState',{
+      updatedAt:_now,
+      baseUpdatedAt:Number(localStorage.getItem('grandol_state_ts'))||0,
       flowers:JSON.stringify(S.flowers),apples:JSON.stringify(S.apples),
       bigApples:S.bigApples,goldFruits:S.goldFruits,seedlings:S.seedlings,trees:S.trees,
       achievements:JSON.stringify(S.achievements),quotes:JSON.stringify(S.quotes),
@@ -1387,8 +1445,15 @@ async function syncState(){
       supportResources:JSON.stringify(S.resourceCats||[]),
       todaySession:JSON.stringify({date:curDay(),checked:S.checked||{},tdlDone:S.tdlDone||{},todayTDL:S.todayTDL||[],tdlHist:S.tdlHist||{}}),
       expLog:JSON.stringify(S.expLog||[]),
-      calColorTags:JSON.stringify(S.calColorTags||{})
+      calColorTags:JSON.stringify(S.calColorTags||{}),
+      archivedHabits:JSON.stringify(S.archivedHabits||[])
     });
+    const _j=await _res.json().catch(()=>null);
+    if(_j&&_j.conflict){
+      setSync('error','⚠️ 雲端有另一台裝置的新資料，請重新整理載入後再操作');
+      return;
+    }
+    localStorage.setItem('grandol_state_ts',String(_now));
     setSync('ok','已同步 ✓');
   }catch(e){setSync('error','同步失敗，資料在本機');}
 }
@@ -1401,6 +1466,7 @@ async function loadCloud(){
       fetch(GAS_URL+'?action=getEntries'+codeQ())
     ]);
     const st=await stRes.json(),en=await enRes.json();
+    if((st&&st.role==='viewer')||(en&&en.role==='viewer')){VIEWER_MODE=true;enterViewerMode();}
     if(st&&st.ok===false&&/unauthorized/.test(st.error||'')){
       setSync('error','需要通行碼：請到設定輸入');
       if(typeof hideLoadSkeleton==='function')hideLoadSkeleton();
@@ -1408,6 +1474,8 @@ async function loadCloud(){
     }
     if(st.ok&&st.data&&Object.keys(st.data).length){
       const d=st.data;
+      // 記下這次看到的雲端版本戳（多裝置防護的基準點）
+      if(d.updatedAt)localStorage.setItem('grandol_state_ts',String(Number(d.updatedAt)||0));
       S.flowers=parseJ(d.flowers,S.flowers);
       S.apples=parseJ(d.apples,S.apples);
       S.bigApples=+d.bigApples||0;S.goldFruits=+d.goldFruits||0;
@@ -1436,6 +1504,7 @@ async function loadCloud(){
       }
       if(d.expLog){const _el=parseJ(d.expLog,null);if(Array.isArray(_el))S.expLog=_el;}
       if(d.calColorTags){const _ct=parseJ(d.calColorTags,null);if(_ct&&typeof _ct==='object')S.calColorTags=_ct;}
+      if(d.archivedHabits){const _ah=parseJ(d.archivedHabits,null);if(Array.isArray(_ah))S.archivedHabits=_ah;}
     }
     if(en.ok&&Array.isArray(en.data)){
       en.data.forEach(row=>{
@@ -1530,7 +1599,7 @@ function checkAchievements(){
   if(S.streak>=7)unlockAchievement('streak_7');
   if(S.streak>=30)unlockAchievement('streak_30');
   if(S.streak>=100)unlockAchievement('streak_100');
-  if(Object.keys(S.checked).length>=9)unlockAchievement('all_habits');
+  if(activeHabits().length&&Object.keys(S.checked).length>=activeHabits().length)unlockAchievement('all_habits');
   if(S.apples.length>=1||S.bigApples>0||S.goldFruits>0)unlockAchievement('first_apple');
   if(S.trees>=2)unlockAchievement('first_tree');
   if(S.entries.filter(e=>e.diary&&(e.diary.hl||e.diary.rf||e.diary.gr)).length>=7)unlockAchievement('diary_7');
@@ -1753,7 +1822,7 @@ function renderStickyNote(){
       const done=!!ctx.done[key];
       return`<div class="sticky-item">
         <div class="sticky-check${done?' done':''}" data-k="${key}">${done?'✓':''}</div>
-        <span class="sticky-txt" style="${done?'text-decoration:line-through;opacity:.55;':''}">${r.theme?`<b>${r.theme}：</b>`:''}${r.task||''}</span>
+        <span class="sticky-txt" style="${done?'text-decoration:line-through;opacity:.55;':''}">${r.theme?`<b>${esc(r.theme)}：</b>`:''}${esc(r.task||'')}</span>
         <button class="sticky-del" data-i="${i}" title="刪除這一項">✕</button>
       </div>`;
     }).join('');
@@ -1842,7 +1911,7 @@ function renderHabits(){
   const e=isT?null:S.entries.find(x=>x.date===viewDate);
   const checkedMap=isT?S.checked:(()=>{const m={};((e&&e.checked)||[]).forEach(k=>m[k]=true);return m;})();
   const locked=false; // 種下後仍可編輯（今天與過去日期都可改）
-  document.getElementById('habits').innerHTML=HABITS.map(h=>`
+  document.getElementById('habits').innerHTML=HABITS.filter(h=>!isArchived(h.k)||checkedMap[h.k]).map(h=>`
     <div class="neo-chip${checkedMap[h.k]?' on':''}${locked?' locked':''}" data-k="${h.k}" style="position:relative;">
       ${fi(h.c,20)}<span>${h.l}</span>
       ${checkedMap[h.k]?`<span style="margin-left:auto;">${fi('2705',15)}</span>`:''}
@@ -1959,7 +2028,18 @@ document.getElementById('plant-btn').addEventListener('click',async()=>{
 
   const yd=new Date();yd.setDate(yd.getDate()-1);const yesterday=fmtLocal(yd);
   if(!replant){
-    S.streak=(S.lastStreak===yesterday)?S.streak+1:1;
+    // 溫柔連續：只空一天、且「空掉的那天」所屬的週還沒用過休息緩衝
+    // → 連續不歸零（每週最多一次）。中斷不是歸零，是暫停。
+    const bd=new Date();bd.setDate(bd.getDate()-2);const beforeYesterday=fmtLocal(bd);
+    const restWk=weekKeyOf(yesterday);
+    if(S.lastStreak===yesterday){
+      S.streak=S.streak+1;
+    }else if(S.lastStreak===beforeYesterday&&S.restUsedWeek!==restWk){
+      S.streak=S.streak+1;S.restUsedWeek=restWk;
+      setTimeout(()=>softToast('🍃 昨天休息了一天，連續紀錄還在——休息也是練習的一部分'),1200);
+    }else{
+      S.streak=1;
+    }
     S.lastStreak=curDay();
   }
   S.tomorrowTDL=toSave.map(r=>({theme:r.theme,task:r.task}));
@@ -2170,15 +2250,15 @@ function calcTDLRate(dates){
 function diaryBlock(diary){
   if(!diary)return'';
   const parts=[];
-  if(diary.hl)parts.push(`<b>🌟 Highlights：</b>${diary.hl}`);
-  if(diary.rf)parts.push(`<b>📖 Reflection：</b>${diary.rf}`);
-  if(diary.gr)parts.push(`<b>🥹 Gratitude：</b>${diary.gr}`);
-  if(diary.quote)parts.push(`<b>💬 金句：</b>${diary.quote}`);
+  if(diary.hl)parts.push(`<b>🌟 Highlights：</b>${esc(diary.hl)}`);
+  if(diary.rf)parts.push(`<b>📖 Reflection：</b>${esc(diary.rf)}`);
+  if(diary.gr)parts.push(`<b>🥹 Gratitude：</b>${esc(diary.gr)}`);
+  if(diary.quote)parts.push(`<b>💬 金句：</b>${esc(diary.quote)}`);
   return parts.length?`<div class="week-diary-full">${parts.join('<br/>')}</div>`:'';
 }
 function photosBlock(photos){
   if(!photos||!photos.length)return'';
-  return`<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">${photos.map(p=>`<div style="width:64px;"><img src="${p.url}" style="width:64px;height:64px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,.7);"/>${p.caption?`<div style="font-size:9px;color:var(--tc3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;">${p.caption}</div>`:''}</div>`).join('')}</div>`;
+  return`<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">${photos.map(p=>`<div style="width:64px;"><img src="${p.url}" style="width:64px;height:64px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,.7);"/>${p.caption?`<div style="font-size:10px;color:var(--tc3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;">${esc(p.caption)}</div>`:''}</div>`).join('')}</div>`;
 }
 
 // ── DATE / PERIOD HELPERS ─────────────────────────────
@@ -2244,7 +2324,7 @@ function renderFruitProgress(elId){
 function renderHabitGrid(elId,dates){
   const el=document.getElementById(elId);if(!el)return;
   const isWeek=dates.length<=7;
-  const rows=HABITS.map(h=>{
+  const rows=activeHabits().map(h=>{
     const cells=dates.map(ds=>{
       const e=S.entries.find(x=>x.date===ds);
       return e?!!(e.checked&&e.checked.includes(h.k)):!!(ds===curDay()&&S.checked[h.k]);
@@ -2281,14 +2361,14 @@ function renderKeywords(cardId,listId,texts){
   const kws=extractKeywords(texts);
   if(!kws.length){document.getElementById(cardId).style.display='none';return;}
   document.getElementById(cardId).style.display='block';
-  document.getElementById(listId).innerHTML=kws.map(([w,n])=>`<span class="keyword-tag">${w} <b>×${n}</b></span>`).join('');
+  document.getElementById(listId).innerHTML=kws.map(([w,n])=>`<span class="keyword-tag">${esc(w)} <b>×${n}</b></span>`).join('');
 }
 function renderHighlight(cardId,elId,highlights){
   if(!highlights.length){document.getElementById(cardId).style.display='none';return;}
   document.getElementById(cardId).style.display='block';
   const pick=highlights[Math.floor(Math.random()*highlights.length)];
   const d=new Date(pick.date+'T00:00:00');
-  document.getElementById(elId).innerHTML=`<div class="highlight-quote-box">${pick.type} "${pick.text}"<span class="hq-date">${d.getMonth()+1}/${d.getDate()}</span></div>`;
+  document.getElementById(elId).innerHTML=`<div class="highlight-quote-box">${pick.type} "${esc(pick.text)}"<span class="hq-date">${d.getMonth()+1}/${d.getDate()}</span></div>`;
 }
 function periodStats(dates){
   let days=0,habits=0,tdlDoneSum=0,tdlTotalSum=0,diaryDays=0;
@@ -2399,7 +2479,7 @@ function renderTdlDetail(cardId,boxId,st){
 function witnessText(cur,label){
   if(!cur.days)return `${label}還沒有紀錄，隨時回來都可以，格蘭朵在這裡等妳 🌱`;
   let topH=null,topN=0;
-  HABITS.forEach(h=>{const n=cur.habitCounts[h.k]||0;if(n>topN){topN=n;topH=h;}});
+  activeHabits().forEach(h=>{const n=cur.habitCounts[h.k]||0;if(n>topN){topN=n;topH=h;}});
   const tails=['妳正穩穩地在成為自己 🌱','每一天都算數，妳做得很好 💛','妳一直都在，這就很了不起 ✨','謝謝妳這樣照顧自己 🤍','光是願意記錄，就是溫柔 🌷'];
   const parts=[`${label}妳記錄了 ${cur.days} 天`];
   if(topH&&topN>0)parts.push(`最常投入的是「${topH.l}」（${topN}次）`);
@@ -2415,8 +2495,8 @@ function renderReviewDonut(elId,cur){
   el.innerHTML=`<div style="display:flex;align-items:center;gap:16px;">
     <div style="width:94px;height:94px;border-radius:50%;background:${ring};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
       <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;">
-        <div style="font-family:'Baloo 2',sans-serif;font-size:20px;font-weight:800;color:#2A7A5A;">${total?pct+'%':'—'}</div>
-        <div style="font-size:9px;color:var(--tc3);">TDL完成</div>
+        <div style="font-family:'Baloo 2',sans-serif;font-size:20px;font-weight:800;color:var(--ok);">${total?pct+'%':'—'}</div>
+        <div style="font-size:10px;color:var(--tc3);">TDL完成</div>
       </div>
     </div>
     <div style="flex:1;font-size:12px;color:var(--tc2);line-height:2;">
@@ -2456,14 +2536,28 @@ function renderInsights(cardId,boxId,cur,prev,dates,label,opt){
   }
   // ② 快消失的習慣：這期 0 次、上期有做過（挑上期做最多的那個）
   let fading=null;
-  HABITS.forEach(h=>{
+  activeHabits().forEach(h=>{
     const c=cur.habitCounts[h.k]||0,p=prev.habitCounts[h.k]||0;
     if(c===0&&p>0&&(!fading||p>fading.p))fading={h,p};
   });
   if(fading)items.push(`🌿「<b>${fading.h.l}</b>」這${label}還沒出現（上${label}有 ${fading.p} 次）——想保留的話，把它縮到最小試試（做 1 分鐘也算）`);
-  // ③ 最穩的習慣（正向收尾）
+  // ③ 連續動能：某習慣在這期內「連著」做了 ≥3 天 → 節奏正在成形。
+  // 對創作、語言這種吃連續性的練習，這比總次數更值得被看見
+  let momo=null;
+  activeHabits().forEach(h=>{
+    let run=0,best=0;
+    dates.forEach(ds=>{
+      const e=S.entries.find(x=>x.date===ds);
+      const on=e?((e.checked||[]).includes(h.k)):(ds===curDay()&&!!S.checked[h.k]);
+      run=on?run+1:0;if(run>best)best=run;
+    });
+    if(best>=3&&(!momo||best>momo.best))momo={h,best};
+  });
+  if(momo)items.push(`🔥「<b>${momo.h.l}</b>」連續 ${momo.best} 天都有動——節奏正在成形，就照這個步調走`);
+  // ④ 最穩的習慣（正向收尾；跟動能同一個習慣時不重複講）
   let top=null;
-  HABITS.forEach(h=>{const c=cur.habitCounts[h.k]||0;if(c>0&&(!top||c>top.c))top={h,c};});
+  activeHabits().forEach(h=>{const c=cur.habitCounts[h.k]||0;if(c>0&&(!top||c>top.c))top={h,c};});
+  if(momo&&top&&top.h.k===momo.h.k)top=null;
   if(top&&top.c>=3){
     const pTop=prev.habitCounts[top.h.k]||0;
     items.push(`💪「<b>${top.h.l}</b>」完成 ${top.c} 天，是這${label}最穩的習慣${pTop>=3?'——連兩'+label+'都很穩，快變成自動的了':''}`);
@@ -2565,8 +2659,8 @@ function renderWeekly(){
     const e=S.entries.find(x=>x.date===ds);
     if(!e)return`<div class="week-card" data-empty="1" style="opacity:.4;"><div class="week-day-hd"><span>${d.getMonth()+1}/${d.getDate()} 週${wdArr[d.getDay()]}</span><span style="font-size:11px;color:var(--tc3);">無紀錄</span></div></div>`;
     const ck=e.checked||[];
-    const dots=HABITS.map(h=>`<div class="habit-dot ${ck.includes(h.k)?'done':'miss'}">${fi(h.c,14)}</div>`).join('');
-    const tdlHtml=(e.tdl||[]).length?`<div style="font-size:11px;color:var(--tc2);margin-top:5px;">📝 TDL：${e.tdl.map(r=>`${r.theme?r.theme+'：':''}${r.task}`).join('、')}</div>`:'';
+    const dots=HABITS.filter(h=>!isArchived(h.k)||ck.includes(h.k)).map(h=>`<div class="habit-dot ${ck.includes(h.k)?'done':'miss'}">${fi(h.c,14)}</div>`).join('');
+    const tdlHtml=(e.tdl||[]).length?`<div style="font-size:11px;color:var(--tc2);margin-top:5px;">📝 TDL：${e.tdl.map(r=>esc(`${r.theme?r.theme+'：':''}${r.task}`)).join('、')}</div>`:'';
     return`<div class="week-card" style="${isToday?'border-color:rgba(var(--primary-rgb),.4);':''}">
       <div class="week-day-hd"><span>${d.getMonth()+1}/${d.getDate()} 週${wdArr[d.getDay()]}${isToday?' ⭐':''}</span><span class="exp-badge">+${ck.length*10+20} EXP</span></div>
       <div class="habit-dots">${dots}</div>
@@ -2723,7 +2817,7 @@ function renderSupportPage(){
   box.innerHTML=S.supportCategories.map((cat,ci)=>`
     <div class="gcard support-cat-card">
       <div class="support-cat-hd">
-        <div class="support-cat-title">${cat.label}</div>
+        <div class="support-cat-title">${esc(cat.label)}</div>
         <button class="support-cat-del" data-ci="${ci}">✕ 刪除分類</button>
       </div>
       <div id="support-items-${ci}"></div>
@@ -2737,7 +2831,7 @@ function renderSupportPage(){
   S.supportCategories.forEach((cat,ci)=>{
     document.getElementById(`support-items-${ci}`).innerHTML=cat.items.map((item,ii)=>`
       <div class="support-item-row">
-        <span style="flex:1;">${item}</span>
+        <span style="flex:1;">${esc(item)}</span>
         <button class="support-item-del" data-ci="${ci}" data-ii="${ii}">✕</button>
       </div>`).join('')||`<div style="font-size:12px;color:var(--tc3);padding:4px 0;">還沒有寫下方法</div>`;
   });
@@ -3086,7 +3180,7 @@ function renderGarden(){
     el.className='gd-sprite';
     el.style.cssText=`left:${pos.x}px;${pos.top!==undefined?`top:${pos.top}px;`:`bottom:${pos.bottom}px;`}z-index:7;`;
     const visual=p.img?`<img class="main" src="${p.img}" width="81" height="81" style="display:block;object-fit:contain;" onerror="grFallback(this,'${p.emoji||'1f436'}',81)"/>`:`<img class="main" src="${CDN}${p.emoji||'1f436'}_3d.png" width="81" height="81" style="display:block;"/>`;
-    el.innerHTML=`<div class="sprite-label">${p.name||''}${p.note?` · ${p.note}`:''}</div>${visual}`;
+    el.innerHTML=`<div class="sprite-label">${esc(p.name||'')}${p.note?` · ${esc(p.note)}`:''}</div>${visual}`;
     dyn.appendChild(el);
     initCharSprite(el,canvas,81);
     const pe=el._onDragEnd;
@@ -3107,7 +3201,7 @@ function renderGarden(){
         ?`<img class="main" src="${t.img}" width="52" height="52" style="display:block;object-fit:contain;"/>`
         :`<img class="main" src="${t.img}" width="52" height="52" style="display:block;object-fit:contain;"/>`)
       :`<span class="main" style="font-size:44px;display:block;">${t.emoji||'💎'}</span>`;
-    el.innerHTML=`<div class="sprite-label">${t.title||''}${t.desc?` · ${t.desc}`:''}</div>${visual}`;
+    el.innerHTML=`<div class="sprite-label">${esc(t.title||'')}${t.desc?` · ${esc(t.desc)}`:''}</div>${visual}`;
     dyn.appendChild(el);
     if(isPerson){
       initCharSprite(el,canvas,52);
@@ -3160,13 +3254,13 @@ function renderPeopleList(){
         <button class="card-edit" data-i="${i}">✏️</button>
         <button class="card-del" data-i="${i}">✕</button>
         <div class="person-emoji">${p.img?`<img src="${p.img}"/>`:fi(p.emoji||'1f436',36)}</div>
-        <div class="person-name">${p.name||''}</div>
-        <div class="person-note">${p.note||''}</div>
+        <div class="person-name">${esc(p.name||'')}</div>
+        <div class="person-note">${esc(p.note||'')}</div>
       </div>`;
     }
     return`<div class="person-card${p.exported?' exported':''}">
       <div class="person-emoji">${p.img?`<img src="${p.img}"/>`:fi(p.emoji||'1f436',30)}</div>
-      <div class="person-info"><div class="person-name">${p.name||''}</div><div class="person-note">${p.note||''}</div></div>
+      <div class="person-info"><div class="person-name">${esc(p.name||'')}</div><div class="person-note">${esc(p.note||'')}</div></div>
       <button class="exp-toggle" data-i="${i}" title="${p.exported?'已匯出（點取消）':'標記已匯出'}">${p.exported?'✅':'⬜'}</button>
       <button class="card-edit" data-i="${i}">✏️</button>
       <button class="card-del" data-i="${i}">✕</button>
@@ -3336,7 +3430,7 @@ function renderQuoteList(){
     const link=q.link?` <a href="${q.link}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="text-decoration:none;">🔗</a>`:'';
     return`<div class="quote-item${q.exported?' exported':''}">
       <button class="exp-toggle" data-i="${i}" title="${q.exported?'已匯出（點取消標記）':'標記為已匯出'}">${q.exported?'✅':'⬜'}</button>
-      <div class="quote-text">"${qText(q)}"${link}${q.desc?`<div class="quote-desc">${q.desc}</div>`:''}</div>
+      <div class="quote-text">"${esc(qText(q))}"${link}${q.desc?`<div class="quote-desc">${esc(q.desc)}</div>`:''}</div>
       <button class="quote-edit" data-i="${i}" style="background:none;border:none;cursor:pointer;color:var(--tc3);font-size:13px;flex-shrink:0;">✏️</button>
       <button class="quote-del" data-i="${i}">✕</button>
     </div>`;
@@ -3391,7 +3485,7 @@ function renderAchievements(){
     return`<div class="achievement-item ${unlocked?'unlocked':'locked'}">
       <div style="font-size:24px;margin-bottom:4px;">${a.icon}</div>
       <div style="font-size:10px;font-weight:700;color:var(--tc);line-height:1.3;">${a.name}</div>
-      <div style="font-size:9px;color:var(--tc3);margin-top:2px;">${a.desc}</div>
+      <div style="font-size:10px;color:var(--tc3);margin-top:2px;">${a.desc}</div>
     </div>`;
   }).join('');
 }
@@ -3409,7 +3503,7 @@ function renderExpLog(){
     const d=new Date(x.t),dt=`${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
     const pos=x.d>0;
     return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(var(--secondary-rgb),.2);font-size:12px;">
-      <span style="font-family:'Baloo 2',sans-serif;font-weight:800;width:40px;flex-shrink:0;color:${pos?'#2A7A5A':'#C0708A'};">${pos?'+':''}${x.d}</span>
+      <span style="font-family:'Baloo 2',sans-serif;font-weight:800;width:40px;flex-shrink:0;color:${pos?'var(--ok)':'#C0708A'};">${pos?'+':''}${x.d}</span>
       <span style="flex:1;color:var(--tc);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${x.r||''}</span>
       <span style="color:var(--tc3);flex-shrink:0;font-size:11px;">${dt}</span>
     </div>`;
@@ -3462,9 +3556,36 @@ loadCloud();
 <script>
 // ═══ PWA + 設定頁（v7.9 PWA 升級新增，不動原有邏輯） ═══
 
-// ── Service Worker 註冊 ──
+// ── Service Worker 註冊＋新版本提示 ──
+// 痛點：PWA 掛在背景不會重新載入頁面，改版後一直跑舊程式，
+// 以前只能靠「完全關閉重開」。這裡改成：每次回到 app 就檢查有沒有新的
+// sw（reg.update()），偵測到新版啟用後跳出提示條，點一下就刷新完成更新。
+function showUpdateToast(){
+  if(document.getElementById('update-toast'))return;
+  const t=document.createElement('div');
+  t.id='update-toast';
+  t.innerHTML='✨ 有新版本！<b>點這裡更新</b>';
+  t.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom));z-index:9999;background:rgba(255,255,255,.95);border:1.5px solid rgba(var(--primary-rgb),.35);border-radius:999px;padding:9px 18px;font-size:13px;font-weight:700;color:var(--primary);box-shadow:0 8px 24px -8px rgba(var(--primary-rgb),.4);cursor:pointer;backdrop-filter:blur(10px);';
+  t.addEventListener('click',()=>location.reload());
+  document.body.appendChild(t);
+}
 if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').then(reg=>{
+      // 新 sw 安裝完成（且目前已有舊 sw 在控制 = 這是「更新」不是首次安裝）→ 提示
+      reg.addEventListener('updatefound',()=>{
+        const nw=reg.installing;
+        if(!nw)return;
+        nw.addEventListener('statechange',()=>{
+          if(nw.state==='activated'&&navigator.serviceWorker.controller)showUpdateToast();
+        });
+      });
+      // 每次切回 app 就主動檢查更新（PWA 常駐背景最需要這個）
+      document.addEventListener('visibilitychange',()=>{
+        if(document.visibilityState==='visible')reg.update().catch(()=>{});
+      });
+    }).catch(()=>{});
+  });
 }
 // ── Splash 淡出（只在 standalone 顯示，其他模式本來就 display:none） ──
 setTimeout(()=>{const s=document.getElementById('pwa-splash');if(s){s.style.opacity='0';setTimeout(()=>s.remove(),500);}},900);
@@ -3588,6 +3709,29 @@ function renderSettings(){
   const cci=document.getElementById('cal-code-input');if(cci)cci.placeholder=localStorage.getItem('grandol_code')?'已設定（輸入可更改）':'輸入 GAS 裡設定的通行碼';
   if(typeof updateCalStatus==='function')updateCalStatus();
   renderCalTagList();
+  renderHabitArchiveList();
+}
+// 設定頁「習慣管理」：封存/解封切換
+function renderHabitArchiveList(){
+  const box=document.getElementById('habit-archive-list');
+  if(!box)return;
+  box.innerHTML=HABITS.map(h=>{
+    const arch=isArchived(h.k);
+    return`<div style="display:flex;align-items:center;gap:8px;padding:6px 2px;border-bottom:1px dashed rgba(var(--primary-rgb),.1);${arch?'opacity:.5;':''}">
+      ${fi(h.c,18)}<span style="flex:1;font-size:13px;font-weight:700;color:var(--tc2);${arch?'text-decoration:line-through;':''}">${h.l}</span>
+      <button class="mini-btn habit-arch-btn" data-k="${h.k}" style="${arch?'background:rgba(var(--tertiary-rgb),.35);color:var(--tc2);':''}">${arch?'解封 ↩':'封存'}</button>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('.habit-arch-btn').forEach(b=>b.addEventListener('click',()=>{
+    const k=b.dataset.k;
+    S.archivedHabits=S.archivedHabits||[];
+    const i=S.archivedHabits.indexOf(k);
+    if(i>=0)S.archivedHabits.splice(i,1);else S.archivedHabits.push(k);
+    sv(S);
+    renderHabitArchiveList();
+    if(typeof renderHabits==='function')renderHabits();
+    syncStateDebounced();
+  }));
 }
 function renderCalTagList(){
   const box=document.getElementById('cal-tag-list');
@@ -3765,7 +3909,7 @@ function renderTodayPhotos(){
         <img class="photo-thumb-img" data-i="${i}" src="${p.url}" style="width:88px;height:88px;object-fit:cover;border-radius:12px;border:1.5px solid rgba(255,255,255,.8);box-shadow:0 2px 8px rgba(var(--primary-rgb),.15);cursor:pointer;"/>
         <button class="photo-del" data-i="${i}" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:none;background:rgba(240,120,120,.9);color:#fff;font-size:11px;cursor:pointer;line-height:1;">✕</button>
       </div>
-      ${p.caption?`<div style="font-size:10px;color:var(--tc2);margin-top:2px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.caption}</div>`:''}
+      ${p.caption?`<div style="font-size:10px;color:var(--tc2);margin-top:2px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(p.caption)}</div>`:''}
     </div>`).join('');
   box.querySelectorAll('.photo-del').forEach(b=>b.addEventListener('click',()=>{
     if(!confirm('移除這張照片？（Drive 上的原檔不會被刪除）'))return;
@@ -3846,7 +3990,7 @@ function renderResCatTabs(){
   const box=document.getElementById('res-cat-tabs');
   if(!box)return;
   const all=`<div class="rcat-tab${selectedResCat==='all'?' on':''}" data-rc="all" style="background:${selectedResCat==='all'?'var(--primary)':'#B4B2A9'};">全部</div>`;
-  const tabs=S.resourceCats.map(cat=>`<div class="rcat-tab${selectedResCat===cat.id?' on':''}" data-rc="${cat.id}" style="background:${cat.color||'#95BCC6'};">${cat.label}</div>`).join('');
+  const tabs=S.resourceCats.map(cat=>`<div class="rcat-tab${selectedResCat===cat.id?' on':''}" data-rc="${cat.id}" style="background:${cat.color||'#95BCC6'};">${esc(cat.label)}</div>`).join('');
   box.innerHTML=all+tabs+`<div class="rcat-tab rcat-add" id="rcat-add-btn">＋ 新增分類</div>`;
   box.querySelectorAll('.rcat-tab[data-rc]').forEach(el=>el.addEventListener('click',()=>{
     selectedResCat=el.dataset.rc;bookPage=0;renderBookItems();
@@ -3932,11 +4076,11 @@ function renderBookItems(){
     const mt=(i%3)*9;
     const tapeColor=it._catColor||RCAT_PALETTE[i%RCAT_PALETTE.length];
     const icon=it.img?`<img class="bi-img" src="${it.img}" draggable="false"/>`:`<span class="bi-icon">${fi(it.emoji||'1f4da',48)}</span>`;
-    const desc=it.desc?`<div class="bi-desc">${it.desc.slice(0,26)}</div>`:'';
+    const desc=it.desc?`<div class="bi-desc">${esc(it.desc.slice(0,26))}</div>`:'';
     const link=it.link?`<div class="bi-link">${shortLink(it.link)}</div>`:'';
     return`<div class="book-item" data-rid="${it.id||''}" style="margin-top:${mt}px;cursor:grab;">`+
       `<div class="bi-card" style="--bi-rot:rotate(${rot}deg);">`+
-      `<span class="tape" style="background:${tapeColor}99;"></span><div class="bi-photo">${icon}</div><div class="bi-title">${it.title||''}</div>${desc}${link}</div></div>`;
+      `<span class="tape" style="background:${tapeColor}99;"></span><div class="bi-photo">${icon}</div><div class="bi-title">${esc(it.title||'')}</div>${desc}${link}</div></div>`;
   };
   l.innerHTML=shown.map((it,i)=>mk(it,i)).join('');
   l.querySelectorAll('.book-item').forEach(el=>{
@@ -3966,7 +4110,7 @@ function resFormHTML(ci){
     <input class="tdl-in" id="res-desc" placeholder="敘述（選填，這個資源對妳的意義）" style="width:100%;margin-bottom:7px;"/>
     <input class="tdl-in" id="res-link" placeholder="連結網址（選填，https://...）" style="width:100%;margin-bottom:7px;"/>
     <input type="file" id="res-file" accept="image/*" style="display:none;"/>
-    <button type="button" class="mini-btn" id="res-upload-btn" style="width:100%;margin-bottom:7px;background:rgba(var(--tertiary-rgb),.55);color:#2A7A5A;">📷 上傳圖片（選填）</button>
+    <button type="button" class="mini-btn" id="res-upload-btn" style="width:100%;margin-bottom:7px;background:rgba(var(--tertiary-rgb),.55);color:var(--ok);">📷 上傳圖片（選填）</button>
     <img id="res-upload-preview" style="display:none;width:56px;height:56px;object-fit:cover;border-radius:10px;margin-bottom:7px;"/>
     <div style="display:flex;gap:8px;">
       <button class="mini-btn" id="res-item-save" data-ci="${ci}" style="flex:1;">${editResIdx>=0?'儲存修改':'收進書裡'}</button>
@@ -3995,16 +4139,16 @@ function resItemHTML(it,ci,ii,mode){
       <button class="exp-toggle res-exp" data-ci="${ci}" data-ii="${ii}" title="${it.exported?'已匯出（點取消）':'標記已匯出'}">${it.exported?'✅':'⬜'}</button>
       <div style="position:absolute;top:4px;right:6px;display:flex;gap:2px;">${btns}</div>
       ${visual}
-      <div style="font-size:12px;font-weight:700;color:var(--tc);line-height:1.4;">${it.title||''} ${linkA}</div>
-      ${it.desc?`<div style="font-size:11px;color:var(--tc3);line-height:1.5;margin-top:2px;">${it.desc}</div>`:''}
+      <div style="font-size:12px;font-weight:700;color:var(--tc);line-height:1.4;">${esc(it.title||'')} ${linkA}</div>
+      ${it.desc?`<div style="font-size:11px;color:var(--tc3);line-height:1.5;margin-top:2px;">${esc(it.desc)}</div>`:''}
     </div>`;
   }
   return`<div class="support-item-row${it.exported?' exported':''}" style="align-items:center;">
     <button class="exp-toggle res-exp" data-ci="${ci}" data-ii="${ii}" title="${it.exported?'已匯出（點取消）':'標記已匯出'}">${it.exported?'✅':'⬜'}</button>
     ${it.img?`<img src="${it.img}" style="width:34px;height:34px;object-fit:contain;flex-shrink:0;"/>`:`<span style="flex-shrink:0;">${fi(it.emoji||'1f4da',22)}</span>`}
     <div style="flex:1;min-width:0;">
-      <div>${it.title||''}</div>
-      ${it.desc?`<div style="font-size:11px;color:var(--tc3);">${it.desc}</div>`:''}
+      <div>${esc(it.title||'')}</div>
+      ${it.desc?`<div style="font-size:11px;color:var(--tc3);">${esc(it.desc)}</div>`:''}
     </div>
     ${linkA}${btns}
   </div>`;
@@ -4020,7 +4164,7 @@ function renderResourcePage(){
     return`
     <div class="gcard support-cat-card" style="border-left:4px solid ${cc};background:linear-gradient(135deg,${cc}16,transparent 60%),var(--g1);">
       <div class="support-cat-hd">
-        <div class="support-cat-title" style="color:${cc};">📖 ${cat.label}</div>
+        <div class="support-cat-title" style="color:${cc};">📖 ${esc(cat.label)}</div>
         <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
           <button class="support-cat-del res-cat-rename" data-ci="${ci}" title="改名">✏️ 改名</button>
           <button class="support-cat-del res-cat-del" data-ci="${ci}">✕ 刪除分類</button>
@@ -4169,8 +4313,20 @@ function plantedSet(){
   return new Set(S.entries.filter(x=>/^\d{4}-\d{2}-\d{2}$/.test(x.date)&&(+x.streak||0)>=1).map(x=>x.date));
 }
 function runEndingAt(ds,set){
+  // 溫柔連續（跟種下時的規則一致）：每週最多容忍 1 天空白不中斷，
+  // 空白的那天不計入天數；連空 2 天以上才算真的中斷
   let c=0;const d=new Date(ds+'T00:00:00');
-  while(set.has(fmtLocal(d))){c++;d.setDate(d.getDate()-1);}
+  const usedWeeks=new Set();
+  while(true){
+    const key=fmtLocal(d);
+    if(set.has(key)){c++;d.setDate(d.getDate()-1);continue;}
+    const wk=weekKeyOf(key);
+    const prev=new Date(d);prev.setDate(prev.getDate()-1);
+    if(!usedWeeks.has(wk)&&set.has(fmtLocal(prev))){
+      usedWeeks.add(wk);d.setDate(d.getDate()-1);continue;
+    }
+    break;
+  }
   return c;
 }
 function recalcStreak(){
@@ -4684,7 +4840,7 @@ function renderCalDayPanel(ds){
           const _tag=cc?calTagOf(cc):'';
           return '<div class="cal-swatch" data-c="'+cc+'" style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;width:36px;">'+
             '<span class="cal-swatch-dot'+(cc===calNewColor?' picked':'')+'" style="width:26px;height:26px;display:block;background:'+(cc?CAL_COLORS[cc]:'linear-gradient(135deg,var(--secondary),var(--tertiary))')+';"></span>'+
-            (_tag?'<span style="font-size:9px;color:var(--tc3);text-align:center;line-height:1.15;">'+_tag+'</span>':'')+
+            (_tag?'<span style="font-size:10px;color:var(--tc3);text-align:center;line-height:1.15;">'+_tag+'</span>':'')+
           '</div>';
         }).join('')+'</div>'+
       '</div>'+

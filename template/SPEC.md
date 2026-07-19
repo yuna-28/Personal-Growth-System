@@ -72,9 +72,16 @@
 - `S.dayKey`＝開頁時決定的「今天」。**寫入一律用 `curDay()`（＝dayKey），絕不用即時時鐘**——避免頁面跨午夜開著時「畫面顯示昨天、卻存進今天」。
 - `rolloverToToday()` 負責換日：把舊日資料落地到 entry → 清空當日狀態 → dayKey 前進。在「開頁時」「按回到今天」「頁面重新可見（visibilitychange）」三個時機都會執行。
 
+## 溫柔連續（休息日不斷鏈）
+
+連續天數允許**每週（週一起算）1 天空白**：空白那天不計數但鏈不斷；同一週第二次空白、或連空 2 天以上才重置。兩處實作必須一致：種下當下的增量判斷（`plant` 流程内）與補記後的全量重算（`runEndingAt()`）。
+
 ## GAS API
 
 所有請求都帶 `code` 參數（通行碼），驗證失敗回 `{ok:false,error:'unauthorized'}`。
+
+- **監督唯讀**：`VIEW_CODE`（設定於 GAS）可通過**讀取**驗證，回應會帶 `role:'viewer'`；前端據此進入唯讀模式。寫入（doPost）只認 `APP_CODE`。
+- **多裝置防護（樂觀鎖）**：`saveState` 需帶 `updatedAt`（本次寫入的版本戳）與 `baseUpdatedAt`（此裝置上次看到的雲端版本戳）；雲端目前版本比 base 新 → 回 `{ok:false,conflict:true}`，前端提示先重新整理。不帶 `baseUpdatedAt` 的舊版前端維持直接覆蓋。
 
 **doGet（讀取）**
 
@@ -95,18 +102,19 @@
 | `addCalEvent` / `editCalEvent` / `delCalEvent` | Google 日曆事件增改刪（支援重複規則與次數 repeatCount） |
 | `syncReminders` | 同步提醒 |
 
-**Google Sheet 結構**：兩張工作表 `entries`（一天一列）與 `state`（單列主狀態），欄位由 GAS 的 `ENTRY_COLS`／`STATE_COLS` 定義，缺欄會自動補上（向後相容）。
+**Google Sheet 結構**：兩張工作表 `entries`（一天一列）與 `state`（單列主狀態），欄位由 GAS 的 `ENTRY_COLS`／`STATE_COLS` 定義，缺欄會自動補上（向後相容）。`state` 含 `updatedAt`（多裝置衝突防護的版本戳）與 `archivedHabits`（封存的習慣清單）。
 
 ## 前端維護注意事項（改壞最常見的原因）
 
 1. **`<script>` 區塊是依序同步執行的**：前面區塊的「頂層」程式碼，不能呼叫定義在後面區塊的函式／常數——會拋錯並讓該區塊剩餘程式碼整段中止（畫面看起來像「某功能默默消失」）。除錯技巧：在 `<head>` 最前面暫時插入 `window.addEventListener('error',e=>console.log(e.message,e.lineno))` 抓第一時間的錯誤。
 2. **popup 元素（`#cal-popup` 等）必須放在 `<body>` 開頭、所有 `<script>` 之前**：既避開 `.wrap` 的 zoom 造成 `position:fixed` 錯位，又確保前面的 script 綁事件時元素已存在。
 3. **桌面版樣式一律包在 `@media(min-width:768px)`**：手機版是基準設計，桌面調整不應影響手機。
-4. **每次改版都要 bump `sw.js` 的 `CACHE_NAME`**，否則使用者裝置會停在舊快取。
-5. GAS 改動要在「管理部署作業」中選「**新版本**」重新部署才會生效。
+4. **每次改版都要 bump `sw.js` 的 `CACHE_NAME`**——不過現在 app 會自動偵測新版並顯示「有新版本」提示條（`showUpdateToast`），使用者點一下即更新。
+5. **使用者輸入的文字進 innerHTML 前一律先過 `esc()`**：不跳脫的話「<」後面整段會被吃掉。
+6. GAS 改動要在「管理部署作業」中選「**新版本**」重新部署才會生效。
 
 ## 已知限制
 
 - 通知：iPhone 需 iOS 16.4+ 且從主畫面 PWA 開啟；系統可能在 app 完全關閉太久後不觸發
 - 照片：存在使用者自己的 Drive，刪除 app 資料不會刪 Drive 檔案
-- 多裝置：以「最後同步的雲端資料」為準，沒有衝突合併機制——同時在兩台裝置寫入可能互相覆蓋
+- 多裝置：有樂觀鎖防「互相覆蓋」（衝突時擋下並提示重新載入），但沒有自動「合併」——衝突發生時以雲端版本為準，本機未同步的改動需要重做

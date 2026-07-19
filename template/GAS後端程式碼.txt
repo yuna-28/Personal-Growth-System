@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════
-// 魔法小森林 GAS v3.4（新增：日曆重複次數 repeatCount）
+// 魔法小森林 GAS v3.5（新增：監督唯讀通行碼 VIEW_CODE、多裝置衝突防護 updatedAt）
 // ═══════════════════════════════════════════════════════
 // 【從舊版升級：只要這兩步】
 // 1. 擴充功能 → Apps Script → 全選刪掉舊程式碼 → 貼上這份 → 儲存
@@ -35,12 +35,16 @@
 
 const SHEET_ID = '';  // ← 請貼上你自己的 Google Sheet ID（看 README 步驟 3）
 const APP_CODE = ''; // ← 通行碼：填入你自己想的一串密碼；留空 = 不啟用
+// 監督通行碼（唯讀）：想讓朋友「看得到、改不了」時用。
+// 填一串跟 APP_CODE 不一樣的密碼；留空 '' = 不啟用。
+// 拿這組密碼的人：讀取（紀錄/統計/日曆）都可以，任何寫入都會被拒絕。
+const VIEW_CODE = '';
 
 const ENTRY_COLS = ['date','checked','hl','rf','gr','quote','tdl','exp','streak','tdlTotal','tdlDone','tdlItems','photos'];
 const STATE_COLS = ['flowers','apples','bigApples','goldFruits','seedlings','trees',
                     'achievements','quotes','calNotes','myPeople','treasures',
                     'lastPlant','lastStreak','streak','exp','gardenPos','supportCategories',
-                    'notifications','supportResources','todaySession','expLog','calColorTags'];
+                    'notifications','supportResources','todaySession','expLog','calColorTags','updatedAt','archivedHabits'];
 
 // 這個函式只是用來手動觸發 Google Drive 授權，之後留著也沒關係
 function testDriveAuth(){
@@ -56,6 +60,15 @@ function testCalAuth(){
 function checkCode_(e){
   if(!APP_CODE) return true;
   return e && e.parameter && e.parameter.code === APP_CODE;
+}
+// 讀取專用驗證：主密碼或監督密碼都放行（寫入仍只認 checkCode_）
+function checkViewCode_(e){
+  if(!APP_CODE) return true;
+  const c = e && e.parameter && e.parameter.code;
+  return c === APP_CODE || (!!VIEW_CODE && c === VIEW_CODE);
+}
+function isViewer_(e){
+  return !!VIEW_CODE && !!(e && e.parameter) && e.parameter.code === VIEW_CODE;
 }
 
 function getSheet(name){
@@ -94,10 +107,11 @@ function json(obj){
 function doGet(e){
   const action = (e.parameter.action||'').trim();
   try{
-    if(!checkCode_(e)) return json({ok:false,error:'unauthorized'});
-    if(action==='getEntries') return json({ok:true,data:getEntries_()});
-    if(action==='getState')   return json({ok:true,data:getState_()});
-    if(action==='getCalEvents') return json({ok:true,data:getCalEvents_(e.parameter.start, e.parameter.end)});
+    if(!checkViewCode_(e)) return json({ok:false,error:'unauthorized'});
+    const role = isViewer_(e)?'viewer':'owner';
+    if(action==='getEntries') return json({ok:true,role:role,data:getEntries_()});
+    if(action==='getState')   return json({ok:true,role:role,data:getState_()});
+    if(action==='getCalEvents') return json({ok:true,role:role,data:getCalEvents_(e.parameter.start, e.parameter.end)});
     return json({ok:false,error:'unknown action: '+action});
   }catch(err){
     return json({ok:false,error:String(err)});
@@ -140,7 +154,7 @@ function doPost(e){
     if(!checkCode_(e)) return json({ok:false,error:'unauthorized'});
     const payload = JSON.parse(e.postData.contents||'{}');
     if(action==='saveEntry') return json({ok:saveEntry_(payload)});
-    if(action==='saveState') return json({ok:saveState_(payload)});
+    if(action==='saveState'){const r=saveState_(payload);return json(r==='conflict'?{ok:false,conflict:true}:{ok:r});}
     if(action==='uploadImage') return json({ok:true,url:uploadImageToDrive_(payload)});
     if(action==='clearAll') return json({ok:clearAll_()});
     if(action==='addCalEvent') return json({ok:true,id:addCalEvent_(payload)});
@@ -186,6 +200,14 @@ function saveState_(p){
   const sh = getSheet('state');
   const values = sh.getDataRange().getValues();
   const header = values[0].map(String);
+  // 多裝置防護（樂觀鎖）：前端會送 baseUpdatedAt＝它上次看到的雲端版本戳。
+  // 雲端目前的 updatedAt 比它新 → 表示有別台裝置寫過 → 拒絕覆蓋。
+  // 舊版前端不會送 baseUpdatedAt，維持原本行為（直接覆蓋），升級才不會卡住。
+  const uIdx = header.indexOf('updatedAt');
+  if(p.baseUpdatedAt!==undefined && uIdx>=0 && values.length>1){
+    const existing = Number(values[1][uIdx])||0;
+    if(existing > (Number(p.baseUpdatedAt)||0)) return 'conflict';
+  }
   const rowData = header.map(h=>{
     let v = p[h];
     if(v===undefined||v===null) v = '';
