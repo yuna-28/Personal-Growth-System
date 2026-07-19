@@ -10,9 +10,7 @@ const PRECACHE = [
   './index.html',
   './manifest.json',
   './puppy.png',
-  './puppy_icon.png',
-  './background.png',
-  './background_web.png'
+  './puppy_icon.png'
 ];
 
 self.addEventListener('install', e => {

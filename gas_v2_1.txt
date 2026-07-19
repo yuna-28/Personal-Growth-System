@@ -12,7 +12,7 @@
 //   （只加欄位，既有資料一列都不會被動到）。
 //
 // 【只有第一次安裝才需要看下面】
-// ・Sheet ID: ***REMOVED***
+// ・Sheet ID: （填在下方 SHEET_ID）
 // ・權限確認：執行身分=我、存取權=所有人
 // ・【圖片上傳】需 Google Drive 權限：
 //   在編輯器手動執行一次 getDriveFolder_ → 跳授權視窗 → 允許
@@ -33,7 +33,7 @@
 //       notifications | supportResources | todaySession | expLog | calColorTags
 // ═══════════════════════════════════════════════════════
 
-const SHEET_ID = '***REMOVED***';
+const SHEET_ID = '';
 const APP_CODE = ''; // ← 通行碼：填入妳自己想的一串密碼；留空 = 不啟用
 
 const ENTRY_COLS = ['date','checked','hl','rf','gr','quote','tdl','exp','streak','tdlTotal','tdlDone','tdlItems','photos'];

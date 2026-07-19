@@ -203,7 +203,7 @@ UI 設計：
 
 ## 📊 Google Sheet 同步（現有，維持不變）
 
-**Sheet ID**：`***REMOVED***`
+**Sheet ID**：（已移除，見部署用檔案）
 **GAS URL**：`https://script.google.com/macros/s/AKfycbw_gbuZtYiZjBusfWTNHPlOB20PMJLcb700u6pd5MIqoX7pCOAnthTjxym66nHTOK8G/exec`
 
 ### entries 分頁（11欄）

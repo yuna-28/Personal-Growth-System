@@ -94,10 +94,11 @@ const HABITS=[
 
 | 檔案 | 用途 |
 |---|---|
-| `puppy.png` | 場景裡的小狗（建議透明背景 PNG） |
-| `puppy_icon.png` | App 圖示（正方形） |
-| `background.png` | 開場畫面背景 |
+| `puppy.png` | 「今天」和「內心花園」場景裡的角色（建議透明背景 PNG，直式比例） |
+| `puppy_icon.png` | App 圖示、開場動畫的頭像（正方形） |
 | `pic/cloud bkg.jpg` | 資源書頁面的背景 |
+
+開場動畫背景是淺藍漸層純色；想放圖片的話，搜尋 `#pwa-splash` 把 `background:` 改成 `background:#D4EEFF url('你的圖.jpg') center/cover no-repeat;` 並把圖片一起上傳。
 
 ## 9. 改見證／鼓勵文案
 
