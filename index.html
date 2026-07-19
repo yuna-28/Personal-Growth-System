@@ -305,6 +305,74 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 .highlight-quote-box{background:rgba(255,255,255,.5);border-left:3px solid rgba(var(--secondary-rgb),.7);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--tc);line-height:1.6;font-style:italic;}
 .highlight-quote-box .hq-date{display:block;font-size:10px;color:var(--tc3);font-style:normal;margin-top:5px;}
 
+/* ── 週/月回顧儀表板 v3：總覽→分析→洞察→明細 ─────────────
+   設計原則：
+   ① 分區標題（.rd-zone）把頁面切成四層敘事，每層回答一個問題
+   ② 「弱點統一用粉色」：最弱的一天、達成率低的主題、快消失的習慣
+      全部用同一種粉紅——掃一眼頁面，粉色的地方就是需要注意的地方
+   ③ 手機維持單欄堆疊；桌面（≥768px）才啟用 .rd-pair 兩欄並排 */
+.rd-zone{display:flex;align-items:center;gap:8px;font-weight:800;font-size:13.5px;color:var(--tc2);margin:18px 2px 10px;}
+.rd-zone::after{content:'';flex:1;height:1.5px;background:linear-gradient(90deg,rgba(var(--primary-rgb),.16),transparent);border-radius:2px;}
+.page>.rd-zone:first-of-type{margin-top:4px;}
+.stat-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;}
+.stat-strip .stat-card{padding:10px 4px;}
+/* 習慣總表：每個習慣一列＝名字＋日格＋天數，同時看到「做了幾天」和「規律長怎樣」。
+   內容置中且寬度有上限，卡片再寬也不會出現「格子擠左、天數孤零零貼右」的大空洞 */
+.hg-row{display:flex;align-items:center;gap:7px;margin-bottom:5px;max-width:470px;margin-left:auto;margin-right:auto;}
+.hg-name{width:72px;flex-shrink:0;font-size:11.5px;color:var(--tc2);font-weight:700;display:flex;align-items:center;gap:3px;white-space:nowrap;overflow:hidden;}
+.hg-cells{display:flex;gap:3px;flex:1;min-width:0;}
+.hg-c{flex:1 1 19px;max-width:30px;min-width:3px;aspect-ratio:1;height:auto;border-radius:5px;background:rgba(var(--secondary-rgb),.13);}
+.hg-cells.hg-month .hg-c{border-radius:2px;}
+.hg-c.on{background:rgba(var(--secondary-rgb),.75);box-shadow:0 0 3px rgba(var(--secondary-rgb),.3);}
+.hg-n{width:36px;text-align:right;font-size:11px;color:var(--tc3);flex-shrink:0;font-family:'Baloo 2',sans-serif;font-weight:800;}
+.hg-n.hot{color:#D4750A;}
+.hg-dow{flex:1 1 19px;max-width:30px;min-width:3px;text-align:center;font-size:9.5px;color:var(--tc3);}
+/* 身份進度圓環：比長條更有「集滿」感；進度低於一半用粉色（弱點色） */
+.id-rings{display:flex;flex-wrap:wrap;justify-content:space-around;gap:8px 4px;padding-top:2px;}
+.id-ring{text-align:center;width:74px;}
+.id-ring-svg{position:relative;width:58px;height:58px;margin:0 auto;}
+.id-ring-svg svg{width:100%;height:100%;}
+.id-ring-emoji{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+.id-ring-lbl{font-size:10.5px;color:var(--tc2);font-weight:700;margin-top:3px;}
+.id-ring-sub{font-size:10px;color:var(--tc3);font-family:'Baloo 2',sans-serif;font-weight:700;}
+/* 成長之路：🍎→🍏→⭐→🌱→🌳 一條里程碑路徑取代四條進度條 */
+.fp-path{display:flex;align-items:center;padding:6px 0 16px;}
+.fp-node{font-size:22px;line-height:1;flex-shrink:0;}
+.fp-node.dim{filter:grayscale(1);opacity:.4;font-size:18px;}
+.fp-seg{flex:1;height:9px;border-radius:5px;background:rgba(var(--secondary-rgb),.18);margin:0 5px;position:relative;}
+.fp-seg-fill{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:linear-gradient(90deg,var(--gold),#F090B0);}
+.fp-seg-n{position:absolute;top:12px;left:50%;transform:translateX(-50%);font-size:9.5px;color:var(--tc3);font-weight:700;font-family:'Baloo 2',sans-serif;}
+.fp-cap{text-align:center;font-size:11.5px;color:var(--tc2);font-weight:700;margin-top:2px;line-height:1.6;}
+.fp-cap b{color:var(--primary);font-family:'Baloo 2',sans-serif;}
+/* 每日達成率長條：頂上標數值，最強的一天 🏆、最弱的一天粉色 */
+.trend-val{font-size:9px;color:var(--tc3);font-weight:700;height:12px;line-height:12px;}
+.trend-bar.weakday{background:linear-gradient(180deg,#F0B9C8,#E28FA9);}
+.dist-bar-fill.weak{background:linear-gradient(90deg,#F0B9C8,#E28FA9);}
+/* 洞察卡：把資料變成行動的那一張 */
+.insight-card{background:linear-gradient(135deg,rgba(var(--gold-rgb),.22),rgba(var(--pink-rgb),.16));}
+.ins-item{font-size:12.5px;line-height:1.8;color:var(--tc);margin-bottom:7px;}
+.ins-item b{color:var(--primary);}
+.ins-sug{margin-top:9px;padding:9px 12px;background:rgba(255,255,255,.6);border-radius:12px;font-size:12.5px;font-weight:700;color:var(--primary);line-height:1.7;}
+/* TDL 明細：每天包成一塊，桌面才能排成兩欄 */
+.tdl-day-blk{padding:2px 0 6px;}
+@media(min-width:768px){
+  .stat-strip{grid-template-columns:repeat(6,1fr);}
+  .stat-strip.stat-strip-5{grid-template-columns:repeat(5,1fr);}
+  .rd-pair{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+  .rd-pair>*{margin-bottom:0;}
+  .rd-stack{display:flex;flex-direction:column;gap:12px;}
+  .rd-stack>*{margin-bottom:0;}
+  #wk-tdldetail{display:grid;grid-template-columns:1fr 1fr;gap:2px 24px;max-height:340px;overflow-y:auto;padding-right:4px;align-items:start;}
+  #week-entries.rd-entries,#month-entries.rd-entries,#month-week-summaries.rd-entries{
+    display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px;
+  }
+  #week-entries.rd-entries .week-card,#month-entries.rd-entries .week-card,#month-week-summaries.rd-entries .week-card{
+    margin-bottom:0;height:100%;display:flex;flex-direction:column;
+  }
+  #week-entries.rd-entries .week-card[data-empty="1"]{align-items:center;justify-content:center;text-align:center;}
+  #week-entries.rd-entries .empty-state,#month-entries.rd-entries .empty-state,#month-week-summaries.rd-entries .empty-state{grid-column:1/-1;}
+}
+
 /* SUPPORT SYSTEM */
 .support-cat-card{margin-bottom:12px;}
 .support-cat-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;}
@@ -758,33 +826,39 @@ button{-webkit-tap-highlight-color:transparent;}
   <button class="period-arrow" id="wk-next">›</button>
 </div>
 <div id="wk-jump-today" class="jump-today-btn" style="display:none;">回到本週</div>
-<div class="witness-card" id="wk-witness"></div>
 
-<div class="gcard">
-  <div class="sec-hd"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4c5_3d.png" width="19" height="19"/> 週回顧</div>
-  <div class="stat-grid">
-    <div class="stat-card"><div class="stat-num" style="color:var(--primary);" id="wk-days">0</div><div class="stat-lbl">記錄天數<span class="cmp" id="wk-days-cmp"></span></div></div>
-    <div class="stat-card"><div class="stat-num" style="color:var(--tertiary);" id="wk-exp">0</div><div class="stat-lbl">EXP<span class="cmp" id="wk-exp-cmp"></span></div></div>
-    <div class="stat-card"><div class="stat-num" style="color:#D4750A;" id="wk-habits">0</div><div class="stat-lbl">習慣完成<span class="cmp" id="wk-habits-cmp"></span></div></div>
-  </div>
-  <div style="display:flex;gap:12px;">
-    <div class="stat-card" style="flex:1;"><div class="stat-num" style="color:#E24B4A;font-size:18px;" id="wk-apples">0</div><div class="stat-lbl">🍎 蘋果</div></div>
-    <div class="stat-card" style="flex:1;"><div class="stat-num" style="color:#F090B0;font-size:18px;" id="wk-flowers">0</div><div class="stat-lbl">🌸 花朵</div></div>
-    <div class="stat-card" style="flex:1;"><div class="stat-num" style="color:var(--primary);font-size:18px;" id="wk-tdlrate">-</div><div class="stat-lbl">TDL 達成</div></div>
-  </div>
+<div class="rd-zone">🌱 這週總覽</div>
+<div class="witness-card" id="wk-witness"></div>
+<div class="stat-strip">
+  <div class="stat-card"><div class="stat-num" style="color:var(--primary);" id="wk-days">0</div><div class="stat-lbl">記錄天數<span class="cmp" id="wk-days-cmp"></span></div></div>
+  <div class="stat-card"><div class="stat-num" style="color:var(--primary);" id="wk-tdlrate">-</div><div class="stat-lbl">TDL 達成</div></div>
+  <div class="stat-card"><div class="stat-num" style="color:#D4750A;" id="wk-habits">0</div><div class="stat-lbl">習慣完成<span class="cmp" id="wk-habits-cmp"></span></div></div>
+  <div class="stat-card"><div class="stat-num" style="color:var(--tertiary);" id="wk-exp">0</div><div class="stat-lbl">EXP<span class="cmp" id="wk-exp-cmp"></span></div></div>
+  <div class="stat-card"><div class="stat-num" style="color:#E24B4A;" id="wk-apples">0</div><div class="stat-lbl">🍎 蘋果</div></div>
+  <div class="stat-card"><div class="stat-num" style="color:#F090B0;" id="wk-flowers">0</div><div class="stat-lbl">🌸 花朵</div></div>
 </div>
 
-<div class="gcard"><div class="sec-hd">🍯 距離下一階段</div><div id="wk-fruit-progress"></div></div>
-<div class="gcard"><div class="sec-hd">🍩 TDL 完成率</div><div id="wk-donut"></div></div>
-<div class="gcard" id="wk-theme-card" style="display:none;"><div class="sec-hd">📋 各主題達成率</div><div id="wk-themes"></div></div>
+<div class="rd-zone">📊 表現分析</div>
+<div class="rd-pair">
+  <div class="gcard"><div class="sec-hd">🍩 TDL 表現</div><div id="wk-donut"></div><div id="wk-trend" style="margin-top:10px;"></div></div>
+  <div class="gcard" id="wk-theme-card" style="display:none;"><div class="sec-hd">📋 各主題達成率</div><div id="wk-themes"></div></div>
+</div>
+<div class="rd-pair">
+  <div class="gcard"><div class="sec-hd">🌿 習慣總表</div><div id="wk-habitgrid"></div></div>
+  <div class="rd-stack">
+    <div class="gcard"><div class="sec-hd">✨ 身份進度</div><div id="wk-identity"></div></div>
+    <div class="gcard"><div class="sec-hd">🍯 成長之路</div><div id="wk-fruit-progress"></div></div>
+  </div>
+</div>
+<div class="gcard insight-card" id="wk-insight-card" style="display:none;"><div class="sec-hd">💡 本週洞察</div><div id="wk-insight"></div></div>
+
+<div class="rd-zone">🗒 這週明細</div>
 <div class="gcard" id="wk-tdldetail-card" style="display:none;"><div class="sec-hd">🗒 這週 TDL 明細</div><div id="wk-tdldetail"></div></div>
-<div class="gcard"><div class="sec-hd">📈 每日 TDL 達成率</div><div id="wk-trend"></div></div>
-<div class="gcard"><div class="sec-hd">🌿 習慣分佈</div><div id="wk-dist"></div></div>
-<div class="gcard"><div class="sec-hd">✨ 身份進度</div><div id="wk-identity"></div></div>
-<div class="gcard" id="wk-keyword-card" style="display:none;"><div class="sec-hd">💭 這週常出現的詞</div><div id="wk-keywords"></div></div>
-<div class="gcard" id="wk-highlight-card" style="display:none;"><div class="sec-hd">🌟 這週的一句話</div><div id="wk-highlight"></div></div>
-<div class="gcard"><div class="sec-hd">習慣熱力圖</div><div id="week-heatmap"></div></div>
-<div id="week-entries"></div>
+<div id="week-entries" class="rd-entries"></div>
+<div class="rd-pair">
+  <div class="gcard" id="wk-keyword-card" style="display:none;"><div class="sec-hd">💭 這週常出現的詞</div><div id="wk-keywords"></div></div>
+  <div class="gcard" id="wk-highlight-card" style="display:none;"><div class="sec-hd">🌟 這週的一句話</div><div id="wk-highlight"></div></div>
+</div>
 <button class="ghost-btn" id="copy-week-btn" style="margin-top:4px;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4cb_3d.png" width="15" height="15"/> 複製這週紀錄給 Claude</button>
 </div>
 
@@ -796,31 +870,38 @@ button{-webkit-tap-highlight-color:transparent;}
   <button class="period-arrow" id="mo-next">›</button>
 </div>
 <div id="mo-jump-today" class="jump-today-btn" style="display:none;">回到本月</div>
-<div class="witness-card" id="mo-witness"></div>
 
-<div class="gcard">
-  <div class="sec-hd"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4c6_3d.png" width="19" height="19"/> 月回顧</div>
-  <div class="stat-grid">
-    <div class="stat-card"><div class="stat-num" style="color:var(--primary);" id="mo-days">0</div><div class="stat-lbl">記錄天數<span class="cmp" id="mo-days-cmp"></span></div></div>
-    <div class="stat-card"><div class="stat-num" style="color:#E24B4A;" id="mo-apples">0</div><div class="stat-lbl">🍎 蘋果<span class="cmp" id="mo-apples-cmp"></span></div></div>
-    <div class="stat-card"><div class="stat-num" style="color:#F090B0;" id="mo-flowers">0</div><div class="stat-lbl">🌸 花朵<span class="cmp" id="mo-flowers-cmp"></span></div></div>
-  </div>
-  <div style="display:flex;gap:12px;">
-    <div class="stat-card" style="flex:1;"><div class="stat-num" style="color:var(--tertiary);" id="mo-exp">0</div><div class="stat-lbl">EXP</div></div>
-    <div class="stat-card" style="flex:1;"><div class="stat-num" id="mo-tdlrate">-</div><div class="stat-lbl">TDL 達成</div></div>
-  </div>
+<div class="rd-zone">🌱 這個月總覽</div>
+<div class="witness-card" id="mo-witness"></div>
+<div class="stat-strip stat-strip-5">
+  <div class="stat-card"><div class="stat-num" style="color:var(--primary);" id="mo-days">0</div><div class="stat-lbl">記錄天數<span class="cmp" id="mo-days-cmp"></span></div></div>
+  <div class="stat-card"><div class="stat-num" style="color:var(--primary);" id="mo-tdlrate">-</div><div class="stat-lbl">TDL 達成</div></div>
+  <div class="stat-card"><div class="stat-num" style="color:var(--tertiary);" id="mo-exp">0</div><div class="stat-lbl">EXP</div></div>
+  <div class="stat-card"><div class="stat-num" style="color:#E24B4A;" id="mo-apples">0</div><div class="stat-lbl">🍎 蘋果<span class="cmp" id="mo-apples-cmp"></span></div></div>
+  <div class="stat-card"><div class="stat-num" style="color:#F090B0;" id="mo-flowers">0</div><div class="stat-lbl">🌸 花朵<span class="cmp" id="mo-flowers-cmp"></span></div></div>
 </div>
 
-<div class="gcard"><div class="sec-hd">🍩 TDL 完成率</div><div id="mo-donut"></div></div>
-<div class="gcard"><div class="sec-hd">🍯 距離下一階段</div><div id="mo-fruit-progress"></div></div>
-<div class="gcard"><div class="sec-hd">📅 星期幾比較容易完成？</div><div id="mo-weekday-dist"></div></div>
-<div class="gcard"><div class="sec-hd">🌿 習慣分佈</div><div id="mo-dist"></div></div>
-<div class="gcard"><div class="sec-hd">✨ 身份進度</div><div id="mo-identity"></div></div>
-<div class="gcard" id="mo-keyword-card" style="display:none;"><div class="sec-hd">💭 這個月常出現的詞</div><div id="mo-keywords"></div></div>
-<div class="gcard" id="mo-highlight-card" style="display:none;"><div class="sec-hd">🌟 這個月的一句話</div><div id="mo-highlight"></div></div>
-<div class="gcard"><div class="sec-hd">習慣熱力圖</div><div id="month-heatmap"></div></div>
-<div id="month-week-summaries"></div>
-<div id="month-entries"></div>
+<div class="rd-zone">📊 表現分析</div>
+<div class="rd-pair">
+  <div class="gcard"><div class="sec-hd">🍩 TDL 完成率</div><div id="mo-donut"></div></div>
+  <div class="gcard"><div class="sec-hd">📅 星期幾比較容易完成？</div><div id="mo-weekday-dist"></div></div>
+</div>
+<div class="rd-pair">
+  <div class="gcard"><div class="sec-hd">🌿 習慣總表</div><div id="mo-habitgrid"></div></div>
+  <div class="rd-stack">
+    <div class="gcard"><div class="sec-hd">✨ 身份進度</div><div id="mo-identity"></div></div>
+    <div class="gcard"><div class="sec-hd">🍯 成長之路</div><div id="mo-fruit-progress"></div></div>
+  </div>
+</div>
+<div class="gcard insight-card" id="mo-insight-card" style="display:none;"><div class="sec-hd">💡 本月洞察</div><div id="mo-insight"></div></div>
+
+<div class="rd-zone">🗒 這個月明細</div>
+<div id="month-week-summaries" class="rd-entries"></div>
+<div id="month-entries" class="rd-entries"></div>
+<div class="rd-pair">
+  <div class="gcard" id="mo-keyword-card" style="display:none;"><div class="sec-hd">💭 這個月常出現的詞</div><div id="mo-keywords"></div></div>
+  <div class="gcard" id="mo-highlight-card" style="display:none;"><div class="sec-hd">🌟 這個月的一句話</div><div id="mo-highlight"></div></div>
+</div>
 <button class="ghost-btn" id="copy-month-btn"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4cb_3d.png" width="15" height="15"/> 複製這月紀錄給 Claude</button>
 </div>
 
@@ -2141,42 +2222,60 @@ function extractKeywords(texts){
   chunks.forEach(c=>{freq[c]=(freq[c]||0)+1;});
   return Object.entries(freq).filter(([,n])=>n>=2).sort((a,b)=>b[1]-a[1]).slice(0,8);
 }
+// 成長之路：四條進度條其實是同一條升級路線的四段，改畫成一條 emoji 里程碑路徑
 function renderFruitProgress(elId){
   const stages=[
-    {label:'🍎→🍏',cur:S.apples.length,need:7},
-    {label:'🍏→⭐',cur:S.bigApples,need:4},
-    {label:'⭐→🌱',cur:S.goldFruits,need:3},
-    {label:'🌱→🌳',cur:S.seedlings,need:2},
+    {from:'🍎',to:'🍏',cur:S.apples.length,need:7},
+    {from:'🍏',to:'⭐',cur:S.bigApples,need:4},
+    {from:'⭐',to:'🌱',cur:S.goldFruits,need:3},
+    {from:'🌱',to:'🌳',cur:S.seedlings,need:2},
   ];
-  document.getElementById(elId).innerHTML=stages.map(s=>`
-    <div class="fp-row">
-      <div class="fp-icons">${s.label}</div>
-      <div class="fp-bar-bg"><div class="fp-bar-fill" style="width:${Math.min(100,s.cur/s.need*100)}%;"></div></div>
-      <div class="fp-count">${s.cur}/${s.need}</div>
+  const nodes=['🍎','🍏','⭐','🌱','🌳'];
+  const cs=stages.find(s=>s.cur<s.need);
+  const cap=cs?`目前在 ${cs.from} → ${cs.to} 這一段：<b>${cs.cur}/${cs.need}</b>，再 ${cs.need-cs.cur} 個就升級！`:'全部集滿了！妳的森林好豐富 🌳';
+  document.getElementById(elId).innerHTML=`<div class="fp-path">${nodes.map((n,i)=>{
+    const lit=i===0||stages[i-1].cur>0;
+    const seg=i<stages.length?`<div class="fp-seg"><div class="fp-seg-fill" style="width:${Math.min(100,stages[i].cur/stages[i].need*100)}%;"></div><span class="fp-seg-n">${stages[i].cur}/${stages[i].need}</span></div>`:'';
+    return`<span class="fp-node${lit?'':' dim'}">${n}</span>${seg}`;
+  }).join('')}</div><div class="fp-cap">${cap}</div>`;
+}
+// 習慣總表＝原本的「習慣分佈」＋「習慣熱力圖」合體：
+// 每個習慣一列，同時看到做了幾天（右側數字）和分佈在哪幾天（日格）
+function renderHabitGrid(elId,dates){
+  const el=document.getElementById(elId);if(!el)return;
+  const isWeek=dates.length<=7;
+  const rows=HABITS.map(h=>{
+    const cells=dates.map(ds=>{
+      const e=S.entries.find(x=>x.date===ds);
+      return e?!!(e.checked&&e.checked.includes(h.k)):!!(ds===curDay()&&S.checked[h.k]);
+    });
+    return{h,cells,count:cells.filter(Boolean).length};
+  }).sort((a,b)=>b.count-a.count);
+  const maxC=Math.max(...rows.map(r=>r.count));
+  const hdr=isWeek?`<div class="hg-row"><span class="hg-name"></span><div class="hg-cells">${dates.map(ds=>{const d=new Date(ds+'T00:00:00');return`<span class="hg-dow">${wdArr[d.getDay()]}</span>`;}).join('')}</div><span class="hg-n"></span></div>`:'';
+  el.innerHTML=hdr+rows.map(r=>`
+    <div class="hg-row">
+      <span class="hg-name">${fi(r.h.c,14)} ${r.h.l}</span>
+      <div class="hg-cells${isWeek?'':' hg-month'}">${r.cells.map((on,i)=>`<div class="hg-c${on?' on':''}" title="${dates[i]}"></div>`).join('')}</div>
+      <span class="hg-n${r.count&&r.count===maxC?' hot':''}">${r.count}天</span>
     </div>`).join('');
 }
-function renderHabitDist(elId,habitCounts){
-  const max=Math.max(1,...Object.values(habitCounts));
-  const sorted=[...HABITS].sort((a,b)=>(habitCounts[b.k]||0)-(habitCounts[a.k]||0));
-  document.getElementById(elId).innerHTML=sorted.map(h=>{
-    const c=habitCounts[h.k]||0;
-    return`<div class="dist-row">
-      <div class="dist-label">${fi(h.c,15)} ${h.l}</div>
-      <div class="dist-bar-bg"><div class="dist-bar-fill" style="width:${c/max*100}%;"></div></div>
-      <div class="dist-count">${c}天</div>
-    </div>`;
-  }).join('');
-}
+// 身份進度：emoji 圓環，進度未過半用粉色（全頁統一的「弱點色」）
 function renderIdentityProgress(elId,habitCounts){
-  document.getElementById(elId).innerHTML=IDENTITY_TAGS.filter(t=>!t.always).map(tag=>{
-    const periodCount=tag.habits.reduce((a,h)=>a+(habitCounts[h]||0),0);
-    if(periodCount===0)return'';
-    return`<div class="idp-row">
-      <div class="idp-txt">${fi(tag.emoji,15)} ${tag.label}</div>
-      <div class="idp-bar-bg"><div class="idp-bar-fill" style="width:${Math.min(100,periodCount/ID_THRESHOLD*100)}%;"></div></div>
-      <div class="dist-count">+${periodCount}天</div>
+  const rows=IDENTITY_TAGS.filter(t=>!t.always)
+    .map(tag=>({tag,n:tag.habits.reduce((a,h)=>a+(habitCounts[h]||0),0)}))
+    .filter(x=>x.n>0);
+  if(!rows.length){document.getElementById(elId).innerHTML=`<div style="font-size:12px;color:var(--tc3);">這期還沒有累積身份天數</div>`;return;}
+  document.getElementById(elId).innerHTML=`<div class="id-rings">`+rows.map(({tag,n})=>{
+    const pct=Math.min(100,Math.round(n/ID_THRESHOLD*100));
+    return`<div class="id-ring">
+      <div class="id-ring-svg">
+        <svg viewBox="0 0 42 42"><circle cx="21" cy="21" r="15.9" fill="none" style="stroke:rgba(var(--primary-rgb),.12);" stroke-width="4.5"/><circle cx="21" cy="21" r="15.9" fill="none" style="stroke:${pct>=50?'var(--secondary)':'var(--pink)'};" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="${pct} ${100-pct}" stroke-dashoffset="25"/></svg>
+        <span class="id-ring-emoji">${fi(tag.emoji,20)}</span>
+      </div>
+      <div class="id-ring-lbl">${tag.label}</div><div class="id-ring-sub">+${n}天</div>
     </div>`;
-  }).join('')||`<div style="font-size:12px;color:var(--tc3);">這期還沒有累積身份天數</div>`;
+  }).join('')+`</div>`;
 }
 function renderKeywords(cardId,listId,texts){
   const kws=extractKeywords(texts);
@@ -2250,6 +2349,14 @@ function tdlSummaryLines(st,label){
   lines.push('');
   return lines;
 }
+// 主題自動配 emoji：對照表比對（含部分比對），對不到用預設 📌
+const THEME_EMOJI={'工作':'💼','生活':'🏡','學習':'📖','日文':'🈶','英文':'🔤','語言':'🗣️','運動':'🏃','健身':'💪','創作':'🎨','畫畫':'🖌️','繪畫':'🖌️','吉他':'🪕','音樂':'🎵','閱讀':'📚','跳舞':'💃','程式':'💻','家務':'🧺','打掃':'🧹','人際':'💬','理財':'💰','健康':'🩺','未分類':'📌'};
+function themeEmoji(t){
+  t=String(t||'');
+  if(THEME_EMOJI[t])return THEME_EMOJI[t];
+  for(const k in THEME_EMOJI){if(t.includes(k))return THEME_EMOJI[k];}
+  return'📌';
+}
 // 各主題達成率：任務文字每天都不一樣，主題才是能跨天比較的軸
 function renderThemeRates(cardId,boxId,st){
   const card=document.getElementById(cardId),box=document.getElementById(boxId);
@@ -2263,8 +2370,8 @@ function renderThemeRates(cardId,boxId,st){
     const pct=r.total?Math.round(r.done/r.total*100):0;
     const t=String(r.theme).replace(/</g,'&lt;');
     return`<div class="dist-row">
-      <div class="theme-label" title="${t}">${t}</div>
-      <div class="dist-bar-bg"><div class="dist-bar-fill" style="width:${pct}%;"></div></div>
+      <div class="theme-label" title="${t}">${themeEmoji(r.theme)} ${t}</div>
+      <div class="dist-bar-bg"><div class="dist-bar-fill${pct<50?' weak':''}" style="width:${pct}%;"></div></div>
       <div class="dist-count">${r.done}/${r.total}</div>
     </div>`;
   }).join('')+(st.tdlNoDetailDays?`<div class="tdl-note">＊另有 ${st.tdlNoDetailDays} 天是舊資料，只留下完成「數量」沒有逐項明細，因此不計入主題統計</div>`:'');
@@ -2277,14 +2384,15 @@ function renderTdlDetail(cardId,boxId,st){
   if(!det.length){card.style.display='none';return;}
   card.style.display='';
   const byDay={};det.forEach(x=>{(byDay[x.date]=byDay[x.date]||[]).push(x);});
+  // 每天包成一塊（.tdl-day-blk），桌面版才能用 grid 排成左右兩欄
   box.innerHTML=Object.keys(byDay).sort().map(ds=>{
     const d=new Date(ds+'T00:00:00'),list=byDay[ds],dn=list.filter(x=>x.done).length;
-    return`<div class="tdl-day-hd">${d.getMonth()+1}/${d.getDate()} 週${wdArr[d.getDay()]} · ${dn}/${list.length}</div>`+
+    return`<div class="tdl-day-blk"><div class="tdl-day-hd">${d.getMonth()+1}/${d.getDate()} 週${wdArr[d.getDay()]} · ${dn}/${list.length}</div>`+
       list.map(x=>{
         const th=String(x.theme||'').replace(/</g,'&lt;');
         const tk=String(x.task||'').replace(/</g,'&lt;');
         return`<div class="tdl-det-row${x.done?'':' undone'}"><span class="mk">${x.done?'✅':'⬜'}</span><span>${th&&th!=='未分類'?`<b class="th">${th}：</b>`:''}${tk||'（未填目標）'}</span></div>`;
-      }).join('');
+      }).join('')+`</div>`;
   }).join('');
 }
 // 溫柔見證小結
@@ -2318,6 +2426,82 @@ function renderReviewDonut(elId,cur){
   </div>`;
 }
 
+// 洞察引擎：用規則從資料算出「所以呢？」——最弱的一天、快消失的習慣、
+// 最穩的習慣、TDL 負荷建議。全部純計算，不需要 AI。opt 可帶：
+//   dailyRates（週用，對齊 dates 的每日達成率）、weekday（月用，{counts,totals}）
+function renderInsights(cardId,boxId,cur,prev,dates,label,opt){
+  const card=document.getElementById(cardId),box=document.getElementById(boxId);
+  if(!card||!box)return;
+  opt=opt||{};
+  const items=[];let sug='';
+  const wdName=['日','一','二','三','四','五','六'];
+  // ① 最弱的一天／星期（粉色長條的文字版）
+  if(opt.dailyRates){
+    const valid=opt.dailyRates.map((r,i)=>({r,i})).filter(x=>x.r!==null);
+    if(valid.length>=3){
+      const worst=valid.reduce((a,b)=>b.r<a.r?b:a);
+      const best=valid.reduce((a,b)=>b.r>a.r?b:a);
+      if(worst.r<best.r&&worst.r<.6){
+        const d=new Date(dates[worst.i]+'T00:00:00');
+        items.push(`📉 <b>週${wdName[d.getDay()]}</b>是這${label}最弱的一天（${Math.round(worst.r*100)}%）——那天的能量本來就比較低的話，值得把任務排輕一點`);
+      }
+    }
+  }else if(opt.weekday){
+    const cand=opt.weekday.totals.map((t,i)=>({t,c:opt.weekday.counts[i],i})).filter(x=>x.t>0);
+    if(cand.length>=4){
+      const worst=cand.reduce((a,b)=>(b.c/b.t)<(a.c/a.t)?b:a);
+      const best=cand.reduce((a,b)=>(b.c/b.t)>(a.c/a.t)?b:a);
+      if(worst.i!==best.i)items.push(`📉 這${label}<b>週${['一','二','三','四','五','六','日'][worst.i]}</b>通常完成最少、週${['一','二','三','四','五','六','日'][best.i]}最多——排計畫時可以順著這個節奏`);
+    }
+  }
+  // ② 快消失的習慣：這期 0 次、上期有做過（挑上期做最多的那個）
+  let fading=null;
+  HABITS.forEach(h=>{
+    const c=cur.habitCounts[h.k]||0,p=prev.habitCounts[h.k]||0;
+    if(c===0&&p>0&&(!fading||p>fading.p))fading={h,p};
+  });
+  if(fading)items.push(`🌿「<b>${fading.h.l}</b>」這${label}還沒出現（上${label}有 ${fading.p} 次）——想保留的話，把它縮到最小試試（做 1 分鐘也算）`);
+  // ③ 最穩的習慣（正向收尾）
+  let top=null;
+  HABITS.forEach(h=>{const c=cur.habitCounts[h.k]||0;if(c>0&&(!top||c>top.c))top={h,c};});
+  if(top&&top.c>=3){
+    const pTop=prev.habitCounts[top.h.k]||0;
+    items.push(`💪「<b>${top.h.l}</b>」完成 ${top.c} 天，是這${label}最穩的習慣${pTop>=3?'——連兩'+label+'都很穩，快變成自動的了':''}`);
+  }
+  // ④ TDL 負荷分析 → 具體的下期建議
+  let loD=0,loDone=0,loTot=0,hiD=0,hiDone=0,hiTot=0;
+  dates.forEach(ds=>{
+    const it=tdlItemsOf(ds);if(!it||!it.length)return;
+    const dn=it.filter(x=>x.done).length;
+    if(it.length<=3){loD++;loDone+=dn;loTot+=it.length;}
+    else{hiD++;hiDone+=dn;hiTot+=it.length;}
+  });
+  if(loD>=2&&hiD>=2){
+    const loR=loDone/loTot,hiR=hiDone/hiTot;
+    if(loR-hiR>=.15)sug=`🎯 下${label}建議：TDL 排 3 項以內的日子達成率 ${Math.round(loR*100)}%，4 項以上只有 ${Math.round(hiR*100)}% → 少排一點反而做得完`;
+  }
+  if(!sug){
+    // 沒有負荷結論時，用最弱主題當建議
+    const agg=cur.themeAgg||{};
+    let weakTheme=null;
+    Object.keys(agg).forEach(t=>{const a=agg[t];if(a.total>=3&&a.done/a.total<.5&&(!weakTheme||a.done/a.total<weakTheme.r))weakTheme={t,r:a.done/a.total,a};});
+    if(weakTheme)sug=`🎯 「${themeEmoji(weakTheme.t)} ${weakTheme.t}」主題只完成 ${weakTheme.a.done}/${weakTheme.a.total}——是不想做，還是排太難了？下${label}試著把它拆小一點`;
+  }
+  if(!items.length&&!sug){card.style.display='none';return;}
+  card.style.display='';
+  box.innerHTML=items.map(t=>`<div class="ins-item">${t}</div>`).join('')+(sug?`<div class="ins-sug">${sug}</div>`:'');
+}
+// .rd-pair 是固定兩兩配對；其中一張因沒資料被隱藏時，讓剩下那張補滿整列
+function fixRdPairs(scopeId){
+  document.querySelectorAll('#'+scopeId+' .rd-pair').forEach(pair=>{
+    const kids=[...pair.children];
+    const visible=kids.filter(k=>k.style.display!=='none');
+    kids.forEach(k=>{k.style.gridColumn='';});
+    if(visible.length===1)visible[0].style.gridColumn='1 / -1';
+    pair.style.display=visible.length===0?'none':'';
+  });
+}
+
 // ── WEEKLY ────────────────────────────────────────────
 let weekOffset=0;
 function renderWeekly(){
@@ -2342,37 +2526,44 @@ function renderWeekly(){
   renderThemeRates('wk-theme-card','wk-themes',cur);
   renderTdlDetail('wk-tdldetail-card','wk-tdldetail',cur);
   renderFruitProgress('wk-fruit-progress');
-  renderHabitDist('wk-dist',cur.habitCounts);
+  renderHabitGrid('wk-habitgrid',dates);
   renderIdentityProgress('wk-identity',cur.habitCounts);
   renderKeywords('wk-keyword-card','wk-keywords',cur.diaryHighlights.map(h=>h.text));
   renderHighlight('wk-highlight-card','wk-highlight',cur.diaryHighlights);
 
-  document.getElementById('wk-trend').innerHTML=`<div class="trend-chart">${dates.map(ds=>{
+  // 每日達成率：先算好全週的 rate，才能標出最強（🏆）和最弱（粉色）的一天
+  const rateArr=dates.map(ds=>{
     const e=S.entries.find(x=>x.date===ds);
     const isToday=ds===curDay();
-    let rate=null;
-    if(e&&e.tdlTotal)rate=e.tdlDone/e.tdlTotal;
-    else if(isToday&&(S.todayTDL||[]).length)rate=Object.keys(S.tdlDone).length/S.todayTDL.length;
+    if(e&&e.tdlTotal)return e.tdlDone/e.tdlTotal;
+    if(isToday&&(S.todayTDL||[]).length)return Object.keys(S.tdlDone).length/S.todayTDL.length;
+    return null;
+  });
+  const validRates=rateArr.filter(r=>r!==null);
+  const maxR=validRates.length?Math.max(...validRates):null;
+  const minR=validRates.length>=3?Math.min(...validRates):null;
+  document.getElementById('wk-trend').innerHTML=`<div class="trend-chart" style="height:104px;">${dates.map((ds,i)=>{
+    const rate=rateArr[i];
     const d=new Date(ds+'T00:00:00');
     const h=rate===null?4:Math.max(4,rate*80);
+    const isBest=rate!==null&&rate===maxR&&maxR>0&&validRates.length>1;
+    const isWeak=!isBest&&rate!==null&&minR!==null&&rate===minR&&minR<maxR;
     return`<div class="trend-bar-wrap">
-      <div class="trend-bar${rate===null?' empty':''}" style="height:${h}px;" title="${rate===null?'無資料':Math.round(rate*100)+'%'}"></div>
+      <div class="trend-val">${rate===null?'':(isBest?'🏆':Math.round(rate*100))}</div>
+      <div class="trend-bar${rate===null?' empty':''}${isWeak?' weakday':''}" style="height:${h}px;" title="${rate===null?'無資料':Math.round(rate*100)+'%'}"></div>
       <div class="trend-lbl">${d.getDate()}</div>
     </div>`;
   }).join('')}</div>`;
 
-  document.getElementById('week-heatmap').innerHTML=HABITS.map(h=>`
-    <div class="heatmap-row">
-      <div class="heatmap-label">${h.l}</div>
-      <div class="heatmap-cells">${dates.map(ds=>{const e=S.entries.find(x=>x.date===ds);const done=e?e.checked&&e.checked.includes(h.k):(ds===curDay()&&S.checked[h.k]);return`<div class="heatmap-cell ${done?'done':'miss'}" title="${ds}"></div>`;}).join('')}</div>
-    </div>`).join('');
+  renderInsights('wk-insight-card','wk-insight',cur,prev,dates,'週',{dailyRates:rateArr});
+  fixRdPairs('page-week');
 
   if(cur.days===0){document.getElementById('week-entries').innerHTML=`<div class="empty-state">${fi('1f331',32)}<br/>這週還沒有紀錄</div>`;return;}
   document.getElementById('week-entries').innerHTML=dates.map(ds=>{
     const d=new Date(ds+'T00:00:00');
     const isToday=ds===curDay();
     const e=S.entries.find(x=>x.date===ds);
-    if(!e)return`<div class="week-card" style="opacity:.4;"><div class="week-day-hd"><span>${d.getMonth()+1}/${d.getDate()} 週${wdArr[d.getDay()]}</span><span style="font-size:11px;color:var(--tc3);">無紀錄</span></div></div>`;
+    if(!e)return`<div class="week-card" data-empty="1" style="opacity:.4;"><div class="week-day-hd"><span>${d.getMonth()+1}/${d.getDate()} 週${wdArr[d.getDay()]}</span><span style="font-size:11px;color:var(--tc3);">無紀錄</span></div></div>`;
     const ck=e.checked||[];
     const dots=HABITS.map(h=>`<div class="habit-dot ${ck.includes(h.k)?'done':'miss'}">${fi(h.c,14)}</div>`).join('');
     const tdlHtml=(e.tdl||[]).length?`<div style="font-size:11px;color:var(--tc2);margin-top:5px;">📝 TDL：${e.tdl.map(r=>`${r.theme?r.theme+'：':''}${r.task}`).join('、')}</div>`:'';
@@ -2445,7 +2636,7 @@ function renderMonthly(){
   document.getElementById('mo-witness').innerHTML=witnessText(cur,'這個月');
   renderReviewDonut('mo-donut',cur);
   renderFruitProgress('mo-fruit-progress');
-  renderHabitDist('mo-dist',cur.habitCounts);
+  renderHabitGrid('mo-habitgrid',dates);
   renderIdentityProgress('mo-identity',cur.habitCounts);
   renderKeywords('mo-keyword-card','mo-keywords',cur.diaryHighlights.map(h=>h.text));
   renderHighlight('mo-highlight-card','mo-highlight',cur.diaryHighlights);
@@ -2465,11 +2656,8 @@ function renderMonthly(){
       <div class="trend-lbl">週${l}</div>
     </div>`).join('')}</div>`;
 
-  document.getElementById('month-heatmap').innerHTML=HABITS.map(h=>`
-    <div class="heatmap-row">
-      <div class="heatmap-label" style="font-size:10px;">${h.l}</div>
-      <div class="heatmap-cells">${dates.map(ds=>{const e=S.entries.find(x=>x.date===ds);const done=e?e.checked&&e.checked.includes(h.k):(ds===curDay()&&S.checked[h.k]);return`<div class="heatmap-cell ${done?'done':'miss'}" title="${ds}"></div>`;}).join('')}</div>
-    </div>`).join('');
+  renderInsights('mo-insight-card','mo-insight',cur,prev,dates,'個月',{weekday:{counts:weekdayCounts,totals:weekdayTotals}});
+  fixRdPairs('page-month');
 
   const weeks=[];for(let i=0;i<dates.length;i+=7)weeks.push(dates.slice(i,i+7));
   document.getElementById('month-week-summaries').innerHTML=weeks.map((wk,wi)=>{
