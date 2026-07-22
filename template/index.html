@@ -1205,7 +1205,7 @@ button{-webkit-tap-highlight-color:transparent;}
 <div class="gcard">
   <div class="sec-hd">🌱 關於</div>
   <div style="font-size:13px;color:var(--tc);line-height:1.9;">
-    <div>版本：v7.9（PWA）</div>
+    <div>版本：<span id="about-ver">v7.9</span>（PWA）</div>
     <div style="color:var(--tc2);">小森林不是目標管理工具，是你正在成為自己的見證者 🌱</div>
   </div>
 </div>
@@ -1255,7 +1255,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v73';
+const APP_VER='v75';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
@@ -3753,6 +3753,7 @@ function renderSettings(){
   const cci=document.getElementById('cal-code-input');if(cci)cci.placeholder=localStorage.getItem('grandol_code')?'已設定（輸入可更改）':'輸入 GAS 裡設定的通行碼';
   if(typeof updateCalStatus==='function')updateCalStatus();
   const _va=document.getElementById('ver-app');if(_va)_va.textContent=APP_VER;
+  const _av=document.getElementById('about-ver');if(_av)_av.textContent=APP_VER;
   renderCalTagList();
   renderHabitArchiveList();
 }
