@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════
-// 魔法小森林 GAS v3.6（新增：日曆每月重複、間隔 interval「每N週/月一次」）
+// 魔法小森林 GAS v3.7（新增：版本 ping 診斷、重複行程可完整編輯 calRecur）
 // ═══════════════════════════════════════════════════════
 // 【從舊版升級：只要這兩步】
 // 1. 擴充功能 → Apps Script → 全選刪掉舊程式碼 → 貼上這份 → 儲存
@@ -44,7 +44,7 @@ const ENTRY_COLS = ['date','checked','hl','rf','gr','quote','tdl','exp','streak'
 const STATE_COLS = ['flowers','apples','bigApples','goldFruits','seedlings','trees',
                     'achievements','quotes','calNotes','myPeople','treasures',
                     'lastPlant','lastStreak','streak','exp','gardenPos','supportCategories',
-                    'notifications','supportResources','todaySession','expLog','calColorTags','updatedAt','archivedHabits'];
+                    'notifications','supportResources','todaySession','expLog','calColorTags','updatedAt','archivedHabits','calRecur'];
 
 // 這個函式只是用來手動觸發 Google Drive 授權，之後留著也沒關係
 function testDriveAuth(){
@@ -104,9 +104,11 @@ function json(obj){
 }
 
 // ── GET ──────────────────────────────────────────────
+var GAS_VER = '3.7';
 function doGet(e){
   const action = (e.parameter.action||'').trim();
   try{
+    if(action==='ping') return json({ok:true, ver:GAS_VER});
     if(!checkViewCode_(e)) return json({ok:false,error:'unauthorized'});
     const role = isViewer_(e)?'viewer':'owner';
     if(action==='getEntries') return json({ok:true,role:role,data:getEntries_()});

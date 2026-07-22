@@ -1149,6 +1149,8 @@ button{-webkit-tap-highlight-color:transparent;}
     </select>
   </div>
   <div class="set-row"><span style="flex:1;">連線狀態</span><span id="cal-status" style="font-size:12px;color:var(--tc3);">尚未連線</span></div>
+  <div class="set-row"><span style="flex:1;">版本</span><span id="ver-info" style="font-size:12px;color:var(--tc3);">App <b id="ver-app"></b> · 後端 <b id="ver-gas">未檢查</b></span></div>
+  <button class="mini-btn" id="ver-check-btn" style="margin-top:4px;">🔍 檢查後端版本（確認 GAS 有沒有更新到）</button>
   <div style="font-size:12px;font-weight:700;color:var(--tc2);margin:10px 0 4px;">通行碼（每台裝置輸入一次）</div>
   <div style="display:flex;gap:8px;">
     <input class="tdl-in" id="cal-code-input" type="password" placeholder="輸入 GAS 裡設定的通行碼" style="flex:1;min-width:0;"/>
@@ -1253,6 +1255,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
+const APP_VER='v73';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
@@ -1350,7 +1353,7 @@ function defaults(){
   return{exp:0,flowers:[],apples:[],bigApples:0,goldFruits:0,seedlings:0,trees:1,
     streak:0,lastStreak:'',checked:{},diary:{hl:'',rf:'',gr:'',quote:''},
     lastPlant:'',tomorrowTDL:[],todayTDL:[],tdlDone:{},entries:[],
-    achievements:[],quotes:[],calNotes:{},myPeople:[],treasures:[],gardenPos:{},notePos:null,notifications:null,todayPhotos:[],resourceCats:null,expLog:[],tdlHist:{},archivedHabits:[]};
+    achievements:[],quotes:[],calNotes:{},myPeople:[],treasures:[],gardenPos:{},notePos:null,notifications:null,todayPhotos:[],resourceCats:null,expLog:[],tdlHist:{},archivedHabits:[],calRecur:{}};
 }
 function ld(){
   try{const r=localStorage.getItem(SK);if(r){const s=JSON.parse(r);return Object.assign(defaults(),s);}}catch(e){}
@@ -1480,7 +1483,8 @@ async function syncState(){
       todaySession:JSON.stringify({date:curDay(),checked:S.checked||{},tdlDone:S.tdlDone||{},todayTDL:S.todayTDL||[],tdlHist:S.tdlHist||{}}),
       expLog:JSON.stringify(S.expLog||[]),
       calColorTags:JSON.stringify(S.calColorTags||{}),
-      archivedHabits:JSON.stringify(S.archivedHabits||[])
+      archivedHabits:JSON.stringify(S.archivedHabits||[]),
+      calRecur:JSON.stringify(S.calRecur||{})
     });
     const _j=await _res.json().catch(()=>null);
     if(_j&&_j.conflict){
@@ -1539,6 +1543,7 @@ async function loadCloud(){
       if(d.expLog){const _el=parseJ(d.expLog,null);if(Array.isArray(_el))S.expLog=_el;}
       if(d.calColorTags){const _ct=parseJ(d.calColorTags,null);if(_ct&&typeof _ct==='object')S.calColorTags=_ct;}
       if(d.archivedHabits){const _ah=parseJ(d.archivedHabits,null);if(Array.isArray(_ah))S.archivedHabits=_ah;}
+      if(d.calRecur){const _cr=parseJ(d.calRecur,null);if(_cr&&typeof _cr==='object')S.calRecur=_cr;}
     }
     if(en.ok&&Array.isArray(en.data)){
       en.data.forEach(row=>{
@@ -3743,9 +3748,28 @@ function renderSettings(){
   const crs=document.getElementById('cal-remind-sel');if(crs)crs.value=localStorage.getItem('grandol_cal_remind')||'10';
   const cci=document.getElementById('cal-code-input');if(cci)cci.placeholder=localStorage.getItem('grandol_code')?'已設定（輸入可更改）':'輸入 GAS 裡設定的通行碼';
   if(typeof updateCalStatus==='function')updateCalStatus();
+  const _va=document.getElementById('ver-app');if(_va)_va.textContent=APP_VER;
   renderCalTagList();
   renderHabitArchiveList();
 }
+// 檢查後端 GAS 版本：直接打 ping，回報實際跑的版本，用來確認「有沒有重新部署到」
+async function checkGasVersion(){
+  const g=document.getElementById('ver-gas');if(!g)return;
+  if(!GAS_URL){g.textContent='未設定網址';g.style.color='var(--tc3)';return;}
+  g.textContent='檢查中…';g.style.color='var(--tc3)';
+  try{
+    const res=await fetch(GAS_URL+'?action=ping'+codeQ());
+    const j=await res.json();
+    if(j&&j.ok&&j.ver){
+      const latest='3.7';
+      g.textContent='v'+j.ver+(j.ver===latest?' ✓ 最新':' ⚠️ 舊版，請重新部署');
+      g.style.color=j.ver===latest?'#0F6E56':'#C0703A';
+    }else{
+      g.textContent='舊版（無版本回應）⚠️ 請重新部署';g.style.color='#C0703A';
+    }
+  }catch(e){g.textContent='連不到後端';g.style.color='#C0703A';}
+}
+document.addEventListener('click',e=>{if(e.target&&e.target.id==='ver-check-btn')checkGasVersion();});
 // 設定頁「習慣管理」：封存/解封切換
 function renderHabitArchiveList(){
   const box=document.getElementById('habit-archive-list');
@@ -4954,6 +4978,18 @@ function renderCalDayPanel(ds,editId){
     document.querySelectorAll('#cal-new-colors .cal-swatch-dot').forEach(dot=>{
       dot.classList.toggle('picked',dot.closest('.cal-swatch').dataset.c===calNewColor);
     });
+    // 帶回這個行程原本的重複設定（用本 app 建立的重複行程才有記錄；
+    // 更早以前或在 Google 端建的重複行程沒有記錄，會顯示「不重複」）
+    const _rec=(S.calRecur||{})[ev.id];
+    if(_rec&&_rec.repeat&&_rec.repeat!=='none'){
+      calRepeatSet(_rec.repeat);
+      calStepSet('cal-new-interval',_rec.interval||1);
+      calStepSet('cal-new-repeat-count',_rec.count||0);
+      (_rec.days||[]).forEach(d=>{const c=document.querySelector('#cal-new-days .day-chip[data-d="'+d+'"]');if(c)c.classList.add('on');});
+    }else{
+      calRepeatSet('none');
+    }
+    calRepeatSync();
     syncRepeatVsRange();
     const btn=document.getElementById('cal-new-save');
     btn.textContent='💾 更新行程';
@@ -4995,6 +5031,7 @@ function renderCalDayPanel(ds,editId){
       const j=await res.json();
       if(!j.ok)throw new Error(j.error||'');
       Object.keys(calEvents).forEach(k=>{calEvents[k]=(calEvents[k]||[]).filter(x=>x.id!==b.dataset.id);});
+      if(S.calRecur&&S.calRecur[b.dataset.id]){delete S.calRecur[b.dataset.id];sv(S);if(typeof syncStateDebounced==='function')syncStateDebounced();}
       renderPopCal();renderCalDayPanel(ds);renderTodayEvents();
     }catch(e){alert('刪除失敗 🥲 請檢查網路與通行碼');}
   }));
@@ -5032,6 +5069,12 @@ function renderCalDayPanel(ds,editId){
     }
     // ── 到這裡＝雲端已存成功，以下都是本地更新，包在自己的 try 裡不影響成功狀態 ──
     calConnected=true;updateCalStatus();
+    // 記下這個行程的重複設定，之後點開編輯才帶得回來（Google 端讀不回重複規則）
+    S.calRecur=S.calRecur||{};
+    if(editingId&&S.calRecur[editingId])delete S.calRecur[editingId];
+    if(repeat!=='none'&&j.id)S.calRecur[j.id]={repeat:repeat,interval:interval,count:repeatCount,days:repeatDays};
+    else if(j.id)delete S.calRecur[j.id];
+    sv(S);if(typeof syncStateDebounced==='function')syncStateDebounced();
     calEditingId=null;
     try{
       if(editingId)Object.keys(calEvents).forEach(k=>{calEvents[k]=(calEvents[k]||[]).filter(x=>x.id!==editingId);});
