@@ -162,16 +162,18 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 /* 日期數字靠左（不再置中），跟「+」各占一角，格子再窄也不會擠在一起；
    右邊保留固定寬度給「+」，數字/圓點永遠留在安全區內 */
 .cal-day .cd-num{display:flex;align-items:center;justify-content:flex-start;line-height:1;margin-bottom:1px;padding-right:19px;}
-.cal-day .cd-n{width:22px;height:22px;flex-shrink:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;}
+.cal-day .cd-n{width:24px;height:24px;flex-shrink:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Baloo 2',sans-serif;font-size:14.5px;font-weight:800;}
 /* 備註小圓點獨立放右下角，不擠進日期數字那一列——跟「+」（右上）、數字（左上）三個角落互不相干 */
 .cd-note-dot{position:absolute;bottom:4px;right:4px;width:5px;height:5px;border-radius:50%;background:var(--gold);z-index:1;}
-.cal-add{position:absolute;top:3px;right:3px;width:15px;height:15px;border-radius:50%;background:rgba(var(--primary-rgb),.12);color:var(--primary);font-size:10.5px;font-weight:700;line-height:15px;text-align:center;cursor:pointer;z-index:2;opacity:.55;}
+.cal-add{position:absolute;top:3px;right:3px;width:19px;height:19px;border-radius:50%;background:rgba(var(--primary-rgb),.13);color:var(--primary);font-size:13px;font-weight:700;line-height:19px;text-align:center;cursor:pointer;z-index:2;opacity:.6;}
 .cal-day:hover .cal-add{opacity:1;}
 .cal-add:hover{background:rgba(var(--primary-rgb),.3);opacity:1;}
 .cal-add:active{opacity:1;transform:scale(.92);}
 /* 手機沒有 hover，「+」直接稍微淡淡常駐顯示，不用等點過才看得到 */
 @media(hover:none){.cal-add{opacity:.7;}}
-.cal-ev-chip{min-width:0;font-size:10px;line-height:1.45;background:var(--primary);color:#fff;border-radius:4px;padding:1.5px 5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;text-align:left;margin-bottom:1.5px;}
+/* 行程方塊：看起來就可以點（細框），點下去直接編輯該行程 */
+.cal-ev-chip{min-width:0;font-size:10px;line-height:1.45;background:rgba(var(--primary-rgb),.12);color:var(--primary);border:1px solid rgba(var(--primary-rgb),.2);border-radius:5px;padding:2px 5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;text-align:left;margin-bottom:2px;cursor:pointer;}
+.cal-ev-chip:active{filter:brightness(.94);transform:scale(.97);}
 .cal-more{font-size:10px;color:var(--secondary);font-weight:700;text-align:left;padding-left:4px;}
 /* 跨日行程橫幅：每一天各自渲染自己那一小段，同一列裡沒有橫幅的格子補一個等高透明佔位——
    靠 CSS Grid 每列自動同高對齊，不用量 DOM 座標，縮放/換字級都不會跑位或疊住下面的行程 */
@@ -200,8 +202,8 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 @media(min-width:768px){
   .cal-day{min-height:92px;padding:4px 4px 5px;gap:2.5px;}
   .cal-day .cd-num{padding-right:22px;}
-  .cal-day .cd-n{width:28px;height:28px;font-size:14.5px;}
-  .cal-ev-chip{font-size:11px;padding:2px 7px;}
+  .cal-day .cd-n{width:30px;height:30px;font-size:17px;}
+  .cal-ev-chip{font-size:11px;padding:3px 7px;}
   .cal-more{font-size:10.5px;}
   .cal-dow{font-size:12.5px;}
   .cal-add{width:20px;height:20px;font-size:14px;line-height:20px;}
@@ -588,8 +590,20 @@ body.viewer-mode .neo-chip,body.viewer-mode .sticky-check,body.viewer-mode .habi
 .tgl input:checked+.knob{background:linear-gradient(135deg,var(--primary),var(--tertiary));}
 .tgl input:checked+.knob::before{transform:translateX(19px);}
 .time-in{background:rgba(255,255,255,.75);border:1.5px solid rgba(255,255,255,.88);border-radius:9px;padding:4px 7px;font-family:'Quicksand',sans-serif;font-size:12px;color:var(--tc);outline:none;}
-.day-chip{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.5);border:1.5px solid rgba(255,255,255,.8);font-size:11px;font-weight:700;color:var(--tc3);cursor:pointer;user-select:none;}
-.day-chip.on{background:rgba(var(--tertiary-rgb),.4);border-color:rgba(var(--tertiary-rgb),.7);color:var(--ok);}
+.day-chip{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.6);border:1.5px solid rgba(var(--secondary-rgb),.3);font-size:14px;font-weight:700;color:var(--tc2);cursor:pointer;user-select:none;}
+.day-chip.on{background:rgba(var(--tertiary-rgb),.5);border-color:var(--tertiary);color:var(--ok);}
+.day-chip:active{transform:scale(.9);}
+/* 日曆表單：分段重複按鈕 */
+.cal-seg{display:flex;gap:6px;}
+.cal-seg-opt{flex:1;height:42px;border-radius:12px;border:1.5px solid rgba(var(--secondary-rgb),.3);background:rgba(255,255,255,.6);font-family:'Quicksand',sans-serif;font-size:13px;font-weight:700;color:var(--tc2);cursor:pointer;}
+.cal-seg-opt.on{background:var(--primary);border-color:var(--primary);color:#fff;}
+.cal-seg-opt:active{transform:scale(.96);}
+/* 加減 stepper */
+.cal-inline-step{display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:14px;font-weight:700;color:var(--tc2);}
+.cal-stepper{display:flex;align-items:center;border:1.5px solid rgba(var(--secondary-rgb),.3);border-radius:13px;overflow:hidden;background:rgba(255,255,255,.7);height:44px;}
+.cal-step-b{width:44px;height:100%;font-size:22px;font-weight:700;color:var(--primary);background:rgba(var(--primary-rgb),.06);border:none;cursor:pointer;}
+.cal-step-b:active{background:rgba(var(--primary-rgb),.16);}
+.cal-step-v{min-width:44px;text-align:center;font-family:'Baloo 2',sans-serif;font-size:18px;font-weight:800;color:var(--tc);}
 
 
 /* ── 清單/格狀切換 ── */
@@ -2212,14 +2226,14 @@ function renderPopCal(){
     const hasRecord=!!S.entries.find(e=>e.date===ds);
     const hasNote=!!S.calNotes[ds];
     const _evs=(typeof calEvents!=='undefined'&&calEvents[ds])?calEvents[ds].filter(ev=>!(typeof isReminderEvent==='function'&&isReminderEvent(ev))&&!isMultiDayEvent(ev)):[];
-    const _chips=_evs.slice(0,2).map(ev=>{const _c=(typeof CAL_COLORS!=='undefined'&&ev.color&&CAL_COLORS[ev.color])?CAL_COLORS[ev.color]:'';return `<div class="cal-ev-chip"${_c?` style="background:${_c}26;color:${_c};"`:''}>${(ev.title||'').replace(/</g,'&lt;')}</div>`;}).join('')+(_evs.length>2?`<div class="cal-more">+${_evs.length-2}</div>`:'');
+    const _chips=_evs.slice(0,2).map(ev=>{const _c=(typeof CAL_COLORS!=='undefined'&&ev.color&&CAL_COLORS[ev.color])?CAL_COLORS[ev.color]:'';const _t=ev.allDay?'':((ev.time||'')?ev.time+' ':'');return `<div class="cal-ev-chip" data-evid="${ev.id}" data-evdate="${ds}"${_c?` style="background:${_c}1f;color:${_c};border-color:${_c}55;"`:''}>${_t}${(ev.title||'').replace(/</g,'&lt;')}</div>`;}).join('')+(_evs.length>2?`<div class="cal-more">+${_evs.length-2}</div>`:'');
     const{segs,laneCount}=rowSegs[rowIdx]||{segs:[],laneCount:0};
     let _bars='';
     for(let lane=0;lane<laneCount;lane++){
       const seg=segs.find(s=>s.lane===lane&&ci>=s.cs&&ci<=s.ce);
       if(seg){
         const c=(seg.ev.color&&CAL_COLORS[seg.ev.color])?CAL_COLORS[seg.ev.color]:'var(--primary)';
-        _bars+=`<div class="cal-bar-seg" data-evdate="${seg.ev.date}" style="height:${CAL_BAR_H}px;background:${c};">${(seg.ev.title||'').replace(/</g,'&lt;')}</div>`;
+        _bars+=`<div class="cal-bar-seg" data-evdate="${seg.ev.date}" data-evid="${seg.ev.id}" style="height:${CAL_BAR_H}px;background:${c};">${(seg.ev.title||'').replace(/</g,'&lt;')}</div>`;
       }else{
         _bars+=`<div class="cal-bar-seg empty" style="height:${CAL_BAR_H}px;"></div>`;
       }
@@ -2239,9 +2253,10 @@ function renderPopCal(){
     e.stopPropagation();
     if(typeof renderCalDayPanel==='function')renderCalDayPanel(b.dataset.add);
   }));
-  document.querySelectorAll('#pop-cal-grid .cal-bar-seg:not(.empty)').forEach(b=>b.addEventListener('click',e=>{
+  // 直接點行程方塊／跨日橫幅 → 打開那一天的面板並自動進入該行程的編輯（不觸發「點數字回日記」）
+  document.querySelectorAll('#pop-cal-grid .cal-ev-chip[data-evid],#pop-cal-grid .cal-bar-seg:not(.empty)[data-evid]').forEach(b=>b.addEventListener('click',e=>{
     e.stopPropagation();
-    if(typeof renderCalDayPanel==='function')renderCalDayPanel(b.dataset.evdate);
+    if(typeof renderCalDayPanel==='function')renderCalDayPanel(b.dataset.evdate,b.dataset.evid);
   }));
 }
 function selectPopCalDate(ds){
@@ -4819,7 +4834,25 @@ function renderTodayEvents(){
   const evs=(calEvents[ds]||[]).filter(ev=>!isReminderEvent(ev));
   document.getElementById('today-events-list').innerHTML=evs.length?evs.map(ev=>calEvRow(ev,false)).join(''):(isT?'<div style="font-size:12px;color:var(--tc3);padding:2px 0;">今天沒有安排，自由的一天 🌿</div>':'<div style="font-size:12px;color:var(--tc3);padding:2px 0;">這天沒有行程</div>');
 }
-function renderCalDayPanel(ds){
+// 日曆表單控制項 helper（分段重複、加減 stepper）
+function calRepeatGet(){const on=document.querySelector('#cal-new-repeat .cal-seg-opt.on');return on?on.dataset.v:'none';}
+function calRepeatSet(v){document.querySelectorAll('#cal-new-repeat .cal-seg-opt').forEach(b=>b.classList.toggle('on',b.dataset.v===v));}
+function calStepGet(id){return parseInt((document.getElementById(id)||{}).dataset?.val||'0',10)||0;}
+function calStepSet(id,v){const el=document.getElementById(id);if(!el)return;const zero=id==='cal-new-repeat-count';el.dataset.val=v;el.textContent=(zero&&v===0)?'∞':v;}
+function calStep(id,d){const min=id==='cal-new-repeat-count'?0:1;let v=calStepGet(id)+d;if(v<min)v=min;if(v>99)v=99;calStepSet(id,v);}
+// 依重複類型顯示/隱藏間隔、星期、次數（change 與編輯回填共用）
+function calRepeatSync(){
+  const v=calRepeatGet();
+  document.getElementById('cal-new-days').style.display=v==='weekly'?'flex':'none';
+  document.getElementById('cal-new-count-wrap').style.display=v==='none'?'none':'flex';
+  const iv=document.getElementById('cal-new-interval-wrap');
+  iv.style.display=(v==='weekly'||v==='monthly')?'flex':'none';
+  document.getElementById('cal-new-interval-unit').textContent=v==='monthly'?'個月':'週';
+  const edInput=document.getElementById('cal-new-end-date');
+  if(v!=='none'){edInput.value=document.getElementById('cal-new-start-date').value;edInput.disabled=true;}
+  else{edInput.disabled=false;}
+}
+function renderCalDayPanel(ds,editId){
   showCalDayview(); // 點某一天/按＋直接整個換成當天的內容，不用再往下滑找表單
   const form=document.getElementById('pop-cal-form');
   calEditingId=null;
@@ -4849,28 +4882,29 @@ function renderCalDayPanel(ds){
       '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">'+
         '<label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--tc2);cursor:pointer;"><input type="checkbox" id="cal-new-allday"/> 全天</label>'+
       '</div>'+
-      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">'+
-        '<span class="cal-lbl">'+ICON_REPEAT+'重複</span>'+
-        '<select id="cal-new-repeat" class="time-in"><option value="none">不重複</option><option value="daily">每天</option><option value="weekly">每週</option><option value="monthly">每月</option></select>'+
+      '<div style="margin-bottom:12px;">'+
+        '<div class="cal-lbl" style="margin-bottom:8px;">'+ICON_REPEAT+'重複</div>'+
+        '<div class="cal-seg" id="cal-new-repeat">'+
+          [['none','不重複'],['daily','每天'],['weekly','每週'],['monthly','每月']].map(o=>'<button type="button" class="cal-seg-opt'+(o[0]==='none'?' on':'')+'" data-v="'+o[0]+'">'+o[1]+'</button>').join('')+
+        '</div>'+
       '</div>'+
-      '<div id="cal-new-interval-wrap" style="display:none;align-items:center;gap:6px;margin-bottom:12px;">'+
-        '<span class="cal-lbl" style="width:auto;">每</span>'+
-        '<input type="number" min="1" value="1" id="cal-new-interval" class="time-in" style="width:60px;flex:0 0 auto;text-align:center;"/>'+
-        '<span class="cal-lbl" style="width:auto;" id="cal-new-interval-unit">週</span>'+
-        '<span class="cal-lbl" style="width:auto;">一次</span>'+
+      '<div id="cal-new-interval-wrap" class="cal-inline-step" style="display:none;">'+
+        '<span>每</span>'+
+        '<div class="cal-stepper"><button type="button" class="cal-step-b" data-t="cal-new-interval" data-d="-1">−</button><span class="cal-step-v" id="cal-new-interval" data-val="1">1</span><button type="button" class="cal-step-b" data-t="cal-new-interval" data-d="1">＋</button></div>'+
+        '<span id="cal-new-interval-unit">週</span><span>一次</span>'+
       '</div>'+
       '<div id="cal-new-days" style="display:none;gap:8px;margin-bottom:12px;flex-wrap:wrap;">'+[1,2,3,4,5,6,0].map(dd=>'<div class="day-chip" data-d="'+dd+'">'+wdArr[dd]+'</div>').join('')+'</div>'+
-      '<div id="cal-new-count-wrap" style="display:none;align-items:center;gap:6px;margin-bottom:12px;">'+
-        '<span class="cal-lbl" style="width:auto;">共</span>'+
-        '<input type="number" min="1" id="cal-new-repeat-count" class="time-in" placeholder="留空＝不限" style="flex:1;min-width:0;"/>'+
-        '<span class="cal-lbl" style="width:auto;">次</span>'+
+      '<div id="cal-new-count-wrap" class="cal-inline-step" style="display:none;">'+
+        '<span>共</span>'+
+        '<div class="cal-stepper"><button type="button" class="cal-step-b" data-t="cal-new-repeat-count" data-d="-1">−</button><span class="cal-step-v" id="cal-new-repeat-count" data-val="0">∞</span><button type="button" class="cal-step-b" data-t="cal-new-repeat-count" data-d="1">＋</button></div>'+
+        '<span>次</span><span style="color:var(--tc3);font-weight:400;font-size:11px;">∞＝一直</span>'+
       '</div>'+
       '<div style="margin-bottom:12px;">'+
         '<div class="cal-lbl" style="margin-bottom:8px;">'+ICON_SWATCH+'顏色標籤</div>'+
         '<div id="cal-new-colors" style="display:flex;gap:8px;flex-wrap:wrap;">'+['',...Object.keys(CAL_COLORS)].map(cc=>{
           const _tag=cc?calTagOf(cc):'';
-          return '<div class="cal-swatch" data-c="'+cc+'" style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;width:36px;">'+
-            '<span class="cal-swatch-dot'+(cc===calNewColor?' picked':'')+'" style="width:26px;height:26px;display:block;background:'+(cc?CAL_COLORS[cc]:'linear-gradient(135deg,var(--secondary),var(--tertiary))')+';"></span>'+
+          return '<div class="cal-swatch" data-c="'+cc+'" style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;width:44px;">'+
+            '<span class="cal-swatch-dot'+(cc===calNewColor?' picked':'')+'" style="width:34px;height:34px;display:block;background:'+(cc?CAL_COLORS[cc]:'linear-gradient(135deg,var(--secondary),var(--tertiary))')+';"></span>'+
             (_tag?'<span style="font-size:10px;color:var(--tc3);text-align:center;line-height:1.15;">'+_tag+'</span>':'')+
           '</div>';
         }).join('')+'</div>'+
@@ -4890,14 +4924,15 @@ function renderCalDayPanel(ds){
   function syncRepeatVsRange(){
     const sd=document.getElementById('cal-new-start-date').value;
     const ed=document.getElementById('cal-new-end-date').value;
-    const repSel=document.getElementById('cal-new-repeat');
+    const rep=document.getElementById('cal-new-repeat');
     if(ed&&sd&&ed!==sd){
-      repSel.value='none';repSel.disabled=true;
+      // 跨日行程不支援重複：切回不重複並鎖住整組重複設定
+      calRepeatSet('none');rep.style.opacity='.4';rep.style.pointerEvents='none';
       document.getElementById('cal-new-days').style.display='none';
       document.getElementById('cal-new-interval-wrap').style.display='none';
       document.getElementById('cal-new-count-wrap').style.display='none';
     }else{
-      repSel.disabled=false;
+      rep.style.opacity='';rep.style.pointerEvents='';
     }
   }
   document.getElementById('cal-new-allday').addEventListener('change',e=>{
@@ -4937,21 +4972,10 @@ function renderCalDayPanel(ds){
     });
   });
   document.getElementById('cal-edit-cancel').addEventListener('click',()=>renderCalDayPanel(ds));
-  document.getElementById('cal-new-repeat').addEventListener('change',e=>{
-    const v=e.target.value;
-    document.getElementById('cal-new-days').style.display=v==='weekly'?'flex':'none';
-    document.getElementById('cal-new-count-wrap').style.display=v==='none'?'none':'flex';
-    const iv=document.getElementById('cal-new-interval-wrap');
-    iv.style.display=(v==='weekly'||v==='monthly')?'flex':'none';
-    document.getElementById('cal-new-interval-unit').textContent=v==='monthly'?'個月':'週';
-    const edInput=document.getElementById('cal-new-end-date');
-    if(v!=='none'){
-      edInput.value=document.getElementById('cal-new-start-date').value;
-      edInput.disabled=true;
-    }else{
-      edInput.disabled=false;
-    }
-  });
+  // 分段重複按鈕
+  document.querySelectorAll('#cal-new-repeat .cal-seg-opt').forEach(b=>b.addEventListener('click',()=>{calRepeatSet(b.dataset.v);calRepeatSync();}));
+  // 加減 stepper（間隔、次數）
+  document.querySelectorAll('.cal-step-b').forEach(b=>b.addEventListener('click',()=>calStep(b.dataset.t,+b.dataset.d)));
   document.querySelectorAll('#cal-new-days .day-chip').forEach(ch=>ch.addEventListener('click',()=>ch.classList.toggle('on')));
   document.querySelectorAll('#cal-new-colors .cal-swatch').forEach(sw=>sw.addEventListener('click',()=>{
     calNewColor=sw.dataset.c;
@@ -4988,22 +5012,32 @@ function renderCalDayPanel(ds){
     const endTime=timeSelGet('cal-new-end-time')||'';
     const rsel=document.getElementById('cal-new-remind');
     const remind=rsel.value==='custom'?(+((rsel.querySelector('option[value="custom"]')||{}).dataset||{}).min||10):rsel.value;
-    const repeat=document.getElementById('cal-new-repeat').value;
+    const repeat=calRepeatGet();
     const repeatDays=[...document.querySelectorAll('#cal-new-days .day-chip.on')].map(ch=>+ch.dataset.d);
-    const repeatCountRaw=document.getElementById('cal-new-repeat-count').value.trim();
-    const repeatCount=(repeat!=='none'&&repeatCountRaw)?Math.max(1,parseInt(repeatCountRaw,10)||0):0;
-    const interval=(repeat==='weekly'||repeat==='monthly')?Math.max(1,parseInt(document.getElementById('cal-new-interval').value,10)||1):1;
+    const repeatCount=(repeat!=='none')?calStepGet('cal-new-repeat-count'):0; // 0＝一直（∞）
+    const interval=(repeat==='weekly'||repeat==='monthly')?Math.max(1,calStepGet('cal-new-interval')):1;
     const btn=document.getElementById('cal-new-save');
     if(endDate<startDate){alert('結束日期不能早於開始日期喔');return;}
     const editingId=calEditingId;
     btn.disabled=true;btn.textContent=editingId?'⏳ 更新中...':'⏳ 加入中...';
+    let j;
+    // 只有「送出到雲端」這一步失敗才算真的失敗；存完之後的重整/重繪就算出錯，
+    // 資料也已經寫進 Google 了，不能再誤報「更新失敗」（先前的 bug 就是這樣）
     try{
       const payload={title:title,date:startDate,endDate:endDate,time:time,endTime:endTime,allDay:allDay,reminderMin:remind,repeat:repeat,repeatDays:repeatDays,repeatCount:repeatCount,interval:interval,color:calNewColor};
       if(editingId)payload.id=editingId;
       const res=await gasPost(editingId?'editCalEvent':'addCalEvent',payload);
-      const j=await res.json();
-      if(!j.ok)throw new Error(j.error||'');
-      calConnected=true;updateCalStatus();
+      j=await res.json();
+      if(!j.ok)throw new Error(j.error||'伺服器回傳失敗');
+    }catch(e){
+      alert((editingId?'更新失敗':'新增失敗')+' 🥲\n'+(e&&e.message?('原因：'+e.message):'請檢查網路與通行碼')+'\n（若 GAS 尚未重新部署到最新版，日曆重複功能會失效）');
+      btn.disabled=false;btn.textContent=editingId?'💾 更新行程':'加進日曆';
+      return;
+    }
+    // ── 到這裡＝雲端已存成功，以下都是本地更新，包在自己的 try 裡不影響成功狀態 ──
+    calConnected=true;updateCalStatus();
+    calEditingId=null;
+    try{
       if(editingId)Object.keys(calEvents).forEach(k=>{calEvents[k]=(calEvents[k]||[]).filter(x=>x.id!==editingId);});
       if(repeat!=='none'){
         calFetchedMonths={};
@@ -5022,14 +5056,12 @@ function renderCalDayPanel(ds){
         calEvents[startDate].push({id:j.id,title:title,allDay:allDay,time:allDay?'':time,date:startDate,color:calNewColor});
         calEvents[startDate].sort((x,z)=>(x.allDay?'':x.time)<(z.allDay?'':z.time)?-1:1);
       }
-      calEditingId=null;
-      renderPopCal();renderCalDayPanel(ds);renderTodayEvents();
-      triggerBurst(document.getElementById('pop-cal-title')||btn);
-    }catch(e){
-      alert((editingId?'更新失敗':'新增失敗')+' 🥲\n可能是 GAS 還沒更新到 v3.2、還沒執行 testCalAuth 授權日曆、或通行碼不對。');
-      btn.disabled=false;btn.textContent=editingId?'💾 更新行程':'加進日曆';
-    }
+    }catch(_){}
+    renderPopCal();renderCalDayPanel(ds);renderTodayEvents();
+    triggerBurst(document.getElementById('pop-cal-title')||btn);
   });
+  // 從月曆直接點某個行程進來 → 自動打開該行程的編輯（表單已填好、捲到定位）
+  if(editId){const _ev=(calEvents[ds]||[]).find(x=>x.id===editId);if(_ev)startEditCalEvent(_ev);}
 }
 // 今日行程卡的＋：開月曆並直接展開今天面板
 (function(){
