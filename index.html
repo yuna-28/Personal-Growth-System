@@ -2,6 +2,30 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8"/>
+<script>
+// 全域錯誤顯示器：任何 JS 錯誤都在畫面頂端顯示紅條（含版本＋行號），
+// 使用者截圖就能直接除錯——不再有「默默壞掉的空白畫面」。
+window.__errLog=[];
+window.addEventListener('error',function(e){
+  window.__errLog.push((e.message||'?')+' @'+e.lineno);
+  try{
+    var show=function(){
+      var t=document.getElementById('err-toast');
+      if(!t){t=document.createElement('div');t.id='err-toast';
+        t.style.cssText='position:fixed;top:8px;left:8px;right:8px;z-index:2147483647;background:#FFF0F0;border:2px solid #E24B4A;border-radius:12px;padding:9px 34px 9px 12px;font-size:12px;color:#A32D2D;font-family:monospace;line-height:1.6;word-break:break-all;box-shadow:0 6px 18px rgba(0,0,0,.15);';
+        var x=document.createElement('div');x.textContent='✕';
+        x.style.cssText='position:absolute;top:6px;right:10px;cursor:pointer;font-size:14px;font-weight:bold;';
+        x.addEventListener('click',function(){t.remove();});
+        t.appendChild(x);
+        var m=document.createElement('div');m.id='err-toast-msg';t.appendChild(m);
+        document.body.appendChild(t);}
+      var msg=document.getElementById('err-toast-msg');
+      if(msg)msg.textContent='⚠️ 程式錯誤（請截圖給 Claude）：'+(e.message||'?')+'（第 '+e.lineno+' 行）';
+    };
+    if(document.body)show();else document.addEventListener('DOMContentLoaded',show);
+  }catch(_){}
+});
+</script>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover"/>
 <title>格蘭朵魔法森林</title>
 <link rel="manifest" href="manifest.json"/>
@@ -1255,7 +1279,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v75';
+const APP_VER='v76';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
@@ -4782,11 +4806,15 @@ let calNewColor='';
 let calEditingId=null;
 function calTagOf(colorId){
   ensureCalColorTagsDefaults();
-  return (colorId&&S.calColorTags[colorId])||'';
+  // String()：雲端同步回來的標籤值不保證是字串，非字串會讓後面的 .replace 爆掉
+  const v=colorId&&S.calColorTags&&S.calColorTags[colorId];
+  return v?String(v):'';
 }
 function isReminderEvent(ev){
+  // 雲端同步回來的 calIds 不保證是陣列（曾有非陣列形狀讓 .indexOf 直接拋錯，
+  // 整個日面板因此變空白）——不是陣列一律當「不是提醒事件」
   const ids=(S.notifications&&S.notifications.calIds)||[];
-  return ids.indexOf(ev.id)>=0;
+  return Array.isArray(ids)?ids.indexOf(ev&&ev.id)>=0:false;
 }
 function updateCalStatus(){
   const el=document.getElementById('cal-status');
@@ -4873,7 +4901,16 @@ function calRepeatSync(){
   if(v!=='none'){edInput.value=document.getElementById('cal-new-start-date').value;edInput.disabled=true;}
   else{edInput.disabled=false;}
 }
+// 防護罩：日面板建構若拋錯，顯示紅色錯誤卡（含錯誤訊息＋版本）而不是默默空白
 function renderCalDayPanel(ds,editId){
+  try{_renderCalDayPanelInner(ds,editId);}
+  catch(e){
+    showCalDayview();
+    const f=document.getElementById('pop-cal-form');
+    if(f)f.innerHTML='<div style="background:#FFF0F0;border:1.5px solid #E24B4A;border-radius:12px;padding:12px;font-size:12px;color:#A32D2D;line-height:1.8;word-break:break-all;">⚠️ 表單載入出錯，請把這段截圖給 Claude：<br/><b>'+String(e&&e.message||e).replace(/</g,'&lt;')+'</b><br/>App '+(typeof APP_VER!=='undefined'?APP_VER:'?')+' · 日期 '+ds+'</div>';
+  }
+}
+function _renderCalDayPanelInner(ds,editId){
   showCalDayview(); // 點某一天/按＋直接整個換成當天的內容，不用再往下滑找表單
   const form=document.getElementById('pop-cal-form');
   calEditingId=null;
