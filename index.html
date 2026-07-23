@@ -1177,7 +1177,7 @@ button{-webkit-tap-highlight-color:transparent;}
   <button class="mini-btn" id="ver-check-btn" style="margin-top:4px;">🔍 檢查後端版本（確認 GAS 有沒有更新到）</button>
   <div style="font-size:12px;font-weight:700;color:var(--tc2);margin:10px 0 4px;">通行碼（每台裝置輸入一次）</div>
   <div style="display:flex;gap:8px;">
-    <input class="tdl-in" id="cal-code-input" type="password" placeholder="輸入 GAS 裡設定的通行碼" style="flex:1;min-width:0;"/>
+    <input class="tdl-in" id="cal-code-input" type="text" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-masked="1" placeholder="輸入 GAS 裡設定的通行碼" style="flex:1;min-width:0;-webkit-text-security:disc;text-security:disc;"/>
     <button class="mini-btn" id="cal-code-save" style="flex-shrink:0;">儲存</button>
   </div>
   <p style="font-size:11px;color:var(--tc3);line-height:1.7;margin-top:6px;">通行碼只存在這台裝置，需與 GAS 程式碼裡的 APP_CODE 相同（沒設定就留空）。</p>
@@ -1279,7 +1279,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v77';
+const APP_VER='v78';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
@@ -3651,6 +3651,27 @@ if('serviceWorker' in navigator){
     }).catch(()=>{});
   });
 }
+// ── 關掉瀏覽器的自動填入／存密碼提示 ──
+// 這個 app 沒有登入功能，但只要頁面上有「像帳密的欄位」，Chrome 就會把
+// 剛打的字（例如 TDL 內容）誤認成帳號、跳出「要儲存密碼嗎？」。
+// 幫所有輸入框標上 autocomplete=off；TDL/日記是動態產生的，所以用
+// MutationObserver 讓新長出來的欄位也一起套用。
+function killAutofill(root){
+  (root||document).querySelectorAll('input,textarea').forEach(el=>{
+    if(el.dataset.acDone)return;
+    el.dataset.acDone='1';
+    el.setAttribute('autocomplete','off');
+    el.setAttribute('autocorrect','off');
+    el.setAttribute('autocapitalize','off');
+    el.setAttribute('spellcheck','false');
+  });
+}
+killAutofill();
+try{
+  new MutationObserver(muts=>{
+    for(const m of muts)if(m.addedNodes&&m.addedNodes.length){killAutofill();break;}
+  }).observe(document.body,{childList:true,subtree:true});
+}catch(_){}
 // ── Splash 淡出（只在 standalone 顯示，其他模式本來就 display:none） ──
 setTimeout(()=>{const s=document.getElementById('pwa-splash');if(s){s.style.opacity='0';setTimeout(()=>s.remove(),500);}},900);
 
