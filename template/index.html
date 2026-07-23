@@ -1279,7 +1279,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v76';
+const APP_VER='v77';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
@@ -2294,8 +2294,8 @@ function selectPopCalDate(ds){
   toggleCalPopup();
   applyViewDate(true);
 }
-document.getElementById('pop-cal-prev').addEventListener('click',()=>{popCalMonth--;if(popCalMonth<0){popCalMonth=11;popCalYear--;}renderPopCal();document.getElementById('pop-cal-form').style.display='none';if(typeof fetchCalMonth==='function')fetchCalMonth(popCalYear,popCalMonth);});
-document.getElementById('pop-cal-next').addEventListener('click',()=>{popCalMonth++;if(popCalMonth>11){popCalMonth=0;popCalYear++;}renderPopCal();document.getElementById('pop-cal-form').style.display='none';if(typeof fetchCalMonth==='function')fetchCalMonth(popCalYear,popCalMonth);});
+document.getElementById('pop-cal-prev').addEventListener('click',()=>{popCalMonth--;if(popCalMonth<0){popCalMonth=11;popCalYear--;}renderPopCal();if(typeof fetchCalMonth==='function')fetchCalMonth(popCalYear,popCalMonth);});
+document.getElementById('pop-cal-next').addEventListener('click',()=>{popCalMonth++;if(popCalMonth>11){popCalMonth=0;popCalYear++;}renderPopCal();if(typeof fetchCalMonth==='function')fetchCalMonth(popCalYear,popCalMonth);});
 
 // ── TDL RATE ──────────────────────────────────────────
 function calcTDLRate(dates){
@@ -4916,6 +4916,8 @@ function renderCalDayPanel(ds,editId){
 }
 function _renderCalDayPanelInner(ds,editId){
   showCalDayview(); // 點某一天/按＋直接整個換成當天的內容，不用再往下滑找表單
+  // 防禦：舊版翻月按鈕曾把表單 display:none 藏起來（歷史 bug），這裡一律重新打開
+  const _f0=document.getElementById('pop-cal-form');if(_f0)_f0.style.display='';
   const form=document.getElementById('pop-cal-form');
   calEditingId=null;
   const d=new Date(ds+'T00:00:00');
