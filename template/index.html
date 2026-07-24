@@ -1279,7 +1279,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v78';
+const APP_VER='v79';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
@@ -1560,13 +1560,11 @@ async function loadCloud(){
       if(d.notifications){const nf=parseJ(d.notifications,null);if(nf&&nf.presets)S.notifications=nf;}
       if(d.supportResources){const rc=parseJ(d.supportResources,null);if(Array.isArray(rc))S.resourceCats=rc;}
       if(d.todaySession){
+        // todaySession 只保留 tdlHist 合併（歷史每天的 TDL 完成紀錄）；
+        // 今天的 checked/tdlDone/todayTDL 改由下面「entry 時間戳還原」統一處理，
+        // 不再在這裡各自還原，避免兩套邏輯打架
         const ts=parseJ(d.todaySession,null);
         if(ts&&ts.tdlHist)S.tdlHist=Object.assign({},ts.tdlHist,S.tdlHist||{});
-        if(ts&&ts.date===today()&&!Object.keys(S.checked||{}).length&&!Object.keys(S.tdlDone||{}).length){
-          if(ts.checked&&Object.keys(ts.checked).length)S.checked={...ts.checked};
-          if(ts.tdlDone&&Object.keys(ts.tdlDone).length)S.tdlDone={...ts.tdlDone};
-          if(Array.isArray(ts.todayTDL)&&ts.todayTDL.length&&(!S.todayTDL||!S.todayTDL.length))S.todayTDL=ts.todayTDL.slice();
-        }
       }
       if(d.expLog){const _el=parseJ(d.expLog,null);if(Array.isArray(_el))S.expLog=_el;}
       if(d.calColorTags){const _ct=parseJ(d.calColorTags,null);if(_ct&&typeof _ct==='object')S.calColorTags=_ct;}
@@ -1581,7 +1579,7 @@ async function loadCloud(){
           diary:{hl:row.hl||'',rf:row.rf||'',gr:row.gr||'',quote:row.quote||''},
           tdl:parseJ(row.tdl,[]),exp:+row.exp||0,streak:+row.streak||0,
           tdlTotal:+row.tdlTotal||0,tdlDone:+row.tdlDone||0,
-          tdlItems:parseJ(row.tdlItems,null),photos:parseJ(row.photos,[])};
+          tdlItems:parseJ(row.tdlItems,null),photos:parseJ(row.photos,[]),savedAt:+row.savedAt||0};
         const idx=S.entries.findIndex(e=>e.date===dateStr);
         if(idx>=0){
           // 雲端還沒有這天的 TDL 明細（舊資料列）時，不要用空值蓋掉本機已經有的快照
@@ -1604,13 +1602,29 @@ async function loadCloud(){
         }
       }
     }
-    // restore today's session from cloud entry（草稿或已種下都還原，本機空才採用）
+    // 還原「今天」的即時狀態（草稿／已種下的同步核心）：
+    // 用 savedAt 時間戳做「最後寫入的裝置贏」——雲端這天的資料比本機正在編輯的新
+    // （或本機根本還沒動過今天）→ 整組覆蓋，另一台存的草稿/種下狀態才會出現；
+    // 反之（本機才是最新的）就保留本機，不被舊雲端蓋掉。
     const te=S.entries.find(e=>e.date===curDay());
     if(te){
-      if(!Object.keys(S.checked).length&&Array.isArray(te.checked))te.checked.forEach(k=>S.checked[k]=true);
-      if(!S.diary.hl&&!S.diary.rf&&!S.diary.gr&&te.diary)S.diary={...te.diary};
-      if(!S.tomorrowTDL.length&&Array.isArray(te.tdl))S.tomorrowTDL=te.tdl.slice();
-      if(!(S.todayPhotos||[]).length&&Array.isArray(te.photos))S.todayPhotos=te.photos.slice();
+      const cloudTs=+te.savedAt||0;
+      const localTs=+localStorage.getItem('grandol_live_ts')||0;
+      const localEmpty=!Object.keys(S.checked).length&&!S.diary.hl&&!S.diary.rf&&!S.diary.gr&&!(S.todayTDL||[]).length&&!(S.tomorrowTDL||[]).length;
+      if(cloudTs>localTs||localEmpty){
+        S.checked={};if(Array.isArray(te.checked))te.checked.forEach(k=>S.checked[k]=true);
+        if(te.diary)S.diary={...te.diary};
+        if(Array.isArray(te.tdl))S.tomorrowTDL=te.tdl.slice();
+        if(Array.isArray(te.photos))S.todayPhotos=te.photos.slice();
+        // 今天的 TDL 明細（含已勾/未勾）→ 還原成即時 todayTDL＋tdlDone
+        if(Array.isArray(te.tdlItems)&&te.tdlItems.length){
+          S.todayTDL=te.tdlItems.map(x=>({task:x.task,theme:x.theme}));
+          S.tdlDone={};te.tdlItems.forEach((x,i)=>{if(x.done)S.tdlDone['t'+i]=true;});
+        }
+        // 這天 entry 已種下（streak>=1）→ 對齊 lastPlant，另一台就不會重複種、重複加分
+        if((+te.streak||0)>=1)S.lastPlant=curDay();
+        if(cloudTs)localStorage.setItem('grandol_live_ts',String(cloudTs));
+      }
     }
     if(tdlEditCtx==='today'&&S.tomorrowTDL.length)tdlRows=S.tomorrowTDL.map(r=>({...r,confirmed:r.confirmed||false}));
     sv(S);renderAll();
@@ -2084,8 +2098,12 @@ document.getElementById('tdl-add').addEventListener('click',()=>{curRows().push(
 // ── PLANT TODAY ───────────────────────────────────────
 document.getElementById('plant-btn').addEventListener('click',async()=>{
   if(!ctxIsToday()){await plantBackfill();return;}
-  const replant=S.lastPlant===curDay();
-  if(replant&&!confirm('今天已經種過了！要覆蓋今天的紀錄嗎？'))return;
+  // 防重複加分：本機 lastPlant 或雲端同步下來的 entry（streak>=1）任一顯示今天已種，
+  // 就當「已種過」，只更新內容、不再加 EXP／蘋果。避免「手機沒同步到→又種一次→重複加分」
+  const _todayEntry=S.entries.find(e=>e.date===curDay());
+  const replant=S.lastPlant===curDay()||!!(_todayEntry&&(+_todayEntry.streak||0)>=1);
+  if(replant&&!confirm('今天已經種過了（可能在另一個裝置種的）！要用現在的內容更新今天的紀錄嗎？'))return;
+  if(replant)S.lastPlant=curDay();
   const d=S.diary;
   if(!d.hl&&!d.rf&&!d.gr){alert('今日小記還是空的，先寫一點再種下今天 📖');return;}
   const confirmed=tdlRows.filter(r=>(r.theme||r.task)&&r.confirmed);
@@ -2121,7 +2139,8 @@ document.getElementById('plant-btn').addEventListener('click',async()=>{
     while(S.seedlings>=2){S.seedlings-=2;S.trees++;}
   }
 
-  const entry={date:curDay(),checked:[...Object.keys(S.checked)],diary:{...d},exp:S.exp,streak:S.streak,tdl:S.tomorrowTDL,tdlTotal:(S.todayTDL||[]).length,tdlDone:Object.keys(S.tdlDone).length,tdlItems:buildTdlSnapshot(S.todayTDL,S.tdlDone),photos:(S.todayPhotos||[])};
+  const _now=Date.now();localStorage.setItem('grandol_live_ts',String(_now));
+  const entry={date:curDay(),checked:[...Object.keys(S.checked)],diary:{...d},exp:S.exp,streak:S.streak,tdl:S.tomorrowTDL,tdlTotal:(S.todayTDL||[]).length,tdlDone:Object.keys(S.tdlDone).length,tdlItems:buildTdlSnapshot(S.todayTDL,S.tdlDone),photos:(S.todayPhotos||[]),savedAt:_now};
   const idx=S.entries.findIndex(e=>e.date===curDay());
   if(idx>=0)S.entries[idx]=entry;else S.entries.push(entry);
 
@@ -2136,7 +2155,7 @@ document.getElementById('plant-btn').addEventListener('click',async()=>{
   renderPlantBtn();
   triggerBurst(btn);if(!replant)showExpPop(btn,'+20 EXP 🌱');
 
-  await syncEntry({date:curDay(),checked:Object.keys(S.checked),hl:d.hl,rf:d.rf,gr:d.gr,quote:d.quote||'',tdl:S.tomorrowTDL,exp:S.exp,streak:S.streak,tdlTotal:entry.tdlTotal,tdlDone:entry.tdlDone,tdlItems:entry.tdlItems||[],photos:S.todayPhotos||[]});
+  await syncEntry({date:curDay(),checked:Object.keys(S.checked),hl:d.hl,rf:d.rf,gr:d.gr,quote:d.quote||'',tdl:S.tomorrowTDL,exp:S.exp,streak:S.streak,tdlTotal:entry.tdlTotal,tdlDone:entry.tdlDone,tdlItems:entry.tdlItems||[],photos:S.todayPhotos||[],savedAt:entry.savedAt});
   await syncState();
 });
 
@@ -4449,7 +4468,7 @@ let entryTimer=null;
 function syncEntryFor(ds){
   const e=S.entries.find(x=>x.date===ds);
   if(!e)return Promise.resolve();
-  return syncEntry({date:e.date,checked:e.checked||[],hl:e.diary?.hl||'',rf:e.diary?.rf||'',gr:e.diary?.gr||'',quote:e.diary?.quote||'',tdl:e.tdl||[],exp:e.exp||0,streak:e.streak||0,tdlTotal:e.tdlTotal||0,tdlDone:e.tdlDone||0,tdlItems:e.tdlItems||[],photos:e.photos||[]});
+  return syncEntry({date:e.date,checked:e.checked||[],hl:e.diary?.hl||'',rf:e.diary?.rf||'',gr:e.diary?.gr||'',quote:e.diary?.quote||'',tdl:e.tdl||[],exp:e.exp||0,streak:e.streak||0,tdlTotal:e.tdlTotal||0,tdlDone:e.tdlDone||0,tdlItems:e.tdlItems||[],photos:e.photos||[],savedAt:e.savedAt||Date.now()});
 }
 function syncEntryDebounced(){
   const ds=ctxIsToday()?curDay():viewDate;
@@ -4549,7 +4568,8 @@ function writeDraftEntry(){
   const keepStreak=existing?(+existing.streak||0):0;
   // 存草稿一樣要帶當天的 TDL 快照：這裡是整筆覆蓋 entry，漏掉 tdlItems 會把已存的明細清空，
   // 接著 syncEntryFor 又會把空的明細推上雲端，等於把紀錄洗掉
-  const entry={date:curDay(),checked:[...Object.keys(S.checked)],diary:{...d},exp:S.exp,streak:keepStreak,tdl:S.tomorrowTDL,tdlTotal:(S.todayTDL||[]).length,tdlDone:Object.keys(S.tdlDone).length,tdlItems:buildTdlSnapshot(S.todayTDL,S.tdlDone),photos:(S.todayPhotos||[])};
+  const _now=Date.now();localStorage.setItem('grandol_live_ts',String(_now));
+  const entry={date:curDay(),checked:[...Object.keys(S.checked)],diary:{...d},exp:S.exp,streak:keepStreak,tdl:S.tomorrowTDL,tdlTotal:(S.todayTDL||[]).length,tdlDone:Object.keys(S.tdlDone).length,tdlItems:buildTdlSnapshot(S.todayTDL,S.tdlDone),photos:(S.todayPhotos||[]),savedAt:_now};
   const idx=S.entries.findIndex(e=>e.date===curDay());
   if(idx>=0)S.entries[idx]=entry;else S.entries.push(entry);
   sv(S);
@@ -4595,6 +4615,16 @@ document.addEventListener('visibilitychange',()=>{
   applyViewDate(false);
   if(typeof renderFlowers==='function')renderFlowers();
   if(typeof renderFruits==='function')renderFruits();
+});
+// 切回 app 時自動從雲端拉最新——這是「多裝置同步」的關鍵：
+// 在網頁種下/存草稿後切到手機，手機會自動抓到最新狀態（loadCloud 內部用時間戳
+// 只覆蓋比本機舊的部分、再 renderAll），不會再出現「手機沒同步、重複種下」。
+let _lastFgSync=Date.now();
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden||VIEWER_MODE||!GAS_URL)return;
+  if(Date.now()-_lastFgSync<20000)return; // 20 秒內不重複拉，避免頻繁切換一直打 API
+  _lastFgSync=Date.now();
+  if(typeof loadCloud==='function')loadCloud();
 });
 // 備註欄（今天與補記日期都能填，日曆黃點沿用 calNotes）
 (function(){
