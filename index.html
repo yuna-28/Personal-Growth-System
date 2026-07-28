@@ -628,6 +628,33 @@ body.viewer-mode .neo-chip,body.viewer-mode .sticky-check,body.viewer-mode .habi
 .cal-step-b{width:44px;height:100%;font-size:22px;font-weight:700;color:var(--primary);background:rgba(var(--primary-rgb),.06);border:none;cursor:pointer;}
 .cal-step-b:active{background:rgba(var(--primary-rgb),.16);}
 .cal-step-v{min-width:44px;text-align:center;font-family:'Baloo 2',sans-serif;font-size:18px;font-weight:800;color:var(--tc);}
+/* ── 健康模組 ─────────────────────────────────────── */
+.health-card{border:1.5px solid rgba(var(--tertiary-rgb),.4);}
+#health-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+@media(max-width:520px){#health-grid{grid-template-columns:1fr;}}
+.hz-card{background:rgba(255,255,255,.55);border:1.5px solid rgba(var(--tertiary-rgb),.35);border-radius:16px;padding:11px 12px;box-shadow:var(--nm-in);}
+.hz-card.on{background:rgba(var(--tertiary-rgb),.22);border-color:rgba(var(--tertiary-rgb),.6);}
+.hz-hd{display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none;}
+.hz-hd .hz-ic{font-size:18px;flex-shrink:0;display:flex;}
+.hz-hd .hz-l{font-weight:800;font-size:13.5px;color:var(--tc);}
+.hz-hd .hz-sum{flex:1;font-size:11.5px;color:var(--tc3);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+.hz-hd .hz-chevron{font-size:11px;color:var(--tc3);flex-shrink:0;transition:transform .2s;}
+.hz-card.expanded .hz-chevron{transform:rotate(90deg);}
+.hz-body{display:none;margin-top:10px;padding-top:10px;border-top:1px dashed rgba(var(--tertiary-rgb),.4);}
+.hz-card.expanded .hz-body{display:block;}
+.hz-row{display:flex;align-items:center;gap:8px;margin-bottom:9px;flex-wrap:wrap;}
+.hz-row .hz-lbl{font-size:12px;font-weight:700;color:var(--tc2);width:40px;flex-shrink:0;}
+.hz-note{width:100%;background:rgba(255,255,255,.7);border:1.5px solid rgba(var(--tertiary-rgb),.35);border-radius:11px;padding:8px 11px;font-family:'Quicksand',sans-serif;font-size:12.5px;color:var(--tc);outline:none;resize:vertical;min-height:38px;}
+.hz-note:focus{border-color:rgba(var(--primary-rgb),.5);}
+.hz-tag{display:inline-flex;align-items:center;padding:7px 12px;border-radius:999px;border:1.5px solid rgba(var(--secondary-rgb),.3);background:rgba(255,255,255,.6);font-size:12.5px;font-weight:700;color:var(--tc2);cursor:pointer;user-select:none;}
+.hz-tag.on{background:rgba(var(--tertiary-rgb),.5);border-color:var(--tertiary);color:var(--ok);}
+.hz-tag:active{transform:scale(.96);}
+.hz-tags{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:9px;}
+.hz-water-ring{display:flex;align-items:center;gap:12px;}
+.hz-water-btns{display:flex;gap:7px;flex-wrap:wrap;flex:1;}
+.hz-wbtn{flex:1;min-width:64px;height:40px;border-radius:12px;border:1.5px solid rgba(var(--secondary-rgb),.35);background:rgba(255,255,255,.7);font-family:'Baloo 2',sans-serif;font-size:14px;font-weight:800;color:var(--secondary);cursor:pointer;}
+.hz-wbtn:active{transform:scale(.96);background:rgba(var(--tertiary-rgb),.25);}
+.hz-wbtn.minus{color:var(--tc3);flex:0 0 42px;min-width:42px;}
 
 
 /* ── 清單/格狀切換 ── */
@@ -861,6 +888,11 @@ button{-webkit-tap-highlight-color:transparent;}
   </div>
 </div>
 
+<div class="gcard health-card">
+  <div class="sec-hd">🌿 健康 <span style="font-size:11px;font-weight:500;color:var(--tc3);">睡眠 · 飲食 · 運動 · 喝水，快速記錄就好</span></div>
+  <div id="health-grid"></div>
+</div>
+
 <button class="liq-btn" id="plant-btn"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/2728_3d.png" width="17" height="17"/> 種下今天</button>
 <button class="ghost-btn" id="draft-btn">💾 儲存草稿（先存不種）</button>
 <button class="ghost-btn" id="copy-btn"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4cb_3d.png" width="15" height="15"/> 複製今日紀錄給 Claude</button>
@@ -899,6 +931,14 @@ button{-webkit-tap-highlight-color:transparent;}
   </div>
 </div>
 <div class="gcard insight-card" id="wk-insight-card" style="display:none;"><div class="sec-hd">💡 本週洞察</div><div id="wk-insight"></div></div>
+
+<div class="rd-zone" id="wk-health-zone" style="display:none;">🌿 健康觀察</div>
+<div class="gcard" id="wk-sleep-card" style="display:none;"><div class="sec-hd">🌙 睡眠觀察</div><div id="wk-sleep"></div></div>
+<div class="rd-pair" id="wk-health-pair" style="display:none;">
+  <div class="gcard" id="wk-diet-card" style="display:none;"><div class="sec-hd">🍽️ 飲食</div><div id="wk-diet"></div></div>
+  <div class="gcard" id="wk-exercise-card" style="display:none;"><div class="sec-hd">🏃 運動</div><div id="wk-exercise"></div></div>
+</div>
+<div class="gcard" id="wk-water-card" style="display:none;"><div class="sec-hd">💧 喝水</div><div id="wk-water"></div></div>
 
 <div class="rd-zone">🗒 這週明細</div>
 <div class="gcard" id="wk-tdldetail-card" style="display:none;"><div class="sec-hd">🗒 這週 TDL 明細</div><div id="wk-tdldetail"></div></div>
@@ -1279,7 +1319,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v79';
+const APP_VER='v80';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
@@ -1373,11 +1413,84 @@ function softToast(msg,ms){
   setTimeout(()=>{t.style.transition='opacity .4s';t.style.opacity='0';setTimeout(()=>t.remove(),400);},ms||4200);
 }
 function today(){return fmtLocal(new Date());}
+
+// ── 健康模組（睡眠/飲食/運動/喝水）──────────────────────
+// 取代原本的 早起/早睡/跳舞 三個習慣（會被自動封存）。四項各自：當天有記錄
+// → +10 EXP＋長一朵花（跟習慣一致）。ic=顯示圖示碼、fc=花朵碼。
+const HEALTH=[
+  {k:'sleep',   l:'睡眠', ic:'1f634', fc:'1fab7'},
+  {k:'diet',    l:'飲食', ic:'1f37d', fc:'1f337'},
+  {k:'exercise',l:'運動', ic:'1f3c3', fc:'1f33a'},
+  {k:'water',   l:'喝水', ic:'1f4a7', fc:'1f4f0'},
+];
+const DIET_TAGS=['三餐正常','有點餓補餐','看劇配零食','聚餐/外食','喝手搖/含糖飲料'];
+const EXERCISE_TYPES=['跑步機','跳舞','其他'];
+const WATER_GOAL=2500;
+function emptyHealth(){return {sleep:{sleepTime:'',wakeTime:'',note:''},diet:{tags:[],note:''},exercise:{type:'',duration:0,note:''},water:{amount:0},scored:{}};}
+// 這個項目今天有沒有記錄（決定要不要給 EXP／花）
+function healthHas(h,k){
+  if(!h)return false;
+  if(k==='sleep')return !!(h.sleep&&(h.sleep.sleepTime||h.sleep.wakeTime));
+  if(k==='diet')return !!(h.diet&&((h.diet.tags&&h.diet.tags.length)||h.diet.note));
+  if(k==='exercise')return !!(h.exercise&&h.exercise.type);
+  if(k==='water')return !!(h.water&&(+h.water.amount||0)>0);
+  return false;
+}
+// 睡眠時數（分鐘）：起床時間 - 入睡時間，跨午夜自動 +24h
+function sleepMinutes(sl){
+  if(!sl||!sl.sleepTime||!sl.wakeTime)return null;
+  const p=s=>{const a=String(s).split(':');return (+a[0])*60+(+a[1]||0);};
+  let s=p(sl.sleepTime),w=p(sl.wakeTime);
+  if(w<=s)w+=24*60; // 跨午夜
+  return w-s;
+}
+function fmtSleepDur(min){if(min==null)return '';const h=Math.floor(min/60),m=min%60;return h+'小時'+(m?m+'分':'');}
+// 「複製給 Claude」用的健康摘要文字
+function healthCopyText(h){
+  if(!h||!HEALTH.some(H=>healthHas(h,H.k)))return '🌿 健康：無記錄\n';
+  const L=['🌿 健康：'];
+  if(healthHas(h,'sleep')){const s=h.sleep,dm=sleepMinutes(s);L.push(`  🌙 睡眠：${s.sleepTime||'?'}→${s.wakeTime||'?'}${dm!=null?'（'+fmtSleepDur(dm)+'）':''}${s.note?' · '+s.note:''}`);}
+  if(healthHas(h,'diet')){const d=h.diet;L.push(`  🍽️ 飲食：${(d.tags||[]).join('、')||'—'}${d.note?' · '+d.note:''}`);}
+  if(healthHas(h,'exercise')){const e=h.exercise;L.push(`  🏃 運動：${e.type}${e.duration?' '+e.duration+'分':''}${e.note?' · '+e.note:''}`);}
+  if(healthHas(h,'water')){L.push(`  💧 喝水：${h.water.amount}ml`);}
+  return L.join('\n')+'\n';
+}
+// 對照健康資料的「已記錄」狀態與「已給分」狀態，差異式加減 EXP＋花（今天或補記日都通用）
+function reconcileHealthExp(h,ds){
+  if(!h)return 0;
+  h.scored=h.scored||{};
+  let delta=0;
+  HEALTH.forEach(H=>{
+    const has=healthHas(h,H.k),was=!!h.scored[H.k];
+    if(has&&!was){delta+=10;addFlower(H.fc,ds);h.scored[H.k]=true;}
+    else if(!has&&was){delta-=10;removeFlower(H.fc,ds);h.scored[H.k]=false;}
+  });
+  if(delta){S.exp=Math.max(0,S.exp+delta);logExp(delta,'🌿 健康記錄');}
+  return delta;
+}
 function defaults(){
   return{exp:0,flowers:[],apples:[],bigApples:0,goldFruits:0,seedlings:0,trees:1,
     streak:0,lastStreak:'',checked:{},diary:{hl:'',rf:'',gr:'',quote:''},
     lastPlant:'',tomorrowTDL:[],todayTDL:[],tdlDone:{},entries:[],
-    achievements:[],quotes:[],calNotes:{},myPeople:[],treasures:[],gardenPos:{},notePos:null,notifications:null,todayPhotos:[],resourceCats:null,expLog:[],tdlHist:{},archivedHabits:[],calRecur:{}};
+    achievements:[],quotes:[],calNotes:{},myPeople:[],treasures:[],gardenPos:{},notePos:null,notifications:null,todayPhotos:[],resourceCats:null,expLog:[],tdlHist:{},archivedHabits:[],calRecur:{},health:emptyHealth(),healthMigrated:false};
+}
+// 一次性遷移：健康模組接手「早起/早睡/跳舞」→ 把這三個習慣封存（歷史紀錄保留）。
+// 只跑一次（healthMigrated 旗標），之後使用者若自己解封也不會被強制封回。
+const HEALTH_REPLACED=['wakeup','sleep','dance']; // 被健康模組取代、不再出現在習慣清單
+// 確保被取代的習慣維持封存——每次載入都跑（含 loadCloud 之後），避免雲端舊的
+// archivedHabits 把它們又「解封」出來。每台跑新版的裝置都會自動維持一致。
+function enforceHealthArchive(){
+  if(!S.healthMigrated)return;
+  S.archivedHabits=S.archivedHabits||[];
+  HEALTH_REPLACED.forEach(k=>{if(S.archivedHabits.indexOf(k)<0)S.archivedHabits.push(k);});
+}
+function migrateHealth(){
+  if(S.healthMigrated)return;
+  if(!S.health||typeof S.health!=='object')S.health=emptyHealth();
+  S.health.scored=S.health.scored||{};
+  S.healthMigrated=true;
+  enforceHealthArchive();
+  sv(S);
 }
 function ld(){
   try{const r=localStorage.getItem(SK);if(r){const s=JSON.parse(r);return Object.assign(defaults(),s);}}catch(e){}
@@ -1394,6 +1507,9 @@ function qText(q){return typeof q==='string'?q:((q&&q.text)||'');}
 function migQuotes(){if(Array.isArray(S.quotes))S.quotes=S.quotes.map(q=>typeof q==='string'?{text:q,desc:'',link:'',exported:false}:Object.assign({text:'',desc:'',link:'',exported:false},q));}
 let S=ld();
 migQuotes();
+if(!S.health||typeof S.health!=='object')S.health=emptyHealth();
+if(!S.health.scored)S.health.scored={};
+migrateHealth();
 
 // 這兩個函式提前搬到這裡定義：rolloverToToday() 在頁面載入時就會被同步呼叫（見下面），
 // 而它們原本定義在後面的 <script> 區塊——瀏覽器是一個 <script> 標籤執行完才執行下一個，
@@ -1450,12 +1566,17 @@ function rolloverToToday(){
       }
       if(_ck.length&&!(_en.checked||[]).length)_en.checked=_ck;
       if(_hasDiary&&!(_en.diary&&(_en.diary.hl||_en.diary.rf||_en.diary.gr||_en.diary.quote)))_en.diary={..._dy};
+      // 健康資料也一起落地到舊那天的 entry（有記錄才存）
+      if(S.health&&HEALTH.some(H=>healthHas(S.health,H.k))&&!(_en.health&&HEALTH.some(H=>healthHas(_en.health,H.k)))){
+        _en.health=JSON.parse(JSON.stringify(S.health));
+      }
     }
   }
   const _hk=Object.keys(S.tdlHist).sort();
   while(_hk.length>60){delete S.tdlHist[_hk.shift()];}
   S.checked={};S.diary={hl:'',rf:'',gr:'',quote:''};S.todayPhotos=[];
   S.todayTDL=S.tomorrowTDL||[];S.tomorrowTDL=[];S.tdlDone={};
+  S.health=emptyHealth(); // 新的一天，健康記錄歸零
   S.dayKey=t;sv(S);
   return true;
 }
@@ -1565,6 +1686,7 @@ async function loadCloud(){
       if(d.expLog){const _el=parseJ(d.expLog,null);if(Array.isArray(_el))S.expLog=_el;}
       if(d.calColorTags){const _ct=parseJ(d.calColorTags,null);if(_ct&&typeof _ct==='object')S.calColorTags=_ct;}
       if(d.archivedHabits){const _ah=parseJ(d.archivedHabits,null);if(Array.isArray(_ah))S.archivedHabits=_ah;}
+      enforceHealthArchive(); // 雲端可能是遷移前的舊清單，補回被健康模組取代的封存
       if(d.calRecur){const _cr=parseJ(d.calRecur,null);if(_cr&&typeof _cr==='object')S.calRecur=_cr;}
     }
     if(en.ok&&Array.isArray(en.data)){
@@ -1575,12 +1697,13 @@ async function loadCloud(){
           diary:{hl:row.hl||'',rf:row.rf||'',gr:row.gr||'',quote:row.quote||''},
           tdl:parseJ(row.tdl,[]),exp:+row.exp||0,streak:+row.streak||0,
           tdlTotal:+row.tdlTotal||0,tdlDone:+row.tdlDone||0,
-          tdlItems:parseJ(row.tdlItems,null),photos:parseJ(row.photos,[]),savedAt:+row.savedAt||0};
+          tdlItems:parseJ(row.tdlItems,null),photos:parseJ(row.photos,[]),health:parseJ(row.health,null),savedAt:+row.savedAt||0};
         const idx=S.entries.findIndex(e=>e.date===dateStr);
         if(idx>=0){
           // 雲端還沒有這天的 TDL 明細（舊資料列）時，不要用空值蓋掉本機已經有的快照
           const _old=S.entries[idx];
           if(!Array.isArray(entry.tdlItems)&&_old&&Array.isArray(_old.tdlItems))entry.tdlItems=_old.tdlItems;
+          if(!entry.health&&_old&&_old.health)entry.health=_old.health;
           S.entries[idx]=entry;
         }else S.entries.push(entry);
       });
@@ -1616,6 +1739,11 @@ async function loadCloud(){
         if(Array.isArray(te.tdlItems)&&te.tdlItems.length){
           S.todayTDL=te.tdlItems.map(x=>({task:x.task,theme:x.theme}));
           S.tdlDone={};te.tdlItems.forEach((x,i)=>{if(x.done)S.tdlDone['t'+i]=true;});
+        }
+        // 健康資料還原到今天即時狀態（EXP 已隨 state 同步，不重算，只把 scored 對齊資料）
+        if(te.health&&typeof te.health==='object'){
+          S.health=Object.assign(emptyHealth(),te.health);
+          S.health.scored={};HEALTH.forEach(H=>{S.health.scored[H.k]=healthHas(S.health,H.k);});
         }
         // 這天 entry 已種下（streak>=1）→ 對齊 lastPlant，另一台就不會重複種、重複加分
         if((+te.streak||0)>=1)S.lastPlant=curDay();
@@ -2039,6 +2167,140 @@ function renderHabits(){
   }));
 }
 
+// ── HEALTH（睡眠/飲食/運動/喝水）────────────────────────
+let healthExpanded={};
+// 目前要編輯的健康資料：今天→S.health；補記→那天 entry.health
+function healthTarget(){
+  if(ctxIsToday())return {h:S.health,ds:curDay(),isToday:true};
+  const en=getOrCreateEntry(viewDate);
+  if(!en.health||typeof en.health!=='object')en.health=emptyHealth();
+  return {h:en.health,ds:viewDate,isToday:false};
+}
+// 健康資料改動後統一收尾：算 EXP／花、存檔、同步。
+// rerenderGrid=false 用於「打備註中」——重繪整格會讓 textarea 失焦，所以不重繪健康格。
+function commitHealth(rerenderGrid){
+  if(rerenderGrid===undefined)rerenderGrid=true;
+  const t=healthTarget();
+  const oldExp=S.exp;
+  reconcileHealthExp(t.h,t.ds);
+  if(t.isToday){
+    const _now=Date.now();localStorage.setItem('grandol_live_ts',String(_now));
+    if(S.lastPlant===curDay()){const en=S.entries.find(e=>e.date===curDay());if(en){en.health=JSON.parse(JSON.stringify(S.health));en.exp=S.exp;en.savedAt=_now;syncEntryDebounced();}}
+    else autoDraftDebounced();
+  }else{
+    const en=S.entries.find(e=>e.date===viewDate);if(en)en.savedAt=Date.now();
+    syncEntryDebounced();
+  }
+  sv(S);checkLevelUp(oldExp,S.exp);
+  if(rerenderGrid)renderHealth();
+  renderFlowers();renderExpBar();checkAchievements();syncStateDebounced();
+}
+function healthSummary(h,k){
+  if(k==='sleep'){const s=h.sleep||{};if(!s.sleepTime&&!s.wakeTime)return '';const dur=sleepMinutes(s);return (s.sleepTime||'?')+' → '+(s.wakeTime||'?')+(dur!=null?' · '+fmtSleepDur(dur):'');}
+  if(k==='diet'){const d=h.diet||{};const n=(d.tags||[]).length;return n?(d.tags.slice(0,2).join('、')+(n>2?' +'+(n-2):'')):(d.note?'有備註':'');}
+  if(k==='exercise'){const e=h.exercise||{};if(!e.type)return '';return e.type+(e.duration?' · '+e.duration+'分':'');}
+  if(k==='water'){const w=+((h.water||{}).amount)||0;return w?w+' / '+WATER_GOAL+'ml':'';}
+  return '';
+}
+function renderHealth(){
+  const box=document.getElementById('health-grid');
+  if(!box)return;
+  const t=healthTarget();const h=t.h;
+  box.innerHTML=HEALTH.map(H=>{
+    const has=healthHas(h,H.k);
+    const sum=healthSummary(h,H.k)||(has?'已記錄':'點開記錄');
+    const exp=!!healthExpanded[H.k];
+    return `<div class="hz-card${has?' on':''}${exp?' expanded':''}" data-k="${H.k}">
+      <div class="hz-hd" data-toggle="${H.k}">
+        <span class="hz-ic">${fi(H.ic,18)}</span><span class="hz-l">${H.l}</span>
+        <span class="hz-sum">${esc(sum)}</span><span class="hz-chevron">▸</span>
+      </div>
+      <div class="hz-body">${healthEditorHTML(H.k,h)}</div>
+    </div>`;
+  }).join('');
+  // 展開/收合
+  box.querySelectorAll('.hz-hd').forEach(hd=>hd.addEventListener('click',()=>{
+    const k=hd.dataset.toggle;healthExpanded[k]=!healthExpanded[k];
+    hd.closest('.hz-card').classList.toggle('expanded',healthExpanded[k]);
+  }));
+  wireHealthEditors(h);
+}
+function healthEditorHTML(k,h){
+  if(k==='sleep'){
+    const s=h.sleep||{};
+    return `<div class="hz-row"><span class="hz-lbl">入睡</span>${timeSelHTML('hz-sleep-in',s.sleepTime||'23:30')}</div>`+
+      `<div class="hz-row"><span class="hz-lbl">起床</span>${timeSelHTML('hz-sleep-wake',s.wakeTime||'07:00')}</div>`+
+      `<div class="hz-row" style="gap:6px;"><button type="button" class="hz-tag" id="hz-sleep-fill">✓ 用上面的時間記錄</button><span id="hz-sleep-dur" style="font-size:12px;color:var(--ok);font-weight:700;"></span></div>`+
+      `<textarea class="hz-note" id="hz-sleep-note" placeholder="備註選填（例如：滑手機到很晚、今天比較焦慮）">${esc(s.note||'')}</textarea>`;
+  }
+  if(k==='diet'){
+    const d=h.diet||{};const tags=d.tags||[];
+    return `<div class="hz-tags">${DIET_TAGS.map(t=>`<span class="hz-tag${tags.indexOf(t)>=0?' on':''}" data-diet="${esc(t)}">${esc(t)}</span>`).join('')}</div>`+
+      `<textarea class="hz-note" id="hz-diet-note" placeholder="備註選填">${esc(d.note||'')}</textarea>`;
+  }
+  if(k==='exercise'){
+    const e=h.exercise||{};
+    return `<div class="hz-tags">${EXERCISE_TYPES.map(t=>`<span class="hz-tag${e.type===t?' on':''}" data-extype="${esc(t)}">${esc(t)}</span>`).join('')}</div>`+
+      `<div class="hz-tags" id="hz-ex-durs">${[15,30,45,60].map(m=>`<span class="hz-tag${+e.duration===m?' on':''}" data-exdur="${m}">${m}分</span>`).join('')}<span class="hz-tag" data-exdur="custom">自訂…</span></div>`+
+      `<textarea class="hz-note" id="hz-ex-note" placeholder="備註選填（例如：跑步機聽了喜歡的podcast）">${esc(e.note||'')}</textarea>`;
+  }
+  if(k==='water'){
+    const w=+((h.water||{}).amount)||0;const pct=Math.min(100,Math.round(w/WATER_GOAL*100));
+    return `<div class="hz-water-ring">
+      <svg width="66" height="66" viewBox="0 0 42 42" style="flex-shrink:0;"><circle cx="21" cy="21" r="15.9" fill="none" style="stroke:rgba(var(--secondary-rgb),.15);" stroke-width="5"/><circle cx="21" cy="21" r="15.9" fill="none" style="stroke:var(--secondary);" stroke-width="5" stroke-linecap="round" stroke-dasharray="${pct} ${100-pct}" stroke-dashoffset="25"/><text x="21" y="20" text-anchor="middle" style="font-size:8px;font-weight:800;fill:var(--secondary);">${w}</text><text x="21" y="27" text-anchor="middle" style="font-size:4px;fill:var(--tc3);">/${WATER_GOAL}ml</text></svg>
+      <div class="hz-water-btns">
+        <button type="button" class="hz-wbtn minus" data-water="-250">−250</button>
+        <button type="button" class="hz-wbtn" data-water="250">+250</button>
+        <button type="button" class="hz-wbtn" data-water="500">+500</button>
+      </div>
+    </div>`;
+  }
+  return '';
+}
+function wireHealthEditors(h){
+  const box=document.getElementById('health-grid');
+  // 睡眠
+  const durEl=document.getElementById('hz-sleep-dur');
+  function updDur(){const dm=sleepMinutes({sleepTime:timeSelGet('hz-sleep-in'),wakeTime:timeSelGet('hz-sleep-wake')});if(durEl)durEl.textContent=dm!=null?('睡了 '+fmtSleepDur(dm)):'';}
+  box.querySelectorAll('#hz-sleep-in select,#hz-sleep-wake select').forEach(s=>s.addEventListener('change',updDur));
+  updDur();
+  const sf=document.getElementById('hz-sleep-fill');
+  if(sf)sf.addEventListener('click',()=>{h.sleep=h.sleep||{};h.sleep.sleepTime=timeSelGet('hz-sleep-in');h.sleep.wakeTime=timeSelGet('hz-sleep-wake');commitHealth();});
+  const sn=document.getElementById('hz-sleep-note');
+  if(sn)sn.addEventListener('input',()=>{h.sleep=h.sleep||{};h.sleep.note=sn.value;healthNoteDebounced();});
+  // 飲食
+  box.querySelectorAll('[data-diet]').forEach(el=>el.addEventListener('click',()=>{
+    h.diet=h.diet||{tags:[],note:''};h.diet.tags=h.diet.tags||[];
+    const t=el.dataset.diet,i=h.diet.tags.indexOf(t);
+    if(i>=0)h.diet.tags.splice(i,1);else h.diet.tags.push(t);
+    commitHealth();
+  }));
+  const dn=document.getElementById('hz-diet-note');
+  if(dn)dn.addEventListener('input',()=>{h.diet=h.diet||{tags:[]};h.diet.note=dn.value;healthNoteDebounced();});
+  // 運動
+  box.querySelectorAll('[data-extype]').forEach(el=>el.addEventListener('click',()=>{
+    h.exercise=h.exercise||{};
+    h.exercise.type=(h.exercise.type===el.dataset.extype)?'':el.dataset.extype; // 再點一次取消
+    commitHealth();
+  }));
+  box.querySelectorAll('[data-exdur]').forEach(el=>el.addEventListener('click',()=>{
+    h.exercise=h.exercise||{};
+    if(el.dataset.exdur==='custom'){const v=prompt('運動幾分鐘？');const n=parseInt(v,10);if(!isNaN(n)&&n>0)h.exercise.duration=n;}
+    else h.exercise.duration=(+h.exercise.duration===+el.dataset.exdur)?0:+el.dataset.exdur;
+    commitHealth();
+  }));
+  const en=document.getElementById('hz-ex-note');
+  if(en)en.addEventListener('input',()=>{h.exercise=h.exercise||{};h.exercise.note=en.value;healthNoteDebounced();});
+  // 喝水
+  box.querySelectorAll('[data-water]').forEach(el=>el.addEventListener('click',()=>{
+    h.water=h.water||{amount:0};
+    h.water.amount=Math.max(0,(+h.water.amount||0)+(+el.dataset.water));
+    commitHealth();
+  }));
+}
+let _healthNoteT=null;
+function healthNoteDebounced(){clearTimeout(_healthNoteT);_healthNoteT=setTimeout(()=>commitHealth(false),900);}
+
 // ── TOMORROW TDL ──────────────────────────────────────
 let tdlRows=S.tomorrowTDL.length?S.tomorrowTDL.map(r=>({...r,confirmed:r.confirmed||false})):[{theme:'',task:'',confirmed:false},{theme:'',task:'',confirmed:false},{theme:'',task:'',confirmed:false}];
 let tdlEditCtx='today',backfillRows=[];
@@ -2136,7 +2398,7 @@ document.getElementById('plant-btn').addEventListener('click',async()=>{
   }
 
   const _now=Date.now();localStorage.setItem('grandol_live_ts',String(_now));
-  const entry={date:curDay(),checked:[...Object.keys(S.checked)],diary:{...d},exp:S.exp,streak:S.streak,tdl:S.tomorrowTDL,tdlTotal:(S.todayTDL||[]).length,tdlDone:Object.keys(S.tdlDone).length,tdlItems:buildTdlSnapshot(S.todayTDL,S.tdlDone),photos:(S.todayPhotos||[]),savedAt:_now};
+  const entry={date:curDay(),checked:[...Object.keys(S.checked)],diary:{...d},exp:S.exp,streak:S.streak,tdl:S.tomorrowTDL,tdlTotal:(S.todayTDL||[]).length,tdlDone:Object.keys(S.tdlDone).length,tdlItems:buildTdlSnapshot(S.todayTDL,S.tdlDone),photos:(S.todayPhotos||[]),health:JSON.parse(JSON.stringify(S.health||emptyHealth())),savedAt:_now};
   const idx=S.entries.findIndex(e=>e.date===curDay());
   if(idx>=0)S.entries[idx]=entry;else S.entries.push(entry);
 
@@ -2151,7 +2413,7 @@ document.getElementById('plant-btn').addEventListener('click',async()=>{
   renderPlantBtn();
   triggerBurst(btn);if(!replant)showExpPop(btn,'+20 EXP 🌱');
 
-  await syncEntry({date:curDay(),checked:Object.keys(S.checked),hl:d.hl,rf:d.rf,gr:d.gr,quote:d.quote||'',tdl:S.tomorrowTDL,exp:S.exp,streak:S.streak,tdlTotal:entry.tdlTotal,tdlDone:entry.tdlDone,tdlItems:entry.tdlItems||[],photos:S.todayPhotos||[],savedAt:entry.savedAt});
+  await syncEntry({date:curDay(),checked:Object.keys(S.checked),hl:d.hl,rf:d.rf,gr:d.gr,quote:d.quote||'',tdl:S.tomorrowTDL,exp:S.exp,streak:S.streak,tdlTotal:entry.tdlTotal,tdlDone:entry.tdlDone,tdlItems:entry.tdlItems||[],photos:S.todayPhotos||[],health:JSON.stringify(entry.health||emptyHealth()),savedAt:entry.savedAt});
   await syncState();
 });
 
@@ -2200,7 +2462,7 @@ document.getElementById('copy-btn').addEventListener('click',async()=>{
   const todayT=(S.todayTDL||[]).map((r,i)=>`${S.tdlDone['t'+i]?'✅':'⬜'} ${r.theme?r.theme+'：':''}${r.task}`).join('\n');
   const tomorrowT=tdlText(S.tomorrowTDL);
   const calT=calLinesForDates([curDay()]).join('\n');
-  navigator.clipboard.writeText(`${curDay()} 紀錄\n做了：${c.join('、')||'無'}\n\n今日TDL：\n${todayT||'無'}\n\n📅 今日行程：\n${calT||'無'}\n\n🌟 Highlights：${d.hl||'無'}\n📖 Reflection：${d.rf||'無'}\n🥹 Gratitude：${d.gr||'無'}\n💬 金句：${d.quote||'無'}\n\n明天TDL：\n${tomorrowT||'無'}`).then(()=>{
+  navigator.clipboard.writeText(`${curDay()} 紀錄\n做了：${c.join('、')||'無'}\n\n${healthCopyText(S.health)}\n今日TDL：\n${todayT||'無'}\n\n📅 今日行程：\n${calT||'無'}\n\n🌟 Highlights：${d.hl||'無'}\n📖 Reflection：${d.rf||'無'}\n🥹 Gratitude：${d.gr||'無'}\n💬 金句：${d.quote||'無'}\n\n明天TDL：\n${tomorrowT||'無'}`).then(()=>{
     b.innerHTML=`${fi('2705',15)} 已複製！`;setTimeout(()=>{b.innerHTML=`${fi('1f4cb',15)} 複製今日紀錄給 Claude`;},2000);
   });
 });
@@ -2493,7 +2755,13 @@ function periodStats(dates){
       if(dia.gr)diaryHighlights.push({date:ds,text:dia.gr,type:'🥹'});
     }
   });
-  return{days,habits,exp:habits*10+days*20,tdlDoneSum,tdlTotalSum,habitCounts,diaryHighlights,diaryDays,themeAgg,tdlDetail,tdlNoDetailDays};
+  // 健康資料另外收（草稿也算，不限已種下那天）
+  const healthDays=[];
+  dates.forEach(ds=>{
+    const h=(ds===curDay())?S.health:((S.entries.find(x=>x.date===ds)||{}).health);
+    if(h&&HEALTH.some(H=>healthHas(h,H.k)))healthDays.push({ds,h});
+  });
+  return{days,habits,exp:habits*10+days*20,tdlDoneSum,tdlTotalSum,habitCounts,diaryHighlights,diaryDays,themeAgg,tdlDetail,tdlNoDetailDays,healthDays};
 }
 // 「複製給 Claude」用的 TDL 總結：整體達成率＋各主題達成率
 function tdlSummaryLines(st,label){
@@ -2592,6 +2860,82 @@ function renderReviewDonut(elId,cur){
 // 洞察引擎：用規則從資料算出「所以呢？」——最弱的一天、快消失的習慣、
 // 最穩的習慣、TDL 負荷建議。全部純計算，不需要 AI。opt 可帶：
 //   dailyRates（週用，對齊 dates 的每日達成率）、weekday（月用，{counts,totals}）
+// 健康觀察（週/月複盤）：如實呈現，不評價、不警示
+function renderHealthReview(cur,prefix){
+  const zone=document.getElementById(prefix+'-health-zone');
+  const hd=(cur.healthDays||[]);
+  const any=hd.length>0;
+  if(zone)zone.style.display=any?'':'none';
+  const pair=document.getElementById(prefix+'-health-pair');if(pair)pair.style.display=any?'':'none';
+  const show=(id,on)=>{const el=document.getElementById(id);if(el)el.style.display=on?'':'none';};
+  if(!any){['-sleep-card','-diet-card','-exercise-card','-water-card'].forEach(s=>show(prefix+s,false));return;}
+  const wd=['日','一','二','三','四','五','六'];
+  const dlab=ds=>{const d=new Date(ds+'T00:00:00');return (d.getMonth()+1)+'/'+d.getDate()+' 週'+wd[d.getDay()];};
+  // ── 睡眠 ──
+  const sleepDays=hd.filter(x=>x.h.sleep&&(x.h.sleep.sleepTime||x.h.sleep.wakeTime));
+  if(sleepDays.length){
+    show(prefix+'-sleep-card',true);
+    const toMin=(s,bed)=>{if(!s)return null;const a=String(s).split(':');let m=(+a[0])*60+(+a[1]||0);if(bed&&(+a[0])<12)m+=24*60;return m;};
+    const beds=sleepDays.map(x=>toMin(x.h.sleep.sleepTime,true)).filter(v=>v!=null);
+    const wakes=sleepDays.map(x=>toMin(x.h.sleep.wakeTime,false)).filter(v=>v!=null);
+    const durs=sleepDays.map(x=>sleepMinutes(x.h.sleep)).filter(v=>v!=null);
+    const avg=a=>a.length?Math.round(a.reduce((s,v)=>s+v,0)/a.length):null;
+    const m2t=m=>{if(m==null)return '—';m=((m%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');};
+    const avgBed=avg(beds),avgWake=avg(wakes),avgDur=avg(durs);
+    const maxDur=Math.max(...durs,1);
+    let html='<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--tc2);margin-bottom:10px;">'+
+      '<span>平均入睡 <b style="color:var(--primary);font-family:Baloo 2;">'+m2t(avgBed)+'</b></span>'+
+      '<span>平均起床 <b style="color:var(--primary);font-family:Baloo 2;">'+m2t(avgWake)+'</b></span>'+
+      (avgDur!=null?'<span>平均睡 <b style="color:var(--ok);font-family:Baloo 2;">'+fmtSleepDur(avgDur)+'</b></span>':'')+'</div>';
+    html+=sleepDays.map(x=>{const s=x.h.sleep,dm=sleepMinutes(s);
+      return '<div style="padding:6px 0;border-bottom:1px dashed rgba(var(--primary-rgb),.1);">'+
+        '<div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--tc2);font-weight:700;">'+dlab(x.ds)+'</span>'+
+        '<span style="font-family:Baloo 2;color:var(--tc);">'+(s.sleepTime||'?')+' → '+(s.wakeTime||'?')+(dm!=null?' · '+fmtSleepDur(dm):'')+'</span></div>'+
+        (dm!=null?'<div style="height:6px;background:rgba(var(--secondary-rgb),.12);border-radius:4px;margin-top:4px;overflow:hidden;"><div style="height:100%;width:'+Math.round(dm/maxDur*100)+'%;background:linear-gradient(90deg,var(--secondary),var(--tertiary));border-radius:4px;"></div></div>':'')+
+        (s.note?'<div style="font-size:11.5px;color:var(--tc3);margin-top:3px;">💭 '+esc(s.note)+'</div>':'')+
+      '</div>';
+    }).join('');
+    document.getElementById(prefix+'-sleep').innerHTML=html;
+  }else show(prefix+'-sleep-card',false);
+  // ── 飲食（標籤頻率）──
+  const dietDays=hd.filter(x=>x.h.diet&&((x.h.diet.tags||[]).length||x.h.diet.note));
+  if(dietDays.length){
+    show(prefix+'-diet-card',true);
+    const freq={};dietDays.forEach(x=>(x.h.diet.tags||[]).forEach(t=>freq[t]=(freq[t]||0)+1));
+    const rows=Object.keys(freq).sort((a,b)=>freq[b]-freq[a]);
+    const mx=Math.max(1,...Object.values(freq));
+    document.getElementById(prefix+'-diet').innerHTML=(rows.length?rows.map(t=>
+      '<div class="dist-row"><div class="dist-label" style="width:auto;flex:0 0 84px;">'+esc(t)+'</div>'+
+      '<div class="dist-bar-bg"><div class="dist-bar-fill" style="width:'+Math.round(freq[t]/mx*100)+'%;"></div></div>'+
+      '<div class="dist-count">'+freq[t]+'天</div></div>').join(''):'')+
+      '<div style="font-size:11px;color:var(--tc3);margin-top:4px;">共記錄 '+dietDays.length+' 天</div>';
+  }else show(prefix+'-diet-card',false);
+  // ── 運動 ──
+  const exDays=hd.filter(x=>x.h.exercise&&x.h.exercise.type);
+  if(exDays.length){
+    show(prefix+'-exercise-card',true);
+    const typeFreq={};let totMin=0;exDays.forEach(x=>{typeFreq[x.h.exercise.type]=(typeFreq[x.h.exercise.type]||0)+1;totMin+=(+x.h.exercise.duration||0);});
+    document.getElementById(prefix+'-exercise').innerHTML=
+      '<div style="font-size:13px;color:var(--tc);margin-bottom:8px;">這週動了 <b style="color:var(--ok);">'+exDays.length+'</b> 天'+(totMin?'，共 <b style="color:var(--ok);">'+totMin+'</b> 分鐘':'')+'</div>'+
+      Object.keys(typeFreq).map(t=>'<div style="font-size:12px;color:var(--tc2);padding:2px 0;">'+esc(t)+' × '+typeFreq[t]+'</div>').join('');
+  }else show(prefix+'-exercise-card',false);
+  // ── 喝水 ──
+  const waterDays=hd.filter(x=>x.h.water&&(+x.h.water.amount||0)>0);
+  if(waterDays.length){
+    show(prefix+'-water-card',true);
+    const amounts=waterDays.map(x=>+x.h.water.amount||0);
+    const avgW=Math.round(amounts.reduce((s,v)=>s+v,0)/amounts.length);
+    const mx=Math.max(WATER_GOAL,...amounts);
+    document.getElementById(prefix+'-water').innerHTML=
+      '<div style="font-size:12px;color:var(--tc2);margin-bottom:8px;">平均每天 <b style="color:var(--secondary);font-family:Baloo 2;">'+avgW+'</b> ml（目標 '+WATER_GOAL+'）</div>'+
+      '<div style="display:flex;align-items:flex-end;gap:5px;height:70px;">'+waterDays.map(x=>{const a=+x.h.water.amount||0;const d=new Date(x.ds+'T00:00:00');
+        return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:3px;">'+
+          '<div style="font-size:9px;color:var(--tc3);">'+Math.round(a/100)/10+'L</div>'+
+          '<div style="width:70%;max-width:26px;background:linear-gradient(180deg,var(--tertiary),var(--secondary));border-radius:5px 5px 2px 2px;height:'+Math.max(4,Math.round(a/mx*54))+'px;"></div>'+
+          '<div style="font-size:9px;color:var(--tc3);">'+(d.getMonth()+1)+'/'+d.getDate()+'</div></div>';
+      }).join('')+'</div>';
+  }else show(prefix+'-water-card',false);
+}
 function renderInsights(cardId,boxId,cur,prev,dates,label,opt){
   const card=document.getElementById(cardId),box=document.getElementById(boxId);
   if(!card||!box)return;
@@ -2733,6 +3077,7 @@ function renderWeekly(){
   }).join('')}</div>`;
 
   renderInsights('wk-insight-card','wk-insight',cur,prev,dates,'週',{dailyRates:rateArr});
+  renderHealthReview(cur,'wk');
   fixRdPairs('page-week');
 
   if(cur.days===0){document.getElementById('week-entries').innerHTML=`<div class="empty-state">${fi('1f331',32)}<br/>這週還沒有紀錄</div>`;return;}
@@ -3619,7 +3964,7 @@ document.querySelectorAll('.nav-btn').forEach(btn=>{
 // ── RENDER ALL / INIT ─────────────────────────────────
 function renderAll(){
   migrateFlowers();
-  renderTopDate();renderHabits();renderExpBar();renderFlowers();renderFruits();
+  renderTopDate();renderHabits();renderHealth();renderExpBar();renderFlowers();renderFruits();
   renderStickyNote();renderTDL();renderAchievements();
   if(typeof renderTodayPhotos==='function')renderTodayPhotos();
   if(typeof renderPlantBtn==='function')renderPlantBtn();
@@ -3839,13 +4184,14 @@ document.addEventListener('click',e=>{if(e.target&&e.target.id==='ver-check-btn'
 function renderHabitArchiveList(){
   const box=document.getElementById('habit-archive-list');
   if(!box)return;
-  box.innerHTML=HABITS.map(h=>{
+  // 早起/早睡/跳舞 已由「健康」模組取代，不在這裡列出（避免又被解封出來）
+  box.innerHTML=HABITS.filter(h=>HEALTH_REPLACED.indexOf(h.k)<0).map(h=>{
     const arch=isArchived(h.k);
     return`<div style="display:flex;align-items:center;gap:8px;padding:6px 2px;border-bottom:1px dashed rgba(var(--primary-rgb),.1);${arch?'opacity:.5;':''}">
       ${fi(h.c,18)}<span style="flex:1;font-size:13px;font-weight:700;color:var(--tc2);${arch?'text-decoration:line-through;':''}">${h.l}</span>
       <button class="mini-btn habit-arch-btn" data-k="${h.k}" style="${arch?'background:rgba(var(--tertiary-rgb),.35);color:var(--tc2);':''}">${arch?'解封 ↩':'封存'}</button>
     </div>`;
-  }).join('');
+  }).join('')+'<div style="font-size:11px;color:var(--tc3);margin-top:8px;line-height:1.6;">🌿 早起、早睡、跳舞已整合進「健康」區塊記錄</div>';
   box.querySelectorAll('.habit-arch-btn').forEach(b=>b.addEventListener('click',()=>{
     const k=b.dataset.k;
     S.archivedHabits=S.archivedHabits||[];
@@ -4464,7 +4810,7 @@ let entryTimer=null;
 function syncEntryFor(ds){
   const e=S.entries.find(x=>x.date===ds);
   if(!e)return Promise.resolve();
-  return syncEntry({date:e.date,checked:e.checked||[],hl:e.diary?.hl||'',rf:e.diary?.rf||'',gr:e.diary?.gr||'',quote:e.diary?.quote||'',tdl:e.tdl||[],exp:e.exp||0,streak:e.streak||0,tdlTotal:e.tdlTotal||0,tdlDone:e.tdlDone||0,tdlItems:e.tdlItems||[],photos:e.photos||[],savedAt:e.savedAt||Date.now()});
+  return syncEntry({date:e.date,checked:e.checked||[],hl:e.diary?.hl||'',rf:e.diary?.rf||'',gr:e.diary?.gr||'',quote:e.diary?.quote||'',tdl:e.tdl||[],exp:e.exp||0,streak:e.streak||0,tdlTotal:e.tdlTotal||0,tdlDone:e.tdlDone||0,tdlItems:e.tdlItems||[],photos:e.photos||[],health:JSON.stringify(e.health||emptyHealth()),savedAt:e.savedAt||Date.now()});
 }
 function syncEntryDebounced(){
   const ds=ctxIsToday()?curDay():viewDate;
@@ -4542,7 +4888,7 @@ function applyViewDate(switchPage){
   ['hl','rf','gr','quote'].forEach(k=>{document.getElementById('d-'+k).value=dv[k]||'';});
   const noteEl=document.getElementById('d-note');
   if(noteEl)noteEl.value=S.calNotes[isT?curDay():viewDate]||'';
-  renderTopDate();renderHabits();renderExpBar();renderPlantBtn();
+  renderTopDate();renderHabits();renderHealth();renderExpBar();renderPlantBtn();
   if(typeof renderTodayPhotos==='function')renderTodayPhotos();
   if(typeof renderTodayEvents==='function')renderTodayEvents();
   if(!isT&&typeof fetchCalMonth==='function'){const _vd=new Date(viewDate+'T00:00:00');fetchCalMonth(_vd.getFullYear(),_vd.getMonth());}
@@ -4565,7 +4911,7 @@ function writeDraftEntry(){
   // 存草稿一樣要帶當天的 TDL 快照：這裡是整筆覆蓋 entry，漏掉 tdlItems 會把已存的明細清空，
   // 接著 syncEntryFor 又會把空的明細推上雲端，等於把紀錄洗掉
   const _now=Date.now();localStorage.setItem('grandol_live_ts',String(_now));
-  const entry={date:curDay(),checked:[...Object.keys(S.checked)],diary:{...d},exp:S.exp,streak:keepStreak,tdl:S.tomorrowTDL,tdlTotal:(S.todayTDL||[]).length,tdlDone:Object.keys(S.tdlDone).length,tdlItems:buildTdlSnapshot(S.todayTDL,S.tdlDone),photos:(S.todayPhotos||[]),savedAt:_now};
+  const entry={date:curDay(),checked:[...Object.keys(S.checked)],diary:{...d},exp:S.exp,streak:keepStreak,tdl:S.tomorrowTDL,tdlTotal:(S.todayTDL||[]).length,tdlDone:Object.keys(S.tdlDone).length,tdlItems:buildTdlSnapshot(S.todayTDL,S.tdlDone),photos:(S.todayPhotos||[]),health:JSON.parse(JSON.stringify(S.health||emptyHealth())),savedAt:_now};
   const idx=S.entries.findIndex(e=>e.date===curDay());
   if(idx>=0)S.entries[idx]=entry;else S.entries.push(entry);
   sv(S);

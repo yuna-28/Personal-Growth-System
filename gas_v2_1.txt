@@ -40,7 +40,7 @@ const APP_CODE = ''; // ← 通行碼：填入妳自己想的一串密碼；留�
 // 拿這組密碼的人：讀取（紀錄/統計/日曆）都可以，任何寫入都會被拒絕。
 const VIEW_CODE = '';
 
-const ENTRY_COLS = ['date','checked','hl','rf','gr','quote','tdl','exp','streak','tdlTotal','tdlDone','tdlItems','photos','savedAt'];
+const ENTRY_COLS = ['date','checked','hl','rf','gr','quote','tdl','exp','streak','tdlTotal','tdlDone','tdlItems','photos','savedAt','health'];
 const STATE_COLS = ['flowers','apples','bigApples','goldFruits','seedlings','trees',
                     'achievements','quotes','calNotes','myPeople','treasures',
                     'lastPlant','lastStreak','streak','exp','gardenPos','supportCategories',
