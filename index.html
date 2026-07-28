@@ -649,6 +649,8 @@ body.viewer-mode .neo-chip,body.viewer-mode .sticky-check,body.viewer-mode .habi
 .hz-tag{display:inline-flex;align-items:center;padding:7px 12px;border-radius:999px;border:1.5px solid rgba(var(--secondary-rgb),.3);background:rgba(255,255,255,.6);font-size:12.5px;font-weight:700;color:var(--tc2);cursor:pointer;user-select:none;}
 .hz-tag.on{background:rgba(var(--tertiary-rgb),.5);border-color:var(--tertiary);color:var(--ok);}
 .hz-tag:active{transform:scale(.96);}
+.hz-tag.hz-add{border-style:dashed;color:var(--tc3);border-color:rgba(var(--primary-rgb),.3);}
+.hz-tag img{vertical-align:-2px;}
 .hz-tags{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:9px;}
 .hz-water-ring{display:flex;align-items:center;gap:12px;}
 .hz-water-btns{display:flex;gap:7px;flex-wrap:wrap;flex:1;}
@@ -1319,7 +1321,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v80';
+const APP_VER='v81';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
@@ -1423,19 +1425,28 @@ const HEALTH=[
   {k:'exercise',l:'運動', ic:'1f3c3', fc:'1f33a'},
   {k:'water',   l:'喝水', ic:'1f4a7', fc:'1f4f0'},
 ];
-const DIET_TAGS=['三餐正常','有點餓補餐','看劇配零食','聚餐/外食','喝手搖/含糖飲料'];
-const EXERCISE_TYPES=['跑步機','跳舞','其他'];
+// 內建選項＋每項的 emoji（fluent 圖示碼）。使用者可自訂新增（存 S.healthOpts）。
+const DIET_TAGS=['原型食物為主','麵包/貝果','飯','麵','零食','含糖飲料','無糖飲料','鮮奶茶','外食'];
+const DIET_EMOJI={'原型食物為主':'1f957','麵包/貝果':'1f35e','飯':'1f35a','麵':'1f35c','零食':'1f370','含糖飲料':'1f964','無糖飲料':'1f375','鮮奶茶':'1f9cb','外食':'1f35f'};
+const EXERCISE_TYPES=['跑步','跳舞','其他'];
+const PRE_SLEEP_ACTS=['看劇','小說','漫畫','閱讀'];
+const SLEEP_EASE=[['good','😴 好睡','1f634'],['ok','😐 普通','1f610'],['hard','😣 難睡','1f623']];
 const WATER_GOAL=2500;
-function emptyHealth(){return {sleep:{sleepTime:'',wakeTime:'',note:''},diet:{tags:[],note:''},exercise:{type:'',duration:0,note:''},water:{amount:0},scored:{}};}
+function dietTags(){return DIET_TAGS.concat((S.healthOpts&&S.healthOpts.diet)||[]);}
+function exerciseTypes(){return EXERCISE_TYPES.concat((S.healthOpts&&S.healthOpts.exercise)||[]);}
+function preSleepActs(){return PRE_SLEEP_ACTS.concat((S.healthOpts&&S.healthOpts.sleepActs)||[]);}
+function dietEmoji(t){return DIET_EMOJI[t]||'1f37d';}
+function emptyHealth(){return {sleep:{sleepTime:'',wakeTime:'',ease:'',acts:[],note:''},diet:{tags:[],note:''},exercise:{type:'',duration:0,note:''},water:{amount:0,note:''},scored:{}};}
 // 這個項目今天有沒有記錄（決定要不要給 EXP／花）
 function healthHas(h,k){
   if(!h)return false;
-  if(k==='sleep')return !!(h.sleep&&(h.sleep.sleepTime||h.sleep.wakeTime));
+  if(k==='sleep'){const s=h.sleep;return !!(s&&(s.sleepTime||s.wakeTime||s.ease||(s.acts&&s.acts.length)||s.note));}
   if(k==='diet')return !!(h.diet&&((h.diet.tags&&h.diet.tags.length)||h.diet.note));
   if(k==='exercise')return !!(h.exercise&&h.exercise.type);
   if(k==='water')return !!(h.water&&(+h.water.amount||0)>0);
   return false;
 }
+function easeLabel(e){const f=SLEEP_EASE.find(x=>x[0]===e);return f?f[1]:'';}
 // 睡眠時數（分鐘）：起床時間 - 入睡時間，跨午夜自動 +24h
 function sleepMinutes(sl){
   if(!sl||!sl.sleepTime||!sl.wakeTime)return null;
@@ -1449,7 +1460,7 @@ function fmtSleepDur(min){if(min==null)return '';const h=Math.floor(min/60),m=mi
 function healthCopyText(h){
   if(!h||!HEALTH.some(H=>healthHas(h,H.k)))return '🌿 健康：無記錄\n';
   const L=['🌿 健康：'];
-  if(healthHas(h,'sleep')){const s=h.sleep,dm=sleepMinutes(s);L.push(`  🌙 睡眠：${s.sleepTime||'?'}→${s.wakeTime||'?'}${dm!=null?'（'+fmtSleepDur(dm)+'）':''}${s.note?' · '+s.note:''}`);}
+  if(healthHas(h,'sleep')){const s=h.sleep,dm=sleepMinutes(s);L.push(`  🌙 睡眠：${s.sleepTime||'?'}→${s.wakeTime||'?'}${dm!=null?'（'+fmtSleepDur(dm)+'）':''}${s.ease?' · '+easeLabel(s.ease):''}${(s.acts&&s.acts.length)?' · 睡前:'+s.acts.join('/'):''}${s.note?' · '+s.note:''}`);}
   if(healthHas(h,'diet')){const d=h.diet;L.push(`  🍽️ 飲食：${(d.tags||[]).join('、')||'—'}${d.note?' · '+d.note:''}`);}
   if(healthHas(h,'exercise')){const e=h.exercise;L.push(`  🏃 運動：${e.type}${e.duration?' '+e.duration+'分':''}${e.note?' · '+e.note:''}`);}
   if(healthHas(h,'water')){L.push(`  💧 喝水：${h.water.amount}ml`);}
@@ -1472,7 +1483,7 @@ function defaults(){
   return{exp:0,flowers:[],apples:[],bigApples:0,goldFruits:0,seedlings:0,trees:1,
     streak:0,lastStreak:'',checked:{},diary:{hl:'',rf:'',gr:'',quote:''},
     lastPlant:'',tomorrowTDL:[],todayTDL:[],tdlDone:{},entries:[],
-    achievements:[],quotes:[],calNotes:{},myPeople:[],treasures:[],gardenPos:{},notePos:null,notifications:null,todayPhotos:[],resourceCats:null,expLog:[],tdlHist:{},archivedHabits:[],calRecur:{},health:emptyHealth(),healthMigrated:false};
+    achievements:[],quotes:[],calNotes:{},myPeople:[],treasures:[],gardenPos:{},notePos:null,notifications:null,todayPhotos:[],resourceCats:null,expLog:[],tdlHist:{},archivedHabits:[],calRecur:{},health:emptyHealth(),healthMigrated:false,healthOpts:{diet:[],exercise:[],sleepActs:[],water:[]}};
 }
 // 一次性遷移：健康模組接手「早起/早睡/跳舞」→ 把這三個習慣封存（歷史紀錄保留）。
 // 只跑一次（healthMigrated 旗標），之後使用者若自己解封也不會被強制封回。
@@ -1509,6 +1520,10 @@ let S=ld();
 migQuotes();
 if(!S.health||typeof S.health!=='object')S.health=emptyHealth();
 if(!S.health.scored)S.health.scored={};
+if(!S.health.sleep)S.health.sleep={sleepTime:'',wakeTime:'',ease:'',acts:[],note:''};
+if(!S.health.sleep.acts)S.health.sleep.acts=[];
+if(!S.healthOpts||typeof S.healthOpts!=='object')S.healthOpts={diet:[],exercise:[],sleepActs:[],water:[]};
+['diet','exercise','sleepActs','water'].forEach(k=>{if(!Array.isArray(S.healthOpts[k]))S.healthOpts[k]=[];});
 migrateHealth();
 
 // 這兩個函式提前搬到這裡定義：rolloverToToday() 在頁面載入時就會被同步呼叫（見下面），
@@ -1629,7 +1644,8 @@ async function syncState(){
       expLog:JSON.stringify(S.expLog||[]),
       calColorTags:JSON.stringify(S.calColorTags||{}),
       archivedHabits:JSON.stringify(S.archivedHabits||[]),
-      calRecur:JSON.stringify(S.calRecur||{})
+      calRecur:JSON.stringify(S.calRecur||{}),
+      healthOpts:JSON.stringify(S.healthOpts||{})
     });
     const _j=await _res.json().catch(()=>null);
     if(_j&&_j.conflict){
@@ -1688,6 +1704,7 @@ async function loadCloud(){
       if(d.archivedHabits){const _ah=parseJ(d.archivedHabits,null);if(Array.isArray(_ah))S.archivedHabits=_ah;}
       enforceHealthArchive(); // 雲端可能是遷移前的舊清單，補回被健康模組取代的封存
       if(d.calRecur){const _cr=parseJ(d.calRecur,null);if(_cr&&typeof _cr==='object')S.calRecur=_cr;}
+      if(d.healthOpts){const _ho=parseJ(d.healthOpts,null);if(_ho&&typeof _ho==='object'){['diet','exercise','sleepActs','water'].forEach(k=>{if(Array.isArray(_ho[k]))S.healthOpts[k]=_ho[k];});}}
     }
     if(en.ok&&Array.isArray(en.data)){
       en.data.forEach(row=>{
@@ -2226,26 +2243,33 @@ function renderHealth(){
   wireHealthEditors(h);
 }
 function healthEditorHTML(k,h){
+  const noteHTML=(id,val,ph)=>`<div style="font-size:11px;font-weight:700;color:var(--tc3);margin:2px 2px 4px;">📝 備註（選填）</div><textarea class="hz-note" id="${id}" placeholder="${ph}">${esc(val||'')}</textarea>`;
+  const addChip=grp=>`<span class="hz-tag hz-add" data-add="${grp}">＋ 新增</span>`;
   if(k==='sleep'){
     const s=h.sleep||{};
     return `<div class="hz-row"><span class="hz-lbl">入睡</span>${timeSelHTML('hz-sleep-in',s.sleepTime||'23:30')}</div>`+
       `<div class="hz-row"><span class="hz-lbl">起床</span>${timeSelHTML('hz-sleep-wake',s.wakeTime||'07:00')}</div>`+
-      `<div class="hz-row" style="gap:6px;"><button type="button" class="hz-tag" id="hz-sleep-fill">✓ 用上面的時間記錄</button><span id="hz-sleep-dur" style="font-size:12px;color:var(--ok);font-weight:700;"></span></div>`+
-      `<textarea class="hz-note" id="hz-sleep-note" placeholder="備註選填（例如：滑手機到很晚、今天比較焦慮）">${esc(s.note||'')}</textarea>`;
+      `<div class="hz-row" style="gap:6px;"><button type="button" class="hz-tag" id="hz-sleep-fill">✓ 記錄這個睡眠時間</button><span id="hz-sleep-dur" style="font-size:12px;color:var(--ok);font-weight:700;"></span></div>`+
+      `<div style="font-size:11.5px;font-weight:700;color:var(--tc2);margin:4px 2px;">今早起來，好入睡嗎？</div>`+
+      `<div class="hz-tags">${SLEEP_EASE.map(e=>`<span class="hz-tag${s.ease===e[0]?' on':''}" data-ease="${e[0]}">${e[1]}</span>`).join('')}</div>`+
+      `<div style="font-size:11.5px;font-weight:700;color:var(--tc2);margin:4px 2px;">昨晚睡前主要在</div>`+
+      `<div class="hz-tags">${preSleepActs().map(a=>`<span class="hz-tag${(s.acts||[]).indexOf(a)>=0?' on':''}" data-act="${esc(a)}">${esc(a)}</span>`).join('')}${addChip('sleepActs')}</div>`+
+      noteHTML('hz-sleep-note',s.note,'例如：滑手機到很晚、今天比較焦慮');
   }
   if(k==='diet'){
     const d=h.diet||{};const tags=d.tags||[];
-    return `<div class="hz-tags">${DIET_TAGS.map(t=>`<span class="hz-tag${tags.indexOf(t)>=0?' on':''}" data-diet="${esc(t)}">${esc(t)}</span>`).join('')}</div>`+
-      `<textarea class="hz-note" id="hz-diet-note" placeholder="備註選填">${esc(d.note||'')}</textarea>`;
+    return `<div class="hz-tags">${dietTags().map(t=>`<span class="hz-tag${tags.indexOf(t)>=0?' on':''}" data-diet="${esc(t)}">${fi(dietEmoji(t),15)} ${esc(t)}</span>`).join('')}${addChip('diet')}</div>`+
+      noteHTML('hz-diet-note',d.note,'今天的飲食想多記什麼都可以');
   }
   if(k==='exercise'){
     const e=h.exercise||{};
-    return `<div class="hz-tags">${EXERCISE_TYPES.map(t=>`<span class="hz-tag${e.type===t?' on':''}" data-extype="${esc(t)}">${esc(t)}</span>`).join('')}</div>`+
-      `<div class="hz-tags" id="hz-ex-durs">${[15,30,45,60].map(m=>`<span class="hz-tag${+e.duration===m?' on':''}" data-exdur="${m}">${m}分</span>`).join('')}<span class="hz-tag" data-exdur="custom">自訂…</span></div>`+
-      `<textarea class="hz-note" id="hz-ex-note" placeholder="備註選填（例如：跑步機聽了喜歡的podcast）">${esc(e.note||'')}</textarea>`;
+    return `<div class="hz-tags">${exerciseTypes().map(t=>`<span class="hz-tag${e.type===t?' on':''}" data-extype="${esc(t)}">${esc(t)}</span>`).join('')}${addChip('exercise')}</div>`+
+      `<div class="hz-tags" id="hz-ex-durs">${[15,30,45,60].map(m=>`<span class="hz-tag${+e.duration===m?' on':''}" data-exdur="${m}">${m}分</span>`).join('')}<span class="hz-tag" data-exdur="custom">自訂分鐘…</span></div>`+
+      noteHTML('hz-ex-note',e.note,'例如：跑步聽了喜歡的 podcast');
   }
   if(k==='water'){
     const w=+((h.water||{}).amount)||0;const pct=Math.min(100,Math.round(w/WATER_GOAL*100));
+    const custom=(S.healthOpts&&S.healthOpts.water)||[];
     return `<div class="hz-water-ring">
       <svg width="66" height="66" viewBox="0 0 42 42" style="flex-shrink:0;"><circle cx="21" cy="21" r="15.9" fill="none" style="stroke:rgba(var(--secondary-rgb),.15);" stroke-width="5"/><circle cx="21" cy="21" r="15.9" fill="none" style="stroke:var(--secondary);" stroke-width="5" stroke-linecap="round" stroke-dasharray="${pct} ${100-pct}" stroke-dashoffset="25"/><text x="21" y="20" text-anchor="middle" style="font-size:8px;font-weight:800;fill:var(--secondary);">${w}</text><text x="21" y="27" text-anchor="middle" style="font-size:4px;fill:var(--tc3);">/${WATER_GOAL}ml</text></svg>
       <div class="hz-water-btns">
@@ -2253,12 +2277,27 @@ function healthEditorHTML(k,h){
         <button type="button" class="hz-wbtn" data-water="250">+250</button>
         <button type="button" class="hz-wbtn" data-water="500">+500</button>
       </div>
-    </div>`;
+    </div>`+
+    `<div class="hz-tags" style="margin-top:8px;">${custom.map(v=>`<span class="hz-tag" data-water="${+v||0}">+${+v||0}</span>`).join('')}<span class="hz-tag hz-add" data-add="water">＋ 常喝的量</span></div>`+
+    noteHTML('hz-water-note',(h.water||{}).note,'例如：今天有喝溫水');
   }
   return '';
 }
+// 「＋新增」自訂選項：問名字→存進 S.healthOpts→重繪
+function addHealthOpt(grp){
+  S.healthOpts=S.healthOpts||{diet:[],exercise:[],sleepActs:[],water:[]};
+  const isWater=grp==='water';
+  const v=prompt(isWater?'常喝的水量（數字，ml，例如 350）：':'新增一個選項：');
+  if(v==null)return;
+  const val=isWater?String(Math.max(0,parseInt(v,10)||0)):v.trim();
+  if(!val||(isWater&&!(+val>0)))return;
+  S.healthOpts[grp]=S.healthOpts[grp]||[];
+  if(S.healthOpts[grp].indexOf(val)<0)S.healthOpts[grp].push(val);
+  sv(S);renderHealth();syncStateDebounced();
+}
 function wireHealthEditors(h){
   const box=document.getElementById('health-grid');
+  box.querySelectorAll('.hz-add').forEach(el=>el.addEventListener('click',()=>addHealthOpt(el.dataset.add)));
   // 睡眠
   const durEl=document.getElementById('hz-sleep-dur');
   function updDur(){const dm=sleepMinutes({sleepTime:timeSelGet('hz-sleep-in'),wakeTime:timeSelGet('hz-sleep-wake')});if(durEl)durEl.textContent=dm!=null?('睡了 '+fmtSleepDur(dm)):'';}
@@ -2266,6 +2305,8 @@ function wireHealthEditors(h){
   updDur();
   const sf=document.getElementById('hz-sleep-fill');
   if(sf)sf.addEventListener('click',()=>{h.sleep=h.sleep||{};h.sleep.sleepTime=timeSelGet('hz-sleep-in');h.sleep.wakeTime=timeSelGet('hz-sleep-wake');commitHealth();});
+  box.querySelectorAll('[data-ease]').forEach(el=>el.addEventListener('click',()=>{h.sleep=h.sleep||{};h.sleep.ease=(h.sleep.ease===el.dataset.ease)?'':el.dataset.ease;commitHealth();}));
+  box.querySelectorAll('[data-act]').forEach(el=>el.addEventListener('click',()=>{h.sleep=h.sleep||{};h.sleep.acts=h.sleep.acts||[];const a=el.dataset.act,i=h.sleep.acts.indexOf(a);if(i>=0)h.sleep.acts.splice(i,1);else h.sleep.acts.push(a);commitHealth();}));
   const sn=document.getElementById('hz-sleep-note');
   if(sn)sn.addEventListener('input',()=>{h.sleep=h.sleep||{};h.sleep.note=sn.value;healthNoteDebounced();});
   // 飲食
@@ -2280,7 +2321,7 @@ function wireHealthEditors(h){
   // 運動
   box.querySelectorAll('[data-extype]').forEach(el=>el.addEventListener('click',()=>{
     h.exercise=h.exercise||{};
-    h.exercise.type=(h.exercise.type===el.dataset.extype)?'':el.dataset.extype; // 再點一次取消
+    h.exercise.type=(h.exercise.type===el.dataset.extype)?'':el.dataset.extype;
     commitHealth();
   }));
   box.querySelectorAll('[data-exdur]').forEach(el=>el.addEventListener('click',()=>{
@@ -2297,6 +2338,8 @@ function wireHealthEditors(h){
     h.water.amount=Math.max(0,(+h.water.amount||0)+(+el.dataset.water));
     commitHealth();
   }));
+  const wn=document.getElementById('hz-water-note');
+  if(wn)wn.addEventListener('input',()=>{h.water=h.water||{amount:0};h.water.note=wn.value;healthNoteDebounced();});
 }
 let _healthNoteT=null;
 function healthNoteDebounced(){clearTimeout(_healthNoteT);_healthNoteT=setTimeout(()=>commitHealth(false),900);}
