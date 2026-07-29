@@ -657,12 +657,13 @@ body.viewer-mode .neo-chip,body.viewer-mode .sticky-check,body.viewer-mode .habi
 .hz-wbtn.minus{color:var(--tc3);flex:0 0 42px;min-width:42px;}
 
 /* ── 🍽️ 飲食餐盤（點＋拖、食物飄動、狗勾說話） ── */
-.diet-plate{position:relative;width:210px;height:210px;margin:2px auto 12px;border-radius:50%;
-  background:radial-gradient(circle at 50% 42%,#ffffff 0 40%,#fbf7f0 58%,#f0e7d8 100%);
-  box-shadow:0 6px 16px rgba(140,110,70,.18),inset 0 0 0 2px rgba(255,255,255,.9),inset 0 0 0 8px rgba(210,190,160,.28),inset 0 6px 14px rgba(180,150,110,.12);
-  display:flex;align-items:center;justify-content:center;transition:box-shadow .25s,transform .25s;}
-.diet-plate.drop{box-shadow:0 8px 22px rgba(93,202,165,.45),inset 0 0 0 2px #fff,inset 0 0 0 9px rgba(93,202,165,.5);transform:scale(1.04);}
-.dp-foods{position:relative;width:150px;height:150px;}
+/* 盤子＝fluent 餐盤 emoji 當背景（不用畫圈） */
+.diet-plate{position:relative;width:250px;height:250px;margin:2px auto 10px;
+  background:url('https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f37d_3d.png') center/contain no-repeat;
+  display:flex;align-items:center;justify-content:center;transition:transform .25s,filter .25s;}
+.diet-plate.drop{transform:scale(1.06);filter:drop-shadow(0 0 10px rgba(93,202,165,.85));}
+/* 食物落點範圍＝ 🍽️ 中央的盤面 */
+.dp-foods{position:relative;width:130px;height:130px;}
 .dp-food{position:absolute;transform:translate(-50%,-50%);cursor:pointer;animation:foodPlop .44s cubic-bezier(.34,1.56,.64,1) both;}
 .dp-food.leaving{animation:foodPop .28s ease forwards;}
 .dpf-in{display:inline-block;filter:drop-shadow(0 2px 3px rgba(120,90,50,.3));animation:dpFloat var(--fd,3.4s) ease-in-out infinite;animation-delay:var(--dl,0s);}
@@ -670,8 +671,7 @@ body.viewer-mode .neo-chip,body.viewer-mode .sticky-check,body.viewer-mode .habi
 @keyframes foodPlop{0%{transform:translate(-50%,-150%) scale(.3);opacity:0;}60%{transform:translate(-50%,-50%) scale(1.18);opacity:1;}100%{transform:translate(-50%,-50%) scale(1);}}
 @keyframes foodPop{to{transform:translate(-50%,-50%) scale(0) rotate(30deg);opacity:0;}}
 @keyframes dpFloat{0%,100%{transform:translateY(0) rotate(-4deg);}50%{transform:translateY(-6px) rotate(4deg);}}
-.dp-empty{font-size:12px;color:var(--tc3);text-align:center;line-height:1.5;opacity:.85;}
-.dp-empty img{display:block;margin:0 auto 4px;opacity:.6;animation:dpFloat 3.4s ease-in-out infinite;}
+.dp-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;color:var(--tc3);text-align:center;line-height:1.6;opacity:.8;}
 .diet-plate.wobble{animation:plateWob .5s ease;}
 @keyframes plateWob{0%,100%{transform:rotate(0);}25%{transform:rotate(-3deg);}55%{transform:rotate(2.4deg);}80%{transform:rotate(-1deg);}}
 .dp-drag-clone{position:fixed;z-index:99998;pointer-events:none;transform:translate(-50%,-50%) scale(1.15);filter:drop-shadow(0 6px 8px rgba(0,0,0,.28));transition:transform .1s;}
@@ -765,14 +765,48 @@ body.viewer-mode .neo-chip,body.viewer-mode .sticky-check,body.viewer-mode .habi
 .hard-pill.hard-mid{background:rgba(var(--secondary-rgb),.18);color:var(--secondary);}
 .hard-pill.hard-hi{background:rgba(216,130,60,.2);color:#C06A28;}
 .xnote{font-size:10.5px;color:var(--tc3);margin-top:6px;line-height:1.5;}
+/* 睡眠時間軸（橫式：一天一列，看得懂幾點睡幾點起） */
+.slp-legend{display:flex;gap:10px;flex-wrap:wrap;font-size:10.5px;color:var(--tc3);margin-top:7px;}
+.slp-legend i{font-style:normal;}
+.slp-axis{display:grid;grid-template-columns:52px 1fr 62px;align-items:center;gap:6px;margin-bottom:3px;}
+.slp-axis .slp-ticks{position:relative;height:12px;}
+.slp-axis .slp-ticks i{position:absolute;top:0;transform:translateX(-50%);font-size:9.5px;color:var(--tc3);font-family:'Baloo 2',sans-serif;font-weight:700;}
+.slp-row{display:grid;grid-template-columns:52px 1fr 62px;align-items:center;gap:6px;margin-bottom:4px;}
+.slp-day{font-size:10.5px;font-weight:700;color:var(--tc2);white-space:nowrap;}
+.slp-day.we{color:var(--secondary);}
+.slp-track{position:relative;height:19px;border-radius:6px;background:rgba(var(--secondary-rgb),.09);overflow:hidden;}
+/* 兩條目標線：00:00 (33.33%) 與 07:00 (72.22%) */
+.slp-track::before,.slp-track::after{content:'';position:absolute;top:0;bottom:0;width:0;border-left:1px dashed rgba(216,130,60,.55);}
+.slp-track::before{left:33.33%;}
+.slp-track::after{left:72.22%;}
+.slp-bar{position:absolute;top:3px;bottom:3px;border-radius:5px;background:linear-gradient(90deg,#6FA8D6,#3F80B2);min-width:3px;}
+.slp-bar.hard{background:linear-gradient(90deg,#E8A96A,#D8823C);}
+.slp-bar.good{background:linear-gradient(90deg,#6FCCA8,#1D9E75);}
+.slp-dur{font-size:10.5px;font-family:'Baloo 2',sans-serif;font-weight:700;color:var(--tc2);text-align:right;white-space:nowrap;}
+.slp-none{font-size:10px;color:var(--tc3);opacity:.65;}
+/* 星期幾彙總（月複盤） */
+.wdrow{display:grid;grid-template-columns:30px 1fr 74px;align-items:center;gap:7px;margin-bottom:5px;}
+.wdrow .wdl{font-size:11.5px;font-weight:700;color:var(--tc2);}
+.wdrow .wdbar-bg{height:15px;border-radius:7px;background:rgba(var(--secondary-rgb),.12);overflow:hidden;}
+.wdrow .wdbar{height:100%;border-radius:7px;background:linear-gradient(90deg,#8FC5E8,#3F80B2);}
+.wdrow.best .wdbar{background:linear-gradient(90deg,#6FCCA8,#1D9E75);}
+.wdrow .wdv{font-size:10.5px;font-family:'Baloo 2',sans-serif;font-weight:700;color:var(--tc2);text-align:right;}
+.wdrow .wdv small{color:var(--tc3);font-weight:600;}
+/* 飲食頻率（大 emoji） */
+.dfrow{display:flex;align-items:center;gap:9px;margin-bottom:7px;}
+.dfrow .dfe{flex:0 0 auto;display:flex;}
+.dfrow .dfn{flex:0 0 82px;font-size:11.5px;font-weight:700;color:var(--tc2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.dfrow .dfb{flex:1;height:13px;border-radius:7px;background:rgba(var(--secondary-rgb),.13);overflow:hidden;}
+.dfrow .dfb>i{display:block;height:100%;border-radius:7px;background:linear-gradient(90deg,var(--tertiary),var(--secondary));}
+.dfrow.whole .dfb>i{background:linear-gradient(90deg,#6FCCA8,#1D9E75);}
+.dfrow .dfc{flex:0 0 34px;text-align:right;font-size:11px;font-family:'Baloo 2',sans-serif;font-weight:700;color:var(--tc3);}
 .hcal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
 .hcal-w{font-size:10px;color:var(--tc3);text-align:center;font-weight:700;padding-bottom:2px;}
-.hplate{aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 50% 45%,#fff,rgba(var(--tertiary-rgb),.28) 74%,rgba(var(--secondary-rgb),.35));box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.8),inset 0 0 0 3px rgba(var(--secondary-rgb),.15);display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:1px;position:relative;overflow:hidden;min-height:34px;}
-.hplate.empty{background:rgba(255,255,255,.25);box-shadow:inset 0 0 0 1px rgba(var(--primary-rgb),.08);}
-.hplate.ex{background:radial-gradient(circle at 50% 45%,rgba(var(--tertiary-rgb),.35),rgba(var(--secondary-rgb),.28));}
+.hplate{aspect-ratio:1;border-radius:9px;background:rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;min-height:34px;}
+.hplate.empty{background:rgba(255,255,255,.22);box-shadow:inset 0 0 0 1px rgba(var(--primary-rgb),.07);}
+.hplate.ex{background:linear-gradient(160deg,rgba(var(--tertiary-rgb),.42),rgba(var(--secondary-rgb),.3));}
 .hplate .hpn{position:absolute;top:2px;left:0;right:0;text-align:center;font-size:8.5px;color:var(--tc3);font-family:'Baloo 2',sans-serif;line-height:1;}
-.hplate img{width:11px;height:11px;}
-.hplate.ex img{width:16px;height:16px;}
+.hplate.ex img{width:20px;height:20px;margin-top:5px;}
 
 /* ── 清單/格狀切換 ── */
 .view-toggle{display:inline-flex;background:rgba(255,255,255,.55);border:1.5px solid rgba(255,255,255,.85);border-radius:10px;overflow:hidden;}
@@ -1104,11 +1138,11 @@ button{-webkit-tap-highlight-color:transparent;}
 <div class="rd-zone" id="mo-health-zone" style="display:none;">🌿 健康觀察</div>
 <div class="gcard" id="mo-sleep-card" style="display:none;"><div class="sec-hd">🌙 睡眠觀察</div><div id="mo-sleep"></div></div>
 <div class="gcard" id="mo-sleepx-card" style="display:none;"><div class="sec-hd">🔍 睡前活動 × 入睡狀況</div><div id="mo-sleepx"></div></div>
-<div class="gcard" id="mo-diet-card" style="display:none;"><div class="sec-hd">🍽️ 飲食</div><div id="mo-diet"></div></div>
 <div class="rd-pair" id="mo-health-pair" style="display:none;">
+  <div class="gcard" id="mo-diet-card" style="display:none;"><div class="sec-hd">🍽️ 飲食</div><div id="mo-diet"></div></div>
   <div class="gcard" id="mo-exercise-card" style="display:none;"><div class="sec-hd">🏃 運動</div><div id="mo-exercise"></div></div>
-  <div class="gcard" id="mo-water-card" style="display:none;"><div class="sec-hd">💧 喝水</div><div id="mo-water"></div></div>
 </div>
+<div class="gcard" id="mo-water-card" style="display:none;"><div class="sec-hd">💧 喝水</div><div id="mo-water"></div></div>
 
 <div class="rd-zone">🗒 這個月明細</div>
 <div id="month-week-summaries" class="rd-entries"></div>
@@ -1447,7 +1481,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v83';
+const APP_VER='v84';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
@@ -1549,7 +1583,7 @@ const HEALTH=[
   {k:'sleep',   l:'睡眠', ic:'1f634', fc:'1fab7'},
   {k:'diet',    l:'飲食', ic:'1f37d', fc:'1f337'},
   {k:'exercise',l:'運動', ic:'1f3c3', fc:'1f33a'},
-  {k:'water',   l:'喝水', ic:'1f4a7', fc:'1f4f0'},
+  {k:'water',   l:'喝水', ic:'1f4a7', fc:'1f490'},
 ];
 // 內建選項＋每項的 emoji（fluent 圖示碼）。使用者可自訂新增（存 S.healthOpts）。
 const DIET_TAGS=['原型食物為主','麵包/貝果','飯','麵','零食','含糖飲料','無糖飲料','鮮奶茶','外食'];
@@ -1667,6 +1701,8 @@ if(!S.health.sleep)S.health.sleep={sleepTime:'',wakeTime:'',ease:'',acts:[],note
 if(!S.health.sleep.acts)S.health.sleep.acts=[];
 if(!S.healthOpts||typeof S.healthOpts!=='object')S.healthOpts={diet:[],exercise:[],sleepActs:[],water:[]};
 ['diet','exercise','sleepActs','water'].forEach(k=>{if(!Array.isArray(S.healthOpts[k]))S.healthOpts[k]=[];});
+// 修正：喝水的花本來誤植成 1f4f0（📰 報紙），把已長出來的報紙換成花束
+if(Array.isArray(S.flowers)){let _fx=0;S.flowers.forEach(f=>{if(f&&f.f==='1f4f0'){f.f='1f490';_fx++;}});if(_fx)sv(S);}
 migrateHealth();
 
 // 這兩個函式提前搬到這裡定義：rolloverToToday() 在頁面載入時就會被同步呼叫（見下面），
@@ -2407,7 +2443,6 @@ function healthEditorHTML(k,h){
         `<span class="ss-dog"><img src="${PUPPY_IMG}" alt="狗勾" onerror="this.outerHTML='<span style=font-size:46px>🐶</span>'"/></span>`+
         `<span class="ss-zzz">Z z</span>`+
         `<span class="ss-cap" id="hz-sleep-cap">☀️ 早安</span>`+
-        `<span class="ss-tap">點我切換 ☀️ / 🌙</span>`+
       `</div>`+
       `<div class="sleep-ctrl">`+
         `<div class="hz-row" style="margin:0;"><span class="hz-lbl">入睡</span>${timeSelHTML('hz-sleep-in',s.sleepTime||'23:30')}</div>`+
@@ -2557,8 +2592,8 @@ function dietSet(h,tag,wantOn){
   if(wantOn){dietPlateAdd(h,tag);dietReact(tag);}else dietPlateRemove(tag);
   commitHealth();
 }
-function dietFoodPos(i){const a=i*137.508*Math.PI/180,r=Math.min(62,26*Math.sqrt(i));return [75+r*Math.cos(a),75+r*Math.sin(a)];}
-const DP_FOOD_SZ=64; // 餐盤食物 emoji 尺寸（約舊版兩倍，允許重疊）
+function dietFoodPos(i){const a=i*137.508*Math.PI/180,r=Math.min(42,19*Math.sqrt(i));return [65+r*Math.cos(a),65+r*Math.sin(a)];}
+const DP_FOOD_SZ=58; // 餐盤食物 emoji 尺寸（約舊版兩倍，允許重疊）
 function makeFoodEl(h,tag,idx,sz){
   const p=dietFoodPos(idx);
   const el=document.createElement('span');
@@ -2568,7 +2603,7 @@ function makeFoodEl(h,tag,idx,sz){
   el.addEventListener('click',()=>dietSet(h,tag,false));
   return el;
 }
-function dietEmptyHTML(){return '<div class="dp-empty">'+fi('1f37d',34)+'<br>空盤子～點或拖食物進來</div>';}
+function dietEmptyHTML(){return '<div class="dp-empty">空盤子～<br>點或拖食物進來</div>';}
 function renderDietPlate(h){
   const box=document.getElementById('hz-diet-foods');if(!box)return;
   const tags=((h.diet||{}).tags)||[];
@@ -3295,22 +3330,72 @@ function renderHealthReview(cur,prefix,dates){
       '<span>平均入睡 <b style="color:var(--primary);font-family:Baloo 2;">'+m2t(avgBed)+'</b></span>'+
       '<span>平均起床 <b style="color:var(--primary);font-family:Baloo 2;">'+m2t(avgWake)+'</b></span>'+
       (avgDur!=null?'<span>平均睡 <b style="color:var(--ok);font-family:Baloo 2;">'+fmtSleepDur(avgDur)+'</b></span>':'')+'</div>';
-    if(beds.length>=2)html+='<div style="font-size:11.5px;color:var(--tc3);margin-bottom:8px;">入睡落在 <b style="color:var(--secondary);">'+m2t(Math.min(...beds))+' ～ '+m2t(Math.max(...beds))+'</b> 之間</div>';
-    // 睡眠節律圖：x=每天、y=時間（頂18:00→底次日12:00），畫睡眠區間＋目標線(00:00/07:00)
-    const chartDays=sleepDays.filter(x=>x.h.sleep.sleepTime&&x.h.sleep.wakeTime);
-    if(chartDays.length){
-      const W=340,H=150,pT=8,pB=16,top=18*60,bot=(24+12)*60;
-      const yOf=m=>{let v=m;if(v<12*60)v+=24*60;return pT+((v-top)/(bot-top))*(H-pT-pB);};
-      let g='';[[24*60,'目標入睡'],[31*60,'目標起床']].forEach(t=>{const y=yOf(t[0]);g+='<line x1="0" y1="'+y+'" x2="'+W+'" y2="'+y+'" stroke="#D8823C" stroke-width="1" stroke-dasharray="4 3" opacity=".5"/>';});
-      const n=chartDays.length,bw=Math.min(11,(W/n)*0.6),gap=W/n;
-      chartDays.forEach((x,i)=>{const s=x.h.sleep;const y1=yOf(toMin(s.sleepTime,true)%(24*60)+((+s.sleepTime.split(':')[0]<12)?24*60:0));
-        const sb=toMin(s.sleepTime,true),sw=toMin(s.wakeTime,false)+((toMin(s.wakeTime,false)<=sb-24*60)?0:0);
-        const yA=yOf(sb),yB=yOf(toMin(s.wakeTime,false)<sb?toMin(s.wakeTime,false)+24*60:toMin(s.wakeTime,false));
-        const hard=s.ease==='hard';const cx=(W/n)*i+(W/n)/2-bw/2;
-        g+='<rect x="'+cx+'" y="'+Math.min(yA,yB)+'" width="'+bw+'" height="'+Math.max(3,Math.abs(yB-yA))+'" rx="'+bw/2+'" fill="'+(hard?'#D8823C':'#3F80B2')+'" opacity="'+(hard?.95:.72)+'"/>';
+    if(beds.length>=2)html+='<div style="font-size:11.5px;color:var(--tc3);margin-bottom:8px;">入睡落在 <b style="color:var(--secondary);">'+m2t(Math.min(...beds))+' ～ '+m2t(Math.max(...beds))+'</b> 之間'+
+      (Math.max(...beds)-Math.min(...beds)<=90?'（很規律 👍）':'')+'</div>';
+
+    // 時間軸：18:00 → 次日 12:00（共 1080 分），0% 對 18:00
+    const T0=18*60,TSPAN=18*60;
+    const pctOf=m=>Math.max(0,Math.min(100,(m-T0)/TSPAN*100));
+    // 一晚的睡眠區間（分鐘）：入睡<12點視為隔天凌晨；起床一律算隔天早上
+    const spanOf=s=>{
+      if(!s.sleepTime||!s.wakeTime)return null;
+      let b=toMin(s.sleepTime,true),w=toMin(s.wakeTime,false)+24*60;
+      if(w<=b)w+=24*60;
+      return [b,Math.min(w,T0+TSPAN)];
+    };
+    const axis='<div class="slp-axis"><span></span><div class="slp-ticks">'+
+      [['18',0],['21',16.7],['00',33.3],['03',50],['06',66.7],['09',83.3],['12',100]]
+        .map(t=>'<i style="left:'+t[1]+'%;">'+t[0]+'</i>').join('')+
+      '</div><span></span></div>';
+
+    if(isWeek){
+      // 週：一天一列，看得懂「幾點睡、幾點起、睡多久」
+      html+='<div style="font-size:12px;font-weight:700;color:var(--tc2);margin:10px 2px 6px;">🛏️ 每天的睡眠時段</div>'+axis;
+      period.forEach(ds=>{
+        const d=new Date(ds+'T00:00:00'),we=(d.getDay()===0||d.getDay()===6);
+        const lab='<span class="slp-day'+(we?' we':'')+'">'+wd[d.getDay()]+' '+(d.getMonth()+1)+'/'+d.getDate()+'</span>';
+        const h2=hmap[ds],s=h2&&h2.sleep;
+        const sp=s?spanOf(s):null;
+        if(!sp){html+='<div class="slp-row">'+lab+'<div class="slp-track"></div><span class="slp-dur slp-none">—</span></div>';return;}
+        const dm=sleepMinutes(s),L=pctOf(sp[0]),R=pctOf(sp[1]);
+        const cls=s.ease==='hard'?' hard':(s.ease==='good'?' good':'');
+        html+='<div class="slp-row">'+lab+
+          '<div class="slp-track"><div class="slp-bar'+cls+'" style="left:'+L+'%;width:'+Math.max(1.5,R-L)+'%;" title="'+s.sleepTime+'→'+s.wakeTime+'"></div></div>'+
+          '<span class="slp-dur">'+(dm!=null?fmtSleepDur(dm):'—')+'</span></div>';
       });
-      html+='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;">'+g+'</svg>'+
-        '<div style="display:flex;gap:12px;font-size:10.5px;color:var(--tc3);margin-top:4px;flex-wrap:wrap;"><span>🔵 睡眠區間</span><span>🟠 難睡的夜晚</span><span>┈ 你的目標</span></div>';
+      html+='<div class="slp-legend"><i>🟢 好睡</i><i>🔵 普通</i><i>🟠 難睡</i><i>┊ 目標 00:00 / 07:00</i></div>';
+    }else{
+      // 月：看「星期幾睡得比較好」＋每週趨勢，而不是列 30 行
+      const WD=['一','二','三','四','五','六','日'];
+      const agg=WD.map(()=>({n:0,dur:0,bed:0,bedN:0,hard:0}));
+      sleepDays.forEach(x=>{
+        const d=new Date(x.ds+'T00:00:00'),i=(d.getDay()+6)%7,o=agg[i];
+        const dm=sleepMinutes(x.h.sleep),b=toMin(x.h.sleep.sleepTime,true);
+        o.n++;if(dm!=null)o.dur+=dm;if(b!=null){o.bed+=b;o.bedN++;}
+        if(x.h.sleep.ease==='hard')o.hard++;
+      });
+      const withData=agg.map((o,i)=>({i,o,avg:o.n?o.dur/o.n:null})).filter(x=>x.avg!=null&&x.o.n>0);
+      if(withData.length>=2){
+        const best=withData.reduce((a,b)=>b.avg>a.avg?b:a),worst=withData.reduce((a,b)=>b.avg<a.avg?b:a);
+        if(best.i!==worst.i)html+='<div style="font-size:12px;color:var(--tc2);margin:10px 2px 6px;line-height:1.7;">📆 這個月 <b style="color:var(--ok);">週'+WD[best.i]+'</b> 睡最久（平均 '+fmtSleepDur(Math.round(best.avg))+'），<b style="color:var(--secondary);">週'+WD[worst.i]+'</b> 最少（'+fmtSleepDur(Math.round(worst.avg))+'）</div>';
+        const mxD=Math.max(...withData.map(x=>x.avg));
+        withData.sort((a,b)=>a.i-b.i).forEach(x=>{
+          const o=x.o,ab=o.bedN?m2t(Math.round(o.bed/o.bedN)):'—';
+          html+='<div class="wdrow'+(x.i===best.i?' best':'')+'"><span class="wdl">週'+WD[x.i]+'</span>'+
+            '<div class="wdbar-bg"><div class="wdbar" style="width:'+Math.round(x.avg/mxD*100)+'%;"></div></div>'+
+            '<span class="wdv">'+fmtSleepDur(Math.round(x.avg))+'<br/><small>入睡 '+ab+(o.hard?' · 難睡'+o.hard:'')+'</small></span></div>';
+        });
+      }
+      // 每週平均時長趨勢
+      const wkAgg={};
+      sleepDays.forEach(x=>{const dm=sleepMinutes(x.h.sleep);if(dm==null)return;const wn=Math.ceil(new Date(x.ds+'T00:00:00').getDate()/7);wkAgg[wn]=wkAgg[wn]||{s:0,n:0};wkAgg[wn].s+=dm;wkAgg[wn].n++;});
+      const wks=Object.keys(wkAgg).sort((a,b)=>a-b);
+      if(wks.length>=2){
+        const mxW=Math.max(...wks.map(k=>wkAgg[k].s/wkAgg[k].n));
+        html+='<div style="font-size:12px;font-weight:700;color:var(--tc2);margin:12px 2px 6px;">📈 每週平均睡眠</div>';
+        wks.forEach(k=>{const v=wkAgg[k].s/wkAgg[k].n;
+          html+='<div class="wdrow"><span class="wdl">第'+k+'週</span><div class="wdbar-bg"><div class="wdbar" style="width:'+Math.round(v/mxW*100)+'%;"></div></div><span class="wdv">'+fmtSleepDur(Math.round(v))+'</span></div>';});
+      }
     }
     // 只列「難睡」或「有備註」的夜晚（不流水帳）
     const focus=sleepDays.filter(x=>x.h.sleep.ease==='hard'||x.h.sleep.note);
@@ -3338,7 +3423,7 @@ function renderHealthReview(cur,prefix,dates){
       acts.forEach(a=>{const o=actAgg[a];const cls=o.hard/o.n>=.5?'hard-hi':(o.hard===0?'hard-lo':'hard-mid');
         t+='<tr><td class="act">'+esc(a)+'</td><td class="r">'+o.n+'</td><td class="r bed">'+(o.bedN?m2t(Math.round(o.bedSum/o.bedN)):'—')+'</td><td class="r"><span class="hard-pill '+cls+'">'+o.hard+' 晚</span></td></tr>';
       });
-      t+='</table><div class="xnote">＊只是把你的紀錄擺在一起，讓你自己看——不下結論、不建議。</div>';
+      t+='</table>';
       document.getElementById(prefix+'-sleepx').innerHTML=t;
     }
   }
@@ -3348,20 +3433,14 @@ function renderHealthReview(cur,prefix,dates){
   if(dietDays.length){
     show(prefix+'-diet-card',true);
     const wholeN=dietDays.filter(x=>(x.h.diet.tags||[]).indexOf('原型食物為主')>=0).length;
-    let html=wit('🌿 這'+(isWeek?'週':'個月')+'有 <b>'+wholeN+'</b> 天以原型食物為主，你一直有好好照顧自己。偶爾配點零食，那也很好。');
-    // 餐盤月曆：每天一個盤子，擺當天吃的 emoji
-    const first=new Date(period[0]+'T00:00:00');let lead=(first.getDay()+6)%7;
-    html+='<div class="hcal">'+['一','二','三','四','五','六','日'].map(w=>'<div class="hcal-w">'+w+'</div>').join('');
-    for(let i=0;i<lead;i++)html+='<div></div>';
-    period.forEach(ds=>{const h=hmap[ds];const d=new Date(ds+'T00:00:00');const tags=(h&&h.diet&&h.diet.tags)||[];
-      const emo=tags.slice(0,3).map(t=>fi(dietEmoji(t),11)).join('');
-      html+='<div class="hplate'+(tags.length?'':' empty')+'"><span class="hpn">'+d.getDate()+'</span>'+emo+'</div>';
-    });
-    html+='</div>';
+    let html=wit('🌿 這'+(isWeek?'週':'個月')+'有 <b>'+wholeN+'</b> / '+dietDays.length+' 天以原型食物為主，你一直有好好照顧自己。偶爾配點零食，那也很好。');
     const freq={};dietDays.forEach(x=>(x.h.diet.tags||[]).forEach(t=>freq[t]=(freq[t]||0)+1));
     const rows=Object.keys(freq).sort((a,b)=>freq[b]-freq[a]);const mx=Math.max(1,...Object.values(freq));
-    html+='<div style="font-size:12px;font-weight:700;color:var(--tc2);margin:10px 2px 6px;">這'+(isWeek?'週':'個月')+'你的飲食裡有…</div>';
-    html+=rows.map(t=>'<div class="dist-row"><div class="dist-label" style="width:auto;flex:0 0 110px;">'+fi(dietEmoji(t),14)+' '+esc(t)+'</div><div class="dist-bar-bg"><div class="dist-bar-fill" style="width:'+Math.round(freq[t]/mx*100)+'%;"></div></div><div class="dist-count">'+freq[t]+'天</div></div>').join('');
+    html+=rows.map(t=>'<div class="dfrow'+(t==='原型食物為主'?' whole':'')+'">'+
+      '<span class="dfe">'+fi(dietEmoji(t),30)+'</span>'+
+      '<span class="dfn">'+esc(t)+'</span>'+
+      '<span class="dfb"><i style="width:'+Math.round(freq[t]/mx*100)+'%;"></i></span>'+
+      '<span class="dfc">'+freq[t]+'天</span></div>').join('');
     document.getElementById(prefix+'-diet').innerHTML=html;
   }
 
@@ -3376,7 +3455,7 @@ function renderHealthReview(cur,prefix,dates){
     html+='<div class="hcal">'+['一','二','三','四','五','六','日'].map(w=>'<div class="hcal-w">'+w+'</div>').join('');
     for(let i=0;i<lead;i++)html+='<div></div>';
     period.forEach(ds=>{const h=hmap[ds];const d=new Date(ds+'T00:00:00');const ex=h&&h.exercise&&h.exercise.type;
-      html+='<div class="hplate'+(ex?' ex':' empty')+'"><span class="hpn">'+d.getDate()+'</span>'+(ex?fi(exEmoji(h.exercise.type),15):'')+'</div>';
+      html+='<div class="hplate'+(ex?' ex':' empty')+'"><span class="hpn">'+d.getDate()+'</span>'+(ex?fi(exEmoji(h.exercise.type),20):'')+'</div>';
     });
     html+='</div>';
     html+='<div style="font-size:12px;color:var(--tc2);margin-top:8px;">'+Object.keys(typeFreq).map(t=>esc(t)+' × '+typeFreq[t]).join('　')+'</div>';
