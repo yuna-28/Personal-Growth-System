@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════
-// 格蘭朵魔法森林 GAS v3.7（新增：版本 ping 診斷、重複行程可完整編輯 calRecur）
+// 格蘭朵魔法森林 GAS v3.8（新增：健康自訂選項 healthOpts 同步）
 // ═══════════════════════════════════════════════════════
 // 【從舊版升級：只要這兩步】
 // 1. 擴充功能 → Apps Script → 全選刪掉舊程式碼 → 貼上這份 → 儲存
@@ -44,7 +44,7 @@ const ENTRY_COLS = ['date','checked','hl','rf','gr','quote','tdl','exp','streak'
 const STATE_COLS = ['flowers','apples','bigApples','goldFruits','seedlings','trees',
                     'achievements','quotes','calNotes','myPeople','treasures',
                     'lastPlant','lastStreak','streak','exp','gardenPos','supportCategories',
-                    'notifications','supportResources','todaySession','expLog','calColorTags','updatedAt','archivedHabits','calRecur'];
+                    'notifications','supportResources','todaySession','expLog','calColorTags','updatedAt','archivedHabits','calRecur','healthOpts'];
 
 // 這個函式只是用來手動觸發 Google Drive 授權，之後留著也沒關係
 function testDriveAuth(){
@@ -104,7 +104,7 @@ function json(obj){
 }
 
 // ── GET ──────────────────────────────────────────────
-var GAS_VER = '3.7';
+var GAS_VER = '3.8';
 function doGet(e){
   const action = (e.parameter.action||'').trim();
   try{
