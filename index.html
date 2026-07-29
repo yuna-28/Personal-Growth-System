@@ -657,13 +657,45 @@ body.viewer-mode .neo-chip,body.viewer-mode .sticky-check,body.viewer-mode .habi
 .hz-wbtn.minus{color:var(--tc3);flex:0 0 42px;min-width:42px;}
 
 /* ── 🍽️ 飲食餐盤（點＋拖、食物飄動、狗勾說話） ── */
-/* 盤子＝fluent 餐盤 emoji 當背景（不用畫圈） */
-.diet-plate{position:relative;width:250px;height:250px;margin:2px auto 10px;
-  background:url('https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f37d_3d.png') center/contain no-repeat;
-  display:flex;align-items:center;justify-content:center;transition:transform .25s,filter .25s;}
-.diet-plate.drop{transform:scale(1.06);filter:drop-shadow(0 0 10px rgba(93,202,165,.85));}
-/* 食物落點範圍＝ 🍽️ 中央的盤面 */
-.dp-foods{position:relative;width:130px;height:130px;}
+/* 左＝手繪陶瓷餐盤＋刀叉，右＝食物籃 */
+.diet-stage{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;margin-bottom:10px;}
+.plate-wrap{display:flex;align-items:center;justify-content:center;gap:4px;}
+.cutlery{flex:0 0 12px;width:12px;opacity:.9;filter:drop-shadow(0 1px 1px rgba(90,80,110,.25));}
+.cutlery svg{width:100%;height:auto;display:block;}
+.diet-plate{position:relative;width:140px;height:140px;flex:0 0 auto;border-radius:50%;
+  background:
+    radial-gradient(circle at 40% 32%,rgba(255,255,255,.95) 0 16%,rgba(255,255,255,0) 52%),
+    radial-gradient(circle at 50% 52%,#FFFDFA 0 54%,#F8F2E9 63%,#EDE3D3 74%,#F7F1E7 84%,#E0D3BE 100%);
+  box-shadow:0 12px 22px -11px rgba(120,95,60,.5),0 2px 5px rgba(120,95,60,.13),inset 0 0 0 1px rgba(255,255,255,.9);
+  display:flex;align-items:center;justify-content:center;transition:transform .25s,box-shadow .25s;}
+.diet-plate::before{content:'';position:absolute;inset:12%;border-radius:50%;
+  background:radial-gradient(circle at 44% 36%,#fff 0 42%,#FCF9F3 72%,#F2EADC 100%);
+  box-shadow:inset 0 2px 7px rgba(170,145,110,.24),0 1px 0 rgba(255,255,255,.95);}
+.diet-plate.drop{transform:scale(1.05);box-shadow:0 12px 24px -10px rgba(93,202,165,.6),0 0 0 3px rgba(93,202,165,.55),inset 0 0 0 1px #fff;}
+.dp-foods{position:relative;z-index:2;width:104px;height:104px;}
+/* 食物籃 */
+.food-basket{min-width:0;border-radius:15px;padding:8px 9px 10px;
+  background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.3) 0 5px,rgba(120,85,40,.07) 5px 10px),linear-gradient(180deg,#F7E9D2,#E4CCA4);
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.55),inset 0 -3px 8px rgba(150,110,60,.16),0 4px 10px -7px rgba(120,90,50,.65);}
+.fb-label{font-size:11px;font-weight:800;color:#8A6A44;margin:0 2px 7px;}
+.fb-items{display:flex;flex-wrap:wrap;gap:6px;}
+/* emoji 按鈕（只放圖，hover／點一下才顯示文字） */
+.hz-sub{font-size:11.5px;font-weight:700;color:var(--tc2);margin:8px 2px 5px;}
+.ebtns{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px;}
+.ebtn{position:relative;width:46px;height:46px;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.78);border:1.5px solid rgba(255,255,255,.95);cursor:pointer;user-select:none;
+  box-shadow:0 2px 4px rgba(120,95,60,.16);transition:transform .12s,box-shadow .15s,background .15s;}
+.ebtn:hover{transform:translateY(-2px);box-shadow:0 5px 9px -3px rgba(120,95,60,.3);}
+.ebtn:active{transform:scale(.9);}
+.ebtn.on{background:rgba(var(--tertiary-rgb),.6);border-color:var(--tertiary);box-shadow:0 0 0 2.5px rgba(var(--tertiary-rgb),.45);}
+.ebtn.num{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:15px;color:var(--secondary);}
+.ebtn.on.num{color:var(--ok);}
+.ebtn.eadd{border-style:dashed;border-color:rgba(var(--primary-rgb),.35);color:var(--tc3);font-size:19px;font-weight:800;background:rgba(255,255,255,.45);box-shadow:none;}
+.ebtn[data-dietchip]{touch-action:none;}
+.ebtn::after{content:attr(data-lbl);position:absolute;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%) scale(.88);
+  background:rgba(48,52,64,.94);color:#fff;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:8px;white-space:nowrap;
+  opacity:0;pointer-events:none;transition:opacity .15s,transform .15s;z-index:30;}
+.ebtn:hover::after,.ebtn.show-lbl::after{opacity:1;transform:translateX(-50%) scale(1);}
 .dp-food{position:absolute;transform:translate(-50%,-50%);cursor:pointer;animation:foodPlop .44s cubic-bezier(.34,1.56,.64,1) both;}
 .dp-food.leaving{animation:foodPop .28s ease forwards;}
 .dpf-in{display:inline-block;filter:drop-shadow(0 2px 3px rgba(120,90,50,.3));animation:dpFloat var(--fd,3.4s) ease-in-out infinite;animation-delay:var(--dl,0s);}
@@ -792,6 +824,20 @@ body.viewer-mode .neo-chip,body.viewer-mode .sticky-check,body.viewer-mode .habi
 .wdrow.best .wdbar{background:linear-gradient(90deg,#6FCCA8,#1D9E75);}
 .wdrow .wdv{font-size:10.5px;font-family:'Baloo 2',sans-serif;font-weight:700;color:var(--tc2);text-align:right;}
 .wdrow .wdv small{color:var(--tc3);font-weight:600;}
+/* 複盤：每天一個小餐盤（畫的，跟今天頁同一套質感） */
+.dcal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin:0 auto 10px;max-width:430px;}
+.dcal-w{font-size:9.5px;color:var(--tc3);text-align:center;font-weight:700;}
+.dcal-cell{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;}
+.rplate{width:100%;aspect-ratio:1;border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 42% 32%,rgba(255,255,255,.92) 0 17%,rgba(255,255,255,0) 54%),radial-gradient(circle at 50% 52%,#FFFDFA 0 56%,#F4EDE1 71%,#E4D7C1 100%);
+  box-shadow:0 3px 7px -3px rgba(120,95,60,.5),inset 0 0 0 1px rgba(255,255,255,.9);}
+.rplate::before{content:'';position:absolute;inset:13%;border-radius:50%;background:radial-gradient(circle at 45% 37%,#fff 0 44%,#FBF7F0 100%);box-shadow:inset 0 1px 3px rgba(170,145,110,.22);}
+.rplate.empty{background:rgba(255,255,255,.26);box-shadow:inset 0 0 0 1px rgba(var(--primary-rgb),.09);}
+.rplate.empty::before{display:none;}
+.rp-foods{position:relative;z-index:2;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;width:80%;}
+.rp-foods img{margin:-2.5px;}
+.dcal-d{font-size:9px;color:var(--tc3);font-weight:700;font-family:'Baloo 2',sans-serif;line-height:1.2;}
+.dcal-d.we{color:var(--secondary);}
 /* 飲食頻率（大 emoji） */
 .dfrow{display:flex;align-items:center;gap:9px;margin-bottom:7px;}
 .dfrow .dfe{flex:0 0 auto;display:flex;}
@@ -1086,11 +1132,11 @@ button{-webkit-tap-highlight-color:transparent;}
 <div class="rd-zone" id="wk-health-zone" style="display:none;">🌿 健康觀察</div>
 <div class="gcard" id="wk-sleep-card" style="display:none;"><div class="sec-hd">🌙 睡眠觀察</div><div id="wk-sleep"></div></div>
 <div class="gcard" id="wk-sleepx-card" style="display:none;"><div class="sec-hd">🔍 睡前活動 × 入睡狀況</div><div id="wk-sleepx"></div></div>
+<div class="gcard" id="wk-diet-card" style="display:none;"><div class="sec-hd">🍽️ 飲食</div><div id="wk-diet"></div></div>
 <div class="rd-pair" id="wk-health-pair" style="display:none;">
-  <div class="gcard" id="wk-diet-card" style="display:none;"><div class="sec-hd">🍽️ 飲食</div><div id="wk-diet"></div></div>
   <div class="gcard" id="wk-exercise-card" style="display:none;"><div class="sec-hd">🏃 運動</div><div id="wk-exercise"></div></div>
+  <div class="gcard" id="wk-water-card" style="display:none;"><div class="sec-hd">💧 喝水</div><div id="wk-water"></div></div>
 </div>
-<div class="gcard" id="wk-water-card" style="display:none;"><div class="sec-hd">💧 喝水</div><div id="wk-water"></div></div>
 
 <div class="rd-zone">🗒 這週明細</div>
 <div class="gcard" id="wk-tdldetail-card" style="display:none;"><div class="sec-hd">🗒 這週 TDL 明細</div><div id="wk-tdldetail"></div></div>
@@ -1138,11 +1184,11 @@ button{-webkit-tap-highlight-color:transparent;}
 <div class="rd-zone" id="mo-health-zone" style="display:none;">🌿 健康觀察</div>
 <div class="gcard" id="mo-sleep-card" style="display:none;"><div class="sec-hd">🌙 睡眠觀察</div><div id="mo-sleep"></div></div>
 <div class="gcard" id="mo-sleepx-card" style="display:none;"><div class="sec-hd">🔍 睡前活動 × 入睡狀況</div><div id="mo-sleepx"></div></div>
+<div class="gcard" id="mo-diet-card" style="display:none;"><div class="sec-hd">🍽️ 飲食</div><div id="mo-diet"></div></div>
 <div class="rd-pair" id="mo-health-pair" style="display:none;">
-  <div class="gcard" id="mo-diet-card" style="display:none;"><div class="sec-hd">🍽️ 飲食</div><div id="mo-diet"></div></div>
   <div class="gcard" id="mo-exercise-card" style="display:none;"><div class="sec-hd">🏃 運動</div><div id="mo-exercise"></div></div>
+  <div class="gcard" id="mo-water-card" style="display:none;"><div class="sec-hd">💧 喝水</div><div id="mo-water"></div></div>
 </div>
-<div class="gcard" id="mo-water-card" style="display:none;"><div class="sec-hd">💧 喝水</div><div id="mo-water"></div></div>
 
 <div class="rd-zone">🗒 這個月明細</div>
 <div id="month-week-summaries" class="rd-entries"></div>
@@ -1470,6 +1516,9 @@ const SHEET_ID='';
 function codeQ(){const c=localStorage.getItem('grandol_code')||'';return c?'&code='+encodeURIComponent(c):'';}
 const CDN='https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/';
 const PUPPY_IMG='https://cdn.jsdelivr.net/gh/yuna-28/Personal-Growth-System@main/puppy.png';
+// 餐盤兩側的刀叉（手繪 SVG，配合畫出來的盤子）
+const CUTLERY_FORK='<svg viewBox="0 0 16 72" aria-hidden="true"><defs><linearGradient id="cgf" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#EFEDF5"/><stop offset=".42" stop-color="#CFCCDD"/><stop offset="1" stop-color="#A8A4BD"/></linearGradient></defs><g fill="url(#cgf)"><rect x="1.4" y="5" width="2.7" height="16" rx="1.35"/><rect x="6.65" y="3.6" width="2.7" height="17.4" rx="1.35"/><rect x="11.9" y="5" width="2.7" height="16" rx="1.35"/><path d="M1.4 18.6h13.2v4.1c0 3.4-2 5.8-4.7 6.7v37.9a1.9 1.9 0 0 1-3.8 0V29.4c-2.7-.9-4.7-3.3-4.7-6.7z"/></g></svg>';
+const CUTLERY_KNIFE='<svg viewBox="0 0 16 72" aria-hidden="true"><defs><linearGradient id="cgk" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#EFEDF5"/><stop offset=".42" stop-color="#CFCCDD"/><stop offset="1" stop-color="#A8A4BD"/></linearGradient></defs><g fill="url(#cgk)"><path d="M6.2 3.6c4.6 1.9 7.4 7 7.4 13.9 0 5.7-2.2 9.9-5.5 11.6v38.2a1.9 1.9 0 0 1-3.8 0V29.4C2 28 1.4 25 1.4 20.6c0-8.6 1.9-14.9 4.8-17z"/></g></svg>';
 const fi=(c,s=20)=>`<img src="${CDN}${c}_3d.png" width="${s}" height="${s}" style="display:inline-block;vertical-align:middle;" onerror="this.style.display='none'"/>`;
 // 圖片讀取失敗時安全退回 emoji 圖（不能用字串拼 onerror，引號會炸出亂碼）
 function grFallback(el,code,size){
@@ -1481,7 +1530,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v84';
+const APP_VER='v85';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
@@ -1589,9 +1638,33 @@ const HEALTH=[
 const DIET_TAGS=['原型食物為主','麵包/貝果','飯','麵','零食','含糖飲料','無糖飲料','鮮奶茶','外食'];
 const DIET_EMOJI={'原型食物為主':'1f957','麵包/貝果':'1f35e','飯':'1f35a','麵':'1f35c','零食':'1f370','含糖飲料':'1f964','無糖飲料':'1f375','鮮奶茶':'1f9cb','外食':'1f35f'};
 const EXERCISE_TYPES=['跑步','跳舞','其他'];
+const EXERCISE_EMOJI={'跑步':'1f3c3','跳舞':'1f483','其他':'1f4aa'};
 const PRE_SLEEP_ACTS=['看劇','看直播','聽直播','小說','漫畫','閱讀'];
-const SLEEP_EASE=[['good','😴 好睡','1f634'],['ok','😐 普通','1f610'],['hard','😣 難睡','1f623']];
+const ACT_EMOJI={'看劇':'1f4fa','看直播':'1f3a5','聽直播':'1f3a7','小說':'1f4d6','漫畫':'1f4d8','閱讀':'1f4da'};
+const SLEEP_EASE=[['good','好睡','1f634'],['ok','普通','1f610'],['hard','難睡','1f623']];
 const WATER_GOAL=2500;
+// 自訂選項沒有內建 emoji 時，用關鍵字猜一個，猜不到給通用圖示
+function actEmoji(a){
+  if(ACT_EMOJI[a])return ACT_EMOJI[a];
+  if(/劇|影|片|電視|追/.test(a))return '1f4fa';
+  if(/直播|播/.test(a))return '1f3a5';
+  if(/音樂|歌|聽|podcast|Podcast/.test(a))return '1f3a7';
+  if(/書|讀|說|文/.test(a))return '1f4d6';
+  if(/遊戲|玩/.test(a))return '1f3ae';
+  if(/手機|滑/.test(a))return '1f4f1';
+  return '1f319';
+}
+function exEmojiOf(t){
+  if(EXERCISE_EMOJI[t])return EXERCISE_EMOJI[t];
+  if(/跑|慢跑|衝/.test(t))return '1f3c3';
+  if(/舞|跳/.test(t))return '1f483';
+  if(/瑜伽|伸展|拉筋/.test(t))return '1f9d8';
+  if(/走|散步/.test(t))return '1f6b6';
+  if(/游泳|泳/.test(t))return '1f3ca';
+  if(/腳踏車|單車|騎/.test(t))return '1f6b4';
+  if(/重訓|健身|舉/.test(t))return '1f3cb';
+  return '1f4aa';
+}
 function dietTags(){return DIET_TAGS.concat((S.healthOpts&&S.healthOpts.diet)||[]);}
 function exerciseTypes(){return EXERCISE_TYPES.concat((S.healthOpts&&S.healthOpts.exercise)||[]);}
 function preSleepActs(){return PRE_SLEEP_ACTS.concat((S.healthOpts&&S.healthOpts.sleepActs)||[]);}
@@ -2447,23 +2520,37 @@ function healthEditorHTML(k,h){
         `<span id="hz-sleep-dur" style="font-size:12px;color:var(--ok);font-weight:700;text-align:center;"></span>`+
       `</div>`+
     `</div>`+
-      `<div style="font-size:11.5px;font-weight:700;color:var(--tc2);margin:4px 2px;">今早起來，好入睡嗎？</div>`+
-      `<div class="hz-tags">${SLEEP_EASE.map(e=>`<span class="hz-tag${s.ease===e[0]?' on':''}" data-ease="${e[0]}">${e[1]}</span>`).join('')}</div>`+
-      `<div style="font-size:11.5px;font-weight:700;color:var(--tc2);margin:4px 2px;">昨晚睡前主要在</div>`+
-      `<div class="hz-tags">${preSleepActs().map(a=>`<span class="hz-tag${(s.acts||[]).indexOf(a)>=0?' on':''}" data-act="${esc(a)}">${esc(a)}</span>`).join('')}${addChip('sleepActs')}</div>`+
+      `<div class="hz-sub">今早起來，好入睡嗎？</div>`+
+      `<div class="ebtns">${SLEEP_EASE.map(e=>`<span class="ebtn${s.ease===e[0]?' on':''}" data-ease="${e[0]}" data-lbl="${e[1]}" title="${e[1]}">${fi(e[2],28)}</span>`).join('')}</div>`+
+      `<div class="hz-sub">昨晚睡前主要在</div>`+
+      `<div class="ebtns">${preSleepActs().map(a=>`<span class="ebtn${(s.acts||[]).indexOf(a)>=0?' on':''}" data-act="${esc(a)}" data-lbl="${esc(a)}" title="${esc(a)}">${fi(actEmoji(a),28)}</span>`).join('')}<span class="ebtn eadd" data-add="sleepActs" data-lbl="新增選項" title="新增選項">＋</span></div>`+
       noteHTML('hz-sleep-note',s.note,'例如：滑手機到很晚、今天比較焦慮');
   }
   if(k==='diet'){
     const d=h.diet||{};const tags=d.tags||[];
     return `<div class="dog-say" id="hz-diet-say" style="display:none;"><img class="ds-av" src="${PUPPY_IMG}" onerror="this.style.display='none'"/><span class="ds-tx" id="hz-diet-say-tx"></span></div>`+
-      `<div class="diet-plate" id="hz-diet-plate"><div class="dp-foods" id="hz-diet-foods"></div></div>`+
-      `<div class="hz-tags">${dietTags().map(t=>`<span class="hz-tag${tags.indexOf(t)>=0?' on':''}" data-diet="${esc(t)}" data-dietchip="1">${fi(dietEmoji(t),15)} ${esc(t)}</span>`).join('')}${addChip('diet')}</div>`+
+      `<div class="diet-stage">`+
+        `<div class="plate-wrap">`+
+          `<span class="cutlery fork">${CUTLERY_FORK}</span>`+
+          `<div class="diet-plate" id="hz-diet-plate"><div class="dp-foods" id="hz-diet-foods"></div></div>`+
+          `<span class="cutlery knife">${CUTLERY_KNIFE}</span>`+
+        `</div>`+
+        `<div class="food-basket">`+
+          `<div class="fb-label">🧺 食物籃　<span style="font-weight:600;color:var(--tc3);">點或拖到盤子</span></div>`+
+          `<div class="fb-items">`+
+            dietTags().map(t=>`<span class="ebtn${tags.indexOf(t)>=0?' on':''}" data-diet="${esc(t)}" data-dietchip="1" data-lbl="${esc(t)}" title="${esc(t)}">${fi(dietEmoji(t),30)}</span>`).join('')+
+            `<span class="ebtn eadd" data-add="diet" data-lbl="新增選項" title="新增選項">＋</span>`+
+          `</div>`+
+        `</div>`+
+      `</div>`+
       noteHTML('hz-diet-note',d.note,'今天的飲食想多記什麼都可以');
   }
   if(k==='exercise'){
     const e=h.exercise||{};
-    return `<div class="hz-tags">${exerciseTypes().map(t=>`<span class="hz-tag${e.type===t?' on':''}" data-extype="${esc(t)}">${esc(t)}</span>`).join('')}${addChip('exercise')}</div>`+
-      `<div class="hz-tags" id="hz-ex-durs">${[15,30,45,60].map(m=>`<span class="hz-tag${+e.duration===m?' on':''}" data-exdur="${m}">${m}分</span>`).join('')}<span class="hz-tag" data-exdur="custom">自訂分鐘…</span></div>`+
+    return `<div class="hz-sub">今天做了什麼運動</div>`+
+      `<div class="ebtns">${exerciseTypes().map(t=>`<span class="ebtn${e.type===t?' on':''}" data-extype="${esc(t)}" data-lbl="${esc(t)}" title="${esc(t)}">${fi(exEmojiOf(t),28)}</span>`).join('')}<span class="ebtn eadd" data-add="exercise" data-lbl="新增選項" title="新增選項">＋</span></div>`+
+      `<div class="hz-sub">做了多久</div>`+
+      `<div class="ebtns" id="hz-ex-durs">${[15,30,45,60].map(m=>`<span class="ebtn num${+e.duration===m?' on':''}" data-exdur="${m}" data-lbl="${m} 分鐘" title="${m} 分鐘">${m}</span>`).join('')}<span class="ebtn eadd" data-exdur="custom" data-lbl="自訂分鐘" title="自訂分鐘">⋯</span></div>`+
       noteHTML('hz-ex-note',e.note,'例如：跑步聽了喜歡的 podcast');
   }
   if(k==='water'){
@@ -2488,7 +2575,7 @@ function healthEditorHTML(k,h){
         </div>
       </div>
     </div>`+
-    `<div class="hz-tags" style="margin-top:8px;">${custom.map(v=>`<span class="hz-tag" data-water="${+v||0}">+${+v||0}</span>`).join('')}<span class="hz-tag hz-add" data-add="water">＋ 常喝的量</span></div>`+
+    `<div class="ebtns" style="margin-top:8px;">${custom.map(v=>`<span class="ebtn num" data-water="${+v||0}" data-lbl="+${+v||0}ml" title="+${+v||0}ml">+${+v||0}</span>`).join('')}<span class="ebtn eadd" data-add="water" data-lbl="常喝的量" title="常喝的量">＋</span></div>`+
     noteHTML('hz-water-note',(h.water||{}).note,'例如：今天有喝溫水');
   }
   return '';
@@ -2507,7 +2594,12 @@ function addHealthOpt(grp){
 }
 function wireHealthEditors(h){
   const box=document.getElementById('health-grid');
-  box.querySelectorAll('.hz-add').forEach(el=>el.addEventListener('click',()=>addHealthOpt(el.dataset.add)));
+  box.querySelectorAll('[data-add]').forEach(el=>el.addEventListener('click',()=>addHealthOpt(el.dataset.add)));
+  // 觸控裝置沒有 hover：點一下先把名字浮出來一下下
+  box.querySelectorAll('.ebtn').forEach(el=>el.addEventListener('pointerdown',()=>{
+    el.classList.add('show-lbl');clearTimeout(el.__lblT);
+    el.__lblT=setTimeout(()=>el.classList.remove('show-lbl'),1400);
+  }));
   // ── 睡眠 ──
   const durEl=document.getElementById('hz-sleep-dur');
   function updDur(){const dm=sleepMinutes({sleepTime:timeSelGet('hz-sleep-in'),wakeTime:timeSelGet('hz-sleep-wake')});if(durEl)durEl.textContent=dm!=null?('睡了 '+fmtSleepDur(dm)):'';}
@@ -2588,8 +2680,8 @@ function dietSet(h,tag,wantOn){
   if(wantOn){dietPlateAdd(h,tag);dietReact(tag);}else dietPlateRemove(tag);
   commitHealth();
 }
-function dietFoodPos(i){const a=i*137.508*Math.PI/180,r=Math.min(42,19*Math.sqrt(i));return [65+r*Math.cos(a),65+r*Math.sin(a)];}
-const DP_FOOD_SZ=58; // 餐盤食物 emoji 尺寸（約舊版兩倍，允許重疊）
+function dietFoodPos(i){const a=i*137.508*Math.PI/180,r=Math.min(32,15*Math.sqrt(i));return [52+r*Math.cos(a),52+r*Math.sin(a)];}
+const DP_FOOD_SZ=44; // 餐盤食物 emoji 尺寸（放得下、可重疊）
 function makeFoodEl(h,tag,idx,sz){
   const p=dietFoodPos(idx);
   const el=document.createElement('span');
@@ -2599,7 +2691,7 @@ function makeFoodEl(h,tag,idx,sz){
   el.addEventListener('click',()=>dietSet(h,tag,false));
   return el;
 }
-function dietEmptyHTML(){return '<div class="dp-empty">空盤子～<br>點或拖食物進來</div>';}
+function dietEmptyHTML(){return '<div class="dp-empty">空盤子<br>～</div>';}
 function renderDietPlate(h){
   const box=document.getElementById('hz-diet-foods');if(!box)return;
   const tags=((h.diet||{}).tags)||[];
@@ -2670,7 +2762,7 @@ function _dpClean(){document.querySelectorAll('.dp-drag-clone').forEach(x=>x.rem
 function _dpMove(e){
   const d=_dpDrag;if(!d)return;
   const dx=e.clientX-d.sx,dy=e.clientY-d.sy;
-  if(!d.moved){if(Math.hypot(dx,dy)<8)return;d.moved=true;d.clone=document.createElement('span');d.clone.className='dp-drag-clone';d.clone.innerHTML=fi(dietEmoji(d.tag),60);document.body.appendChild(d.clone);}
+  if(!d.moved){if(Math.hypot(dx,dy)<8)return;d.moved=true;d.clone=document.createElement('span');d.clone.className='dp-drag-clone';d.clone.innerHTML=fi(dietEmoji(d.tag),46);document.body.appendChild(d.clone);}
   d.clone.style.left=e.clientX+'px';d.clone.style.top=e.clientY+'px';
   const plate=document.getElementById('hz-diet-plate');
   if(plate){const r=plate.getBoundingClientRect();plate.classList.toggle('drop',e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom);}
@@ -3430,6 +3522,20 @@ function renderHealthReview(cur,prefix,dates){
     show(prefix+'-diet-card',true);
     const wholeN=dietDays.filter(x=>(x.h.diet.tags||[]).indexOf('原型食物為主')>=0).length;
     let html=wit('🌿 這'+(isWeek?'週':'個月')+'有 <b>'+wholeN+'</b> / '+dietDays.length+' 天以原型食物為主，妳一直有好好照顧自己。偶爾配點零食，那也很好。');
+    // 每天一個餐盤，整週／整月都擺出來
+    const WDH=['一','二','三','四','五','六','日'];
+    const psz=isWeek?17:12,pmax=isWeek?5:4;
+    html+='<div class="dcal">'+WDH.map(w=>'<div class="dcal-w">'+w+'</div>').join('');
+    const lead=(new Date(period[0]+'T00:00:00').getDay()+6)%7;
+    for(let i=0;i<lead;i++)html+='<div></div>';
+    period.forEach(ds=>{
+      const d=new Date(ds+'T00:00:00'),we=(d.getDay()===0||d.getDay()===6);
+      const tags=((hmap[ds]||{}).diet||{}).tags||[];
+      html+='<div class="dcal-cell"><div class="rplate'+(tags.length?'':' empty')+'" title="'+dlab(ds)+(tags.length?'：'+esc(tags.join('、')):'')+'">'+
+        (tags.length?'<span class="rp-foods">'+tags.slice(0,pmax).map(t=>fi(dietEmoji(t),psz)).join('')+'</span>':'')+
+        '</div><span class="dcal-d'+(we?' we':'')+'">'+d.getDate()+'</span></div>';
+    });
+    html+='</div>';
     const freq={};dietDays.forEach(x=>(x.h.diet.tags||[]).forEach(t=>freq[t]=(freq[t]||0)+1));
     const rows=Object.keys(freq).sort((a,b)=>freq[b]-freq[a]);const mx=Math.max(1,...Object.values(freq));
     html+=rows.map(t=>'<div class="dfrow'+(t==='原型食物為主'?' whole':'')+'">'+
