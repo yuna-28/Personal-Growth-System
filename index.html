@@ -658,11 +658,12 @@ body.viewer-mode .neo-chip,body.viewer-mode .sticky-check,body.viewer-mode .habi
 
 /* ── 🍽️ 飲食餐盤（點＋拖、食物飄動、狗勾說話） ── */
 /* 左＝手繪陶瓷餐盤＋刀叉，右＝食物籃 */
-.diet-stage{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;margin-bottom:10px;}
-.plate-wrap{display:flex;align-items:center;justify-content:center;gap:4px;}
-.cutlery{flex:0 0 12px;width:12px;opacity:.9;filter:drop-shadow(0 1px 1px rgba(90,80,110,.25));}
+/* 左 6：餐盤（垂直置中）　右 4：食物籃 */
+.diet-stage{display:grid;grid-template-columns:minmax(0,6fr) minmax(0,4fr);gap:10px;align-items:stretch;margin-bottom:10px;}
+.plate-wrap{display:flex;align-items:center;justify-content:center;gap:5px;align-self:center;}
+.cutlery{flex:0 0 13px;width:13px;opacity:.9;filter:drop-shadow(0 1px 1px rgba(90,80,110,.25));}
 .cutlery svg{width:100%;height:auto;display:block;}
-.diet-plate{position:relative;width:140px;height:140px;flex:0 0 auto;border-radius:50%;
+.diet-plate{position:relative;width:168px;height:168px;max-width:100%;aspect-ratio:1;flex:0 1 auto;border-radius:50%;
   background:
     radial-gradient(circle at 40% 32%,rgba(255,255,255,.95) 0 16%,rgba(255,255,255,0) 52%),
     radial-gradient(circle at 50% 52%,#FFFDFA 0 54%,#F8F2E9 63%,#EDE3D3 74%,#F7F1E7 84%,#E0D3BE 100%);
@@ -672,13 +673,15 @@ body.viewer-mode .neo-chip,body.viewer-mode .sticky-check,body.viewer-mode .habi
   background:radial-gradient(circle at 44% 36%,#fff 0 42%,#FCF9F3 72%,#F2EADC 100%);
   box-shadow:inset 0 2px 7px rgba(170,145,110,.24),0 1px 0 rgba(255,255,255,.95);}
 .diet-plate.drop{transform:scale(1.05);box-shadow:0 12px 24px -10px rgba(93,202,165,.6),0 0 0 3px rgba(93,202,165,.55),inset 0 0 0 1px #fff;}
-.dp-foods{position:relative;z-index:2;width:104px;height:104px;}
+.dp-foods{position:relative;z-index:2;width:118px;height:118px;}
 /* 食物籃 */
 .food-basket{min-width:0;border-radius:15px;padding:8px 9px 10px;
   background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.3) 0 5px,rgba(120,85,40,.07) 5px 10px),linear-gradient(180deg,#F7E9D2,#E4CCA4);
   box-shadow:inset 0 0 0 2px rgba(255,255,255,.55),inset 0 -3px 8px rgba(150,110,60,.16),0 4px 10px -7px rgba(120,90,50,.65);}
-.fb-label{font-size:11px;font-weight:800;color:#8A6A44;margin:0 2px 7px;}
-.fb-items{display:flex;flex-wrap:wrap;gap:6px;}
+.fb-label{font-size:11px;font-weight:800;color:#8A6A44;margin:0 2px 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;}
+.fb-items{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;}
+.fb-items .ebtn{width:42px;height:42px;border-radius:13px;}
+.fb-items .ebtn img{width:27px;height:27px;}
 /* emoji 按鈕（只放圖，hover／點一下才顯示文字） */
 .hz-sub{font-size:11.5px;font-weight:700;color:var(--tc2);margin:8px 2px 5px;}
 .ebtns{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px;}
@@ -833,18 +836,22 @@ body.viewer-mode .neo-chip,body.viewer-mode .sticky-check,body.viewer-mode .habi
 .sleep-scene.night .ss-panel{background:rgba(28,36,64,.6);}
 .sleep-scene.night .ss-panel,.sleep-scene.night .ss-panel .hz-lbl,.sleep-scene.night .ss-panel .ssp-q{color:#EAF1FA;}
 .sleep-scene.night .ss-panel .time-in{background:rgba(255,255,255,.9);}
-.ssp-row{display:flex;align-items:center;gap:6px;}
-.ssp-row .hz-lbl{font-size:11.5px;font-weight:700;color:var(--tc2);width:32px;flex-shrink:0;}
-.ssp-btn{flex:1;height:32px;border-radius:11px;border:1.5px solid rgba(var(--tertiary-rgb),.7);background:rgba(255,255,255,.9);
-  font-family:'Quicksand',sans-serif;font-size:12.5px;font-weight:800;color:var(--ok);cursor:pointer;}
+/* 面板四列共用同一組欄位：左邊標籤、右邊內容，內容全部對齊同一條線 */
+.ssp-row{display:grid;grid-template-columns:58px minmax(0,1fr);align-items:center;gap:8px;}
+.ssp-row .hz-lbl{font-size:11.5px;font-weight:700;color:var(--tc2);width:auto;}
+.ssp-row .time-sel{width:100%;}
+.ssp-row .time-sel select{flex:1;min-width:0;}
+.ssp-act{display:flex;align-items:center;gap:9px;}
+.ssp-btn{flex:0 0 auto;padding:0 16px;height:32px;border-radius:11px;border:1.5px solid rgba(var(--tertiary-rgb),.7);background:rgba(255,255,255,.9);
+  font-family:'Quicksand',sans-serif;font-size:12.5px;font-weight:800;color:var(--ok);cursor:pointer;white-space:nowrap;}
 .ssp-btn:active{transform:scale(.96);}
-.ssp-dur{font-size:11px;font-weight:800;color:var(--ok);white-space:nowrap;}
+.ssp-dur{display:flex;align-items:center;gap:3px;font-size:11.5px;font-weight:800;color:var(--ok);white-space:nowrap;}
 .sleep-scene.night .ssp-dur{color:#8FE3C4;}
 .ssp-q{font-size:11px;font-weight:700;color:var(--tc2);}
-.ss-panel .ebtns{gap:5px;margin:0;}
-.ss-panel .ebtn{width:36px;height:36px;border-radius:11px;}
+.ss-panel .ebtns{display:flex;gap:6px;margin:0;flex-wrap:nowrap;}
+.ss-panel .ebtn{width:36px;height:36px;border-radius:11px;flex:0 0 auto;}
 .ss-panel .ebtn img{width:23px;height:23px;}
-@media(max-width:400px){.ss-panel{left:66px;padding:7px;}.ss-panel .ebtn{width:32px;height:32px;}}
+@media(max-width:430px){.ss-panel{left:64px;padding:7px;}.ssp-row{grid-template-columns:48px minmax(0,1fr);gap:6px;}.ss-panel .ebtn{width:32px;height:32px;}.ssp-btn{padding:0 11px;}}
 /* 飲食複盤：左餐盤月曆、右頻率長條（電腦版兩欄） */
 .diet-rv{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start;}
 @media(max-width:640px){.diet-rv{grid-template-columns:1fr;gap:10px;}}
@@ -1597,7 +1604,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v86';
+const APP_VER='v87';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
@@ -2607,8 +2614,8 @@ function healthEditorHTML(k,h){
         `<div class="ss-panel" id="hz-sleep-panel">`+
           `<div class="ssp-row"><span class="hz-lbl">入睡</span>${timeSelHTML('hz-sleep-in',s.sleepTime||'23:30')}</div>`+
           `<div class="ssp-row"><span class="hz-lbl">起床</span>${timeSelHTML('hz-sleep-wake',s.wakeTime||'07:00')}</div>`+
-          `<div class="ssp-row"><button type="button" class="ssp-btn" id="hz-sleep-fill">✓ 記錄</button><span class="ssp-dur" id="hz-sleep-dur"></span></div>`+
-          `<div class="ssp-row" style="gap:7px;"><span class="ssp-q">好入睡嗎？</span>`+
+          `<div class="ssp-row"><span></span><span class="ssp-act"><button type="button" class="ssp-btn" id="hz-sleep-fill">✓ 記錄</button><span class="ssp-dur" id="hz-sleep-dur"></span></span></div>`+
+          `<div class="ssp-row"><span class="ssp-q">好入睡嗎？</span>`+
             `<span class="ebtns">${SLEEP_EASE.map(e=>`<span class="ebtn${s.ease===e[0]?' on':''}" data-ease="${e[0]}" data-lbl="${e[1]}" title="${e[1]}">${fi(e[2],24)}</span>`).join('')}</span></div>`+
         `</div>`+
       `</div>`+
@@ -2627,7 +2634,7 @@ function healthEditorHTML(k,h){
           `<span class="cutlery knife">${CUTLERY_KNIFE}</span>`+
         `</div>`+
         `<div class="food-basket">`+
-          `<div class="fb-label">🧺 食物籃　<span style="font-weight:600;color:var(--tc3);">點或拖到盤子</span></div>`+
+          `<div class="fb-label" title="點一下或拖到盤子上">🧺 食物籃</div>`+
           `<div class="fb-items ebtns">`+
             dietTags().map(t=>`<span class="ebtn${tags.indexOf(t)>=0?' on':''}" data-diet="${esc(t)}" data-dietchip="1"${cAttr('diet',t)} data-lbl="${esc(t)}" title="${esc(t)}">${dietIconHTML(t,30)}</span>`).join('')+
             addChips('diet')+
@@ -2759,7 +2766,8 @@ function wireHealthEditors(h){
   }));
   // ── 睡眠 ──
   const durEl=document.getElementById('hz-sleep-dur');
-  function updDur(){const dm=sleepMinutes({sleepTime:timeSelGet('hz-sleep-in'),wakeTime:timeSelGet('hz-sleep-wake')});if(durEl)durEl.textContent=dm!=null?('睡了 '+fmtSleepDur(dm)):'';}
+  function updDur(){const dm=sleepMinutes({sleepTime:timeSelGet('hz-sleep-in'),wakeTime:timeSelGet('hz-sleep-wake')});
+    if(durEl)durEl.innerHTML=dm!=null?('睡了'+fi('1f4a4',15)+fmtSleepDur(dm)):'';}
   box.querySelectorAll('#hz-sleep-in select,#hz-sleep-wake select').forEach(s=>s.addEventListener('change',updDur));
   updDur();
   const sf=document.getElementById('hz-sleep-fill');
@@ -2845,8 +2853,8 @@ function dietSet(h,tag,wantOn){
   if(wantOn){dietPlateAdd(h,tag);dietReact(tag);}else dietPlateRemove(tag);
   commitHealth();
 }
-function dietFoodPos(i){const a=i*137.508*Math.PI/180,r=Math.min(32,15*Math.sqrt(i));return [52+r*Math.cos(a),52+r*Math.sin(a)];}
-const DP_FOOD_SZ=44; // 餐盤食物 emoji 尺寸（放得下、可重疊）
+function dietFoodPos(i){const a=i*137.508*Math.PI/180,r=Math.min(36,17*Math.sqrt(i));return [59+r*Math.cos(a),59+r*Math.sin(a)];}
+const DP_FOOD_SZ=48; // 餐盤食物 emoji 尺寸（放得下、可重疊）
 function makeFoodEl(h,tag,idx,sz){
   const p=dietFoodPos(idx);
   const el=document.createElement('span');
