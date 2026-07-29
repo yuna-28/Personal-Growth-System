@@ -696,6 +696,38 @@ body.viewer-mode .neo-chip,body.viewer-mode .sticky-check,body.viewer-mode .habi
   background:rgba(48,52,64,.94);color:#fff;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:8px;white-space:nowrap;
   opacity:0;pointer-events:none;transition:opacity .15s,transform .15s;z-index:30;}
 .ebtn:hover::after,.ebtn.show-lbl::after{opacity:1;transform:translateX(-50%) scale(1);}
+/* emoji 是 <img>，若不關掉原生圖片拖曳會把 pointer 事件搶走 → 拖不到盤子 */
+.ebtn img,.dp-food img,.ebtn span{-webkit-user-drag:none;user-select:none;pointer-events:none;}
+.ebtn .oi{font-size:26px;line-height:1;}
+/* ⚙️ 管理模式：自訂按鈕右上角出現 ✎，點了開編輯視窗 */
+.ebtn.mng{background:rgba(255,255,255,.5);border-style:dashed;border-color:rgba(var(--secondary-rgb),.5);}
+.ebtns.managing .ebtn[data-custom]{animation:mngWob 1.6s ease-in-out infinite;}
+.ebtns.managing .ebtn[data-custom]::before{content:'✎';position:absolute;top:-6px;right:-6px;width:19px;height:19px;border-radius:50%;
+  background:var(--secondary);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;z-index:5;box-shadow:0 1px 3px rgba(0,0,0,.25);}
+@keyframes mngWob{0%,100%{transform:rotate(-1.6deg);}50%{transform:rotate(1.6deg);}}
+/* 備註收合 */
+.note-wrap{margin-top:2px;}
+.note-tog{background:none;border:none;padding:2px 2px 4px;font-family:'Quicksand',sans-serif;font-size:11px;font-weight:700;color:var(--tc3);cursor:pointer;}
+.note-tog:hover{color:var(--tc2);}
+.note-wrap .hz-note{display:none;}
+.note-wrap.open .hz-note{display:block;}
+/* 自訂選項編輯視窗 */
+.optdlg-bg{position:fixed;inset:0;z-index:99990;background:rgba(40,44,54,.4);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px;}
+.optdlg{background:rgba(255,255,255,.98);border-radius:20px;padding:16px 16px 14px;width:min(340px,94vw);max-height:86vh;overflow-y:auto;box-shadow:0 20px 50px -14px rgba(var(--primary-rgb),.5);}
+.optdlg h4{font-size:14px;font-weight:800;color:var(--tc);margin-bottom:10px;}
+.optdlg label{display:block;font-size:11px;font-weight:700;color:var(--tc3);margin:8px 2px 4px;}
+.optdlg input{width:100%;background:rgba(255,255,255,.9);border:1.5px solid rgba(var(--secondary-rgb),.35);border-radius:11px;padding:8px 11px;font-family:'Quicksand',sans-serif;font-size:13px;color:var(--tc);outline:none;}
+.optdlg input:focus{border-color:rgba(var(--primary-rgb),.55);}
+.od-pick{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;max-height:132px;overflow-y:auto;padding:2px;}
+.od-pick span{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.8);border:1.5px solid rgba(var(--secondary-rgb),.22);cursor:pointer;}
+.od-pick span.on{border-color:var(--tertiary);background:rgba(var(--tertiary-rgb),.45);}
+.od-prev{display:flex;align-items:center;gap:8px;margin-top:9px;font-size:12px;color:var(--tc3);font-weight:700;}
+.od-prev .ebtn{cursor:default;}
+.od-btns{display:flex;gap:7px;margin-top:13px;}
+.od-btns button{flex:1;height:38px;border-radius:12px;border:none;font-family:'Quicksand',sans-serif;font-size:13px;font-weight:800;cursor:pointer;}
+.od-save{background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;}
+.od-cancel{background:rgba(var(--secondary-rgb),.14);color:var(--tc2);}
+.od-del{background:rgba(226,75,74,.14);color:#C0392B;flex:0 0 74px;}
 .dp-food{position:absolute;transform:translate(-50%,-50%);cursor:pointer;animation:foodPlop .44s cubic-bezier(.34,1.56,.64,1) both;}
 .dp-food.leaving{animation:foodPop .28s ease forwards;}
 .dpf-in{display:inline-block;filter:drop-shadow(0 2px 3px rgba(120,90,50,.3));animation:dpFloat var(--fd,3.4s) ease-in-out infinite;animation-delay:var(--dl,0s);}
@@ -782,6 +814,41 @@ body.viewer-mode .neo-chip,body.viewer-mode .sticky-check,body.viewer-mode .habi
 .ss-tap{position:absolute;bottom:6px;right:8px;font-size:9.5px;font-weight:700;color:rgba(80,100,130,.6);pointer-events:none;}
 .sleep-scene.night .ss-tap{color:rgba(255,255,255,.55);}
 .sleep-ctrl{flex:1 1 150px;min-width:140px;display:flex;flex-direction:column;justify-content:center;gap:8px;}
+/* 時間／記錄／好入睡嗎 全部收進場景，小狗縮到左下角 → 卡片變短 */
+.sleep-wrap{display:block;}
+.sleep-scene{width:100%;min-height:186px;height:auto;cursor:default;}
+.sleep-scene .ss-dog{left:12px;bottom:10px;transform:none;}
+.sleep-scene .ss-dog img{width:46px;height:46px;}
+.sleep-scene:not(.night) .ss-dog{animation:dogHop2 1.7s ease-in-out infinite;}
+@keyframes dogHop2{0%,100%{transform:translateY(0) rotate(0);}30%{transform:translateY(-8px) rotate(-5deg);}60%{transform:translateY(0) rotate(3deg);}}
+.sleep-scene.night .ss-dog{bottom:13px;animation:dogSleep2 3.4s ease-in-out infinite;}
+@keyframes dogSleep2{0%,100%{transform:rotate(8deg) scale(1);}50%{transform:rotate(8deg) scale(1.05);}}
+.sleep-scene .ss-bed{left:14px;bottom:6px;transform:none;}
+.sleep-scene .ss-zzz{left:56px;top:auto;bottom:56px;}
+.sleep-scene .ss-cap{cursor:pointer;padding:3px 7px;border-radius:9px;background:rgba(255,255,255,.42);}
+.sleep-scene.night .ss-cap{background:rgba(255,255,255,.16);}
+.ss-panel{position:absolute;right:8px;top:8px;bottom:8px;left:74px;border-radius:13px;padding:8px 9px;
+  background:rgba(255,255,255,.72);backdrop-filter:blur(7px);box-shadow:0 3px 10px -5px rgba(40,50,80,.4);
+  display:flex;flex-direction:column;justify-content:center;gap:6px;transition:background .8s;}
+.sleep-scene.night .ss-panel{background:rgba(28,36,64,.6);}
+.sleep-scene.night .ss-panel,.sleep-scene.night .ss-panel .hz-lbl,.sleep-scene.night .ss-panel .ssp-q{color:#EAF1FA;}
+.sleep-scene.night .ss-panel .time-in{background:rgba(255,255,255,.9);}
+.ssp-row{display:flex;align-items:center;gap:6px;}
+.ssp-row .hz-lbl{font-size:11.5px;font-weight:700;color:var(--tc2);width:32px;flex-shrink:0;}
+.ssp-btn{flex:1;height:32px;border-radius:11px;border:1.5px solid rgba(var(--tertiary-rgb),.7);background:rgba(255,255,255,.9);
+  font-family:'Quicksand',sans-serif;font-size:12.5px;font-weight:800;color:var(--ok);cursor:pointer;}
+.ssp-btn:active{transform:scale(.96);}
+.ssp-dur{font-size:11px;font-weight:800;color:var(--ok);white-space:nowrap;}
+.sleep-scene.night .ssp-dur{color:#8FE3C4;}
+.ssp-q{font-size:11px;font-weight:700;color:var(--tc2);}
+.ss-panel .ebtns{gap:5px;margin:0;}
+.ss-panel .ebtn{width:36px;height:36px;border-radius:11px;}
+.ss-panel .ebtn img{width:23px;height:23px;}
+@media(max-width:400px){.ss-panel{left:66px;padding:7px;}.ss-panel .ebtn{width:32px;height:32px;}}
+/* 飲食複盤：左餐盤月曆、右頻率長條（電腦版兩欄） */
+.diet-rv{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start;}
+@media(max-width:640px){.diet-rv{grid-template-columns:1fr;gap:10px;}}
+.diet-rv .dcal{max-width:none;margin:0;}
 
 /* ── 健康複盤（週/月） ── */
 .witness-line{font-size:12px;line-height:1.6;color:var(--tc2);background:rgba(var(--tertiary-rgb),.14);border-left:3px solid rgba(var(--tertiary-rgb),.6);border-radius:0 9px 9px 0;padding:7px 10px;margin-bottom:10px;}
@@ -1530,7 +1597,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v85';
+const APP_VER='v86';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
@@ -1665,9 +1732,25 @@ function exEmojiOf(t){
   if(/重訓|健身|舉/.test(t))return '1f3cb';
   return '1f4aa';
 }
-function dietTags(){return DIET_TAGS.concat((S.healthOpts&&S.healthOpts.diet)||[]);}
-function exerciseTypes(){return EXERCISE_TYPES.concat((S.healthOpts&&S.healthOpts.exercise)||[]);}
-function preSleepActs(){return PRE_SLEEP_ACTS.concat((S.healthOpts&&S.healthOpts.sleepActs)||[]);}
+// 自訂選項存成 {n:名稱, e:圖示}；e 可以是 fluent 代碼（六位十六進位）或直接貼上的 emoji 字元。
+// 舊資料是純字串，讀取時就地升級（見下方 migrate）。
+function optList(grp){return (S.healthOpts&&S.healthOpts[grp])||[];}
+function optName(o){return typeof o==='string'?o:((o&&o.n)||'');}
+function optIcon(o){return typeof o==='string'?'':((o&&o.e)||'');}
+function customOpt(grp,name){return optList(grp).find(o=>optName(o)===name);}
+function isCustom(grp,name){return !!customOpt(grp,name);}
+// 圖示 → HTML：代碼走 fluent 圖庫，貼上的字元就直接顯示
+function iconHTML(e,size){
+  if(!e)return '';
+  return /^[0-9a-fA-F]{4,6}$/.test(e)?fi(e,size):'<span class="oi" style="font-size:'+Math.round(size*.88)+'px;">'+esc(e)+'</span>';
+}
+function dietTags(){return DIET_TAGS.concat(optList('diet').map(optName));}
+function exerciseTypes(){return EXERCISE_TYPES.concat(optList('exercise').map(optName));}
+function preSleepActs(){return PRE_SLEEP_ACTS.concat(optList('sleepActs').map(optName));}
+// 各群組的圖示：自訂的優先用使用者選的，否則用內建／關鍵字猜測
+function dietIconHTML(t,size){const c=customOpt('diet',t);return (c&&c.e)?iconHTML(c.e,size):fi(dietEmoji(t),size);}
+function actIconHTML(a,size){const c=customOpt('sleepActs',a);return (c&&c.e)?iconHTML(c.e,size):fi(actEmoji(a),size);}
+function exIconHTML(t,size){const c=customOpt('exercise',t);return (c&&c.e)?iconHTML(c.e,size):fi(exEmojiOf(t),size);}
 function dietEmoji(t){return DIET_EMOJI[t]||'1f37d';}
 function emptyHealth(){return {sleep:{sleepTime:'',wakeTime:'',ease:'',acts:[],note:''},diet:{tags:[],note:''},exercise:{type:'',duration:0,note:''},water:{amount:0,note:''},scored:{}};}
 // 這個項目今天有沒有記錄（決定要不要給 EXP／花）
@@ -1773,7 +1856,11 @@ if(!S.health.scored)S.health.scored={};
 if(!S.health.sleep)S.health.sleep={sleepTime:'',wakeTime:'',ease:'',acts:[],note:''};
 if(!S.health.sleep.acts)S.health.sleep.acts=[];
 if(!S.healthOpts||typeof S.healthOpts!=='object')S.healthOpts={diet:[],exercise:[],sleepActs:[],water:[]};
-['diet','exercise','sleepActs','water'].forEach(k=>{if(!Array.isArray(S.healthOpts[k]))S.healthOpts[k]=[];});
+['diet','exercise','sleepActs','water'].forEach(k=>{
+  if(!Array.isArray(S.healthOpts[k]))S.healthOpts[k]=[];
+  // 舊版把自訂選項存成純字串，升級成 {n,e} 才放得下自選圖示
+  S.healthOpts[k]=S.healthOpts[k].map(o=>typeof o==='string'?{n:o,e:''}:o).filter(o=>o&&o.n);
+});
 // 修正：喝水的花本來誤植成 1f4f0（📰 報紙），把已長出來的報紙換成花束
 if(Array.isArray(S.flowers)){let _fx=0;S.flowers.forEach(f=>{if(f&&f.f==='1f4f0'){f.f='1f490';_fx++;}});if(_fx)sv(S);}
 migrateHealth();
@@ -1960,7 +2047,7 @@ async function loadCloud(){
       if(d.archivedHabits){const _ah=parseJ(d.archivedHabits,null);if(Array.isArray(_ah))S.archivedHabits=_ah;}
       enforceHealthArchive(); // 雲端可能是遷移前的舊清單，補回被健康模組取代的封存
       if(d.calRecur){const _cr=parseJ(d.calRecur,null);if(_cr&&typeof _cr==='object')S.calRecur=_cr;}
-      if(d.healthOpts){const _ho=parseJ(d.healthOpts,null);if(_ho&&typeof _ho==='object'){['diet','exercise','sleepActs','water'].forEach(k=>{if(Array.isArray(_ho[k]))S.healthOpts[k]=_ho[k];});}}
+      if(d.healthOpts){const _ho=parseJ(d.healthOpts,null);if(_ho&&typeof _ho==='object'){['diet','exercise','sleepActs','water'].forEach(k=>{if(Array.isArray(_ho[k]))S.healthOpts[k]=_ho[k].map(o=>typeof o==='string'?{n:o,e:''}:o).filter(o=>o&&o.n);});}}
     }
     if(en.ok&&Array.isArray(en.data)){
       en.data.forEach(row=>{
@@ -2503,31 +2590,35 @@ function renderHealth(){
   wireHealthEditors(h);
 }
 function healthEditorHTML(k,h){
-  const noteHTML=(id,val,ph)=>`<div style="font-size:11px;font-weight:700;color:var(--tc3);margin:2px 2px 4px;">📝 備註（選填）</div><textarea class="hz-note" id="${id}" placeholder="${ph}">${esc(val||'')}</textarea>`;
-  const addChip=grp=>`<span class="hz-tag hz-add" data-add="${grp}">＋ 新增</span>`;
+  // 備註預設收起來（有寫過的自動展開）＝四張卡都變短
+  const noteHTML=(id,val,ph)=>{const has=!!(val&&String(val).trim());
+    return `<div class="note-wrap${has?' open':''}"><button type="button" class="note-tog">📝 備註${has?'':'（選填）'}</button><textarea class="hz-note" id="${id}" placeholder="${ph}">${esc(val||'')}</textarea></div>`;};
+  // ＋新增／⚙️ 管理（管理模式下點自訂按鈕＝編輯或刪除）
+  const addChips=grp=>`<span class="ebtn eadd" data-add="${grp}" data-lbl="新增選項" title="新增選項">＋</span>`+
+    (optList(grp).length?`<span class="ebtn eadd" data-mng="${grp}" data-lbl="管理自訂選項" title="管理自訂選項">⚙️</span>`:'');
+  const cAttr=(grp,n)=>isCustom(grp,n)?' data-custom="1"':'';
   if(k==='sleep'){
     const s=h.sleep||{};
     const stars=[[14,18],[38,10],[62,26],[82,14],[50,32]].map(p=>`<span class="ss-star" style="left:${p[0]}%;top:${p[1]}px;"></span>`).join('');
     return `<div class="sleep-wrap">`+
       `<div class="sleep-scene" id="hz-sleep-scene">`+
-        `<div class="ss-sky">${stars}<span class="ss-sun">${fi('2600',24)}</span><span class="ss-moon">${fi('1f319',22)}</span></div>`+
+        `<div class="ss-sky">${stars}<span class="ss-sun">${fi('2600',22)}</span><span class="ss-moon">${fi('1f319',20)}</span></div>`+
         `<div class="ss-ground"></div>`+
-        `<span class="ss-bed">${fi('1f6cf',38)}</span>`+
-        `<span class="ss-dog"><img src="${PUPPY_IMG}" alt="狗勾" onerror="this.outerHTML='<span style=font-size:46px>🐶</span>'"/></span>`+
+        `<span class="ss-bed">${fi('1f6cf',34)}</span>`+
+        `<span class="ss-dog"><img src="${PUPPY_IMG}" alt="狗勾" onerror="this.outerHTML='<span style=font-size:42px>🐶</span>'"/></span>`+
         `<span class="ss-zzz">Z z</span>`+
         `<span class="ss-cap" id="hz-sleep-cap">☀️ 早安</span>`+
-      `</div>`+
-      `<div class="sleep-ctrl">`+
-        `<div class="hz-row" style="margin:0;"><span class="hz-lbl">入睡</span>${timeSelHTML('hz-sleep-in',s.sleepTime||'23:30')}</div>`+
-        `<div class="hz-row" style="margin:0;"><span class="hz-lbl">起床</span>${timeSelHTML('hz-sleep-wake',s.wakeTime||'07:00')}</div>`+
-        `<button type="button" class="hz-tag" id="hz-sleep-fill" style="justify-content:center;">✓ 記錄睡眠時間</button>`+
-        `<span id="hz-sleep-dur" style="font-size:12px;color:var(--ok);font-weight:700;text-align:center;"></span>`+
+        `<div class="ss-panel" id="hz-sleep-panel">`+
+          `<div class="ssp-row"><span class="hz-lbl">入睡</span>${timeSelHTML('hz-sleep-in',s.sleepTime||'23:30')}</div>`+
+          `<div class="ssp-row"><span class="hz-lbl">起床</span>${timeSelHTML('hz-sleep-wake',s.wakeTime||'07:00')}</div>`+
+          `<div class="ssp-row"><button type="button" class="ssp-btn" id="hz-sleep-fill">✓ 記錄</button><span class="ssp-dur" id="hz-sleep-dur"></span></div>`+
+          `<div class="ssp-row" style="gap:7px;"><span class="ssp-q">好入睡嗎？</span>`+
+            `<span class="ebtns">${SLEEP_EASE.map(e=>`<span class="ebtn${s.ease===e[0]?' on':''}" data-ease="${e[0]}" data-lbl="${e[1]}" title="${e[1]}">${fi(e[2],24)}</span>`).join('')}</span></div>`+
+        `</div>`+
       `</div>`+
     `</div>`+
-      `<div class="hz-sub">今早起來，好入睡嗎？</div>`+
-      `<div class="ebtns">${SLEEP_EASE.map(e=>`<span class="ebtn${s.ease===e[0]?' on':''}" data-ease="${e[0]}" data-lbl="${e[1]}" title="${e[1]}">${fi(e[2],28)}</span>`).join('')}</div>`+
       `<div class="hz-sub">昨晚睡前主要在</div>`+
-      `<div class="ebtns">${preSleepActs().map(a=>`<span class="ebtn${(s.acts||[]).indexOf(a)>=0?' on':''}" data-act="${esc(a)}" data-lbl="${esc(a)}" title="${esc(a)}">${fi(actEmoji(a),28)}</span>`).join('')}<span class="ebtn eadd" data-add="sleepActs" data-lbl="新增選項" title="新增選項">＋</span></div>`+
+      `<div class="ebtns">${preSleepActs().map(a=>`<span class="ebtn${(s.acts||[]).indexOf(a)>=0?' on':''}" data-act="${esc(a)}"${cAttr('sleepActs',a)} data-lbl="${esc(a)}" title="${esc(a)}">${actIconHTML(a,28)}</span>`).join('')}${addChips('sleepActs')}</div>`+
       noteHTML('hz-sleep-note',s.note,'例如：滑手機到很晚、今天比較焦慮');
   }
   if(k==='diet'){
@@ -2541,9 +2632,9 @@ function healthEditorHTML(k,h){
         `</div>`+
         `<div class="food-basket">`+
           `<div class="fb-label">🧺 食物籃　<span style="font-weight:600;color:var(--tc3);">點或拖到盤子</span></div>`+
-          `<div class="fb-items">`+
-            dietTags().map(t=>`<span class="ebtn${tags.indexOf(t)>=0?' on':''}" data-diet="${esc(t)}" data-dietchip="1" data-lbl="${esc(t)}" title="${esc(t)}">${fi(dietEmoji(t),30)}</span>`).join('')+
-            `<span class="ebtn eadd" data-add="diet" data-lbl="新增選項" title="新增選項">＋</span>`+
+          `<div class="fb-items ebtns">`+
+            dietTags().map(t=>`<span class="ebtn${tags.indexOf(t)>=0?' on':''}" data-diet="${esc(t)}" data-dietchip="1"${cAttr('diet',t)} data-lbl="${esc(t)}" title="${esc(t)}">${dietIconHTML(t,30)}</span>`).join('')+
+            addChips('diet')+
           `</div>`+
         `</div>`+
       `</div>`+
@@ -2552,7 +2643,7 @@ function healthEditorHTML(k,h){
   if(k==='exercise'){
     const e=h.exercise||{};
     return `<div class="hz-sub">今天做了什麼運動</div>`+
-      `<div class="ebtns">${exerciseTypes().map(t=>`<span class="ebtn${e.type===t?' on':''}" data-extype="${esc(t)}" data-lbl="${esc(t)}" title="${esc(t)}">${fi(exEmojiOf(t),28)}</span>`).join('')}<span class="ebtn eadd" data-add="exercise" data-lbl="新增選項" title="新增選項">＋</span></div>`+
+      `<div class="ebtns">${exerciseTypes().map(t=>`<span class="ebtn${e.type===t?' on':''}" data-extype="${esc(t)}"${cAttr('exercise',t)} data-lbl="${esc(t)}" title="${esc(t)}">${exIconHTML(t,28)}</span>`).join('')}${addChips('exercise')}</div>`+
       `<div class="hz-sub">做了多久</div>`+
       `<div class="ebtns" id="hz-ex-durs">${[15,30,45,60].map(m=>`<span class="ebtn num${+e.duration===m?' on':''}" data-exdur="${m}" data-lbl="${m} 分鐘" title="${m} 分鐘">${m}</span>`).join('')}<span class="ebtn eadd" data-exdur="custom" data-lbl="自訂分鐘" title="自訂分鐘">⋯</span></div>`+
       noteHTML('hz-ex-note',e.note,'例如：跑步聽了喜歡的 podcast');
@@ -2579,30 +2670,96 @@ function healthEditorHTML(k,h){
         </div>
       </div>
     </div>`+
-    `<div class="ebtns" style="margin-top:8px;">${custom.map(v=>`<span class="ebtn num" data-water="${+v||0}" data-lbl="+${+v||0}ml" title="+${+v||0}ml">+${+v||0}</span>`).join('')}<span class="ebtn eadd" data-add="water" data-lbl="常喝的量" title="常喝的量">＋</span></div>`+
+    `<div class="ebtns" style="margin-top:8px;">${custom.map(o=>{const n=optName(o),v=+n||0;const ic=optIcon(o);
+        return `<span class="ebtn${ic?'':' num'}" data-water="${v}" data-custom="1" data-cname="${esc(n)}" data-lbl="+${v}ml" title="+${v}ml">${ic?iconHTML(ic,26):'+'+v}</span>`;}).join('')}`+
+      `<span class="ebtn eadd" data-add="water" data-lbl="常喝的量" title="常喝的量">＋</span>`+
+      (custom.length?`<span class="ebtn eadd" data-mng="water" data-lbl="管理常喝的量" title="管理常喝的量">⚙️</span>`:'')+`</div>`+
     noteHTML('hz-water-note',(h.water||{}).note,'例如：今天有喝溫水');
   }
   return '';
 }
-// 「＋新增」自訂選項：問名字→存進 S.healthOpts→重繪
-function addHealthOpt(grp){
+// 新增／編輯自訂選項：可挑或貼上 emoji，加上滑過時顯示的名稱；編輯時可刪除
+const OPT_SUGGEST={
+  diet:['1f957','1f35e','1f35a','1f35c','1f370','1f964','1f375','1f9cb','1f35f','1f363','1f32e','1f355','1f354','1f959','1f96a','1f372','1f373','1f95a','1f34e','1f34c','1f347','1f353','1f349','1f95b','2615','1f37a','1f36b','1f36a','1f368','1f36e'],
+  sleepActs:['1f4fa','1f3a5','1f3a7','1f4d6','1f4d8','1f4da','1f3ae','1f4f1','1f3b5','1f4bb','1f6c1','1f9d8','270d','1f4dd','1f52e','1f9f8'],
+  exercise:['1f3c3','1f483','1f4aa','1f9d8','1f6b6','1f3ca','1f6b4','1f3cb','26f9','1f938','1f93a','1f3be','1f3c0','26bd','1f94a','1f6f9'],
+  water:['1f4a7','1f964','2615','1f375','1f376','1f37c','1f9cb','1f95b']
+};
+let _optDlgEl=null;
+function closeOptDialog(){if(_optDlgEl){_optDlgEl.remove();_optDlgEl=null;}}
+function openOptDialog(grp,editName){
+  closeOptDialog();
   S.healthOpts=S.healthOpts||{diet:[],exercise:[],sleepActs:[],water:[]};
   const isWater=grp==='water';
-  const v=prompt(isWater?'常喝的水量（數字，ml，例如 350）：':'新增一個選項：');
-  if(v==null)return;
-  const val=isWater?String(Math.max(0,parseInt(v,10)||0)):v.trim();
-  if(!val||(isWater&&!(+val>0)))return;
-  S.healthOpts[grp]=S.healthOpts[grp]||[];
-  if(S.healthOpts[grp].indexOf(val)<0)S.healthOpts[grp].push(val);
-  sv(S);renderHealth();syncStateDebounced();
+  const cur=editName?customOpt(grp,editName):null;
+  let icon=cur?(cur.e||''):'';
+  const bg=document.createElement('div');bg.className='optdlg-bg';
+  bg.innerHTML='<div class="optdlg">'+
+    '<h4>'+(cur?'編輯選項':'新增選項')+'</h4>'+
+    '<label>'+(isWater?'水量（數字，ml）':'名稱（滑過按鈕時顯示）')+'</label>'+
+    '<input id="od-name" type="'+(isWater?'number':'text')+'" placeholder="'+(isWater?'例如 350':'例如 瑜伽、燕麥奶')+'" value="'+esc(cur?cur.n:'')+'"/>'+
+    '<label>圖示（點下面挑，或直接貼上你喜歡的 emoji）</label>'+
+    '<input id="od-emoji" type="text" placeholder="貼上 emoji，例如 🍠" value="'+esc(/^[0-9a-fA-F]{4,6}$/.test(icon)?'':icon)+'"/>'+
+    '<div class="od-pick" id="od-pick">'+(OPT_SUGGEST[grp]||[]).map(c=>'<span data-c="'+c+'"'+(c===icon?' class="on"':'')+'>'+fi(c,24)+'</span>').join('')+'</div>'+
+    '<div class="od-prev">預覽：<span class="ebtn" id="od-prev-btn">'+(icon?iconHTML(icon,28):'？')+'</span></div>'+
+    '<div class="od-btns">'+(cur?'<button type="button" class="od-del">刪除</button>':'')+
+      '<button type="button" class="od-cancel">取消</button><button type="button" class="od-save">儲存</button></div>'+
+  '</div>';
+  document.body.appendChild(bg);_optDlgEl=bg;
+  const nameEl=bg.querySelector('#od-name'),emoEl=bg.querySelector('#od-emoji'),prev=bg.querySelector('#od-prev-btn');
+  const setIcon=v=>{icon=v;prev.innerHTML=v?iconHTML(v,28):'？';
+    bg.querySelectorAll('#od-pick span').forEach(s=>s.classList.toggle('on',s.dataset.c===v));};
+  bg.querySelectorAll('#od-pick span').forEach(s=>s.addEventListener('click',()=>{emoEl.value='';setIcon(s.dataset.c);}));
+  emoEl.addEventListener('input',()=>{const v=emoEl.value.trim();if(v)setIcon(v);else setIcon('');});
+  bg.addEventListener('click',e=>{if(e.target===bg)closeOptDialog();});
+  bg.querySelector('.od-cancel').addEventListener('click',closeOptDialog);
+  const delBtn=bg.querySelector('.od-del');
+  if(delBtn)delBtn.addEventListener('click',()=>{
+    if(!confirm('要刪除「'+cur.n+'」這個選項嗎？（已經記錄過的資料不會被刪掉）'))return;
+    S.healthOpts[grp]=optList(grp).filter(o=>optName(o)!==cur.n);
+    closeOptDialog();sv(S);renderHealth();syncStateDebounced();
+  });
+  bg.querySelector('.od-save').addEventListener('click',()=>{
+    let val=(nameEl.value||'').trim();
+    if(isWater)val=String(Math.max(0,parseInt(val,10)||0));
+    if(!val||(isWater&&!(+val>0))){nameEl.focus();return;}
+    const arr=optList(grp);
+    const dup=arr.find(o=>optName(o)===val&&(!cur||optName(o)!==cur.n));
+    if(dup){alert('已經有「'+val+'」了');return;}
+    if(cur){const it=arr.find(o=>optName(o)===cur.n);if(it){it.n=val;it.e=icon;}}
+    else arr.push({n:val,e:icon});
+    S.healthOpts[grp]=arr;
+    closeOptDialog();sv(S);renderHealth();syncStateDebounced();
+  });
+  setTimeout(()=>nameEl.focus(),50);
+}
+function addHealthOpt(grp){openOptDialog(grp,null);}
+// 管理模式下點自訂按鈕＝開編輯視窗；回傳 true 代表這一下已被攔截
+function mngIntercept(el,grp){
+  const wrap=el.closest('.ebtns');
+  if(!wrap||!wrap.classList.contains('managing')||!el.dataset.custom)return false;
+  openOptDialog(grp,el.dataset.cname||el.dataset.lbl);
+  return true;
 }
 function wireHealthEditors(h){
   const box=document.getElementById('health-grid');
   box.querySelectorAll('[data-add]').forEach(el=>el.addEventListener('click',()=>addHealthOpt(el.dataset.add)));
+  // ⚙️ 管理：切換該群組的管理模式
+  box.querySelectorAll('[data-mng]').forEach(el=>el.addEventListener('click',()=>{
+    const wrap=el.closest('.ebtns');if(!wrap)return;
+    const on=wrap.classList.toggle('managing');
+    el.classList.toggle('mng',on);
+    if(on)softToast('點有 ✎ 的按鈕可以改圖示／名稱或刪除',2600);
+  }));
   // 觸控裝置沒有 hover：點一下先把名字浮出來一下下
   box.querySelectorAll('.ebtn').forEach(el=>el.addEventListener('pointerdown',()=>{
     el.classList.add('show-lbl');clearTimeout(el.__lblT);
     el.__lblT=setTimeout(()=>el.classList.remove('show-lbl'),1400);
+  }));
+  // 備註收合
+  box.querySelectorAll('.note-tog').forEach(el=>el.addEventListener('click',()=>{
+    const w=el.closest('.note-wrap');w.classList.toggle('open');
+    if(w.classList.contains('open')){const ta=w.querySelector('textarea');if(ta)ta.focus();}
   }));
   // ── 睡眠 ──
   const durEl=document.getElementById('hz-sleep-dur');
@@ -2610,13 +2767,14 @@ function wireHealthEditors(h){
   box.querySelectorAll('#hz-sleep-in select,#hz-sleep-wake select').forEach(s=>s.addEventListener('change',updDur));
   updDur();
   const sf=document.getElementById('hz-sleep-fill');
-  if(sf)sf.addEventListener('click',()=>{h.sleep=h.sleep||{};h.sleep.sleepTime=timeSelGet('hz-sleep-in');h.sleep.wakeTime=timeSelGet('hz-sleep-wake');sf.textContent='✓ 已記錄';setTimeout(()=>{if(sf)sf.textContent='✓ 記錄睡眠時間';},1500);commitHealth();});
+  if(sf)sf.addEventListener('click',()=>{h.sleep=h.sleep||{};h.sleep.sleepTime=timeSelGet('hz-sleep-in');h.sleep.wakeTime=timeSelGet('hz-sleep-wake');sf.textContent='✓ 已記錄';setTimeout(()=>{if(sf)sf.textContent='✓ 記錄';},1500);commitHealth();});
   box.querySelectorAll('[data-ease]').forEach(el=>el.addEventListener('click',()=>{
     h.sleep=h.sleep||{};h.sleep.ease=(h.sleep.ease===el.dataset.ease)?'':el.dataset.ease;
     el.parentElement.querySelectorAll('[data-ease]').forEach(x=>x.classList.toggle('on',!!h.sleep.ease&&x.dataset.ease===h.sleep.ease));
     commitHealth();
   }));
   box.querySelectorAll('[data-act]').forEach(el=>el.addEventListener('click',()=>{
+    if(mngIntercept(el,'sleepActs'))return;
     h.sleep=h.sleep||{};h.sleep.acts=h.sleep.acts||[];const a=el.dataset.act,i=h.sleep.acts.indexOf(a);
     if(i>=0)h.sleep.acts.splice(i,1);else h.sleep.acts.push(a);
     el.classList.toggle('on',h.sleep.acts.indexOf(a)>=0);
@@ -2628,6 +2786,7 @@ function wireHealthEditors(h){
   // ── 飲食（點＝切換、拖＝加入、盤上點＝拿走）──
   box.querySelectorAll('[data-dietchip]').forEach(el=>el.addEventListener('click',()=>{
     if(el.__suppressClick)return;
+    if(mngIntercept(el,'diet'))return;
     const has=((h.diet&&h.diet.tags)||[]).indexOf(el.dataset.diet)>=0;
     dietSet(h,el.dataset.diet,!has);
   }));
@@ -2637,6 +2796,7 @@ function wireHealthEditors(h){
   if(dn)dn.addEventListener('input',()=>{h.diet=h.diet||{tags:[]};h.diet.note=dn.value;healthNoteDebounced();});
   // ── 運動 ──
   box.querySelectorAll('[data-extype]').forEach(el=>el.addEventListener('click',()=>{
+    if(mngIntercept(el,'exercise'))return;
     h.exercise=h.exercise||{};
     h.exercise.type=(h.exercise.type===el.dataset.extype)?'':el.dataset.extype;
     el.parentElement.querySelectorAll('[data-extype]').forEach(x=>x.classList.toggle('on',!!h.exercise.type&&x.dataset.extype===h.exercise.type));
@@ -2653,6 +2813,7 @@ function wireHealthEditors(h){
   if(en)en.addEventListener('input',()=>{h.exercise=h.exercise||{};h.exercise.note=en.value;healthNoteDebounced();});
   // ── 喝水 ──
   box.querySelectorAll('[data-water]').forEach(el=>el.addEventListener('click',()=>{
+    if(mngIntercept(el,'water'))return;
     h.water=h.water||{amount:0};
     const before=+h.water.amount||0;
     h.water.amount=Math.max(0,before+(+el.dataset.water));
@@ -2670,7 +2831,11 @@ function wireSleepScene(){
   const cap=document.getElementById('hz-sleep-cap');
   const apply=()=>{if(cap)cap.textContent=sc.classList.contains('night')?'🌙 晚安':'☀️ 早安';};
   apply();
-  sc.addEventListener('click',()=>{sc.classList.toggle('night');apply();});
+  // 只有點空白處／招呼語才切換白天夜晚，點面板裡的時間跟按鈕不會誤觸
+  sc.addEventListener('click',e=>{
+    if(e.target.closest('.ss-panel'))return;
+    sc.classList.toggle('night');apply();
+  });
 }
 
 // ── 🍽️ 餐盤 ──
@@ -2691,11 +2856,11 @@ function makeFoodEl(h,tag,idx,sz){
   const el=document.createElement('span');
   el.className='dp-food';el.dataset.plate=tag;el.title=tag+'（點一下拿走）';
   el.style.left=p[0]+'px';el.style.top=p[1]+'px';
-  el.innerHTML='<span class="dpf-in" style="--fd:'+(2.8+Math.random()*1.7).toFixed(2)+'s;--dl:'+(Math.random()*1.6).toFixed(2)+'s;">'+fi(dietEmoji(tag),sz)+'</span>';
+  el.innerHTML='<span class="dpf-in" style="--fd:'+(2.8+Math.random()*1.7).toFixed(2)+'s;--dl:'+(Math.random()*1.6).toFixed(2)+'s;">'+dietIconHTML(tag,sz)+'</span>';
   el.addEventListener('click',()=>dietSet(h,tag,false));
   return el;
 }
-function dietEmptyHTML(){return '<div class="dp-empty">空盤子<br>～</div>';}
+function dietEmptyHTML(){return '<div class="dp-empty">今天<br>吃了什麼呢？</div>';}
 function renderDietPlate(h){
   const box=document.getElementById('hz-diet-foods');if(!box)return;
   const tags=((h.diet||{}).tags)||[];
@@ -2766,7 +2931,7 @@ function _dpClean(){document.querySelectorAll('.dp-drag-clone').forEach(x=>x.rem
 function _dpMove(e){
   const d=_dpDrag;if(!d)return;
   const dx=e.clientX-d.sx,dy=e.clientY-d.sy;
-  if(!d.moved){if(Math.hypot(dx,dy)<8)return;d.moved=true;d.clone=document.createElement('span');d.clone.className='dp-drag-clone';d.clone.innerHTML=fi(dietEmoji(d.tag),46);document.body.appendChild(d.clone);}
+  if(!d.moved){if(Math.hypot(dx,dy)<8)return;d.moved=true;d.clone=document.createElement('span');d.clone.className='dp-drag-clone';d.clone.innerHTML=dietIconHTML(d.tag,46);document.body.appendChild(d.clone);}
   d.clone.style.left=e.clientX+'px';d.clone.style.top=e.clientY+'px';
   const plate=document.getElementById('hz-diet-plate');
   if(plate){const r=plate.getBoundingClientRect();plate.classList.toggle('drop',e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom);}
@@ -3526,27 +3691,28 @@ function renderHealthReview(cur,prefix,dates){
     show(prefix+'-diet-card',true);
     const wholeN=dietDays.filter(x=>(x.h.diet.tags||[]).indexOf('原型食物為主')>=0).length;
     let html=wit('🌿 這'+(isWeek?'週':'個月')+'有 <b>'+wholeN+'</b> / '+dietDays.length+' 天以原型食物為主，你一直有好好照顧自己。偶爾配點零食，那也很好。');
-    // 每天一個餐盤，整週／整月都擺出來
+    // 左：每天一個餐盤（整週／整月都擺出來）　右：吃了什麼的頻率
     const WDH=['一','二','三','四','五','六','日'];
-    const psz=isWeek?17:12,pmax=isWeek?5:4;
-    html+='<div class="dcal">'+WDH.map(w=>'<div class="dcal-w">'+w+'</div>').join('');
+    const psz=isWeek?15:13,pmax=4;
+    let cal='<div class="dcal">'+WDH.map(w=>'<div class="dcal-w">'+w+'</div>').join('');
     const lead=(new Date(period[0]+'T00:00:00').getDay()+6)%7;
-    for(let i=0;i<lead;i++)html+='<div></div>';
+    for(let i=0;i<lead;i++)cal+='<div></div>';
     period.forEach(ds=>{
       const d=new Date(ds+'T00:00:00'),we=(d.getDay()===0||d.getDay()===6);
       const tags=((hmap[ds]||{}).diet||{}).tags||[];
-      html+='<div class="dcal-cell"><div class="rplate'+(tags.length?'':' empty')+'" title="'+dlab(ds)+(tags.length?'：'+esc(tags.join('、')):'')+'">'+
-        (tags.length?'<span class="rp-foods">'+tags.slice(0,pmax).map(t=>fi(dietEmoji(t),psz)).join('')+'</span>':'')+
+      cal+='<div class="dcal-cell"><div class="rplate'+(tags.length?'':' empty')+'" title="'+dlab(ds)+(tags.length?'：'+esc(tags.join('、')):'')+'">'+
+        (tags.length?'<span class="rp-foods">'+tags.slice(0,pmax).map(t=>dietIconHTML(t,psz)).join('')+'</span>':'')+
         '</div><span class="dcal-d'+(we?' we':'')+'">'+d.getDate()+'</span></div>';
     });
-    html+='</div>';
+    cal+='</div>';
     const freq={};dietDays.forEach(x=>(x.h.diet.tags||[]).forEach(t=>freq[t]=(freq[t]||0)+1));
     const rows=Object.keys(freq).sort((a,b)=>freq[b]-freq[a]);const mx=Math.max(1,...Object.values(freq));
-    html+=rows.map(t=>'<div class="dfrow'+(t==='原型食物為主'?' whole':'')+'">'+
-      '<span class="dfe">'+fi(dietEmoji(t),30)+'</span>'+
+    const bars=rows.map(t=>'<div class="dfrow'+(t==='原型食物為主'?' whole':'')+'">'+
+      '<span class="dfe">'+dietIconHTML(t,26)+'</span>'+
       '<span class="dfn">'+esc(t)+'</span>'+
       '<span class="dfb"><i style="width:'+Math.round(freq[t]/mx*100)+'%;"></i></span>'+
       '<span class="dfc">'+freq[t]+'天</span></div>').join('');
+    html+='<div class="diet-rv"><div>'+cal+'</div><div>'+bars+'</div></div>';
     document.getElementById(prefix+'-diet').innerHTML=html;
   }
 
@@ -3561,7 +3727,7 @@ function renderHealthReview(cur,prefix,dates){
     html+='<div class="hcal">'+['一','二','三','四','五','六','日'].map(w=>'<div class="hcal-w">'+w+'</div>').join('');
     for(let i=0;i<lead;i++)html+='<div></div>';
     period.forEach(ds=>{const h=hmap[ds];const d=new Date(ds+'T00:00:00');const ex=h&&h.exercise&&h.exercise.type;
-      html+='<div class="hplate'+(ex?' ex':' empty')+'"><span class="hpn">'+d.getDate()+'</span>'+(ex?fi(exEmoji(h.exercise.type),20):'')+'</div>';
+      html+='<div class="hplate'+(ex?' ex':' empty')+'"><span class="hpn">'+d.getDate()+'</span>'+(ex?exIconHTML(h.exercise.type,20):'')+'</div>';
     });
     html+='</div>';
     html+='<div style="font-size:12px;color:var(--tc2);margin-top:8px;">'+Object.keys(typeFreq).map(t=>esc(t)+' × '+typeFreq[t]).join('　')+'</div>';
