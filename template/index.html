@@ -658,6 +658,88 @@ body.viewer-mode .neo-chip,body.viewer-mode .sticky-check,body.viewer-mode .habi
 .hz-wbtn:active{transform:scale(.96);background:rgba(var(--tertiary-rgb),.25);}
 .hz-wbtn.minus{color:var(--tc3);flex:0 0 42px;min-width:42px;}
 
+/* ── 🍽️ 飲食餐盤（可愛互動） ── */
+.diet-plate{position:relative;width:170px;height:170px;margin:2px auto 12px;border-radius:50%;
+  background:radial-gradient(circle at 50% 42%,#ffffff 0 40%,#fbf7f0 58%,#f0e7d8 100%);
+  box-shadow:0 6px 16px rgba(140,110,70,.18),inset 0 0 0 2px rgba(255,255,255,.9),inset 0 0 0 8px rgba(210,190,160,.28),inset 0 6px 14px rgba(180,150,110,.12);
+  display:flex;align-items:center;justify-content:center;transition:box-shadow .2s;touch-action:none;}
+.diet-plate.drop{box-shadow:0 6px 20px rgba(93,202,165,.4),inset 0 0 0 2px #fff,inset 0 0 0 8px rgba(93,202,165,.4);}
+.dp-foods{position:relative;width:118px;height:118px;}
+.dp-food{position:absolute;transform:translate(-50%,-50%);cursor:pointer;animation:foodPlop .42s cubic-bezier(.34,1.56,.64,1) both;filter:drop-shadow(0 2px 3px rgba(120,90,50,.28));}
+.dp-food.leaving{animation:foodPop .3s ease forwards;}
+.dp-food:active{transform:translate(-50%,-50%) scale(.86);}
+@keyframes foodPlop{0%{transform:translate(-50%,-150%) scale(.3);opacity:0;}60%{transform:translate(-50%,-50%) scale(1.15);opacity:1;}100%{transform:translate(-50%,-50%) scale(1);}}
+@keyframes foodPop{to{transform:translate(-50%,-50%) scale(0) rotate(30deg);opacity:0;}}
+.dp-empty{font-size:12px;color:var(--tc3);text-align:center;line-height:1.5;opacity:.8;}
+.dp-empty img{display:block;margin:0 auto 4px;opacity:.6;}
+.diet-plate.wobble{animation:plateWob .5s ease;}
+@keyframes plateWob{0%,100%{transform:rotate(0);}25%{transform:rotate(-3deg);}55%{transform:rotate(2.4deg);}80%{transform:rotate(-1deg);}}
+
+/* ── 💧 喝水玻璃杯（小狗＋小鴨游泳） ── */
+.water-glass-wrap{display:flex;align-items:center;gap:14px;margin-bottom:6px;}
+.water-glass{position:relative;width:88px;height:112px;flex-shrink:0;
+  border:3px solid rgba(120,170,210,.55);border-top:none;border-radius:10px 10px 26px 26px/10px 10px 34px 34px;
+  background:linear-gradient(180deg,rgba(255,255,255,.35),rgba(210,235,250,.25));overflow:hidden;box-shadow:inset 0 0 10px rgba(120,170,210,.15);touch-action:none;}
+.wg-fill{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(180deg,#7ecbf0,#4aa8e0);transition:height .55s cubic-bezier(.34,1.4,.64,1);}
+.wg-fill.full{background:linear-gradient(180deg,#5DCAA5,#1D9E75);}
+.wg-wave{position:absolute;top:-7px;left:0;right:0;height:12px;background:radial-gradient(circle at 10px -2px,transparent 6px,var(--wave,#7ecbf0) 6.5px) repeat-x;background-size:20px 12px;opacity:.8;}
+.wg-swim{position:absolute;top:-11px;font-size:0;transition:left .5s ease;}
+.wg-swim.duck{animation:swimA 3.4s ease-in-out infinite;}
+.wg-swim.pup{animation:swimB 3.9s ease-in-out infinite;}
+@keyframes swimA{0%,100%{transform:translateX(0) rotate(-3deg);}50%{transform:translateX(30px) rotate(3deg);}}
+@keyframes swimB{0%,100%{transform:translateX(26px) rotate(2deg);}50%{transform:translateX(-4px) rotate(-2deg);}}
+.wg-bubble{position:absolute;bottom:6px;width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.7);animation:bubbleUp 2.6s ease-in infinite;}
+@keyframes bubbleUp{0%{bottom:6px;opacity:0;}20%{opacity:.8;}100%{bottom:100%;opacity:0;}}
+.wg-info{flex:1;}
+.wg-amt{font-family:'Baloo 2',sans-serif;font-size:22px;font-weight:800;color:var(--secondary);line-height:1;}
+.wg-amt small{font-size:12px;color:var(--tc3);font-weight:700;}
+.wg-splash{position:absolute;top:-4px;left:50%;width:6px;height:6px;border-radius:50%;background:#9fd8f5;animation:splashUp .6s ease-out forwards;}
+@keyframes splashUp{0%{transform:translate(-50%,0) scale(1);opacity:1;}100%{transform:translate(var(--sx,-14px),-22px) scale(.3);opacity:0;}}
+
+/* ── 🌙 睡眠場景（小狗跳上床，日→夜） ── */
+.sleep-scene{position:relative;height:120px;border-radius:16px;overflow:hidden;margin-bottom:10px;
+  background:linear-gradient(180deg,#bfe3f7 0%,#e8f4fb 70%,#dfeeda 100%);transition:background .8s ease;touch-action:none;}
+.sleep-scene.night{background:linear-gradient(180deg,#2b3a67 0%,#3d4d82 60%,#4a5a6e 100%);}
+.ss-sky{position:absolute;inset:0;pointer-events:none;}
+.ss-sun{position:absolute;top:14px;right:20px;transition:transform .8s ease,opacity .8s ease;}
+.sleep-scene.night .ss-sun{transform:translateY(-40px) scale(.4);opacity:0;}
+.ss-moon{position:absolute;top:14px;right:22px;opacity:0;transform:translateY(30px) scale(.4);transition:transform .8s ease,opacity .8s ease;}
+.sleep-scene.night .ss-moon{opacity:1;transform:translateY(0) scale(1);}
+.ss-star{position:absolute;width:3px;height:3px;border-radius:50%;background:#fff;opacity:0;transition:opacity .8s ease;}
+.sleep-scene.night .ss-star{opacity:.9;animation:twinkle 2.4s ease-in-out infinite;}
+@keyframes twinkle{0%,100%{opacity:.3;}50%{opacity:.95;}}
+.ss-bed{position:absolute;bottom:6px;right:16px;}
+.ss-pup{position:absolute;bottom:8px;left:16px;cursor:grab;transition:left .55s cubic-bezier(.34,1.5,.64,1),bottom .55s cubic-bezier(.34,1.5,.64,1),transform .3s;touch-action:none;z-index:3;}
+.ss-pup:active{cursor:grabbing;}
+.sleep-scene.asleep .ss-pup{left:calc(100% - 74px);bottom:30px;}
+.ss-zzz{position:absolute;bottom:52px;right:42px;font-family:'Baloo 2',sans-serif;font-weight:800;color:rgba(255,255,255,.85);font-size:15px;opacity:0;}
+.sleep-scene.asleep .ss-zzz{animation:zzzFloat 2.6s ease-in-out infinite;}
+@keyframes zzzFloat{0%{opacity:0;transform:translate(0,6px) scale(.7);}40%{opacity:.9;}100%{opacity:0;transform:translate(8px,-16px) scale(1.1);}}
+.ss-hint{position:absolute;top:8px;left:12px;font-size:11px;font-weight:700;color:rgba(60,80,110,.8);pointer-events:none;}
+.sleep-scene.night .ss-hint{color:rgba(255,255,255,.75);}
+
+/* ── 健康複盤（週/月） ── */
+.witness-line{font-size:12px;line-height:1.6;color:var(--tc2);background:rgba(var(--tertiary-rgb),.14);border-left:3px solid rgba(var(--tertiary-rgb),.6);border-radius:0 9px 9px 0;padding:7px 10px;margin-bottom:10px;}
+.witness-line b{color:var(--ok);}
+.xtab{width:100%;border-collapse:collapse;font-size:12px;}
+.xtab th{font-size:11px;font-weight:700;color:var(--tc3);text-align:left;padding:4px 6px;border-bottom:1.5px solid rgba(var(--primary-rgb),.15);}
+.xtab td{padding:6px;border-bottom:1px dashed rgba(var(--primary-rgb),.1);color:var(--tc2);}
+.xtab .r{text-align:right;}
+.xtab td.act{font-weight:700;color:var(--tc);}
+.xtab td.bed{font-family:'Baloo 2',sans-serif;color:var(--primary);}
+.hard-pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:700;}
+.hard-pill.hard-lo{background:rgba(var(--tertiary-rgb),.3);color:var(--ok);}
+.hard-pill.hard-mid{background:rgba(var(--secondary-rgb),.18);color:var(--secondary);}
+.hard-pill.hard-hi{background:rgba(216,130,60,.2);color:#C06A28;}
+.xnote{font-size:10.5px;color:var(--tc3);margin-top:6px;line-height:1.5;}
+.hcal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.hcal-w{font-size:10px;color:var(--tc3);text-align:center;font-weight:700;padding-bottom:2px;}
+.hplate{aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 50% 45%,#fff,rgba(var(--tertiary-rgb),.28) 74%,rgba(var(--secondary-rgb),.35));box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.8),inset 0 0 0 3px rgba(var(--secondary-rgb),.15);display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:1px;position:relative;overflow:hidden;min-height:34px;}
+.hplate.empty{background:rgba(255,255,255,.25);box-shadow:inset 0 0 0 1px rgba(var(--primary-rgb),.08);}
+.hplate.ex{background:radial-gradient(circle at 50% 45%,rgba(var(--tertiary-rgb),.35),rgba(var(--secondary-rgb),.28));}
+.hplate .hpn{position:absolute;top:2px;left:0;right:0;text-align:center;font-size:8.5px;color:var(--tc3);font-family:'Baloo 2',sans-serif;line-height:1;}
+.hplate img{width:11px;height:11px;}
+.hplate.ex img{width:16px;height:16px;}
 
 /* ── 清單/格狀切換 ── */
 .view-toggle{display:inline-flex;background:rgba(255,255,255,.55);border:1.5px solid rgba(255,255,255,.85);border-radius:10px;overflow:hidden;}
@@ -936,6 +1018,7 @@ button{-webkit-tap-highlight-color:transparent;}
 
 <div class="rd-zone" id="wk-health-zone" style="display:none;">🌿 健康觀察</div>
 <div class="gcard" id="wk-sleep-card" style="display:none;"><div class="sec-hd">🌙 睡眠觀察</div><div id="wk-sleep"></div></div>
+<div class="gcard" id="wk-sleepx-card" style="display:none;"><div class="sec-hd">🔍 睡前活動 × 入睡狀況</div><div id="wk-sleepx"></div></div>
 <div class="rd-pair" id="wk-health-pair" style="display:none;">
   <div class="gcard" id="wk-diet-card" style="display:none;"><div class="sec-hd">🍽️ 飲食</div><div id="wk-diet"></div></div>
   <div class="gcard" id="wk-exercise-card" style="display:none;"><div class="sec-hd">🏃 運動</div><div id="wk-exercise"></div></div>
@@ -984,6 +1067,15 @@ button{-webkit-tap-highlight-color:transparent;}
   </div>
 </div>
 <div class="gcard insight-card" id="mo-insight-card" style="display:none;"><div class="sec-hd">💡 本月洞察</div><div id="mo-insight"></div></div>
+
+<div class="rd-zone" id="mo-health-zone" style="display:none;">🌿 健康觀察</div>
+<div class="gcard" id="mo-sleep-card" style="display:none;"><div class="sec-hd">🌙 睡眠觀察</div><div id="mo-sleep"></div></div>
+<div class="gcard" id="mo-sleepx-card" style="display:none;"><div class="sec-hd">🔍 睡前活動 × 入睡狀況</div><div id="mo-sleepx"></div></div>
+<div class="gcard" id="mo-diet-card" style="display:none;"><div class="sec-hd">🍽️ 飲食</div><div id="mo-diet"></div></div>
+<div class="rd-pair" id="mo-health-pair" style="display:none;">
+  <div class="gcard" id="mo-exercise-card" style="display:none;"><div class="sec-hd">🏃 運動</div><div id="mo-exercise"></div></div>
+  <div class="gcard" id="mo-water-card" style="display:none;"><div class="sec-hd">💧 喝水</div><div id="mo-water"></div></div>
+</div>
 
 <div class="rd-zone">🗒 這個月明細</div>
 <div id="month-week-summaries" class="rd-entries"></div>
@@ -1321,7 +1413,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v81';
+const APP_VER='v82';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
@@ -1465,6 +1557,23 @@ function healthCopyText(h){
   if(healthHas(h,'exercise')){const e=h.exercise;L.push(`  🏃 運動：${e.type}${e.duration?' '+e.duration+'分':''}${e.note?' · '+e.note:''}`);}
   if(healthHas(h,'water')){L.push(`  💧 喝水：${h.water.amount}ml`);}
   return L.join('\n')+'\n';
+}
+// 週／月「複製給 Claude」用的健康總結（如實聚合，不評價）
+function healthCopySummary(cur,label){
+  const hd=(cur&&cur.healthDays)||[];if(!hd.length)return [];
+  const toMin=(s,bed)=>{if(!s)return null;const a=String(s).split(':');let m=(+a[0])*60+(+a[1]||0);if(bed&&+a[0]<12)m+=1440;return m;};
+  const m2t=m=>{if(m==null)return '—';m=((m%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');};
+  const avg=a=>a.length?Math.round(a.reduce((s,v)=>s+v,0)/a.length):null;
+  const L=['🌿 健康總結（'+label+'）'];
+  const sl=hd.filter(x=>x.h.sleep&&(x.h.sleep.sleepTime||x.h.sleep.wakeTime));
+  if(sl.length){const beds=sl.map(x=>toMin(x.h.sleep.sleepTime,true)).filter(v=>v!=null),wakes=sl.map(x=>toMin(x.h.sleep.wakeTime,false)).filter(v=>v!=null),durs=sl.map(x=>sleepMinutes(x.h.sleep)).filter(v=>v!=null);L.push('  🌙 睡眠 '+sl.length+' 晚，平均 '+m2t(avg(beds))+'→'+m2t(avg(wakes))+(avg(durs)!=null?'（'+fmtSleepDur(avg(durs))+'）':''));const hard=sl.filter(x=>x.h.sleep.ease==='hard').length;if(hard)L.push('    其中難睡 '+hard+' 晚');}
+  const di=hd.filter(x=>x.h.diet&&(x.h.diet.tags||[]).length);
+  if(di.length){const whole=di.filter(x=>(x.h.diet.tags||[]).indexOf('原型食物為主')>=0).length;L.push('  🍽️ 飲食記錄 '+di.length+' 天，'+whole+' 天以原型食物為主');}
+  const ex=hd.filter(x=>x.h.exercise&&x.h.exercise.type);
+  if(ex.length){let tot=0;ex.forEach(x=>tot+=(+x.h.exercise.duration||0));L.push('  🏃 運動 '+ex.length+' 天'+(tot?'，共 '+tot+' 分鐘':''));}
+  const wa=hd.filter(x=>x.h.water&&(+x.h.water.amount||0)>0);
+  if(wa.length){const am=wa.map(x=>+x.h.water.amount||0);L.push('  💧 喝水平均 '+avg(am)+' ml／天');}
+  return L.length>1?L:[];
 }
 // 對照健康資料的「已記錄」狀態與「已給分」狀態，差異式加減 EXP＋花（今天或補記日都通用）
 function reconcileHealthExp(h,ds){
@@ -2189,7 +2298,8 @@ function renderHabits(){
 }
 
 // ── HEALTH（睡眠/飲食/運動/喝水）────────────────────────
-let healthExpanded={};
+// 預設四張健康卡都展開（使用者不用一直點開），仍保留可收合
+let healthExpanded={sleep:true,diet:true,exercise:true,water:true};
 // 目前要編輯的健康資料：今天→S.health；補記→那天 entry.health
 function healthTarget(){
   if(ctxIsToday())return {h:S.health,ds:curDay(),isToday:true};
@@ -2251,7 +2361,11 @@ function healthEditorHTML(k,h){
   const addChip=grp=>`<span class="hz-tag hz-add" data-add="${grp}">＋ 新增</span>`;
   if(k==='sleep'){
     const s=h.sleep||{};
-    return `<div class="hz-row"><span class="hz-lbl">入睡</span>${timeSelHTML('hz-sleep-in',s.sleepTime||'23:30')}</div>`+
+    const stars=[[20,20],[46,12],[74,26],[104,16],[132,30],[158,14]].map(p=>`<span class="ss-star" style="left:${p[0]}px;top:${p[1]}px;"></span>`).join('');
+    return `<div class="sleep-scene" id="hz-sleep-scene"><div class="ss-sky">${stars}<span class="ss-sun">${fi('2600',26)}</span><span class="ss-moon">${fi('1f319',24)}</span></div>`+
+      `<span class="ss-bed">${fi('1f6cf',44)}</span><span class="ss-pup" id="hz-sleep-pup">${fi('1f436',30)}</span><span class="ss-zzz">Z z</span>`+
+      `<span class="ss-hint" id="hz-sleep-hint">把小狗拖到床上睡覺 💤</span></div>`+
+      `<div class="hz-row"><span class="hz-lbl">入睡</span>${timeSelHTML('hz-sleep-in',s.sleepTime||'23:30')}</div>`+
       `<div class="hz-row"><span class="hz-lbl">起床</span>${timeSelHTML('hz-sleep-wake',s.wakeTime||'07:00')}</div>`+
       `<div class="hz-row" style="gap:6px;"><button type="button" class="hz-tag" id="hz-sleep-fill">✓ 記錄這個睡眠時間</button><span id="hz-sleep-dur" style="font-size:12px;color:var(--ok);font-weight:700;"></span></div>`+
       `<div style="font-size:11.5px;font-weight:700;color:var(--tc2);margin:4px 2px;">今早起來，好入睡嗎？</div>`+
@@ -2262,7 +2376,8 @@ function healthEditorHTML(k,h){
   }
   if(k==='diet'){
     const d=h.diet||{};const tags=d.tags||[];
-    return `<div class="hz-tags">${dietTags().map(t=>`<span class="hz-tag${tags.indexOf(t)>=0?' on':''}" data-diet="${esc(t)}">${fi(dietEmoji(t),15)} ${esc(t)}</span>`).join('')}${addChip('diet')}</div>`+
+    return `<div class="diet-plate" id="hz-diet-plate"><div class="dp-foods" id="hz-diet-foods"></div></div>`+
+      `<div class="hz-tags">${dietTags().map(t=>`<span class="hz-tag${tags.indexOf(t)>=0?' on':''}" data-diet="${esc(t)}">${fi(dietEmoji(t),15)} ${esc(t)}</span>`).join('')}${addChip('diet')}</div>`+
       noteHTML('hz-diet-note',d.note,'今天的飲食想多記什麼都可以');
   }
   if(k==='exercise'){
@@ -2272,14 +2387,23 @@ function healthEditorHTML(k,h){
       noteHTML('hz-ex-note',e.note,'例如：跑步聽了喜歡的 podcast');
   }
   if(k==='water'){
-    const w=+((h.water||{}).amount)||0;const pct=Math.min(100,Math.round(w/WATER_GOAL*100));
     const custom=(S.healthOpts&&S.healthOpts.water)||[];
-    return `<div class="hz-water-ring">
-      <svg width="66" height="66" viewBox="0 0 42 42" style="flex-shrink:0;"><circle cx="21" cy="21" r="15.9" fill="none" style="stroke:rgba(var(--secondary-rgb),.15);" stroke-width="5"/><circle cx="21" cy="21" r="15.9" fill="none" style="stroke:var(--secondary);" stroke-width="5" stroke-linecap="round" stroke-dasharray="${pct} ${100-pct}" stroke-dashoffset="25"/><text x="21" y="20" text-anchor="middle" style="font-size:8px;font-weight:800;fill:var(--secondary);">${w}</text><text x="21" y="27" text-anchor="middle" style="font-size:4px;fill:var(--tc3);">/${WATER_GOAL}ml</text></svg>
-      <div class="hz-water-btns">
-        <button type="button" class="hz-wbtn minus" data-water="-250">−250</button>
-        <button type="button" class="hz-wbtn" data-water="250">+250</button>
-        <button type="button" class="hz-wbtn" data-water="500">+500</button>
+    return `<div class="water-glass-wrap">
+      <div class="water-glass" id="hz-water-glass">
+        <div class="wg-fill" id="hz-water-fill"><div class="wg-wave"></div>
+          <span class="wg-swim duck" id="hz-water-duck" style="left:10px;">${fi('1f986',22)}</span>
+          <span class="wg-swim pup" id="hz-water-pup" style="left:44px;">${fi('1f436',20)}</span>
+          <span class="wg-bubble" style="left:22px;animation-delay:.3s;"></span>
+          <span class="wg-bubble" style="left:56px;animation-delay:1.4s;"></span>
+        </div>
+      </div>
+      <div class="wg-info">
+        <div class="wg-amt"><span id="hz-water-amt">0</span> <small>/ ${WATER_GOAL}ml</small></div>
+        <div class="hz-water-btns" style="margin-top:8px;">
+          <button type="button" class="hz-wbtn minus" data-water="-250">−250</button>
+          <button type="button" class="hz-wbtn" data-water="250">+250</button>
+          <button type="button" class="hz-wbtn" data-water="500">+500</button>
+        </div>
       </div>
     </div>`+
     `<div class="hz-tags" style="margin-top:8px;">${custom.map(v=>`<span class="hz-tag" data-water="${+v||0}">+${+v||0}</span>`).join('')}<span class="hz-tag hz-add" data-add="water">＋ 常喝的量</span></div>`+
@@ -2320,6 +2444,7 @@ function wireHealthEditors(h){
     if(i>=0)h.diet.tags.splice(i,1);else h.diet.tags.push(t);
     commitHealth();
   }));
+  renderDietPlate(h);
   const dn=document.getElementById('hz-diet-note');
   if(dn)dn.addEventListener('input',()=>{h.diet=h.diet||{tags:[]};h.diet.note=dn.value;healthNoteDebounced();});
   // 運動
@@ -2339,11 +2464,64 @@ function wireHealthEditors(h){
   // 喝水
   box.querySelectorAll('[data-water]').forEach(el=>el.addEventListener('click',()=>{
     h.water=h.water||{amount:0};
-    h.water.amount=Math.max(0,(+h.water.amount||0)+(+el.dataset.water));
-    commitHealth();
+    const before=+h.water.amount||0;
+    h.water.amount=Math.max(0,before+(+el.dataset.water));
+    updateWaterGlass(h,h.water.amount>before);
+    commitHealth(false);
   }));
+  updateWaterGlass(h,false);
   const wn=document.getElementById('hz-water-note');
   if(wn)wn.addEventListener('input',()=>{h.water=h.water||{amount:0};h.water.note=wn.value;healthNoteDebounced();});
+  // 睡眠場景：小狗拖到床上睡覺
+  updateSleepScene(h);
+  wireSleepPupDrag(h);
+}
+// 🍽️ 餐盤：把選到的食物擺上盤子（點盤上的食物可移除）
+function dietPlateSlots(){return [[59,44],[36,66],[82,66],[24,42],[94,42],[59,84],[42,24],[76,24],[59,104]];}
+function renderDietPlate(h){
+  const box=document.getElementById('hz-diet-foods');if(!box)return;
+  const tags=((h.diet||{}).tags)||[];
+  if(!tags.length){box.innerHTML='<div class="dp-empty">'+fi('1f37d',30)+'<br>空盤子，點下面加食物</div>';return;}
+  const slots=dietPlateSlots();const sz=tags.length<=3?32:(tags.length<=6?27:23);
+  box.innerHTML=tags.slice(0,9).map((t,i)=>{const p=slots[i]||[59,59];return '<span class="dp-food" data-plate="'+esc(t)+'" style="left:'+p[0]+'px;top:'+p[1]+'px;" title="'+esc(t)+'（點一下拿走）">'+fi(dietEmoji(t),sz)+'</span>';}).join('');
+  const plate=document.getElementById('hz-diet-plate');if(plate){plate.classList.remove('wobble');void plate.offsetWidth;plate.classList.add('wobble');}
+  box.querySelectorAll('[data-plate]').forEach(el=>el.addEventListener('click',()=>{
+    const t=el.dataset.plate,arr=(h.diet&&h.diet.tags)||[],i=arr.indexOf(t);
+    if(i>=0){el.classList.add('leaving');arr.splice(i,1);setTimeout(()=>commitHealth(),240);}
+  }));
+}
+// 💧 玻璃杯：水位＝喝的量／目標，小狗小鴨浮在水面
+function updateWaterGlass(h,animate){
+  const glass=document.getElementById('hz-water-glass');if(!glass)return;
+  const w=+((h.water||{}).amount)||0,pct=Math.max(0,Math.min(100,w/WATER_GOAL*100)),full=w>=WATER_GOAL;
+  const fill=document.getElementById('hz-water-fill');
+  if(fill){fill.style.height=pct+'%';fill.classList.toggle('full',full);fill.style.setProperty('--wave',full?'#5DCAA5':'#7ecbf0');}
+  const amtEl=document.getElementById('hz-water-amt');if(amtEl)amtEl.textContent=w;
+  const card=glass.closest('.hz-card');
+  if(card){card.classList.toggle('on',w>0);const sum=card.querySelector('.hz-sum');if(sum)sum.textContent=w?(w+' / '+WATER_GOAL+'ml'):'點開記錄';}
+  if(animate){const s=document.createElement('span');s.className='wg-splash';s.style.setProperty('--sx',(Math.random()*30-15)+'px');glass.appendChild(s);setTimeout(()=>{s.remove();},600);}
+}
+// 🌙 睡眠場景：有記錄→夜晚＋小狗上床；小狗可拖到床上觸發記錄
+function updateSleepScene(h){
+  const sc=document.getElementById('hz-sleep-scene');if(!sc)return;
+  const s=h.sleep||{},asleep=!!s.sleepTime;
+  sc.classList.toggle('night',asleep);sc.classList.toggle('asleep',asleep);
+  const hint=document.getElementById('hz-sleep-hint');
+  if(hint)hint.textContent=asleep?('晚安 · '+(s.sleepTime||'?')+' → '+(s.wakeTime||'?')):'把小狗拖到床上睡覺 💤';
+}
+function wireSleepPupDrag(h){
+  const pup=document.getElementById('hz-sleep-pup'),sc=document.getElementById('hz-sleep-scene');
+  if(!pup||!sc)return;
+  let drag=false,ox=0,oy=0;
+  pup.addEventListener('pointerdown',e=>{if(sc.classList.contains('asleep'))return;drag=true;try{pup.setPointerCapture(e.pointerId);}catch(_){}ox=e.clientX;oy=e.clientY;pup.style.transition='none';e.preventDefault();});
+  pup.addEventListener('pointermove',e=>{if(!drag)return;pup.style.transform='translate('+(e.clientX-ox)+'px,'+(e.clientY-oy)+'px)';});
+  const end=e=>{if(!drag)return;drag=false;pup.style.transition='';
+    const scr=sc.getBoundingClientRect(),pr=pup.getBoundingClientRect();
+    const overBed=(pr.left+pr.width/2)>scr.left+scr.width*0.5;
+    pup.style.transform='';
+    if(overBed){h.sleep=h.sleep||{};h.sleep.sleepTime=timeSelGet('hz-sleep-in');h.sleep.wakeTime=timeSelGet('hz-sleep-wake');commitHealth();}
+  };
+  pup.addEventListener('pointerup',end);pup.addEventListener('pointercancel',end);
 }
 let _healthNoteT=null;
 function healthNoteDebounced(){clearTimeout(_healthNoteT);_healthNoteT=setTimeout(()=>commitHealth(false),900);}
@@ -2908,18 +3086,25 @@ function renderReviewDonut(elId,cur){
 // 最穩的習慣、TDL 負荷建議。全部純計算，不需要 AI。opt 可帶：
 //   dailyRates（週用，對齊 dates 的每日達成率）、weekday（月用，{counts,totals}）
 // 健康觀察（週/月複盤）：如實呈現，不評價、不警示
-function renderHealthReview(cur,prefix){
+// 健康觀察（週＝7天、月＝整月，同一套）：如實呈現、不評價、不警示，附溫柔見證句
+function renderHealthReview(cur,prefix,dates){
   const zone=document.getElementById(prefix+'-health-zone');
   const hd=(cur.healthDays||[]);
   const any=hd.length>0;
   if(zone)zone.style.display=any?'':'none';
   const pair=document.getElementById(prefix+'-health-pair');if(pair)pair.style.display=any?'':'none';
   const show=(id,on)=>{const el=document.getElementById(id);if(el)el.style.display=on?'':'none';};
-  if(!any){['-sleep-card','-diet-card','-exercise-card','-water-card'].forEach(s=>show(prefix+s,false));return;}
+  ['-sleep-card','-sleepx-card','-diet-card','-exercise-card','-water-card'].forEach(s=>show(prefix+s,false));
+  if(!any)return;
   const wd=['日','一','二','三','四','五','六'];
   const dlab=ds=>{const d=new Date(ds+'T00:00:00');return (d.getMonth()+1)+'/'+d.getDate()+' 週'+wd[d.getDay()];};
-  // ── 睡眠 ──
-  const sleepDays=hd.filter(x=>x.h.sleep&&(x.h.sleep.sleepTime||x.h.sleep.wakeTime));
+  const wit=t=>'<div class="witness-line">'+t+'</div>';
+  const hmap={};hd.forEach(x=>hmap[x.ds]=x.h);
+  const period=dates&&dates.length?dates:hd.map(x=>x.ds);
+  const isWeek=prefix==='wk';
+
+  // ── 🌙 睡眠 ──
+  const sleepDays=hd.filter(x=>{const s=x.h.sleep;return s&&(s.sleepTime||s.wakeTime);});
   if(sleepDays.length){
     show(prefix+'-sleep-card',true);
     const toMin=(s,bed)=>{if(!s)return null;const a=String(s).split(':');let m=(+a[0])*60+(+a[1]||0);if(bed&&(+a[0])<12)m+=24*60;return m;};
@@ -2929,59 +3114,117 @@ function renderHealthReview(cur,prefix){
     const avg=a=>a.length?Math.round(a.reduce((s,v)=>s+v,0)/a.length):null;
     const m2t=m=>{if(m==null)return '—';m=((m%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');};
     const avgBed=avg(beds),avgWake=avg(wakes),avgDur=avg(durs);
-    const maxDur=Math.max(...durs,1);
-    let html='<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--tc2);margin-bottom:10px;">'+
+    const beforeGoal=beds.filter(b=>b<=24*60).length; // 00:00 前入睡
+    let html=wit('🌙 這'+(isWeek?'週':'個月')+'你記錄了 <b>'+sleepDays.length+'</b> 晚的睡眠'+(beforeGoal?'，有 <b>'+beforeGoal+'</b> 晚在 00:00 前入睡':'')+'。願意觀察自己，就是溫柔。');
+    html+='<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--tc2);margin-bottom:6px;">'+
       '<span>平均入睡 <b style="color:var(--primary);font-family:Baloo 2;">'+m2t(avgBed)+'</b></span>'+
       '<span>平均起床 <b style="color:var(--primary);font-family:Baloo 2;">'+m2t(avgWake)+'</b></span>'+
       (avgDur!=null?'<span>平均睡 <b style="color:var(--ok);font-family:Baloo 2;">'+fmtSleepDur(avgDur)+'</b></span>':'')+'</div>';
-    html+=sleepDays.map(x=>{const s=x.h.sleep,dm=sleepMinutes(s);
-      return '<div style="padding:6px 0;border-bottom:1px dashed rgba(var(--primary-rgb),.1);">'+
-        '<div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--tc2);font-weight:700;">'+dlab(x.ds)+'</span>'+
-        '<span style="font-family:Baloo 2;color:var(--tc);">'+(s.sleepTime||'?')+' → '+(s.wakeTime||'?')+(dm!=null?' · '+fmtSleepDur(dm):'')+'</span></div>'+
-        (dm!=null?'<div style="height:6px;background:rgba(var(--secondary-rgb),.12);border-radius:4px;margin-top:4px;overflow:hidden;"><div style="height:100%;width:'+Math.round(dm/maxDur*100)+'%;background:linear-gradient(90deg,var(--secondary),var(--tertiary));border-radius:4px;"></div></div>':'')+
-        (s.note?'<div style="font-size:11.5px;color:var(--tc3);margin-top:3px;">💭 '+esc(s.note)+'</div>':'')+
-      '</div>';
-    }).join('');
+    if(beds.length>=2)html+='<div style="font-size:11.5px;color:var(--tc3);margin-bottom:8px;">入睡落在 <b style="color:var(--secondary);">'+m2t(Math.min(...beds))+' ～ '+m2t(Math.max(...beds))+'</b> 之間</div>';
+    // 睡眠節律圖：x=每天、y=時間（頂18:00→底次日12:00），畫睡眠區間＋目標線(00:00/07:00)
+    const chartDays=sleepDays.filter(x=>x.h.sleep.sleepTime&&x.h.sleep.wakeTime);
+    if(chartDays.length){
+      const W=340,H=150,pT=8,pB=16,top=18*60,bot=(24+12)*60;
+      const yOf=m=>{let v=m;if(v<12*60)v+=24*60;return pT+((v-top)/(bot-top))*(H-pT-pB);};
+      let g='';[[24*60,'目標入睡'],[31*60,'目標起床']].forEach(t=>{const y=yOf(t[0]);g+='<line x1="0" y1="'+y+'" x2="'+W+'" y2="'+y+'" stroke="#D8823C" stroke-width="1" stroke-dasharray="4 3" opacity=".5"/>';});
+      const n=chartDays.length,bw=Math.min(11,(W/n)*0.6),gap=W/n;
+      chartDays.forEach((x,i)=>{const s=x.h.sleep;const y1=yOf(toMin(s.sleepTime,true)%(24*60)+((+s.sleepTime.split(':')[0]<12)?24*60:0));
+        const sb=toMin(s.sleepTime,true),sw=toMin(s.wakeTime,false)+((toMin(s.wakeTime,false)<=sb-24*60)?0:0);
+        const yA=yOf(sb),yB=yOf(toMin(s.wakeTime,false)<sb?toMin(s.wakeTime,false)+24*60:toMin(s.wakeTime,false));
+        const hard=s.ease==='hard';const cx=(W/n)*i+(W/n)/2-bw/2;
+        g+='<rect x="'+cx+'" y="'+Math.min(yA,yB)+'" width="'+bw+'" height="'+Math.max(3,Math.abs(yB-yA))+'" rx="'+bw/2+'" fill="'+(hard?'#D8823C':'#3F80B2')+'" opacity="'+(hard?.95:.72)+'"/>';
+      });
+      html+='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;">'+g+'</svg>'+
+        '<div style="display:flex;gap:12px;font-size:10.5px;color:var(--tc3);margin-top:4px;flex-wrap:wrap;"><span>🔵 睡眠區間</span><span>🟠 難睡的夜晚</span><span>┈ 你的目標</span></div>';
+    }
+    // 只列「難睡」或「有備註」的夜晚（不流水帳）
+    const focus=sleepDays.filter(x=>x.h.sleep.ease==='hard'||x.h.sleep.note);
+    if(focus.length){
+      html+='<div style="font-size:12px;font-weight:700;color:var(--tc2);margin:10px 2px 4px;">💭 想回顧的夜晚</div>';
+      html+=focus.map(x=>{const s=x.h.sleep,dm=sleepMinutes(s);
+        return '<div style="padding:6px 0;border-bottom:1px dashed rgba(var(--primary-rgb),.1);">'+
+          '<div style="display:flex;justify-content:space-between;font-size:12px;gap:8px;"><span style="color:var(--tc2);font-weight:700;">'+dlab(x.ds)+(s.ease?' · '+easeLabel(s.ease):'')+'</span>'+
+          '<span style="font-family:Baloo 2;color:var(--tc);white-space:nowrap;">'+(s.sleepTime||'?')+'→'+(s.wakeTime||'?')+(dm!=null?' '+fmtSleepDur(dm):'')+'</span></div>'+
+          ((s.acts&&s.acts.length)?'<div style="font-size:11px;color:var(--secondary);margin-top:2px;">睡前：'+esc(s.acts.join('、'))+'</div>':'')+
+          (s.note?'<div style="font-size:11.5px;color:var(--tc3);margin-top:2px;">'+esc(s.note)+'</div>':'')+
+        '</div>';
+      }).join('');
+    }
     document.getElementById(prefix+'-sleep').innerHTML=html;
-  }else show(prefix+'-sleep-card',false);
-  // ── 飲食（標籤頻率）──
+
+    // ── 🔍 睡前活動 × 入睡狀況 交叉表 ──
+    const actAgg={};
+    sleepDays.forEach(x=>{const s=x.h.sleep;const bed=toMin(s.sleepTime,true);(s.acts&&s.acts.length?s.acts:['（沒記錄）']).forEach(a=>{actAgg[a]=actAgg[a]||{n:0,bedSum:0,bedN:0,hard:0};actAgg[a].n++;if(bed!=null){actAgg[a].bedSum+=bed;actAgg[a].bedN++;}if(s.ease==='hard')actAgg[a].hard++;});});
+    const acts=Object.keys(actAgg).filter(a=>a!=='（沒記錄）');
+    if(acts.length){
+      show(prefix+'-sleepx-card',true);
+      acts.sort((a,b)=>actAgg[b].n-actAgg[a].n);
+      let t='<table class="xtab"><tr><th>睡前主要在</th><th class="r">晚數</th><th class="r">平均入睡</th><th class="r">難睡</th></tr>';
+      acts.forEach(a=>{const o=actAgg[a];const cls=o.hard/o.n>=.5?'hard-hi':(o.hard===0?'hard-lo':'hard-mid');
+        t+='<tr><td class="act">'+esc(a)+'</td><td class="r">'+o.n+'</td><td class="r bed">'+(o.bedN?m2t(Math.round(o.bedSum/o.bedN)):'—')+'</td><td class="r"><span class="hard-pill '+cls+'">'+o.hard+' 晚</span></td></tr>';
+      });
+      t+='</table><div class="xnote">＊只是把你的紀錄擺在一起，讓你自己看——不下結論、不建議。</div>';
+      document.getElementById(prefix+'-sleepx').innerHTML=t;
+    }
+  }
+
+  // ── 🍽️ 飲食：餐盤月曆 + 標籤頻率 ──
   const dietDays=hd.filter(x=>x.h.diet&&((x.h.diet.tags||[]).length||x.h.diet.note));
   if(dietDays.length){
     show(prefix+'-diet-card',true);
+    const wholeN=dietDays.filter(x=>(x.h.diet.tags||[]).indexOf('原型食物為主')>=0).length;
+    let html=wit('🌿 這'+(isWeek?'週':'個月')+'有 <b>'+wholeN+'</b> 天以原型食物為主，你一直有好好照顧自己。偶爾配點零食，那也很好。');
+    // 餐盤月曆：每天一個盤子，擺當天吃的 emoji
+    const first=new Date(period[0]+'T00:00:00');let lead=(first.getDay()+6)%7;
+    html+='<div class="hcal">'+['一','二','三','四','五','六','日'].map(w=>'<div class="hcal-w">'+w+'</div>').join('');
+    for(let i=0;i<lead;i++)html+='<div></div>';
+    period.forEach(ds=>{const h=hmap[ds];const d=new Date(ds+'T00:00:00');const tags=(h&&h.diet&&h.diet.tags)||[];
+      const emo=tags.slice(0,3).map(t=>fi(dietEmoji(t),11)).join('');
+      html+='<div class="hplate'+(tags.length?'':' empty')+'"><span class="hpn">'+d.getDate()+'</span>'+emo+'</div>';
+    });
+    html+='</div>';
     const freq={};dietDays.forEach(x=>(x.h.diet.tags||[]).forEach(t=>freq[t]=(freq[t]||0)+1));
-    const rows=Object.keys(freq).sort((a,b)=>freq[b]-freq[a]);
-    const mx=Math.max(1,...Object.values(freq));
-    document.getElementById(prefix+'-diet').innerHTML=(rows.length?rows.map(t=>
-      '<div class="dist-row"><div class="dist-label" style="width:auto;flex:0 0 84px;">'+esc(t)+'</div>'+
-      '<div class="dist-bar-bg"><div class="dist-bar-fill" style="width:'+Math.round(freq[t]/mx*100)+'%;"></div></div>'+
-      '<div class="dist-count">'+freq[t]+'天</div></div>').join(''):'')+
-      '<div style="font-size:11px;color:var(--tc3);margin-top:4px;">共記錄 '+dietDays.length+' 天</div>';
-  }else show(prefix+'-diet-card',false);
-  // ── 運動 ──
+    const rows=Object.keys(freq).sort((a,b)=>freq[b]-freq[a]);const mx=Math.max(1,...Object.values(freq));
+    html+='<div style="font-size:12px;font-weight:700;color:var(--tc2);margin:10px 2px 6px;">這'+(isWeek?'週':'個月')+'你的飲食裡有…</div>';
+    html+=rows.map(t=>'<div class="dist-row"><div class="dist-label" style="width:auto;flex:0 0 110px;">'+fi(dietEmoji(t),14)+' '+esc(t)+'</div><div class="dist-bar-bg"><div class="dist-bar-fill" style="width:'+Math.round(freq[t]/mx*100)+'%;"></div></div><div class="dist-count">'+freq[t]+'天</div></div>').join('');
+    document.getElementById(prefix+'-diet').innerHTML=html;
+  }
+
+  // ── 🏃 運動：節奏月曆 ──
   const exDays=hd.filter(x=>x.h.exercise&&x.h.exercise.type);
   if(exDays.length){
     show(prefix+'-exercise-card',true);
     const typeFreq={};let totMin=0;exDays.forEach(x=>{typeFreq[x.h.exercise.type]=(typeFreq[x.h.exercise.type]||0)+1;totMin+=(+x.h.exercise.duration||0);});
-    document.getElementById(prefix+'-exercise').innerHTML=
-      '<div style="font-size:13px;color:var(--tc);margin-bottom:8px;">這週動了 <b style="color:var(--ok);">'+exDays.length+'</b> 天'+(totMin?'，共 <b style="color:var(--ok);">'+totMin+'</b> 分鐘':'')+'</div>'+
-      Object.keys(typeFreq).map(t=>'<div style="font-size:12px;color:var(--tc2);padding:2px 0;">'+esc(t)+' × '+typeFreq[t]+'</div>').join('');
-  }else show(prefix+'-exercise-card',false);
-  // ── 喝水 ──
+    let html=wit('🏃 這'+(isWeek?'週':'個月')+'你讓身體動了 <b>'+exDays.length+'</b> 天'+(totMin?'，共 <b>'+totMin+'</b> 分鐘':'')+'。有動就很好，身體會記得。');
+    const exEmoji=t=>t==='跑步'?'1f3c3':(t==='跳舞'?'1f483':'1f4aa');
+    const first=new Date(period[0]+'T00:00:00');let lead=(first.getDay()+6)%7;
+    html+='<div class="hcal">'+['一','二','三','四','五','六','日'].map(w=>'<div class="hcal-w">'+w+'</div>').join('');
+    for(let i=0;i<lead;i++)html+='<div></div>';
+    period.forEach(ds=>{const h=hmap[ds];const d=new Date(ds+'T00:00:00');const ex=h&&h.exercise&&h.exercise.type;
+      html+='<div class="hplate'+(ex?' ex':' empty')+'"><span class="hpn">'+d.getDate()+'</span>'+(ex?fi(exEmoji(h.exercise.type),15):'')+'</div>';
+    });
+    html+='</div>';
+    html+='<div style="font-size:12px;color:var(--tc2);margin-top:8px;">'+Object.keys(typeFreq).map(t=>esc(t)+' × '+typeFreq[t]).join('　')+'</div>';
+    document.getElementById(prefix+'-exercise').innerHTML=html;
+  }
+
+  // ── 💧 喝水：每日長條 + 目標線 ──
   const waterDays=hd.filter(x=>x.h.water&&(+x.h.water.amount||0)>0);
   if(waterDays.length){
     show(prefix+'-water-card',true);
     const amounts=waterDays.map(x=>+x.h.water.amount||0);
     const avgW=Math.round(amounts.reduce((s,v)=>s+v,0)/amounts.length);
+    const hitGoal=amounts.filter(a=>a>=WATER_GOAL).length;
     const mx=Math.max(WATER_GOAL,...amounts);
-    document.getElementById(prefix+'-water').innerHTML=
-      '<div style="font-size:12px;color:var(--tc2);margin-bottom:8px;">平均每天 <b style="color:var(--secondary);font-family:Baloo 2;">'+avgW+'</b> ml（目標 '+WATER_GOAL+'）</div>'+
-      '<div style="display:flex;align-items:flex-end;gap:5px;height:70px;">'+waterDays.map(x=>{const a=+x.h.water.amount||0;const d=new Date(x.ds+'T00:00:00');
-        return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:3px;">'+
-          '<div style="font-size:9px;color:var(--tc3);">'+Math.round(a/100)/10+'L</div>'+
-          '<div style="width:70%;max-width:26px;background:linear-gradient(180deg,var(--tertiary),var(--secondary));border-radius:5px 5px 2px 2px;height:'+Math.max(4,Math.round(a/mx*54))+'px;"></div>'+
-          '<div style="font-size:9px;color:var(--tc3);">'+(d.getMonth()+1)+'/'+d.getDate()+'</div></div>';
-      }).join('')+'</div>';
-  }else show(prefix+'-water-card',false);
+    let html=wit('💧 這'+(isWeek?'週':'個月')+'平均每天喝 <b>'+avgW+'</b> ml'+(hitGoal?'，有 <b>'+hitGoal+'</b> 天喝到你的目標':'')+'。每一口都算數。');
+    const goalPct=WATER_GOAL/mx*100;
+    html+='<div style="position:relative;height:74px;margin-top:6px;">'+
+      '<div style="position:absolute;left:0;right:0;bottom:'+goalPct*0.7+'px;border-top:1px dashed #D8823C;opacity:.55;"></div>'+
+      '<div style="display:flex;align-items:flex-end;gap:4px;height:70px;">'+waterDays.map(x=>{const a=+x.h.water.amount||0;const d=new Date(x.ds+'T00:00:00');const full=a>=WATER_GOAL;
+        return '<div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><div style="width:80%;max-width:22px;background:'+(full?'linear-gradient(180deg,#5DCAA5,#1D9E75)':'linear-gradient(180deg,var(--tertiary),var(--secondary))')+';border-radius:4px 4px 2px 2px;height:'+Math.max(3,Math.round(a/mx*70))+'px;" title="'+dlab(x.ds)+' '+a+'ml"></div></div>';
+      }).join('')+'</div></div>';
+    document.getElementById(prefix+'-water').innerHTML=html;
+  }
 }
 function renderInsights(cardId,boxId,cur,prev,dates,label,opt){
   const card=document.getElementById(cardId),box=document.getElementById(boxId);
@@ -3124,7 +3367,7 @@ function renderWeekly(){
   }).join('')}</div>`;
 
   renderInsights('wk-insight-card','wk-insight',cur,prev,dates,'週',{dailyRates:rateArr});
-  renderHealthReview(cur,'wk');
+  renderHealthReview(cur,'wk',dates);
   fixRdPairs('page-week');
 
   if(cur.days===0){document.getElementById('week-entries').innerHTML=`<div class="empty-state">${fi('1f331',32)}<br/>這週還沒有紀錄</div>`;return;}
@@ -3157,12 +3400,15 @@ document.getElementById('copy-week-btn').addEventListener('click',async()=>{
     const checkedArr=isT?Object.keys(S.checked||{}):(e?.checked||[]);
     const diary=(isT?S.diary:e?.diary)||{};
     const items=tdlItemsOf(ds);
+    const dayH=(isT?S.health:(e&&e.health))||null;
+    const hasHealth=dayH&&HEALTH.some(H=>healthHas(dayH,H.k));
     const d=new Date(ds+'T00:00:00');
     const dl=`${d.getMonth()+1}/${d.getDate()} 週${wdArr[d.getDay()]}`;
-    if(!e&&!checkedArr.length&&!(items&&items.length)){lines.push(`${dl}：無紀錄`);return;}
+    if(!e&&!checkedArr.length&&!(items&&items.length)&&!hasHealth){lines.push(`${dl}：無紀錄`);return;}
     const names=HABITS.filter(h=>checkedArr.includes(h.k)).map(h=>h.l);
     lines.push(`📅 ${dl}`);
     lines.push(`  ✅ 完成習慣：${names.join('、')||'無'}`);
+    if(hasHealth)healthCopyText(dayH).trimEnd().split('\n').forEach(l=>lines.push('  '+l));
     if(diary.hl)lines.push(`  🌟 Highlights：${diary.hl}`);
     if(diary.rf)lines.push(`  📖 Reflection：${diary.rf}`);
     if(diary.gr)lines.push(`  🥹 Gratitude：${diary.gr}`);
@@ -3177,6 +3423,8 @@ document.getElementById('copy-week-btn').addEventListener('click',async()=>{
     lines.push('');
   });
   lines.push(...tdlSummaryLines(periodStats(dates),weekLabel(weekOffset)));
+  const wkHsum=healthCopySummary(periodStats(dates),weekLabel(weekOffset));
+  if(wkHsum.length){lines.push('');lines.push(...wkHsum);lines.push('');}
   const calT=calLinesForDates(dates);
   if(calT.length){lines.push('📅 本週行程');lines.push(...calT);lines.push('');}
   navigator.clipboard.writeText(lines.join('\n')).then(()=>{
@@ -3226,6 +3474,7 @@ function renderMonthly(){
     </div>`).join('')}</div>`;
 
   renderInsights('mo-insight-card','mo-insight',cur,prev,dates,'個月',{weekday:{counts:weekdayCounts,totals:weekdayTotals}});
+  renderHealthReview(cur,'mo',dates);
   fixRdPairs('page-month');
 
   const weeks=[];for(let i=0;i<dates.length;i+=7)weeks.push(dates.slice(i,i+7));
@@ -3256,18 +3505,24 @@ document.getElementById('copy-month-btn').addEventListener('click',async()=>{
     const checkedArr=isT?Object.keys(S.checked||{}):(e?.checked||[]);
     const diary=(isT?S.diary:e?.diary)||{};
     const items=tdlItemsOf(ds);
-    if(!e&&!checkedArr.length&&!(items&&items.length))return;
+    const dayH=(isT?S.health:(e&&e.health))||null;
+    const hasHealth=dayH&&HEALTH.some(H=>healthHas(dayH,H.k));
+    if(!e&&!checkedArr.length&&!(items&&items.length)&&!hasHealth)return;
     const names=HABITS.filter(h=>checkedArr.includes(h.k)).map(h=>h.l);
-    // 一個月逐項列會太長，這裡每天只給 TDL 完成比例，逐項明細留給週複製
+    // 一個月逐項列會太長，這裡每天只給 TDL 完成比例＋健康摘要，逐項明細留給週複製
     const tdlPart=(items&&items.length)?`｜TDL ${items.filter(x=>x.done).length}/${items.length}`
                  :((e&&e.tdlTotal)?`｜TDL ${e.tdlDone||0}/${e.tdlTotal}`:'');
-    lines.push(`📅 ${ds}：${names.join('、')||'無'}${tdlPart}`);
+    let hPart='';
+    if(hasHealth){const p=[],s=dayH.sleep;if(healthHas(dayH,'sleep'))p.push('🌙'+(s.sleepTime||'?')+'→'+(s.wakeTime||'?'));if(healthHas(dayH,'diet'))p.push('🍽️'+(dayH.diet.tags||[]).length+'項');if(healthHas(dayH,'exercise'))p.push('🏃'+dayH.exercise.type);if(healthHas(dayH,'water'))p.push('💧'+dayH.water.amount+'ml');hPart='｜'+p.join(' ');}
+    lines.push(`📅 ${ds}：${names.join('、')||'無'}${tdlPart}${hPart}`);
     if(diary.hl)lines.push(`  🌟 ${diary.hl}`);
     if(diary.rf)lines.push(`  📖 ${diary.rf}`);
     if(diary.gr)lines.push(`  🥹 ${diary.gr}`);
   });
   lines.push('');
   lines.push(...tdlSummaryLines(periodStats(dates),monthLabel(monthOffset)));
+  const moHsum=healthCopySummary(periodStats(dates),monthLabel(monthOffset));
+  if(moHsum.length){lines.push('');lines.push(...moHsum);}
   const calT=calLinesForDates(dates);
   if(calT.length){lines.push('');lines.push('📅 本月行程');lines.push(...calT);}
   navigator.clipboard.writeText(lines.join('\n')).then(()=>{
