@@ -634,14 +634,11 @@ body.viewer-mode .neo-chip,body.viewer-mode .sticky-check,body.viewer-mode .habi
 @media(max-width:520px){#health-grid{grid-template-columns:1fr;}}
 .hz-card{background:rgba(255,255,255,.55);border:1.5px solid rgba(var(--tertiary-rgb),.35);border-radius:16px;padding:11px 12px;box-shadow:var(--nm-in);}
 .hz-card.on{background:rgba(var(--tertiary-rgb),.22);border-color:rgba(var(--tertiary-rgb),.6);}
-.hz-hd{display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none;}
+.hz-hd{display:flex;align-items:center;gap:7px;user-select:none;}
 .hz-hd .hz-ic{font-size:18px;flex-shrink:0;display:flex;}
 .hz-hd .hz-l{font-weight:800;font-size:13.5px;color:var(--tc);}
 .hz-hd .hz-sum{flex:1;font-size:11.5px;color:var(--tc3);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
-.hz-hd .hz-chevron{font-size:11px;color:var(--tc3);flex-shrink:0;transition:transform .2s;}
-.hz-card.expanded .hz-chevron{transform:rotate(90deg);}
-.hz-body{display:none;margin-top:10px;padding-top:10px;border-top:1px dashed rgba(var(--tertiary-rgb),.4);}
-.hz-card.expanded .hz-body{display:block;}
+.hz-body{display:block;margin-top:10px;padding-top:10px;border-top:1px dashed rgba(var(--tertiary-rgb),.4);}
 .hz-row{display:flex;align-items:center;gap:8px;margin-bottom:9px;flex-wrap:wrap;}
 .hz-row .hz-lbl{font-size:12px;font-weight:700;color:var(--tc2);width:40px;flex-shrink:0;}
 .hz-note{width:100%;background:rgba(255,255,255,.7);border:1.5px solid rgba(var(--tertiary-rgb),.35);border-radius:11px;padding:8px 11px;font-family:'Quicksand',sans-serif;font-size:12.5px;color:var(--tc);outline:none;resize:vertical;min-height:38px;}
@@ -650,6 +647,7 @@ body.viewer-mode .neo-chip,body.viewer-mode .sticky-check,body.viewer-mode .habi
 .hz-tag.on{background:rgba(var(--tertiary-rgb),.5);border-color:var(--tertiary);color:var(--ok);}
 .hz-tag:active{transform:scale(.96);}
 .hz-tag.hz-add{border-style:dashed;color:var(--tc3);border-color:rgba(var(--primary-rgb),.3);}
+.hz-tag[data-dietchip]{touch-action:none;}
 .hz-tag img{vertical-align:-2px;}
 .hz-tags{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:9px;}
 .hz-water-ring{display:flex;align-items:center;gap:12px;}
@@ -658,65 +656,100 @@ body.viewer-mode .neo-chip,body.viewer-mode .sticky-check,body.viewer-mode .habi
 .hz-wbtn:active{transform:scale(.96);background:rgba(var(--tertiary-rgb),.25);}
 .hz-wbtn.minus{color:var(--tc3);flex:0 0 42px;min-width:42px;}
 
-/* ── 🍽️ 飲食餐盤（可愛互動） ── */
-.diet-plate{position:relative;width:170px;height:170px;margin:2px auto 12px;border-radius:50%;
+/* ── 🍽️ 飲食餐盤（點＋拖、食物飄動、狗勾說話） ── */
+.diet-plate{position:relative;width:210px;height:210px;margin:2px auto 12px;border-radius:50%;
   background:radial-gradient(circle at 50% 42%,#ffffff 0 40%,#fbf7f0 58%,#f0e7d8 100%);
   box-shadow:0 6px 16px rgba(140,110,70,.18),inset 0 0 0 2px rgba(255,255,255,.9),inset 0 0 0 8px rgba(210,190,160,.28),inset 0 6px 14px rgba(180,150,110,.12);
-  display:flex;align-items:center;justify-content:center;transition:box-shadow .2s;touch-action:none;}
-.diet-plate.drop{box-shadow:0 6px 20px rgba(93,202,165,.4),inset 0 0 0 2px #fff,inset 0 0 0 8px rgba(93,202,165,.4);}
-.dp-foods{position:relative;width:118px;height:118px;}
-.dp-food{position:absolute;transform:translate(-50%,-50%);cursor:pointer;animation:foodPlop .42s cubic-bezier(.34,1.56,.64,1) both;filter:drop-shadow(0 2px 3px rgba(120,90,50,.28));}
-.dp-food.leaving{animation:foodPop .3s ease forwards;}
-.dp-food:active{transform:translate(-50%,-50%) scale(.86);}
-@keyframes foodPlop{0%{transform:translate(-50%,-150%) scale(.3);opacity:0;}60%{transform:translate(-50%,-50%) scale(1.15);opacity:1;}100%{transform:translate(-50%,-50%) scale(1);}}
+  display:flex;align-items:center;justify-content:center;transition:box-shadow .25s,transform .25s;}
+.diet-plate.drop{box-shadow:0 8px 22px rgba(93,202,165,.45),inset 0 0 0 2px #fff,inset 0 0 0 9px rgba(93,202,165,.5);transform:scale(1.04);}
+.dp-foods{position:relative;width:150px;height:150px;}
+.dp-food{position:absolute;transform:translate(-50%,-50%);cursor:pointer;animation:foodPlop .44s cubic-bezier(.34,1.56,.64,1) both;}
+.dp-food.leaving{animation:foodPop .28s ease forwards;}
+.dpf-in{display:inline-block;filter:drop-shadow(0 2px 3px rgba(120,90,50,.3));animation:dpFloat var(--fd,3.4s) ease-in-out infinite;animation-delay:var(--dl,0s);}
+.dp-food:active .dpf-in{transform:scale(.85);}
+@keyframes foodPlop{0%{transform:translate(-50%,-150%) scale(.3);opacity:0;}60%{transform:translate(-50%,-50%) scale(1.18);opacity:1;}100%{transform:translate(-50%,-50%) scale(1);}}
 @keyframes foodPop{to{transform:translate(-50%,-50%) scale(0) rotate(30deg);opacity:0;}}
-.dp-empty{font-size:12px;color:var(--tc3);text-align:center;line-height:1.5;opacity:.8;}
-.dp-empty img{display:block;margin:0 auto 4px;opacity:.6;}
+@keyframes dpFloat{0%,100%{transform:translateY(0) rotate(-4deg);}50%{transform:translateY(-6px) rotate(4deg);}}
+.dp-empty{font-size:12px;color:var(--tc3);text-align:center;line-height:1.5;opacity:.85;}
+.dp-empty img{display:block;margin:0 auto 4px;opacity:.6;animation:dpFloat 3.4s ease-in-out infinite;}
 .diet-plate.wobble{animation:plateWob .5s ease;}
 @keyframes plateWob{0%,100%{transform:rotate(0);}25%{transform:rotate(-3deg);}55%{transform:rotate(2.4deg);}80%{transform:rotate(-1deg);}}
+.dp-drag-clone{position:fixed;z-index:99998;pointer-events:none;transform:translate(-50%,-50%) scale(1.15);filter:drop-shadow(0 6px 8px rgba(0,0,0,.28));transition:transform .1s;}
+.dp-burst{position:absolute;left:50%;top:44%;pointer-events:none;z-index:5;animation:dpBurst .95s ease-out forwards;}
+@keyframes dpBurst{0%{transform:translate(-50%,-50%) translate(0,0) scale(.4);opacity:0;}25%{opacity:1;}100%{transform:translate(-50%,-50%) translate(var(--bx,0),var(--by,-40px)) scale(1.1) rotate(var(--br,0deg));opacity:0;}}
+/* 狗勾說話泡泡 */
+.dog-say{display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,#fff,#FFF7EC);border:1.5px solid rgba(var(--primary-rgb),.28);border-radius:14px;padding:7px 11px 7px 8px;margin:0 auto 10px;max-width:100%;box-shadow:0 4px 12px -6px rgba(var(--primary-rgb),.4);opacity:0;transform:translateY(6px);transition:opacity .25s,transform .25s;}
+.dog-say.show{opacity:1;transform:translateY(0);}
+.dog-say .ds-av{width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0;background:rgba(var(--tertiary-rgb),.3);animation:dsHop .5s ease;}
+@keyframes dsHop{0%,100%{transform:translateY(0);}40%{transform:translateY(-5px) rotate(-6deg);}}
+.dog-say .ds-tx{font-size:12.5px;font-weight:700;color:var(--tc);line-height:1.5;}
+.dog-say .ds-tx b{color:var(--primary);}
 
-/* ── 💧 喝水玻璃杯（小狗＋小鴨游泳） ── */
+/* ── 💧 喝水玻璃杯（我的狗＋小鴨＋小雞游泳、達標慶祝） ── */
 .water-glass-wrap{display:flex;align-items:center;gap:14px;margin-bottom:6px;}
-.water-glass{position:relative;width:88px;height:112px;flex-shrink:0;
+.water-glass{position:relative;width:96px;height:120px;flex-shrink:0;
   border:3px solid rgba(120,170,210,.55);border-top:none;border-radius:10px 10px 26px 26px/10px 10px 34px 34px;
-  background:linear-gradient(180deg,rgba(255,255,255,.35),rgba(210,235,250,.25));overflow:hidden;box-shadow:inset 0 0 10px rgba(120,170,210,.15);touch-action:none;}
+  background:linear-gradient(180deg,rgba(255,255,255,.35),rgba(210,235,250,.25));overflow:hidden;box-shadow:inset 0 0 10px rgba(120,170,210,.15);}
 .wg-fill{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(180deg,#7ecbf0,#4aa8e0);transition:height .55s cubic-bezier(.34,1.4,.64,1);}
 .wg-fill.full{background:linear-gradient(180deg,#5DCAA5,#1D9E75);}
 .wg-wave{position:absolute;top:-7px;left:0;right:0;height:12px;background:radial-gradient(circle at 10px -2px,transparent 6px,var(--wave,#7ecbf0) 6.5px) repeat-x;background-size:20px 12px;opacity:.8;}
-.wg-swim{position:absolute;top:-11px;font-size:0;transition:left .5s ease;}
+.wg-swim{position:absolute;top:-13px;display:inline-block;}
 .wg-swim.duck{animation:swimA 3.4s ease-in-out infinite;}
-.wg-swim.pup{animation:swimB 3.9s ease-in-out infinite;}
-@keyframes swimA{0%,100%{transform:translateX(0) rotate(-3deg);}50%{transform:translateX(30px) rotate(3deg);}}
-@keyframes swimB{0%,100%{transform:translateX(26px) rotate(2deg);}50%{transform:translateX(-4px) rotate(-2deg);}}
+.wg-swim.chick{animation:swimC 3.0s ease-in-out infinite;}
+.wg-swim.pup{top:-16px;animation:swimB 3.9s ease-in-out infinite;}
+.wg-swim.pup img{width:24px;height:24px;object-fit:contain;filter:drop-shadow(0 1px 1px rgba(0,0,0,.2));}
+@keyframes swimA{0%,100%{transform:translateX(0) rotate(-3deg);}50%{transform:translateX(26px) rotate(3deg);}}
+@keyframes swimB{0%,100%{transform:translateX(22px) rotate(2deg);}50%{transform:translateX(-4px) rotate(-2deg);}}
+@keyframes swimC{0%,100%{transform:translateX(4px) rotate(3deg);}50%{transform:translateX(34px) rotate(-3deg);}}
 .wg-bubble{position:absolute;bottom:6px;width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.7);animation:bubbleUp 2.6s ease-in infinite;}
 @keyframes bubbleUp{0%{bottom:6px;opacity:0;}20%{opacity:.8;}100%{bottom:100%;opacity:0;}}
-.wg-info{flex:1;}
+.wg-info{flex:1;min-width:0;}
 .wg-amt{font-family:'Baloo 2',sans-serif;font-size:22px;font-weight:800;color:var(--secondary);line-height:1;}
+.wg-amt.done{color:var(--ok);}
 .wg-amt small{font-size:12px;color:var(--tc3);font-weight:700;}
 .wg-splash{position:absolute;top:-4px;left:50%;width:6px;height:6px;border-radius:50%;background:#9fd8f5;animation:splashUp .6s ease-out forwards;}
 @keyframes splashUp{0%{transform:translate(-50%,0) scale(1);opacity:1;}100%{transform:translate(var(--sx,-14px),-22px) scale(.3);opacity:0;}}
+.wg-goal-tag{display:inline-block;margin-top:5px;font-size:11px;font-weight:800;color:var(--ok);background:rgba(var(--tertiary-rgb),.4);border-radius:999px;padding:2px 9px;opacity:0;transform:scale(.6);transition:opacity .3s,transform .3s;}
+.wg-goal-tag.show{opacity:1;transform:scale(1);}
+/* 達標慶祝噴發 */
+.wg-confetti{position:fixed;z-index:99997;pointer-events:none;font-size:0;}
+.wg-conf{position:absolute;width:8px;height:12px;border-radius:2px;animation:confFall var(--cd,1.6s) ease-in forwards;}
+@keyframes confFall{0%{transform:translateY(0) rotate(0);opacity:1;}100%{transform:translateY(var(--cy,120px)) translateX(var(--cx,0)) rotate(540deg);opacity:0;}}
 
-/* ── 🌙 睡眠場景（小狗跳上床，日→夜） ── */
-.sleep-scene{position:relative;height:120px;border-radius:16px;overflow:hidden;margin-bottom:10px;
-  background:linear-gradient(180deg,#bfe3f7 0%,#e8f4fb 70%,#dfeeda 100%);transition:background .8s ease;touch-action:none;}
-.sleep-scene.night{background:linear-gradient(180deg,#2b3a67 0%,#3d4d82 60%,#4a5a6e 100%);}
+/* ── 🌙 睡眠場景（兩欄：左＝我的狗白天/夜晚，右＝記錄時間） ── */
+.sleep-wrap{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;}
+.sleep-scene{position:relative;flex:1 1 140px;min-width:130px;height:150px;border-radius:16px;overflow:hidden;cursor:pointer;
+  background:linear-gradient(180deg,#bfe3f7 0%,#e8f4fb 62%,#dfeeda 100%);transition:background .8s ease;-webkit-tap-highlight-color:transparent;}
+.sleep-scene.night{background:linear-gradient(180deg,#26325c 0%,#3a4a7e 58%,#46536a 100%);}
 .ss-sky{position:absolute;inset:0;pointer-events:none;}
-.ss-sun{position:absolute;top:14px;right:20px;transition:transform .8s ease,opacity .8s ease;}
-.sleep-scene.night .ss-sun{transform:translateY(-40px) scale(.4);opacity:0;}
-.ss-moon{position:absolute;top:14px;right:22px;opacity:0;transform:translateY(30px) scale(.4);transition:transform .8s ease,opacity .8s ease;}
+.ss-sun{position:absolute;top:14px;right:18px;transition:transform .8s ease,opacity .8s ease;animation:sunSpin 14s linear infinite;}
+.sleep-scene.night .ss-sun{transform:translateY(-46px) scale(.4);opacity:0;}
+@keyframes sunSpin{to{transform:rotate(360deg);}}
+.ss-moon{position:absolute;top:14px;right:20px;opacity:0;transform:translateY(34px) scale(.4);transition:transform .8s ease,opacity .8s ease;}
 .sleep-scene.night .ss-moon{opacity:1;transform:translateY(0) scale(1);}
 .ss-star{position:absolute;width:3px;height:3px;border-radius:50%;background:#fff;opacity:0;transition:opacity .8s ease;}
 .sleep-scene.night .ss-star{opacity:.9;animation:twinkle 2.4s ease-in-out infinite;}
 @keyframes twinkle{0%,100%{opacity:.3;}50%{opacity:.95;}}
-.ss-bed{position:absolute;bottom:6px;right:16px;}
-.ss-pup{position:absolute;bottom:8px;left:16px;cursor:grab;transition:left .55s cubic-bezier(.34,1.5,.64,1),bottom .55s cubic-bezier(.34,1.5,.64,1),transform .3s;touch-action:none;z-index:3;}
-.ss-pup:active{cursor:grabbing;}
-.sleep-scene.asleep .ss-pup{left:calc(100% - 74px);bottom:30px;}
-.ss-zzz{position:absolute;bottom:52px;right:42px;font-family:'Baloo 2',sans-serif;font-weight:800;color:rgba(255,255,255,.85);font-size:15px;opacity:0;}
-.sleep-scene.asleep .ss-zzz{animation:zzzFloat 2.6s ease-in-out infinite;}
-@keyframes zzzFloat{0%{opacity:0;transform:translate(0,6px) scale(.7);}40%{opacity:.9;}100%{opacity:0;transform:translate(8px,-16px) scale(1.1);}}
-.ss-hint{position:absolute;top:8px;left:12px;font-size:11px;font-weight:700;color:rgba(60,80,110,.8);pointer-events:none;}
-.sleep-scene.night .ss-hint{color:rgba(255,255,255,.75);}
+.ss-ground{position:absolute;left:0;right:0;bottom:0;height:30px;background:linear-gradient(180deg,rgba(150,200,140,.5),rgba(120,175,120,.7));transition:opacity .8s;}
+.sleep-scene.night .ss-ground{opacity:.35;}
+.ss-bed{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);opacity:0;transition:opacity .6s;}
+.sleep-scene.night .ss-bed{opacity:1;}
+.ss-dog{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);z-index:2;transition:bottom .6s;}
+.ss-dog img{width:60px;height:60px;object-fit:contain;display:block;filter:drop-shadow(0 3px 4px rgba(0,0,0,.22));}
+/* 白天：開心蹦跳 */
+.sleep-scene:not(.night) .ss-dog{animation:dogHop 1.6s ease-in-out infinite;}
+@keyframes dogHop{0%,100%{transform:translateX(-50%) translateY(0) rotate(0);}30%{transform:translateX(-50%) translateY(-10px) rotate(-4deg);}60%{transform:translateX(-50%) translateY(0) rotate(3deg);}}
+/* 夜晚：躺在床上呼吸 */
+.sleep-scene.night .ss-dog{bottom:16px;animation:dogSleep 3.4s ease-in-out infinite;}
+@keyframes dogSleep{0%,100%{transform:translateX(-50%) rotate(8deg) scale(1);}50%{transform:translateX(-50%) rotate(8deg) scale(1.05);}}
+.ss-zzz{position:absolute;top:30px;left:56%;font-family:'Baloo 2',sans-serif;font-weight:800;color:rgba(255,255,255,.9);font-size:16px;opacity:0;}
+.sleep-scene.night .ss-zzz{animation:zzzFloat 2.6s ease-in-out infinite;}
+@keyframes zzzFloat{0%{opacity:0;transform:translate(0,8px) scale(.7);}40%{opacity:.9;}100%{opacity:0;transform:translate(10px,-18px) scale(1.1);}}
+.ss-cap{position:absolute;top:8px;left:11px;font-size:12px;font-weight:800;color:rgba(60,80,110,.85);pointer-events:none;transition:color .6s;}
+.sleep-scene.night .ss-cap{color:rgba(255,255,255,.9);}
+.ss-tap{position:absolute;bottom:6px;right:8px;font-size:9.5px;font-weight:700;color:rgba(80,100,130,.6);pointer-events:none;}
+.sleep-scene.night .ss-tap{color:rgba(255,255,255,.55);}
+.sleep-ctrl{flex:1 1 150px;min-width:140px;display:flex;flex-direction:column;justify-content:center;gap:8px;}
 
 /* ── 健康複盤（週/月） ── */
 .witness-line{font-size:12px;line-height:1.6;color:var(--tc2);background:rgba(var(--tertiary-rgb),.14);border-left:3px solid rgba(var(--tertiary-rgb),.6);border-radius:0 9px 9px 0;padding:7px 10px;margin-bottom:10px;}
@@ -1402,6 +1435,7 @@ function enterViewerMode(){
 const SHEET_ID='';
 function codeQ(){const c=localStorage.getItem('grandol_code')||'';return c?'&code='+encodeURIComponent(c):'';}
 const CDN='https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/';
+const PUPPY_IMG='puppy.png';
 const fi=(c,s=20)=>`<img src="${CDN}${c}_3d.png" width="${s}" height="${s}" style="display:inline-block;vertical-align:middle;" onerror="this.style.display='none'"/>`;
 // 圖片讀取失敗時安全退回 emoji 圖（不能用字串拼 onerror，引號會炸出亂碼）
 function grFallback(el,code,size){
@@ -1413,7 +1447,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v82';
+const APP_VER='v83';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
@@ -1521,7 +1555,7 @@ const HEALTH=[
 const DIET_TAGS=['原型食物為主','麵包/貝果','飯','麵','零食','含糖飲料','無糖飲料','鮮奶茶','外食'];
 const DIET_EMOJI={'原型食物為主':'1f957','麵包/貝果':'1f35e','飯':'1f35a','麵':'1f35c','零食':'1f370','含糖飲料':'1f964','無糖飲料':'1f375','鮮奶茶':'1f9cb','外食':'1f35f'};
 const EXERCISE_TYPES=['跑步','跳舞','其他'];
-const PRE_SLEEP_ACTS=['看劇','小說','漫畫','閱讀'];
+const PRE_SLEEP_ACTS=['看劇','看直播','聽直播','小說','漫畫','閱讀'];
 const SLEEP_EASE=[['good','😴 好睡','1f634'],['ok','😐 普通','1f610'],['hard','😣 難睡','1f623']];
 const WATER_GOAL=2500;
 function dietTags(){return DIET_TAGS.concat((S.healthOpts&&S.healthOpts.diet)||[]);}
@@ -2298,8 +2332,7 @@ function renderHabits(){
 }
 
 // ── HEALTH（睡眠/飲食/運動/喝水）────────────────────────
-// 預設四張健康卡都展開（使用者不用一直點開），仍保留可收合
-let healthExpanded={sleep:true,diet:true,exercise:true,water:true};
+// 四張健康卡永遠展開（不收合），跟其他區塊一致
 // 目前要編輯的健康資料：今天→S.health；補記→那天 entry.health
 function healthTarget(){
   if(ctxIsToday())return {h:S.health,ds:curDay(),isToday:true};
@@ -2309,8 +2342,9 @@ function healthTarget(){
 }
 // 健康資料改動後統一收尾：算 EXP／花、存檔、同步。
 // rerenderGrid=false 用於「打備註中」——重繪整格會讓 textarea 失焦，所以不重繪健康格。
-function commitHealth(rerenderGrid){
-  if(rerenderGrid===undefined)rerenderGrid=true;
+// 只持久化＋更新每張卡的「標題摘要／已記錄」外框，絕不重建整個 health-grid
+// （重建會讓四張卡的動畫全部重播＝先前那個 bug 的根源）
+function commitHealth(){
   const t=healthTarget();
   const oldExp=S.exp;
   reconcileHealthExp(t.h,t.ds);
@@ -2323,8 +2357,17 @@ function commitHealth(rerenderGrid){
     syncEntryDebounced();
   }
   sv(S);checkLevelUp(oldExp,S.exp);
-  if(rerenderGrid)renderHealth();
+  HEALTH.forEach(H=>updateHealthChrome(H.k));
   renderFlowers();renderExpBar();checkAchievements();syncStateDebounced();
+}
+// 就地更新單張健康卡的外框（on 狀態＋標題摘要），不動內容、不重播動畫
+function updateHealthChrome(k){
+  const t=healthTarget(),h=t.h;
+  const card=document.querySelector('#health-grid .hz-card[data-k="'+k+'"]');
+  if(!card)return;
+  card.classList.toggle('on',healthHas(h,k));
+  const sum=card.querySelector('.hz-sum');
+  if(sum)sum.textContent=healthSummary(h,k)||'快速記錄';
 }
 function healthSummary(h,k){
   if(k==='sleep'){const s=h.sleep||{};if(!s.sleepTime&&!s.wakeTime)return '';const dur=sleepMinutes(s);return (s.sleepTime||'?')+' → '+(s.wakeTime||'?')+(dur!=null?' · '+fmtSleepDur(dur):'');}
@@ -2339,21 +2382,15 @@ function renderHealth(){
   const t=healthTarget();const h=t.h;
   box.innerHTML=HEALTH.map(H=>{
     const has=healthHas(h,H.k);
-    const sum=healthSummary(h,H.k)||(has?'已記錄':'點開記錄');
-    const exp=!!healthExpanded[H.k];
-    return `<div class="hz-card${has?' on':''}${exp?' expanded':''}" data-k="${H.k}">
-      <div class="hz-hd" data-toggle="${H.k}">
+    const sum=healthSummary(h,H.k)||'快速記錄';
+    return `<div class="hz-card${has?' on':''}" data-k="${H.k}">
+      <div class="hz-hd">
         <span class="hz-ic">${fi(H.ic,18)}</span><span class="hz-l">${H.l}</span>
-        <span class="hz-sum">${esc(sum)}</span><span class="hz-chevron">▸</span>
+        <span class="hz-sum">${esc(sum)}</span>
       </div>
       <div class="hz-body">${healthEditorHTML(H.k,h)}</div>
     </div>`;
   }).join('');
-  // 展開/收合
-  box.querySelectorAll('.hz-hd').forEach(hd=>hd.addEventListener('click',()=>{
-    const k=hd.dataset.toggle;healthExpanded[k]=!healthExpanded[k];
-    hd.closest('.hz-card').classList.toggle('expanded',healthExpanded[k]);
-  }));
   wireHealthEditors(h);
 }
 function healthEditorHTML(k,h){
@@ -2361,13 +2398,24 @@ function healthEditorHTML(k,h){
   const addChip=grp=>`<span class="hz-tag hz-add" data-add="${grp}">＋ 新增</span>`;
   if(k==='sleep'){
     const s=h.sleep||{};
-    const stars=[[20,20],[46,12],[74,26],[104,16],[132,30],[158,14]].map(p=>`<span class="ss-star" style="left:${p[0]}px;top:${p[1]}px;"></span>`).join('');
-    return `<div class="sleep-scene" id="hz-sleep-scene"><div class="ss-sky">${stars}<span class="ss-sun">${fi('2600',26)}</span><span class="ss-moon">${fi('1f319',24)}</span></div>`+
-      `<span class="ss-bed">${fi('1f6cf',44)}</span><span class="ss-pup" id="hz-sleep-pup">${fi('1f436',30)}</span><span class="ss-zzz">Z z</span>`+
-      `<span class="ss-hint" id="hz-sleep-hint">把小狗拖到床上睡覺 💤</span></div>`+
-      `<div class="hz-row"><span class="hz-lbl">入睡</span>${timeSelHTML('hz-sleep-in',s.sleepTime||'23:30')}</div>`+
-      `<div class="hz-row"><span class="hz-lbl">起床</span>${timeSelHTML('hz-sleep-wake',s.wakeTime||'07:00')}</div>`+
-      `<div class="hz-row" style="gap:6px;"><button type="button" class="hz-tag" id="hz-sleep-fill">✓ 記錄這個睡眠時間</button><span id="hz-sleep-dur" style="font-size:12px;color:var(--ok);font-weight:700;"></span></div>`+
+    const stars=[[14,18],[38,10],[62,26],[82,14],[50,32]].map(p=>`<span class="ss-star" style="left:${p[0]}%;top:${p[1]}px;"></span>`).join('');
+    return `<div class="sleep-wrap">`+
+      `<div class="sleep-scene" id="hz-sleep-scene">`+
+        `<div class="ss-sky">${stars}<span class="ss-sun">${fi('2600',24)}</span><span class="ss-moon">${fi('1f319',22)}</span></div>`+
+        `<div class="ss-ground"></div>`+
+        `<span class="ss-bed">${fi('1f6cf',38)}</span>`+
+        `<span class="ss-dog"><img src="${PUPPY_IMG}" alt="狗勾" onerror="this.outerHTML='<span style=font-size:46px>🐶</span>'"/></span>`+
+        `<span class="ss-zzz">Z z</span>`+
+        `<span class="ss-cap" id="hz-sleep-cap">☀️ 早安</span>`+
+        `<span class="ss-tap">點我切換 ☀️ / 🌙</span>`+
+      `</div>`+
+      `<div class="sleep-ctrl">`+
+        `<div class="hz-row" style="margin:0;"><span class="hz-lbl">入睡</span>${timeSelHTML('hz-sleep-in',s.sleepTime||'23:30')}</div>`+
+        `<div class="hz-row" style="margin:0;"><span class="hz-lbl">起床</span>${timeSelHTML('hz-sleep-wake',s.wakeTime||'07:00')}</div>`+
+        `<button type="button" class="hz-tag" id="hz-sleep-fill" style="justify-content:center;">✓ 記錄睡眠時間</button>`+
+        `<span id="hz-sleep-dur" style="font-size:12px;color:var(--ok);font-weight:700;text-align:center;"></span>`+
+      `</div>`+
+    `</div>`+
       `<div style="font-size:11.5px;font-weight:700;color:var(--tc2);margin:4px 2px;">今早起來，好入睡嗎？</div>`+
       `<div class="hz-tags">${SLEEP_EASE.map(e=>`<span class="hz-tag${s.ease===e[0]?' on':''}" data-ease="${e[0]}">${e[1]}</span>`).join('')}</div>`+
       `<div style="font-size:11.5px;font-weight:700;color:var(--tc2);margin:4px 2px;">昨晚睡前主要在</div>`+
@@ -2376,8 +2424,9 @@ function healthEditorHTML(k,h){
   }
   if(k==='diet'){
     const d=h.diet||{};const tags=d.tags||[];
-    return `<div class="diet-plate" id="hz-diet-plate"><div class="dp-foods" id="hz-diet-foods"></div></div>`+
-      `<div class="hz-tags">${dietTags().map(t=>`<span class="hz-tag${tags.indexOf(t)>=0?' on':''}" data-diet="${esc(t)}">${fi(dietEmoji(t),15)} ${esc(t)}</span>`).join('')}${addChip('diet')}</div>`+
+    return `<div class="dog-say" id="hz-diet-say" style="display:none;"><img class="ds-av" src="${PUPPY_IMG}" onerror="this.style.display='none'"/><span class="ds-tx" id="hz-diet-say-tx"></span></div>`+
+      `<div class="diet-plate" id="hz-diet-plate"><div class="dp-foods" id="hz-diet-foods"></div></div>`+
+      `<div class="hz-tags">${dietTags().map(t=>`<span class="hz-tag${tags.indexOf(t)>=0?' on':''}" data-diet="${esc(t)}" data-dietchip="1">${fi(dietEmoji(t),15)} ${esc(t)}</span>`).join('')}${addChip('diet')}</div>`+
       noteHTML('hz-diet-note',d.note,'今天的飲食想多記什麼都可以');
   }
   if(k==='exercise'){
@@ -2391,14 +2440,16 @@ function healthEditorHTML(k,h){
     return `<div class="water-glass-wrap">
       <div class="water-glass" id="hz-water-glass">
         <div class="wg-fill" id="hz-water-fill"><div class="wg-wave"></div>
-          <span class="wg-swim duck" id="hz-water-duck" style="left:10px;">${fi('1f986',22)}</span>
-          <span class="wg-swim pup" id="hz-water-pup" style="left:44px;">${fi('1f436',20)}</span>
-          <span class="wg-bubble" style="left:22px;animation-delay:.3s;"></span>
-          <span class="wg-bubble" style="left:56px;animation-delay:1.4s;"></span>
+          <span class="wg-swim duck" style="left:8px;">${fi('1f986',20)}</span>
+          <span class="wg-swim chick" style="left:38px;">${fi('1f424',18)}</span>
+          <span class="wg-swim pup" style="left:60px;"><img src="${PUPPY_IMG}" alt="狗勾" onerror="this.outerHTML='<span style=font-size:20px>🐶</span>'"/></span>
+          <span class="wg-bubble" style="left:20px;animation-delay:.3s;"></span>
+          <span class="wg-bubble" style="left:62px;animation-delay:1.4s;"></span>
         </div>
       </div>
       <div class="wg-info">
-        <div class="wg-amt"><span id="hz-water-amt">0</span> <small>/ ${WATER_GOAL}ml</small></div>
+        <div class="wg-amt" id="hz-water-amtwrap"><span id="hz-water-amt">0</span> <small>/ ${WATER_GOAL}ml</small></div>
+        <div class="wg-goal-tag" id="hz-water-goal">🎉 達標囉！</div>
         <div class="hz-water-btns" style="margin-top:8px;">
           <button type="button" class="hz-wbtn minus" data-water="-250">−250</button>
           <button type="button" class="hz-wbtn" data-water="250">+250</button>
@@ -2426,105 +2477,229 @@ function addHealthOpt(grp){
 function wireHealthEditors(h){
   const box=document.getElementById('health-grid');
   box.querySelectorAll('.hz-add').forEach(el=>el.addEventListener('click',()=>addHealthOpt(el.dataset.add)));
-  // 睡眠
+  // ── 睡眠 ──
   const durEl=document.getElementById('hz-sleep-dur');
   function updDur(){const dm=sleepMinutes({sleepTime:timeSelGet('hz-sleep-in'),wakeTime:timeSelGet('hz-sleep-wake')});if(durEl)durEl.textContent=dm!=null?('睡了 '+fmtSleepDur(dm)):'';}
   box.querySelectorAll('#hz-sleep-in select,#hz-sleep-wake select').forEach(s=>s.addEventListener('change',updDur));
   updDur();
   const sf=document.getElementById('hz-sleep-fill');
-  if(sf)sf.addEventListener('click',()=>{h.sleep=h.sleep||{};h.sleep.sleepTime=timeSelGet('hz-sleep-in');h.sleep.wakeTime=timeSelGet('hz-sleep-wake');commitHealth();});
-  box.querySelectorAll('[data-ease]').forEach(el=>el.addEventListener('click',()=>{h.sleep=h.sleep||{};h.sleep.ease=(h.sleep.ease===el.dataset.ease)?'':el.dataset.ease;commitHealth();}));
-  box.querySelectorAll('[data-act]').forEach(el=>el.addEventListener('click',()=>{h.sleep=h.sleep||{};h.sleep.acts=h.sleep.acts||[];const a=el.dataset.act,i=h.sleep.acts.indexOf(a);if(i>=0)h.sleep.acts.splice(i,1);else h.sleep.acts.push(a);commitHealth();}));
-  const sn=document.getElementById('hz-sleep-note');
-  if(sn)sn.addEventListener('input',()=>{h.sleep=h.sleep||{};h.sleep.note=sn.value;healthNoteDebounced();});
-  // 飲食
-  box.querySelectorAll('[data-diet]').forEach(el=>el.addEventListener('click',()=>{
-    h.diet=h.diet||{tags:[],note:''};h.diet.tags=h.diet.tags||[];
-    const t=el.dataset.diet,i=h.diet.tags.indexOf(t);
-    if(i>=0)h.diet.tags.splice(i,1);else h.diet.tags.push(t);
+  if(sf)sf.addEventListener('click',()=>{h.sleep=h.sleep||{};h.sleep.sleepTime=timeSelGet('hz-sleep-in');h.sleep.wakeTime=timeSelGet('hz-sleep-wake');sf.textContent='✓ 已記錄';setTimeout(()=>{if(sf)sf.textContent='✓ 記錄睡眠時間';},1500);commitHealth();});
+  box.querySelectorAll('[data-ease]').forEach(el=>el.addEventListener('click',()=>{
+    h.sleep=h.sleep||{};h.sleep.ease=(h.sleep.ease===el.dataset.ease)?'':el.dataset.ease;
+    el.parentElement.querySelectorAll('[data-ease]').forEach(x=>x.classList.toggle('on',!!h.sleep.ease&&x.dataset.ease===h.sleep.ease));
     commitHealth();
   }));
+  box.querySelectorAll('[data-act]').forEach(el=>el.addEventListener('click',()=>{
+    h.sleep=h.sleep||{};h.sleep.acts=h.sleep.acts||[];const a=el.dataset.act,i=h.sleep.acts.indexOf(a);
+    if(i>=0)h.sleep.acts.splice(i,1);else h.sleep.acts.push(a);
+    el.classList.toggle('on',h.sleep.acts.indexOf(a)>=0);
+    commitHealth();
+  }));
+  const sn=document.getElementById('hz-sleep-note');
+  if(sn)sn.addEventListener('input',()=>{h.sleep=h.sleep||{};h.sleep.note=sn.value;healthNoteDebounced();});
+  wireSleepScene();
+  // ── 飲食（點＝切換、拖＝加入、盤上點＝拿走）──
+  box.querySelectorAll('[data-dietchip]').forEach(el=>el.addEventListener('click',()=>{
+    if(el.__suppressClick)return;
+    const has=((h.diet&&h.diet.tags)||[]).indexOf(el.dataset.diet)>=0;
+    dietSet(h,el.dataset.diet,!has);
+  }));
+  wireDietDrag(h);
   renderDietPlate(h);
   const dn=document.getElementById('hz-diet-note');
   if(dn)dn.addEventListener('input',()=>{h.diet=h.diet||{tags:[]};h.diet.note=dn.value;healthNoteDebounced();});
-  // 運動
+  // ── 運動 ──
   box.querySelectorAll('[data-extype]').forEach(el=>el.addEventListener('click',()=>{
     h.exercise=h.exercise||{};
     h.exercise.type=(h.exercise.type===el.dataset.extype)?'':el.dataset.extype;
+    el.parentElement.querySelectorAll('[data-extype]').forEach(x=>x.classList.toggle('on',!!h.exercise.type&&x.dataset.extype===h.exercise.type));
     commitHealth();
   }));
   box.querySelectorAll('[data-exdur]').forEach(el=>el.addEventListener('click',()=>{
     h.exercise=h.exercise||{};
     if(el.dataset.exdur==='custom'){const v=prompt('運動幾分鐘？');const n=parseInt(v,10);if(!isNaN(n)&&n>0)h.exercise.duration=n;}
     else h.exercise.duration=(+h.exercise.duration===+el.dataset.exdur)?0:+el.dataset.exdur;
+    document.querySelectorAll('#hz-ex-durs [data-exdur]').forEach(x=>x.classList.toggle('on',x.dataset.exdur!=='custom'&&+h.exercise.duration>0&&+x.dataset.exdur===+h.exercise.duration));
     commitHealth();
   }));
   const en=document.getElementById('hz-ex-note');
   if(en)en.addEventListener('input',()=>{h.exercise=h.exercise||{};h.exercise.note=en.value;healthNoteDebounced();});
-  // 喝水
+  // ── 喝水 ──
   box.querySelectorAll('[data-water]').forEach(el=>el.addEventListener('click',()=>{
     h.water=h.water||{amount:0};
     const before=+h.water.amount||0;
     h.water.amount=Math.max(0,before+(+el.dataset.water));
-    updateWaterGlass(h,h.water.amount>before);
-    commitHealth(false);
+    updateWaterGlass(h,h.water.amount-before);
+    commitHealth();
   }));
-  updateWaterGlass(h,false);
+  updateWaterGlass(h,0);
   const wn=document.getElementById('hz-water-note');
   if(wn)wn.addEventListener('input',()=>{h.water=h.water||{amount:0};h.water.note=wn.value;healthNoteDebounced();});
-  // 睡眠場景：小狗拖到床上睡覺
-  updateSleepScene(h);
-  wireSleepPupDrag(h);
 }
-// 🍽️ 餐盤：把選到的食物擺上盤子（點盤上的食物可移除）
-function dietPlateSlots(){return [[59,44],[36,66],[82,66],[24,42],[94,42],[59,84],[42,24],[76,24],[59,104]];}
+
+// ── 🌙 睡眠場景：純裝飾，點一下切換白天/夜晚（不記憶，重整回白天）──
+function wireSleepScene(){
+  const sc=document.getElementById('hz-sleep-scene');if(!sc)return;
+  const cap=document.getElementById('hz-sleep-cap');
+  const apply=()=>{if(cap)cap.textContent=sc.classList.contains('night')?'🌙 晚安':'☀️ 早安';};
+  apply();
+  sc.addEventListener('click',()=>{sc.classList.toggle('night');apply();});
+}
+
+// ── 🍽️ 餐盤 ──
+// 加/移一個飲食標籤：同步資料、晶片 on 狀態、盤子、狗勾說話，最後 commit（不重建整格）
+function dietSet(h,tag,wantOn){
+  h.diet=h.diet||{tags:[],note:''};h.diet.tags=h.diet.tags||[];
+  const i=h.diet.tags.indexOf(tag),has=i>=0;
+  if(wantOn===has)return;
+  if(wantOn)h.diet.tags.push(tag);else h.diet.tags.splice(i,1);
+  document.querySelectorAll('#health-grid [data-dietchip]').forEach(c=>{if(c.dataset.diet===tag)c.classList.toggle('on',wantOn);});
+  if(wantOn){dietPlateAdd(h,tag);dietReact(tag);}else dietPlateRemove(tag);
+  commitHealth();
+}
+function dietFoodPos(i){const a=i*137.508*Math.PI/180,r=Math.min(62,26*Math.sqrt(i));return [75+r*Math.cos(a),75+r*Math.sin(a)];}
+const DP_FOOD_SZ=64; // 餐盤食物 emoji 尺寸（約舊版兩倍，允許重疊）
+function makeFoodEl(h,tag,idx,sz){
+  const p=dietFoodPos(idx);
+  const el=document.createElement('span');
+  el.className='dp-food';el.dataset.plate=tag;el.title=tag+'（點一下拿走）';
+  el.style.left=p[0]+'px';el.style.top=p[1]+'px';
+  el.innerHTML='<span class="dpf-in" style="--fd:'+(2.8+Math.random()*1.7).toFixed(2)+'s;--dl:'+(Math.random()*1.6).toFixed(2)+'s;">'+fi(dietEmoji(tag),sz)+'</span>';
+  el.addEventListener('click',()=>dietSet(h,tag,false));
+  return el;
+}
+function dietEmptyHTML(){return '<div class="dp-empty">'+fi('1f37d',34)+'<br>空盤子～點或拖食物進來</div>';}
 function renderDietPlate(h){
   const box=document.getElementById('hz-diet-foods');if(!box)return;
   const tags=((h.diet||{}).tags)||[];
-  if(!tags.length){box.innerHTML='<div class="dp-empty">'+fi('1f37d',30)+'<br>空盤子，點下面加食物</div>';return;}
-  const slots=dietPlateSlots();const sz=tags.length<=3?32:(tags.length<=6?27:23);
-  box.innerHTML=tags.slice(0,9).map((t,i)=>{const p=slots[i]||[59,59];return '<span class="dp-food" data-plate="'+esc(t)+'" style="left:'+p[0]+'px;top:'+p[1]+'px;" title="'+esc(t)+'（點一下拿走）">'+fi(dietEmoji(t),sz)+'</span>';}).join('');
-  const plate=document.getElementById('hz-diet-plate');if(plate){plate.classList.remove('wobble');void plate.offsetWidth;plate.classList.add('wobble');}
-  box.querySelectorAll('[data-plate]').forEach(el=>el.addEventListener('click',()=>{
-    const t=el.dataset.plate,arr=(h.diet&&h.diet.tags)||[],i=arr.indexOf(t);
-    if(i>=0){el.classList.add('leaving');arr.splice(i,1);setTimeout(()=>commitHealth(),240);}
-  }));
+  box.innerHTML='';
+  if(!tags.length){box.innerHTML=dietEmptyHTML();return;}
+  tags.slice(0,12).forEach((t,i)=>box.appendChild(makeFoodEl(h,t,i,DP_FOOD_SZ)));
 }
-// 💧 玻璃杯：水位＝喝的量／目標，小狗小鴨浮在水面
-function updateWaterGlass(h,animate){
+function dietPlateAdd(h,tag){
+  const box=document.getElementById('hz-diet-foods');if(!box)return;
+  const empty=box.querySelector('.dp-empty');if(empty)box.innerHTML='';
+  const idx=box.querySelectorAll('.dp-food').length;
+  box.appendChild(makeFoodEl(h,tag,idx,DP_FOOD_SZ));
+  const plate=document.getElementById('hz-diet-plate');if(plate){plate.classList.remove('wobble');void plate.offsetWidth;plate.classList.add('wobble');}
+}
+function dietPlateRemove(tag){
+  const box=document.getElementById('hz-diet-foods');if(!box)return;
+  const el=[...box.querySelectorAll('.dp-food')].find(x=>x.dataset.plate===tag);
+  if(!el)return;
+  el.classList.add('leaving');
+  setTimeout(()=>{el.remove();if(!box.querySelector('.dp-food'))box.innerHTML=dietEmptyHTML();},280);
+}
+// 狗勾說話＋盤上噴發（依食物類別）
+const DIET_MSG={
+  '原型食物為主':['狗勾：「食物吃原型，你就是我的<b>理想型</b>！」','good'],
+  '麵包/貝果':['狗勾：「麵包香香的～<b>吃一點點剛剛好</b>！」','carb'],
+  '飯':['狗勾：「有好好吃飯，狗勾最安心了 🍚」','carb'],
+  '麵':['狗勾：「呼嚕呼嚕吃麵，暖暖的最幸福～」','carb'],
+  '零食':['狗勾：「零食是快樂小點心，<b>享受當下</b> 🍰」','snack'],
+  '含糖飲料':['狗勾：「甜甜喝一口，開心一下下～ 🥤」','drink'],
+  '無糖飲料':['狗勾：「無糖也超讚，補水又清爽！」','drink'],
+  '鮮奶茶':['狗勾：「鮮奶茶暖呼呼，好療癒 🧋」','drink'],
+  '外食':['狗勾：「外食也是好好吃飯，辛苦了 🍟」','out']
+};
+function dietInfo(tag){
+  if(DIET_MSG[tag])return {text:DIET_MSG[tag][0],cat:DIET_MSG[tag][1]};
+  if(/茶|飲|奶|咖啡|拿鐵|果汁|可樂|汽水|酒/.test(tag))return {text:'狗勾：「'+esc(tag)+'，喝一杯開心一下～」',cat:'drink'};
+  if(/餅|糕|糖|甜|冰|巧克力|洋芋|薯|點心|布丁|甜點/.test(tag))return {text:'狗勾：「'+esc(tag)+'，享受當下最重要！」',cat:'snack'};
+  return {text:'狗勾：「'+esc(tag)+'，有記錄下來超棒的！」',cat:'good'};
+}
+function dietReact(tag){const info=dietInfo(tag);showDogSay(info.text);plateBurst(info.cat);}
+let _dogSayT=null;
+function showDogSay(html){
+  const bub=document.getElementById('hz-diet-say'),tx=document.getElementById('hz-diet-say-tx');
+  if(!bub||!tx)return;
+  tx.innerHTML=html;
+  bub.style.display='flex';void bub.offsetWidth;bub.classList.add('show');
+  clearTimeout(_dogSayT);
+  _dogSayT=setTimeout(()=>{bub.classList.remove('show');setTimeout(()=>{if(bub)bub.style.display='none';},300);},3600);
+}
+function plateBurst(cat){
+  const plate=document.getElementById('hz-diet-plate');if(!plate)return;
+  const sets={drink:['1f496','1f3b5','2728','1f973','1f942'],good:['1f331','2728','1f49a','1f60b'],snack:['1f36c','2728','1f60a','1f495'],carb:['2728','1f60a','1f35a'],out:['2728','1f44d','1f60a']};
+  const arr=sets[cat]||sets.good,n=cat==='drink'?8:4;
+  for(let i=0;i<n;i++){
+    const s=document.createElement('span');s.className='dp-burst';
+    s.style.setProperty('--bx',(Math.random()*130-65).toFixed(0)+'px');
+    s.style.setProperty('--by',(-28-Math.random()*46).toFixed(0)+'px');
+    s.style.setProperty('--br',(Math.random()*70-35).toFixed(0)+'deg');
+    s.style.animationDelay=(i*0.05).toFixed(2)+'s';
+    s.innerHTML=fi(arr[i%arr.length],cat==='drink'?20:17);
+    plate.appendChild(s);
+    setTimeout(()=>s.remove(),1050+i*55);
+  }
+}
+// 拖曳：從飲食晶片拖到餐盤上放開＝加入（共用拖曳狀態＋window 收尾，避免殘留 clone）
+let _dpDrag=null;
+function _dpClean(){document.querySelectorAll('.dp-drag-clone').forEach(x=>x.remove());const p=document.getElementById('hz-diet-plate');if(p)p.classList.remove('drop');}
+function _dpMove(e){
+  const d=_dpDrag;if(!d)return;
+  const dx=e.clientX-d.sx,dy=e.clientY-d.sy;
+  if(!d.moved){if(Math.hypot(dx,dy)<8)return;d.moved=true;d.clone=document.createElement('span');d.clone.className='dp-drag-clone';d.clone.innerHTML=fi(dietEmoji(d.tag),60);document.body.appendChild(d.clone);}
+  d.clone.style.left=e.clientX+'px';d.clone.style.top=e.clientY+'px';
+  const plate=document.getElementById('hz-diet-plate');
+  if(plate){const r=plate.getBoundingClientRect();plate.classList.toggle('drop',e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom);}
+}
+function _dpUp(e){
+  const d=_dpDrag;if(!d)return;_dpDrag=null;
+  const plate=document.getElementById('hz-diet-plate');
+  if(d.moved){
+    let over=false;if(plate){const r=plate.getBoundingClientRect();over=e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;}
+    if(over&&d.h&&((d.h.diet&&d.h.diet.tags)||[]).indexOf(d.tag)<0)dietSet(d.h,d.tag,true);
+    if(d.chip){d.chip.__suppressClick=true;setTimeout(()=>{if(d.chip)d.chip.__suppressClick=false;},60);}
+  }
+  _dpClean();
+}
+let _dpWired=false;
+function wireDietDrag(h){
+  _dpClean();
+  if(!_dpWired){window.addEventListener('pointermove',_dpMove);window.addEventListener('pointerup',_dpUp);window.addEventListener('pointercancel',_dpUp);_dpWired=true;}
+  document.querySelectorAll('#health-grid [data-dietchip]').forEach(chip=>{
+    chip.addEventListener('pointerdown',e=>{
+      if(e.pointerType==='mouse'&&e.button!==0)return;
+      _dpDrag={tag:chip.dataset.diet,chip:chip,clone:null,moved:false,sx:e.clientX,sy:e.clientY,h:h};
+    });
+  });
+}
+// ── 💧 玻璃杯：水位＝喝的量／目標；小狗小鴨小雞游泳；達標噴發 ──
+function updateWaterGlass(h,delta){
   const glass=document.getElementById('hz-water-glass');if(!glass)return;
   const w=+((h.water||{}).amount)||0,pct=Math.max(0,Math.min(100,w/WATER_GOAL*100)),full=w>=WATER_GOAL;
   const fill=document.getElementById('hz-water-fill');
   if(fill){fill.style.height=pct+'%';fill.classList.toggle('full',full);fill.style.setProperty('--wave',full?'#5DCAA5':'#7ecbf0');}
   const amtEl=document.getElementById('hz-water-amt');if(amtEl)amtEl.textContent=w;
-  const card=glass.closest('.hz-card');
-  if(card){card.classList.toggle('on',w>0);const sum=card.querySelector('.hz-sum');if(sum)sum.textContent=w?(w+' / '+WATER_GOAL+'ml'):'點開記錄';}
-  if(animate){const s=document.createElement('span');s.className='wg-splash';s.style.setProperty('--sx',(Math.random()*30-15)+'px');glass.appendChild(s);setTimeout(()=>{s.remove();},600);}
+  const amtWrap=document.getElementById('hz-water-amtwrap');if(amtWrap)amtWrap.classList.toggle('done',full);
+  const goal=document.getElementById('hz-water-goal');if(goal)goal.classList.toggle('show',full);
+  if(delta>0){
+    const s=document.createElement('span');s.className='wg-splash';s.style.setProperty('--sx',(Math.random()*30-15)+'px');glass.appendChild(s);setTimeout(()=>s.remove(),600);
+    if((w-delta)<WATER_GOAL&&w>=WATER_GOAL)waterCelebrate(glass);
+  }
 }
-// 🌙 睡眠場景：有記錄→夜晚＋小狗上床；小狗可拖到床上觸發記錄
-function updateSleepScene(h){
-  const sc=document.getElementById('hz-sleep-scene');if(!sc)return;
-  const s=h.sleep||{},asleep=!!s.sleepTime;
-  sc.classList.toggle('night',asleep);sc.classList.toggle('asleep',asleep);
-  const hint=document.getElementById('hz-sleep-hint');
-  if(hint)hint.textContent=asleep?('晚安 · '+(s.sleepTime||'?')+' → '+(s.wakeTime||'?')):'把小狗拖到床上睡覺 💤';
-}
-function wireSleepPupDrag(h){
-  const pup=document.getElementById('hz-sleep-pup'),sc=document.getElementById('hz-sleep-scene');
-  if(!pup||!sc)return;
-  let drag=false,ox=0,oy=0;
-  pup.addEventListener('pointerdown',e=>{if(sc.classList.contains('asleep'))return;drag=true;try{pup.setPointerCapture(e.pointerId);}catch(_){}ox=e.clientX;oy=e.clientY;pup.style.transition='none';e.preventDefault();});
-  pup.addEventListener('pointermove',e=>{if(!drag)return;pup.style.transform='translate('+(e.clientX-ox)+'px,'+(e.clientY-oy)+'px)';});
-  const end=e=>{if(!drag)return;drag=false;pup.style.transition='';
-    const scr=sc.getBoundingClientRect(),pr=pup.getBoundingClientRect();
-    const overBed=(pr.left+pr.width/2)>scr.left+scr.width*0.5;
-    pup.style.transform='';
-    if(overBed){h.sleep=h.sleep||{};h.sleep.sleepTime=timeSelGet('hz-sleep-in');h.sleep.wakeTime=timeSelGet('hz-sleep-wake');commitHealth();}
-  };
-  pup.addEventListener('pointerup',end);pup.addEventListener('pointercancel',end);
+function waterCelebrate(glass){
+  const r=glass.getBoundingClientRect();
+  const wrap=document.createElement('div');wrap.className='wg-confetti';
+  wrap.style.left=(r.left+r.width/2)+'px';wrap.style.top=r.top+'px';
+  const colors=['#F6C453','#EF6F6C','#5DCAA5','#7EC8E3','#C08CE0','#FF9BB3'];
+  for(let i=0;i<28;i++){
+    const c=document.createElement('span');c.className='wg-conf';
+    c.style.background=colors[i%colors.length];
+    c.style.left=(Math.random()*44-22)+'px';
+    c.style.setProperty('--cx',(Math.random()*170-85).toFixed(0)+'px');
+    c.style.setProperty('--cy',(90+Math.random()*150).toFixed(0)+'px');
+    c.style.setProperty('--cd',(1.1+Math.random()*0.9).toFixed(2)+'s');
+    c.style.animationDelay=(Math.random()*0.3).toFixed(2)+'s';
+    wrap.appendChild(c);
+  }
+  document.body.appendChild(wrap);
+  softToast('🎉 喝滿 '+WATER_GOAL+'ml 達標！狗勾幫你灑花～',3200);
+  setTimeout(()=>wrap.remove(),2500);
 }
 let _healthNoteT=null;
-function healthNoteDebounced(){clearTimeout(_healthNoteT);_healthNoteT=setTimeout(()=>commitHealth(false),900);}
+function healthNoteDebounced(){clearTimeout(_healthNoteT);_healthNoteT=setTimeout(()=>commitHealth(),900);}
 
 // ── TOMORROW TDL ──────────────────────────────────────
 let tdlRows=S.tomorrowTDL.length?S.tomorrowTDL.map(r=>({...r,confirmed:r.confirmed||false})):[{theme:'',task:'',confirmed:false},{theme:'',task:'',confirmed:false},{theme:'',task:'',confirmed:false}];
@@ -3662,7 +3837,7 @@ function puppyHTML(size){
   <div class="pfx pfx-tea" style="position:absolute;top:2px;right:-26px;display:none;animation:bobY 2.2s ease-in-out infinite;">${fi('1f375',22)}</div>
   <div class="pfx pfx-cry" style="position:absolute;top:-24px;left:50%;transform:translateX(-50%);display:none;">${fi('1f62d',22)}</div>
   <div class="pfx pfx-bed" style="position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);display:none;"><span style="font-size:${Math.round(size*0.63)}px;">🛏️</span></div>
-  <img class="main puppy-img" src="puppy.png" width="${size}" height="${size}" style="display:block;animation:pBreathe 2.2s ease-in-out infinite;" onerror="this.outerHTML='<span style=font-size:${Math.round(size*0.8)}px>🐶</span>'"/>`;
+  <img class="main puppy-img" src="${PUPPY_IMG}" width="${size}" height="${size}" style="display:block;animation:pBreathe 2.2s ease-in-out infinite;" onerror="this.outerHTML='<span style=font-size:${Math.round(size*0.8)}px>🐶</span>'"/>`;
 }
 function initPuppy(wrap,stage,size){
   wrap.innerHTML=puppyHTML(size);
