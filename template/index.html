@@ -763,11 +763,22 @@ body.viewer-mode .neo-chip,body.viewer-mode .sticky-check,body.viewer-mode .habi
 .wg-swim{position:absolute;top:-13px;display:inline-block;}
 .wg-swim.duck{animation:swimA 3.4s ease-in-out infinite;}
 .wg-swim.chick{animation:swimC 3.0s ease-in-out infinite;}
-.wg-swim.pup{top:-16px;animation:swimB 3.9s ease-in-out infinite;}
-.wg-swim.pup img{width:24px;height:24px;object-fit:contain;filter:drop-shadow(0 1px 1px rgba(0,0,0,.2));}
+/* 小狗在水面上游泳：左右來回＋上下浮沉＋轉身，還會踢出水花 */
+.wg-swim.pup{top:-17px;animation:swimDog 5.2s ease-in-out infinite;}
+.wg-swim.pup img{width:26px;height:26px;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,.22));animation:dogPaddle 1.05s ease-in-out infinite;}
+.wg-swim.pup::after{content:'';position:absolute;left:-7px;bottom:2px;width:12px;height:5px;border-radius:50%;
+  background:rgba(255,255,255,.75);opacity:0;animation:dogWake 1.05s ease-out infinite;}
 @keyframes swimA{0%,100%{transform:translateX(0) rotate(-3deg);}50%{transform:translateX(26px) rotate(3deg);}}
-@keyframes swimB{0%,100%{transform:translateX(22px) rotate(2deg);}50%{transform:translateX(-4px) rotate(-2deg);}}
 @keyframes swimC{0%,100%{transform:translateX(4px) rotate(3deg);}50%{transform:translateX(34px) rotate(-3deg);}}
+@keyframes swimDog{
+  0%   {transform:translateX(0) scaleX(1);}
+  45%  {transform:translateX(-38px) scaleX(1);}
+  50%  {transform:translateX(-38px) scaleX(-1);}
+  95%  {transform:translateX(0) scaleX(-1);}
+  100% {transform:translateX(0) scaleX(1);}
+}
+@keyframes dogPaddle{0%,100%{transform:translateY(0) rotate(-4deg);}50%{transform:translateY(-3px) rotate(4deg);}}
+@keyframes dogWake{0%{opacity:.6;transform:scale(.5);}70%{opacity:0;transform:scale(1.5) translateX(-5px);}100%{opacity:0;}}
 .wg-bubble{position:absolute;bottom:6px;width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.7);animation:bubbleUp 2.6s ease-in infinite;}
 @keyframes bubbleUp{0%{bottom:6px;opacity:0;}20%{opacity:.8;}100%{bottom:100%;opacity:0;}}
 .wg-info{flex:1;min-width:0;}
@@ -871,6 +882,15 @@ body.viewer-mode .neo-chip,body.viewer-mode .sticky-check,body.viewer-mode .habi
 .hard-pill.hard-mid{background:rgba(var(--secondary-rgb),.18);color:var(--secondary);}
 .hard-pill.hard-hi{background:rgba(216,130,60,.2);color:#C06A28;}
 .xnote{font-size:10.5px;color:var(--tc3);margin-top:6px;line-height:1.5;}
+/* TDL 順延 */
+.carry-pill{display:inline-block;margin-left:6px;padding:0 6px;border-radius:999px;background:rgba(var(--secondary-rgb),.2);color:var(--secondary);font-size:10px;font-weight:800;font-family:'Baloo 2',sans-serif;vertical-align:1px;}
+.carry-row{display:flex;align-items:center;gap:8px;padding:6px 2px;border-bottom:1px dashed rgba(var(--primary-rgb),.1);}
+.carry-n{flex:0 0 auto;min-width:38px;text-align:center;padding:2px 7px;border-radius:999px;background:rgba(var(--secondary-rgb),.18);color:var(--secondary);font-family:'Baloo 2',sans-serif;font-size:11px;font-weight:800;}
+.carry-row.ok .carry-n{background:rgba(var(--tertiary-rgb),.35);color:var(--ok);}
+.carry-t{flex:1;min-width:0;font-size:12.5px;color:var(--tc2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.carry-t b{color:var(--tc);}
+.carry-s{flex:0 0 auto;font-size:10.5px;color:var(--tc3);font-weight:700;}
+.carry-row.ok .carry-s{color:var(--ok);}
 /* 睡眠時間軸（橫式：一天一列，看得懂幾點睡幾點起） */
 .slp-legend{display:flex;gap:10px;flex-wrap:wrap;font-size:10.5px;color:var(--tc3);margin-top:7px;}
 .slp-legend i{font-style:normal;}
@@ -1214,6 +1234,7 @@ button{-webkit-tap-highlight-color:transparent;}
 
 <div class="rd-zone">🗒 這週明細</div>
 <div class="gcard" id="wk-tdldetail-card" style="display:none;"><div class="sec-hd">🗒 這週 TDL 明細</div><div id="wk-tdldetail"></div></div>
+<div class="gcard" id="wk-carry-card" style="display:none;"><div class="sec-hd">⏩ 順延觀察</div><div id="wk-carry"></div></div>
 <div id="week-entries" class="rd-entries"></div>
 <div class="rd-pair">
   <div class="gcard" id="wk-keyword-card" style="display:none;"><div class="sec-hd">💭 這週常出現的詞</div><div id="wk-keywords"></div></div>
@@ -1263,6 +1284,8 @@ button{-webkit-tap-highlight-color:transparent;}
   <div class="gcard" id="mo-exercise-card" style="display:none;"><div class="sec-hd">🏃 運動</div><div id="mo-exercise"></div></div>
   <div class="gcard" id="mo-water-card" style="display:none;"><div class="sec-hd">💧 喝水</div><div id="mo-water"></div></div>
 </div>
+
+<div class="gcard" id="mo-carry-card" style="display:none;"><div class="sec-hd">⏩ 順延觀察</div><div id="mo-carry"></div></div>
 
 <div class="rd-zone">🗒 這個月明細</div>
 <div id="month-week-summaries" class="rd-entries"></div>
@@ -1604,7 +1627,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v87';
+const APP_VER='v88';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
@@ -1885,7 +1908,8 @@ function buildTdlSnapshot(items,doneMap){
   return (items||[]).map((r,i)=>({
     theme:((r&&r.theme)||'').trim(),
     task:((r&&r.task)||'').trim(),
-    done:!!dm['t'+i]
+    done:!!dm['t'+i],
+    c:Math.max(0,+((r&&r.c)||0)||0) // c＝這項被順延過幾次
   })).filter(x=>x.theme||x.task);
 }
 
@@ -1912,15 +1936,19 @@ function rolloverToToday(){
   if(S.lastPlant===t||S.lastStreak===t){S.dayKey=t;sv(S);return true;}
   S.tdlHist=S.tdlHist||{};
   if(S.dayKey&&Object.keys(S.tdlDone||{}).length)S.tdlHist[S.dayKey]=S.tdlDone;
+  // 昨天沒打勾的 TDL → 自動順延到今天，並把順延次數 +1（一直沒做就會一直累加）
+  const _snap=S.dayKey?buildTdlSnapshot(S.todayTDL,S.tdlDone):[];
+  const _carry=_snap.filter(x=>!x.done).map(x=>({theme:x.theme,task:x.task,c:(+x.c||0)+1}));
   // 先把舊那天的紀錄落地到它自己的 entry：下面就會把 checked/diary/todayTDL 全部清空，
   // 沒按過「種下今天」的那天，這些資料會就此消失。已有內容的欄位不覆蓋
   // （已種下的那天，entry 裡的才是權威版本）
   if(S.dayKey){
-    const _snap=buildTdlSnapshot(S.todayTDL,S.tdlDone);
     const _ck=Object.keys(S.checked||{});
     const _dy=S.diary||{};
     const _hasDiary=!!(_dy.hl||_dy.rf||_dy.gr||_dy.quote);
-    if(_snap.length||_ck.length||_hasDiary){
+    // 只填了健康、其他都沒動的那天，也要落地——不然下面 S.health 一歸零就永遠不見了
+    const _hasHealth=!!(S.health&&HEALTH.some(H=>healthHas(S.health,H.k)));
+    if(_snap.length||_ck.length||_hasDiary||_hasHealth){
       const _en=getOrCreateEntry(S.dayKey);
       if(_snap.length&&!(_en.tdlItems&&_en.tdlItems.length)){
         _en.tdlItems=_snap;_en.tdlTotal=_snap.length;_en.tdlDone=_snap.filter(x=>x.done).length;
@@ -1936,7 +1964,11 @@ function rolloverToToday(){
   const _hk=Object.keys(S.tdlHist).sort();
   while(_hk.length>60){delete S.tdlHist[_hk.shift()];}
   S.checked={};S.diary={hl:'',rf:'',gr:'',quote:''};S.todayPhotos=[];
-  S.todayTDL=S.tomorrowTDL||[];S.tomorrowTDL=[];S.tdlDone={};
+  // 今天的清單＝昨天排給今天的計畫 ＋ 昨天沒做完自動順延過來的（不重複）
+  const _plan=(S.tomorrowTDL||[]).map(r=>({theme:r.theme,task:r.task,c:+((r&&r.c)||0)||0}));
+  const _same=(a,b)=>(a.task||'').trim()===(b.task||'').trim()&&(a.theme||'').trim()===(b.theme||'').trim();
+  S.todayTDL=_plan.concat(_carry.filter(cy=>!_plan.some(p=>_same(p,cy))));
+  S.tomorrowTDL=[];S.tdlDone={};
   S.health=emptyHealth(); // 新的一天，健康記錄歸零
   S.dayKey=t;sv(S);
   return true;
@@ -2772,7 +2804,15 @@ function wireHealthEditors(h){
   const durEl=document.getElementById('hz-sleep-dur');
   function updDur(){const dm=sleepMinutes({sleepTime:timeSelGet('hz-sleep-in'),wakeTime:timeSelGet('hz-sleep-wake')});
     if(durEl)durEl.innerHTML=dm!=null?('睡了'+fi('1f4a4',15)+fmtSleepDur(dm)):'';}
-  box.querySelectorAll('#hz-sleep-in select,#hz-sleep-wake select').forEach(s=>s.addEventListener('change',updDur));
+  // 已經記錄過的那天，改時間就直接存起來——不然換到別天再回來會發現改的值不見了
+  box.querySelectorAll('#hz-sleep-in select,#hz-sleep-wake select').forEach(s=>s.addEventListener('change',()=>{
+    updDur();
+    const sl=h.sleep||{};
+    if(sl.sleepTime||sl.wakeTime){
+      h.sleep=sl;sl.sleepTime=timeSelGet('hz-sleep-in');sl.wakeTime=timeSelGet('hz-sleep-wake');
+      commitHealth();
+    }
+  }));
   updDur();
   const sf=document.getElementById('hz-sleep-fill');
   if(sf)sf.addEventListener('click',()=>{h.sleep=h.sleep||{};h.sleep.sleepTime=timeSelGet('hz-sleep-in');h.sleep.wakeTime=timeSelGet('hz-sleep-wake');sf.textContent='✓ 已記錄';setTimeout(()=>{if(sf)sf.textContent='✓ 記錄';},1500);commitHealth();});
@@ -3445,7 +3485,7 @@ function periodStats(dates){
         const th=((x.theme||'')+'').trim()||'未分類';
         if(!themeAgg[th])themeAgg[th]={done:0,total:0};
         themeAgg[th].total++;if(x.done)themeAgg[th].done++;
-        tdlDetail.push({date:ds,theme:th,task:(x.task||''),done:!!x.done});
+        tdlDetail.push({date:ds,theme:th,task:(x.task||''),done:!!x.done,c:Math.max(0,+x.c||0)});
       });
     }else if(tdlT){tdlNoDetailDays++;} // 舊資料只有數量、沒有明細
     if(dia&&(dia.hl||dia.rf||dia.gr))diaryDays++;
@@ -3461,7 +3501,17 @@ function periodStats(dates){
     const h=(ds===curDay())?S.health:((S.entries.find(x=>x.date===ds)||{}).health);
     if(h&&HEALTH.some(H=>healthHas(h,H.k)))healthDays.push({ds,h});
   });
-  return{days,habits,exp:habits*10+days*20,tdlDoneSum,tdlTotalSum,habitCounts,diaryHighlights,diaryDays,themeAgg,tdlDetail,tdlNoDetailDays,healthDays};
+  // 順延分析：同一件事被往後推了幾次、最後到底有沒有做掉
+  const carryMap={};
+  tdlDetail.forEach(x=>{
+    const key=(x.theme||'')+'␟'+(x.task||'');
+    if(!carryMap[key])carryMap[key]={theme:x.theme,task:x.task,max:0,seen:0,done:false};
+    const o=carryMap[key];
+    o.max=Math.max(o.max,+x.c||0);o.seen++;if(x.done)o.done=true;
+  });
+  const carryList=Object.values(carryMap).filter(o=>o.max>0).sort((a,b)=>b.max-a.max);
+  return{days,habits,exp:habits*10+days*20,tdlDoneSum,tdlTotalSum,habitCounts,diaryHighlights,diaryDays,themeAgg,tdlDetail,tdlNoDetailDays,healthDays,
+    carryList,carryDone:carryList.filter(o=>o.done),carryPending:carryList.filter(o=>!o.done)};
 }
 // 「複製給 Claude」用的 TDL 總結：整體達成率＋各主題達成率
 function tdlSummaryLines(st,label){
@@ -3477,6 +3527,11 @@ function tdlSummaryLines(st,label){
     rows.forEach(r=>lines.push(`    ${r.theme} ${r.done}/${r.total}（${Math.round(r.done/r.total*100)}%）`));
   }
   if(st.tdlNoDetailDays)lines.push(`  ※另有 ${st.tdlNoDetailDays} 天是舊資料，只有完成數量、沒有逐項明細，未列入主題統計`);
+  const cl=st.carryList||[],cp=st.carryPending||[];
+  if(cl.length){
+    lines.push(`  ⏩ 順延：有 ${cl.length} 件事被往後移過（完成 ${(st.carryDone||[]).length} 件、still 等待 ${cp.length} 件）`);
+    cp.slice(0,6).forEach(o=>lines.push(`    ⏩${o.max} ${o.theme&&o.theme!=='未分類'?o.theme+'：':''}${o.task||'（未填目標）'}`));
+  }
   lines.push('');
   return lines;
 }
@@ -3522,9 +3577,35 @@ function renderTdlDetail(cardId,boxId,st){
       list.map(x=>{
         const th=String(x.theme||'').replace(/</g,'&lt;');
         const tk=String(x.task||'').replace(/</g,'&lt;');
-        return`<div class="tdl-det-row${x.done?'':' undone'}"><span class="mk">${x.done?'✅':'⬜'}</span><span>${th&&th!=='未分類'?`<b class="th">${th}：</b>`:''}${tk||'（未填目標）'}</span></div>`;
+        const cb=(+x.c||0)>0?`<span class="carry-pill" title="被順延 ${x.c} 次">⏩${x.c}</span>`:'';
+        return`<div class="tdl-det-row${x.done?'':' undone'}"><span class="mk">${x.done?'✅':'⬜'}</span><span>${th&&th!=='未分類'?`<b class="th">${th}：</b>`:''}${tk||'（未填目標）'}${cb}</span></div>`;
       }).join('')+`</div>`;
   }).join('');
+}
+// 順延觀察：一直被往後推的事，值得被看見（不責備，只是攤開來看）
+function renderCarry(cardId,boxId,st,label){
+  const card=document.getElementById(cardId),box=document.getElementById(boxId);
+  if(!card||!box)return;
+  const list=st.carryList||[],pend=st.carryPending||[],done=st.carryDone||[];
+  if(!list.length){card.style.display='none';return;}
+  card.style.display='';
+  let h='<div class="witness-line">⏩ 這'+label+'有 <b>'+list.length+'</b> 件事被往後移過'+
+    (done.length?'，其中 <b>'+done.length+'</b> 件後來還是完成了':'')+'。順延不是失敗，是它還在等一個對的時機。</div>';
+  const row=(o,cls)=>'<div class="carry-row'+(cls||'')+'">'+
+    '<span class="carry-n">⏩'+o.max+'</span>'+
+    '<span class="carry-t">'+(o.theme&&o.theme!=='未分類'?'<b>'+esc(o.theme)+'：</b>':'')+esc(o.task||'（未填目標）')+'</span>'+
+    '<span class="carry-s">'+(o.done?'✅ 完成':'still…')+'</span></div>';
+  if(pend.length){
+    h+='<div style="font-size:12px;font-weight:700;color:var(--tc2);margin:10px 2px 5px;">還在等的（順延最多的排前面）</div>';
+    h+=pend.slice(0,8).map(o=>row(o,'')).join('');
+  }
+  if(done.length){
+    h+='<div style="font-size:12px;font-weight:700;color:var(--tc2);margin:10px 2px 5px;">推遲之後還是做到了 💛</div>';
+    h+=done.slice(0,6).map(o=>row(o,' ok')).join('');
+  }
+  const worst=pend[0];
+  if(worst&&worst.max>=3)h+='<div class="xnote">💭「'+esc(worst.task||'')+'」被移了 '+worst.max+' 次——是它太大了，還是其實現在不需要它？拆小一點，或放它走，都可以。</div>';
+  box.innerHTML=h;
 }
 // 溫柔見證小結
 function witnessText(cur,label){
@@ -3870,6 +3951,7 @@ function renderWeekly(){
   renderReviewDonut('wk-donut',cur);
   renderThemeRates('wk-theme-card','wk-themes',cur);
   renderTdlDetail('wk-tdldetail-card','wk-tdldetail',cur);
+  renderCarry('wk-carry-card','wk-carry',cur,'週');
   renderFruitProgress('wk-fruit-progress');
   renderHabitGrid('wk-habitgrid',dates);
   renderIdentityProgress('wk-identity',cur.habitCounts);
@@ -4009,6 +4091,7 @@ function renderMonthly(){
 
   renderInsights('mo-insight-card','mo-insight',cur,prev,dates,'個月',{weekday:{counts:weekdayCounts,totals:weekdayTotals}});
   renderHealthReview(cur,'mo',dates);
+  renderCarry('mo-carry-card','mo-carry',cur,'個月');
   fixRdPairs('page-month');
 
   const weeks=[];for(let i=0;i<dates.length;i+=7)weeks.push(dates.slice(i,i+7));
