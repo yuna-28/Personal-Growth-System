@@ -1627,7 +1627,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v88';
+const APP_VER='v89';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
@@ -2124,7 +2124,10 @@ async function loadCloud(){
     if(te){
       const cloudTs=+te.savedAt||0;
       const localTs=+localStorage.getItem('grandol_live_ts')||0;
-      const localEmpty=!Object.keys(S.checked).length&&!S.diary.hl&&!S.diary.rf&&!S.diary.gr&&!(S.todayTDL||[]).length&&!(S.tomorrowTDL||[]).length;
+      // 「本機今天還沒動過」也必須把健康算進去。少了它的話，只填健康的那天會被判定成空的，
+      // 於是不管時間戳如何都被雲端整組覆蓋 → 剛選好的睡眠時間就這樣被打回舊值。
+      const localEmpty=!Object.keys(S.checked).length&&!S.diary.hl&&!S.diary.rf&&!S.diary.gr&&!(S.todayTDL||[]).length&&!(S.tomorrowTDL||[]).length
+        &&!HEALTH.some(H=>healthHas(S.health,H.k));
       if(cloudTs>localTs||localEmpty){
         S.checked={};if(Array.isArray(te.checked))te.checked.forEach(k=>S.checked[k]=true);
         if(te.diary)S.diary={...te.diary};
@@ -2624,6 +2627,17 @@ function renderHealth(){
   }).join('');
   wireHealthEditors(h);
 }
+// 睡眠時間「正在選、還沒按記錄」的暫存值。背景同步／其他重繪會重建下拉選單，
+// 沒有這層暫存的話，還沒記錄的選擇就會被打回預設值（＝時間一直跳掉）。
+// 用日期綁定，換到別天就不會沿用。
+let _sleepPend={ds:'',in:'',wake:''};
+function sleepPickVal(which,s){
+  const ds=healthTarget().ds;
+  const saved=which==='in'?(s&&s.sleepTime):(s&&s.wakeTime);
+  if(saved)return saved;
+  if(_sleepPend.ds===ds){const p=which==='in'?_sleepPend.in:_sleepPend.wake;if(p)return p;}
+  return which==='in'?'23:30':'07:00';
+}
 function healthEditorHTML(k,h){
   // 備註預設收起來（有寫過的自動展開）＝四張卡都變短
   const noteHTML=(id,val,ph)=>{const has=!!(val&&String(val).trim());
@@ -2644,8 +2658,8 @@ function healthEditorHTML(k,h){
         `<span class="ss-zzz">Z z</span>`+
         `<span class="ss-cap" id="hz-sleep-cap">☀️ 早安</span>`+
         `<div class="ss-panel" id="hz-sleep-panel">`+
-          `<div class="ssp-row"><span class="hz-lbl">入睡</span>${timeSelHTML('hz-sleep-in',s.sleepTime||'23:30')}</div>`+
-          `<div class="ssp-row"><span class="hz-lbl">起床</span>${timeSelHTML('hz-sleep-wake',s.wakeTime||'07:00')}</div>`+
+          `<div class="ssp-row"><span class="hz-lbl">入睡</span>${timeSelHTML('hz-sleep-in',sleepPickVal('in',s))}</div>`+
+          `<div class="ssp-row"><span class="hz-lbl">起床</span>${timeSelHTML('hz-sleep-wake',sleepPickVal('wake',s))}</div>`+
           `<div class="ssp-row"><span></span><span class="ssp-act"><button type="button" class="ssp-btn" id="hz-sleep-fill">✓ 記錄</button><span class="ssp-dur" id="hz-sleep-dur"></span></span></div>`+
           `<div class="ssp-row"><span class="ssp-q">好入睡嗎？</span>`+
             `<span class="ebtns">${SLEEP_EASE.map(e=>`<span class="ebtn${s.ease===e[0]?' on':''}" data-ease="${e[0]}" data-lbl="${e[1]}" title="${e[1]}">${fi(e[2],24)}</span>`).join('')}</span></div>`+
@@ -2803,9 +2817,11 @@ function wireHealthEditors(h){
   // 已經記錄過的那天，改時間就直接存起來——不然換到別天再回來會發現改的值不見了
   box.querySelectorAll('#hz-sleep-in select,#hz-sleep-wake select').forEach(s=>s.addEventListener('change',()=>{
     updDur();
+    // 先把選到的值記在暫存裡，這樣即使中途被重繪也不會跳回去
+    _sleepPend={ds:healthTarget().ds,in:timeSelGet('hz-sleep-in'),wake:timeSelGet('hz-sleep-wake')};
     const sl=h.sleep||{};
     if(sl.sleepTime||sl.wakeTime){
-      h.sleep=sl;sl.sleepTime=timeSelGet('hz-sleep-in');sl.wakeTime=timeSelGet('hz-sleep-wake');
+      h.sleep=sl;sl.sleepTime=_sleepPend.in;sl.wakeTime=_sleepPend.wake;
       commitHealth();
     }
   }));
