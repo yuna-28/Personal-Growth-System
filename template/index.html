@@ -1634,7 +1634,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v92';
+const APP_VER='v93';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
@@ -3496,6 +3496,9 @@ function periodStats(dates){
   const diaryHighlights=[];
   // TDL 逐項明細與主題聚合：主題是唯一能跨天比較的軸（任務文字每天都不同）
   const themeAgg={};const tdlDetail=[];let tdlNoDetailDays=0;
+  // unitMap：以「主題＋任務」為一件事，記錄它在這期被新排幾次(starts)、完成幾次(dones)。
+  // 舊資料只有每日數量、沒有逐項明細，沒辦法判斷順延，就照原本的加總（legacy）。
+  const unitMap={};let legacyDone=0,legacyTotal=0;
   dates.forEach(ds=>{
     const isToday=ds===curDay();
     let ck,dia,tdlT,tdlD,items=null;
@@ -3514,15 +3517,18 @@ function periodStats(dates){
       items=Array.isArray(e.tdlItems)?e.tdlItems:null;
     }
     habits+=ck.length;ck.forEach(k=>{habitCounts[k]=(habitCounts[k]||0)+1;});
-    if(tdlT){tdlTotalSum+=tdlT;tdlDoneSum+=tdlD;}
     if(items&&items.length){
       items.forEach(x=>{
         const th=((x.theme||'')+'').trim()||'未分類';
-        if(!themeAgg[th])themeAgg[th]={done:0,total:0};
-        themeAgg[th].total++;if(x.done)themeAgg[th].done++;
+        // 達成率以「一件事」為單位：只有當天新排的（c=0）才算一個新單位，
+        // 順延過來的是同一件事的延續，不再重複計入分母（做完了就算做到）
+        const key=th+'␟'+((x.task||'')+'').trim();
+        const u=unitMap[key]||(unitMap[key]={starts:0,dones:0,theme:th});
+        if(!(+x.c||0))u.starts++;
+        if(x.done)u.dones++;
         tdlDetail.push({date:ds,theme:th,task:(x.task||''),done:!!x.done,c:Math.max(0,+x.c||0)});
       });
-    }else if(tdlT){tdlNoDetailDays++;} // 舊資料只有數量、沒有明細
+    }else if(tdlT){tdlNoDetailDays++;legacyTotal+=tdlT;legacyDone+=tdlD;} // 舊資料只有數量、沒有明細
     if(dia&&(dia.hl||dia.rf||dia.gr))diaryDays++;
     if(dia){
       if(dia.hl)diaryHighlights.push({date:ds,text:dia.hl,type:'🌟'});
@@ -3530,6 +3536,17 @@ function periodStats(dates){
       if(dia.gr)diaryHighlights.push({date:ds,text:dia.gr,type:'🥹'});
     }
   });
+  // 結算達成率：一件事＝一個單位。跨期銜接（這期只看到順延、沒看到新排）也算一個單位，
+  // 完成數再夾住上限，任何情況都不會超過 100%。
+  Object.keys(unitMap).forEach(k=>{
+    const u=unitMap[k];
+    const units=u.starts||1;
+    const done=Math.min(u.dones,units);
+    tdlTotalSum+=units;tdlDoneSum+=done;
+    if(!themeAgg[u.theme])themeAgg[u.theme]={done:0,total:0};
+    themeAgg[u.theme].total+=units;themeAgg[u.theme].done+=done;
+  });
+  tdlTotalSum+=legacyTotal;tdlDoneSum+=legacyDone;
   // 健康資料另外收（草稿也算，不限已種下那天）
   const healthDays=[];
   dates.forEach(ds=>{
@@ -3556,7 +3573,7 @@ function tdlSummaryLines(st,label){
     .sort((a,b)=>(b.total-a.total)||(a.theme<b.theme?-1:1));
   if(!st.tdlTotalSum&&!rows.length)return lines;
   lines.push(`📈 ${label} TDL 總結`);
-  if(st.tdlTotalSum)lines.push(`  整體達成：${st.tdlDoneSum}/${st.tdlTotalSum}（${Math.round(st.tdlDoneSum/st.tdlTotalSum*100)}%）`);
+  if(st.tdlTotalSum)lines.push(`  整體達成：${st.tdlDoneSum}/${st.tdlTotalSum}（${Math.round(st.tdlDoneSum/st.tdlTotalSum*100)}%）※以「一件事」為單位，順延不重複計入`);
   if(rows.length){
     lines.push('  各主題達成率：');
     rows.forEach(r=>lines.push(`    ${r.theme} ${r.done}/${r.total}（${Math.round(r.done/r.total*100)}%）`));
@@ -3625,7 +3642,8 @@ function renderCarry(cardId,boxId,st,label){
   if(!list.length){card.style.display='none';return;}
   card.style.display='';
   let h='<div class="witness-line">⏩ 這'+label+'有 <b>'+list.length+'</b> 件事被往後移過'+
-    (done.length?'，其中 <b>'+done.length+'</b> 件後來還是完成了':'')+'。順延不是失敗，是它還在等一個對的時機。</div>';
+    (done.length?'，其中 <b>'+done.length+'</b> 件後來還是完成了':'')+'。順延不是失敗，是它還在等一個對的時機。</div>'+
+    '<div class="xnote">＊達成率是以「一件事」為單位算的，順延不會被重複計入，做到了就算做到。拖了幾次只在這張卡呈現。</div>';
   const row=(o,cls)=>'<div class="carry-row'+(cls||'')+'">'+
     '<span class="carry-n">⏩'+o.max+'</span>'+
     '<span class="carry-t">'+(o.theme&&o.theme!=='未分類'?'<b>'+esc(o.theme)+'：</b>':'')+esc(o.task||'（未填目標）')+'</span>'+
