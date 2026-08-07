@@ -1627,7 +1627,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v89';
+const APP_VER='v90';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
@@ -3673,6 +3673,12 @@ function renderHealthReview(cur,prefix,dates){
 
   // ── 🌙 睡眠 ──
   const sleepDays=hd.filter(x=>{const s=x.h.sleep;return s&&(s.sleepTime||s.wakeTime);});
+  // 有健康紀錄但這期一次睡眠都沒填：明講出來，不要整張卡默默消失讓人以為壞掉
+  if(!sleepDays.length){
+    show(prefix+'-sleep-card',true);
+    document.getElementById(prefix+'-sleep').innerHTML=
+      '<div class="witness-line">🌙 這'+(isWeek?'週':'個月')+'還沒有睡眠紀錄。到「今天」的睡眠卡選好入睡／起床時間，按 <b>✓ 記錄</b> 就會出現在這裡。</div>';
+  }
   if(sleepDays.length){
     show(prefix+'-sleep-card',true);
     const toMin=(s,bed)=>{if(!s)return null;const a=String(s).split(':');let m=(+a[0])*60+(+a[1]||0);if(bed&&(+a[0])<12)m+=24*60;return m;};
