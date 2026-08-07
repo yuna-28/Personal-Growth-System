@@ -1627,7 +1627,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v90';
+const APP_VER='v91';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
@@ -5112,9 +5112,15 @@ async function checkGasVersion(){
     const res=await fetch(GAS_URL+'?action=ping'+codeQ());
     const j=await res.json();
     if(j&&j.ok&&j.ver){
-      const latest='3.7';
-      g.textContent='v'+j.ver+(j.ver===latest?' ✓ 最新':' ⚠️ 舊版，請重新部署');
-      g.style.color=j.ver===latest?'#0F6E56':'#C0703A';
+      // 後端「至少要」這個版本（GAS 檔案裡的 GAS_VER 改了，這裡要一起改）。
+      // 用數字比大小而不是 ===，後端比這裡新的時候才不會被誤判成舊版。
+      const NEED_GAS='3.8';
+      const cmpVer=(a,b)=>{const pa=String(a).split('.'),pb=String(b).split('.');
+        for(let i=0;i<Math.max(pa.length,pb.length);i++){const d=(+pa[i]||0)-(+pb[i]||0);if(d)return d<0?-1:1;}
+        return 0;};
+      const ok=cmpVer(j.ver,NEED_GAS)>=0;
+      g.textContent='v'+j.ver+(ok?' ✓ 最新':' ⚠️ 舊版，請重新部署');
+      g.style.color=ok?'#0F6E56':'#C0703A';
     }else{
       g.textContent='舊版（無版本回應）⚠️ 請重新部署';g.style.color='#C0703A';
     }
