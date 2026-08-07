@@ -858,6 +858,13 @@ body.viewer-mode .neo-chip,body.viewer-mode .sticky-check,body.viewer-mode .habi
 .ssp-btn:active{transform:scale(.96);}
 .ssp-dur{display:flex;align-items:center;gap:3px;font-size:11.5px;font-weight:800;color:var(--ok);white-space:nowrap;}
 .sleep-scene.night .ssp-dur{color:#8FE3C4;}
+.ssp-saved{display:flex;align-items:center;gap:6px;}
+.ssp-ok{font-size:11px;font-weight:800;color:var(--ok);white-space:nowrap;}
+.sleep-scene.night .ssp-ok{color:#8FE3C4;}
+.ssp-clear{background:rgba(255,255,255,.6);border:1.5px solid rgba(var(--secondary-rgb),.35);border-radius:9px;
+  padding:2px 8px;font-family:'Quicksand',sans-serif;font-size:10.5px;font-weight:700;color:var(--tc3);cursor:pointer;white-space:nowrap;}
+.ssp-clear:active{transform:scale(.94);}
+.sleep-scene.night .ssp-clear{background:rgba(255,255,255,.85);}
 .ssp-q{font-size:11px;font-weight:700;color:var(--tc2);}
 .ss-panel .ebtns{display:flex;gap:6px;margin:0;flex-wrap:nowrap;}
 .ss-panel .ebtn{width:36px;height:36px;border-radius:11px;flex:0 0 auto;}
@@ -1627,7 +1634,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v91';
+const APP_VER='v92';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
@@ -2664,7 +2671,7 @@ function healthEditorHTML(k,h){
         `<div class="ss-panel" id="hz-sleep-panel">`+
           `<div class="ssp-row"><span class="hz-lbl">入睡</span>${timeSelHTML('hz-sleep-in',sleepPickVal('in',s))}</div>`+
           `<div class="ssp-row"><span class="hz-lbl">起床</span>${timeSelHTML('hz-sleep-wake',sleepPickVal('wake',s))}</div>`+
-          `<div class="ssp-row"><span></span><span class="ssp-act"><button type="button" class="ssp-btn" id="hz-sleep-fill">✓ 記錄</button><span class="ssp-dur" id="hz-sleep-dur"></span></span></div>`+
+          `<div class="ssp-row"><span></span><span class="ssp-act"><span class="ssp-dur" id="hz-sleep-dur"></span><span class="ssp-saved" id="hz-sleep-saved"></span></span></div>`+
           `<div class="ssp-row"><span class="ssp-q">好入睡嗎？</span>`+
             `<span class="ebtns">${SLEEP_EASE.map(e=>`<span class="ebtn${s.ease===e[0]?' on':''}" data-ease="${e[0]}" data-lbl="${e[1]}" title="${e[1]}">${fi(e[2],24)}</span>`).join('')}</span></div>`+
         `</div>`+
@@ -2819,19 +2826,31 @@ function wireHealthEditors(h){
   function updDur(){const dm=sleepMinutes({sleepTime:timeSelGet('hz-sleep-in'),wakeTime:timeSelGet('hz-sleep-wake')});
     if(durEl)durEl.innerHTML=dm!=null?('睡了'+fi('1f4a4',15)+fmtSleepDur(dm)):'';}
   // 已經記錄過的那天，改時間就直接存起來——不然換到別天再回來會發現改的值不見了
+  // 選好時間就直接記起來。以前要再按一次「✓ 記錄」才算數，很容易以為已經存了
+  // 其實沒有——那是這個區塊最常見的困惑來源，所以改成選了就存。
   box.querySelectorAll('#hz-sleep-in select,#hz-sleep-wake select').forEach(s=>s.addEventListener('change',()=>{
     updDur();
-    // 先把選到的值記在暫存裡，這樣即使中途被重繪也不會跳回去
     _sleepPend={ds:healthTarget().ds,in:timeSelGet('hz-sleep-in'),wake:timeSelGet('hz-sleep-wake')};
-    const sl=h.sleep||{};
-    if(sl.sleepTime||sl.wakeTime){
-      h.sleep=sl;sl.sleepTime=_sleepPend.in;sl.wakeTime=_sleepPend.wake;
-      commitHealth();
-    }
+    h.sleep=h.sleep||{};
+    h.sleep.sleepTime=_sleepPend.in;h.sleep.wakeTime=_sleepPend.wake;
+    commitHealth();
+    updSleepSaved();
   }));
+  // 已記錄／未記錄的狀態列（含「清除」，誤觸也救得回來）
+  function updSleepSaved(){
+    const wrap=document.getElementById('hz-sleep-saved');if(!wrap)return;
+    const s=h.sleep||{},on=!!(s.sleepTime||s.wakeTime);
+    wrap.innerHTML=on?'<span class="ssp-ok">✓ 已記錄</span><button type="button" class="ssp-clear" id="hz-sleep-clear">清除</button>':'';
+    const cb=document.getElementById('hz-sleep-clear');
+    if(cb)cb.addEventListener('click',e=>{
+      e.stopPropagation();
+      h.sleep=h.sleep||{};h.sleep.sleepTime='';h.sleep.wakeTime='';
+      _sleepPend={ds:'',in:'',wake:''};
+      commitHealth();renderHealth();
+    });
+  }
+  updSleepSaved();
   updDur();
-  const sf=document.getElementById('hz-sleep-fill');
-  if(sf)sf.addEventListener('click',()=>{h.sleep=h.sleep||{};h.sleep.sleepTime=timeSelGet('hz-sleep-in');h.sleep.wakeTime=timeSelGet('hz-sleep-wake');sf.textContent='✓ 已記錄';setTimeout(()=>{if(sf)sf.textContent='✓ 記錄';},1500);commitHealth();});
   box.querySelectorAll('[data-ease]').forEach(el=>el.addEventListener('click',()=>{
     h.sleep=h.sleep||{};h.sleep.ease=(h.sleep.ease===el.dataset.ease)?'':el.dataset.ease;
     el.parentElement.querySelectorAll('[data-ease]').forEach(x=>x.classList.toggle('on',!!h.sleep.ease&&x.dataset.ease===h.sleep.ease));
