@@ -124,6 +124,13 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 /* STICKY NOTE */
 .sticky-note{position:absolute;right:10px;top:10px;z-index:6;background:linear-gradient(160deg,#FFF7DC,#FCEEB8);border:none;border-radius:4px 14px 14px 14px;padding:13px 14px 20px;min-width:130px;max-width:170px;box-shadow:0 2px 4px rgba(35,35,30,.1),0 14px 26px -14px rgba(160,120,20,.4);font-size:11px;color:var(--tc);transform:rotate(2deg);cursor:grab;touch-action:none;animation:noteFloat 4s ease-in-out infinite;}
 .sticky-note:active{cursor:grabbing;}
+/* 自由調整寬高：拖右下角 */
+.sticky-note.sized{display:flex;flex-direction:column;max-width:none;min-width:0;}
+.sticky-note.sized #sticky-items{flex:1;min-height:0;overflow-y:auto;}
+.sticky-resize{position:absolute;right:1px;bottom:1px;width:18px;height:18px;cursor:nwse-resize;touch-action:none;z-index:9;opacity:.45;transition:opacity .15s;}
+.sticky-resize::before{content:'';position:absolute;right:4px;bottom:4px;width:8px;height:8px;border-right:2px solid #B79A55;border-bottom:2px solid #B79A55;border-radius:0 0 3px 0;}
+.sticky-note:hover .sticky-resize{opacity:.9;}
+.sticky-resize:active{opacity:1;}
 .sticky-note::before{content:'';position:absolute;top:0;right:0;width:0;height:0;border-style:solid;border-width:0 18px 18px 0;border-color:transparent #F0DA8E transparent transparent;}
 .sticky-hw-date{position:absolute;bottom:2px;right:12px;font-family:'Caveat',cursive;font-size:1.6em;font-weight:700;color:#8A6D1F;transform:rotate(-4deg);opacity:.9;pointer-events:none;}
 .sticky-top{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:3px;}
@@ -1144,6 +1151,7 @@ button{-webkit-tap-highlight-color:transparent;}
           </div>
           <div id="sticky-items"></div>
           <div id="sticky-date" class="sticky-hw-date"></div>
+          <div class="sticky-resize" id="sticky-resize" title="拖曳調整大小（雙擊還原）"></div>
         </div>
         <div id="puppy" style="position:absolute;left:56px;bottom:44px;cursor:pointer;touch-action:none;z-index:5;"></div>
       </div>
@@ -1638,7 +1646,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v95';
+const APP_VER='v96';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
@@ -1857,7 +1865,7 @@ function defaults(){
   return{exp:0,flowers:[],apples:[],bigApples:0,goldFruits:0,seedlings:0,trees:1,
     streak:0,lastStreak:'',checked:{},diary:{hl:'',rf:'',gr:'',quote:''},
     lastPlant:'',tomorrowTDL:[],todayTDL:[],tdlDone:{},entries:[],
-    achievements:[],quotes:[],calNotes:{},myPeople:[],treasures:[],gardenPos:{},notePos:null,notifications:null,todayPhotos:[],resourceCats:null,expLog:[],tdlHist:{},archivedHabits:[],calRecur:{},health:emptyHealth(),healthMigrated:false,healthOpts:{diet:[],exercise:[],sleepActs:[],water:[]}};
+    achievements:[],quotes:[],calNotes:{},myPeople:[],treasures:[],gardenPos:{},notePos:null,noteSize:null,notifications:null,todayPhotos:[],resourceCats:null,expLog:[],tdlHist:{},archivedHabits:[],calRecur:{},health:emptyHealth(),healthMigrated:false,healthOpts:{diet:[],exercise:[],sleepActs:[],water:[]}};
 }
 // 一次性遷移：健康模組接手「早起/早睡/跳舞」→ 把這三個習慣封存（歷史紀錄保留）。
 // 只跑一次（healthMigrated 旗標），之後使用者若自己解封也不會被強制封回。
@@ -1924,6 +1932,32 @@ function buildTdlSnapshot(items,doneMap){
   })).filter(x=>x.theme||x.task);
 }
 
+// ── TDL 單一入口 ──────────────────────────────────────
+// 今天的清單被四個地方寫過（換日、雲端同步、補記昨天…），各自用「位置」對應完成狀態，
+// 順序一變就會勾錯人，順延次數也常被抹成 0 → 已完成的事又被當成沒做、天天順延回來。
+// 以下三個函式是唯一的寫入管道：一律用「主題＋任務」當身分，c 一律保留。
+function tdlKey(r){return (((r&&r.theme)||'')+'').trim()+'␟'+(((r&&r.task)||'')+'').trim();}
+function tdlNorm(r){return {theme:((r&&r.theme)||'')+'',task:((r&&r.task)||'')+'',c:Math.max(0,+((r&&r.c)||0)||0)};}
+// 今天的清單＝給今天的計畫 ＋ 順延過來、計畫裡沒有的（不重複）
+function tdlMergePlanCarry(plan,carried){
+  const out=(plan||[]).map(tdlNorm);
+  const seen={};out.forEach(r=>{seen[tdlKey(r)]=1;});
+  (carried||[]).forEach(r=>{const k=tdlKey(r);if(!seen[k]){out.push(tdlNorm(r));seen[k]=1;}});
+  return out;
+}
+// 設定今天的清單。doneOf 省略＝沿用目前的完成狀態（依身分對應，不看位置）；
+// 傳函式＝用指定來源決定（例如從雲端 entry 還原）。
+function setTodayTDL(list,doneOf){
+  const prev={};
+  if(!doneOf)(S.todayTDL||[]).forEach((r,i)=>{if((S.tdlDone||{})['t'+i])prev[tdlKey(r)]=1;});
+  S.todayTDL=(list||[]).map(tdlNorm);
+  const nd={};
+  S.todayTDL.forEach((r,i)=>{
+    const on=doneOf?!!doneOf(r,i):!!prev[tdlKey(r)];
+    if(on)nd['t'+i]=true;
+  });
+  S.tdlDone=nd;
+}
 function getOrCreateEntry(ds){
   let e=S.entries.find(x=>x.date===ds);
   if(!e){
@@ -1975,11 +2009,9 @@ function rolloverToToday(){
   const _hk=Object.keys(S.tdlHist).sort();
   while(_hk.length>60){delete S.tdlHist[_hk.shift()];}
   S.checked={};S.diary={hl:'',rf:'',gr:'',quote:''};S.todayPhotos=[];
-  // 今天的清單＝昨天排給今天的計畫 ＋ 昨天沒做完自動順延過來的（不重複）
-  const _plan=(S.tomorrowTDL||[]).map(r=>({theme:r.theme,task:r.task,c:+((r&&r.c)||0)||0}));
-  const _same=(a,b)=>(a.task||'').trim()===(b.task||'').trim()&&(a.theme||'').trim()===(b.theme||'').trim();
-  S.todayTDL=_plan.concat(_carry.filter(cy=>!_plan.some(p=>_same(p,cy))));
-  S.tomorrowTDL=[];S.tdlDone={};
+  // 今天的清單＝昨天排給今天的計畫 ＋ 昨天沒做完自動順延過來的（不重複）。新的一天一律未完成。
+  setTodayTDL(tdlMergePlanCarry(S.tomorrowTDL,_carry),()=>false);
+  S.tomorrowTDL=[];
   S.health=emptyHealth(); // 新的一天，健康記錄歸零
   S.dayKey=t;sv(S);
   return true;
@@ -2124,18 +2156,11 @@ async function loadCloud(){
       const _yd=new Date();_yd.setDate(_yd.getDate()-1);const _yds=fmtLocal(_yd);
       const _ye=S.entries.find(e=>e.date===_yds);
       if(_ye&&Array.isArray(_ye.tdl)&&_ye.tdl.length){
-        const _plan=_ye.tdl.map(r=>({theme:r.theme,task:r.task,c:+((r&&r.c)||0)||0}));
-        const _idk=r=>((r&&r.theme)||'').trim()+'␟'+(((r&&r.task)||'')+'').trim();
-        // 順延過來的（c>0 且不在昨天的計畫裡）要保住——直接用計畫覆蓋會把它們洗掉，
-        // 這正是「設定了順延卻看不到」的原因
-        const _carried=(S.todayTDL||[]).filter(r=>(+r.c||0)>0&&!_plan.some(p=>_idk(p)===_idk(r)));
-        const _merged=_plan.concat(_carried);
-        if(JSON.stringify(_merged)!==JSON.stringify((S.todayTDL||[]).map(r=>({theme:r.theme,task:r.task,c:+((r&&r.c)||0)||0})))){
-          // 完成狀態改用「項目本身」對應，順序變了也不會打勾錯人
-          const _doneSet={};(S.todayTDL||[]).forEach((r,i)=>{if((S.tdlDone||{})['t'+i])_doneSet[_idk(r)]=true;});
-          S.todayTDL=_merged;
-          S.tdlDone={};_merged.forEach((r,i)=>{if(_doneSet[_idk(r)])S.tdlDone['t'+i]=true;});
-        }
+        // 順延過來的（c>0 且不在昨天的計畫裡）要保住——直接用計畫覆蓋會把它們洗掉
+        const _plan=_ye.tdl.map(tdlNorm);
+        const _carried=(S.todayTDL||[]).filter(r=>(+r.c||0)>0&&!_plan.some(p=>tdlKey(p)===tdlKey(r)));
+        const _merged=tdlMergePlanCarry(_plan,_carried);
+        if(JSON.stringify(_merged)!==JSON.stringify((S.todayTDL||[]).map(tdlNorm)))setTodayTDL(_merged);
       }
     }
     // 還原「今天」的即時狀態（草稿／已種下的同步核心）：
@@ -2156,9 +2181,9 @@ async function loadCloud(){
         if(Array.isArray(te.tdl))S.tomorrowTDL=te.tdl.slice();
         if(Array.isArray(te.photos))S.todayPhotos=te.photos.slice();
         // 今天的 TDL 明細（含已勾/未勾）→ 還原成即時 todayTDL＋tdlDone
+        // 雲端這天的明細是權威版本：完成狀態直接照它，順延次數 c 也一起帶回來
         if(Array.isArray(te.tdlItems)&&te.tdlItems.length){
-          S.todayTDL=te.tdlItems.map(x=>({task:x.task,theme:x.theme}));
-          S.tdlDone={};te.tdlItems.forEach((x,i)=>{if(x.done)S.tdlDone['t'+i]=true;});
+          setTodayTDL(te.tdlItems,(r,i)=>!!te.tdlItems[i].done);
         }
         // 健康資料還原到今天即時狀態（EXP 已隨 state 同步，不重算，只把 scored 對齊資料）
         if(te.health&&typeof te.health==='object'){
@@ -2517,19 +2542,67 @@ function renderStickyNote(){
   }
 }
 const NOTE_SCALES=[0.85,1,1.2,1.45,1.7];
+// 便利貼能拉到多大：以舞台為界，超過就會被裁掉看不到內容
+function noteSizeLimit(){
+  const st=document.getElementById('scene-stage');
+  const w=st?st.clientWidth:360,h=st?st.clientHeight:320;
+  return {w:Math.max(130,Math.min(460,w-20)),h:Math.max(90,Math.min(520,h-20))};
+}
 function applyNoteStyle(){
   const note=document.getElementById('sticky-note');
   if(!note)return;
   const scale=S.noteScale||1;
   note.style.fontSize=(11*scale)+'px';
   note.style.setProperty('--sn-cb',(20*scale)+'px');
-  note.style.minWidth=(140*scale)+'px';
-  note.style.maxWidth=(184*scale)+'px';
+  // 自己拉過大小就照自己的，沒拉過才用 －／＋ 的縮放級距。
+  // 一律夾在舞台範圍內：換到窄螢幕時，之前在大螢幕拉的尺寸才不會超出去把內容切掉。
+  if(S.noteSize&&+S.noteSize.w>0){
+    const lim=noteSizeLimit();
+    note.classList.add('sized');
+    note.style.width=Math.min(S.noteSize.w,lim.w)+'px';
+    note.style.height=Math.min(S.noteSize.h,lim.h)+'px';
+    note.style.minWidth='0';note.style.maxWidth='none';
+  }else{
+    note.classList.remove('sized');
+    note.style.width='';note.style.height='';
+    note.style.minWidth=(140*scale)+'px';
+    note.style.maxWidth=(184*scale)+'px';
+  }
   const collapsed=!!S.noteCollapsed;
   const dt=document.getElementById('sticky-date'),it=document.getElementById('sticky-items');
   if(dt)dt.style.display=collapsed?'none':'';
   if(it)it.style.display=collapsed?'none':'';
   const cb=document.getElementById('sn-collapse');if(cb)cb.textContent=collapsed?'▸':'▾';
+}
+// 右下角把手：自由拉寬拉長；雙擊還原成自動大小
+function initStickyResize(){
+  const note=document.getElementById('sticky-note'),h=document.getElementById('sticky-resize');
+  if(!note||!h)return;
+  let on=false,sx=0,sy=0,sw=0,sh=0;
+  const stop=e=>e.stopPropagation();
+  h.addEventListener('mousedown',stop);h.addEventListener('touchstart',stop,{passive:true});
+  h.addEventListener('pointerdown',e=>{
+    e.stopPropagation();e.preventDefault();
+    // 便利貼有 rotate，getBoundingClientRect 量到的是旋轉後的外框會愈拉愈胖，
+    // 這裡一律用不受變形影響的 offsetWidth/Height
+    on=true;sx=e.clientX;sy=e.clientY;sw=note.offsetWidth;sh=note.offsetHeight;
+    try{h.setPointerCapture(e.pointerId);}catch(_){}
+  });
+  h.addEventListener('pointermove',e=>{
+    if(!on)return;e.stopPropagation();
+    const lim=noteSizeLimit();
+    const w=Math.max(130,Math.min(lim.w,sw+(e.clientX-sx)));
+    const ht=Math.max(90,Math.min(lim.h,sh+(e.clientY-sy)));
+    note.classList.add('sized');
+    note.style.minWidth='0';note.style.maxWidth='none';
+    note.style.width=w+'px';note.style.height=ht+'px';
+  });
+  const end=e=>{
+    if(!on)return;on=false;e.stopPropagation();
+    S.noteSize={w:note.offsetWidth,h:note.offsetHeight};sv(S);
+  };
+  h.addEventListener('pointerup',end);h.addEventListener('pointercancel',end);
+  h.addEventListener('dblclick',e=>{e.stopPropagation();S.noteSize=null;sv(S);applyNoteStyle();softToast('便利貼大小已還原',2000);});
 }
 function initStickyDrag(){
   const note=document.getElementById('sticky-note');
@@ -3133,8 +3206,9 @@ function mirrorYesterdayTdlToToday(ds){
   if(ds!==fmtLocal(_yd))return;
   const en=S.entries.find(x=>x.date===ds);
   if(!en||!Array.isArray(en.tdl))return;
-  S.todayTDL=en.tdl.map(r=>({theme:r.theme,task:r.task}));
-  Object.keys(S.tdlDone||{}).forEach(k=>{const i=+String(k).slice(1);if(!(i<S.todayTDL.length))delete S.tdlDone[k];});
+  const _plan=en.tdl.map(tdlNorm);
+  const _carried=(S.todayTDL||[]).filter(r=>(+r.c||0)>0&&!_plan.some(p=>tdlKey(p)===tdlKey(r)));
+  setTodayTDL(tdlMergePlanCarry(_plan,_carried));
   sv(S);
   if(typeof renderStickyNote==='function')renderStickyNote();
   syncStateDebounced();
@@ -4995,6 +5069,7 @@ function renderAll(){
 migrateFlowers();
 renderAll();
 initStickyDrag();
+initStickyResize();
 initPuppy(document.getElementById('puppy'),document.getElementById('scene-stage'),90);
 loadCloud();
 </script>
