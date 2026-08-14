@@ -1646,7 +1646,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v96';
+const APP_VER='v97';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
@@ -2544,6 +2544,20 @@ function noteSizeLimit(){
   const w=st?st.clientWidth:360,h=st?st.clientHeight:320;
   return {w:Math.max(130,Math.min(460,w-20)),h:Math.max(90,Math.min(520,h-20))};
 }
+// 清單高度直接算出來填滿剩餘空間。原本只靠 flex:1，實際上會被外層的高度限制卡住，
+// 便利貼拉高之後下面就空一大塊——改成明算，不受環境影響。
+function fitNoteList(){
+  const note=document.getElementById('sticky-note'),it=document.getElementById('sticky-items');
+  if(!note||!it)return;
+  const sized=note.classList.contains('sized');
+  if(S.noteCollapsed||!sized){it.style.height='';it.style.maxHeight='';return;}
+  const top=note.querySelector('.sticky-top');
+  const cs=getComputedStyle(note);
+  const pad=parseFloat(cs.paddingTop||0)+parseFloat(cs.paddingBottom||0);
+  const topH=top?top.offsetHeight+parseFloat(getComputedStyle(top).marginBottom||0):0;
+  const avail=Math.max(40,note.clientHeight-pad-topH);
+  it.style.height=avail+'px';it.style.maxHeight=avail+'px';
+}
 function applyNoteStyle(){
   const note=document.getElementById('sticky-note');
   if(!note)return;
@@ -2568,6 +2582,7 @@ function applyNoteStyle(){
   const dt=document.getElementById('sticky-date'),it=document.getElementById('sticky-items');
   if(dt)dt.style.display=collapsed?'none':'';
   if(it)it.style.display=collapsed?'none':'';
+  fitNoteList();
   const cb=document.getElementById('sn-collapse');if(cb)cb.textContent=collapsed?'▸':'▾';
 }
 // 右下角把手：自由拉寬拉長；雙擊還原成自動大小
@@ -2592,6 +2607,7 @@ function initStickyResize(){
     note.classList.add('sized');
     note.style.minWidth='0';note.style.maxWidth='none';
     note.style.width=w+'px';note.style.height=ht+'px';
+    fitNoteList(); // 拖的當下清單就跟著長高，不用等放開
   });
   const end=e=>{
     if(!on)return;on=false;e.stopPropagation();
