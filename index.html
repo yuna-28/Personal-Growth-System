@@ -1654,7 +1654,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v99';
+const APP_VER='v100';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
@@ -2199,7 +2199,11 @@ async function loadCloud(){
         if(cloudTs)localStorage.setItem('grandol_live_ts',String(cloudTs));
       }
     }
-    if(tdlEditCtx==='today'&&S.tomorrowTDL.length)tdlRows=S.tomorrowTDL.map(r=>({...r,confirmed:r.confirmed||false}));
+    // 雲端帶回計畫 → 編輯列跟著換成雲端版本，這時本機那個「使用者編輯過」的意圖已被取代
+    if(tdlEditCtx==='today'&&S.tomorrowTDL.length){
+      tdlRows=S.tomorrowTDL.map(r=>({...r,confirmed:r.confirmed||false}));
+      tdlPlanEdited=false;
+    }
     sv(S);renderAll();
     setSync('ok','已同步 ✓');if(typeof hideLoadSkeleton==='function')hideLoadSkeleton();
   }catch(e){setSync('error','無法連線，使用本機資料');if(typeof hideLoadSkeleton==='function')hideLoadSkeleton();}
@@ -2441,6 +2445,7 @@ function postponeTdlItem(i){
   if(!c.todayMode)return;
   const item=c.items[i];if(!item)return;
   if(c.done['t'+i]){softToast('這項已經完成了，不用順延 🎉',2600);return;}
+  todayListEdited=true; // 使用者真的動了今天的清單，之後才准寫入空值
   const nc=(+item.c||0)+1;
   const idk=r=>(((r&&r.theme)||'')+'').trim()+'␟'+(((r&&r.task)||'')+'').trim();
   // 今天移除
@@ -2459,6 +2464,7 @@ function deleteTdlItem(i){
   const c=stickyCtx();
   const item=c.items[i];
   if(!item)return;
+  if(c.todayMode)todayListEdited=true; // 同上：這是明確的刪除意圖
   const label=item.task||item.theme||'這一項';
   const wasDone=!!c.done['t'+i];
   if(!confirm(`刪除「${label}」？\n刪掉後就不會列入 TDL 分析。${wasDone?'\n（這項已完成，會一併退回 10 EXP）':''}`))return;
@@ -2565,6 +2571,26 @@ function fitNoteList(){
   const topH=top?top.offsetHeight+parseFloat(getComputedStyle(top).marginBottom||0):0;
   const avail=Math.max(40,note.clientHeight-pad-topH);
   it.style.height=avail+'px';it.style.maxHeight=avail+'px';
+}
+// 便利貼的實際高度會在很多時候才定案：字型換上、圖片載完把版面撐開、雲端同步回來重繪、
+// 視窗縮放…以前是逐一去猜「哪些時機要重算」，漏掉一個清單就停在舊高度、下面留一截空白，
+// 非得手動拉一下才會修正。改成直接盯著尺寸變化，任何原因造成的改變都會自動補算。
+// （fitNoteList 只改子元素高度，不會回頭改變 note 本身的尺寸，所以不會無限循環。）
+let _noteRO=null;
+function watchNoteSize(){
+  if(!window.ResizeObserver)return;
+  const note=document.getElementById('sticky-note');
+  if(!note)return;
+  if(_noteRO)_noteRO.disconnect();
+  let pending=false;
+  _noteRO=new ResizeObserver(()=>{
+    if(pending)return;
+    pending=true;
+    requestAnimationFrame(()=>{pending=false;fitNoteList();});
+  });
+  _noteRO.observe(note);
+  const top=note.querySelector('.sticky-top');
+  if(top)_noteRO.observe(top); // 標題列會因字型換上而變高，也要一起盯
 }
 function applyNoteStyle(){
   const note=document.getElementById('sticky-note');
@@ -3245,11 +3271,14 @@ function renderTDL(){
       ${showConfirm?`<button class="tdl-confirm-btn${r.confirmed?' confirmed':''}" data-i="${i}" title="確認加入明天">${r.confirmed?'⭐':'✓'}</button>`:''}
       <button class="tdl-del-btn" data-i="${i}" title="刪除">✕</button>
     </div>`).join('');
-  document.querySelectorAll('#tdl-rows input').forEach(el=>el.addEventListener('input',()=>{curRows()[+el.dataset.i][el.dataset.f]=el.value;persistTdlIfBackfill();}));
-  document.querySelectorAll('#tdl-rows .tdl-confirm-btn').forEach(b=>b.addEventListener('click',()=>{curRows()[+b.dataset.i].confirmed=!curRows()[+b.dataset.i].confirmed;renderTDL();}));
-  document.querySelectorAll('#tdl-rows .tdl-del-btn').forEach(b=>b.addEventListener('click',()=>{curRows().splice(+b.dataset.i,1);persistTdlIfBackfill();renderTDL();}));
+  // 標記「使用者真的動過明天的計畫」——沒有這個標記就無法分辨
+  // 「他把計畫刪光了」和「這台裝置還沒同步到計畫」，只能一律保守不覆蓋
+  const markPlan=()=>{if(tdlEditCtx==='today')tdlPlanEdited=true;};
+  document.querySelectorAll('#tdl-rows input').forEach(el=>el.addEventListener('input',()=>{markPlan();curRows()[+el.dataset.i][el.dataset.f]=el.value;persistTdlIfBackfill();}));
+  document.querySelectorAll('#tdl-rows .tdl-confirm-btn').forEach(b=>b.addEventListener('click',()=>{markPlan();curRows()[+b.dataset.i].confirmed=!curRows()[+b.dataset.i].confirmed;renderTDL();}));
+  document.querySelectorAll('#tdl-rows .tdl-del-btn').forEach(b=>b.addEventListener('click',()=>{markPlan();curRows().splice(+b.dataset.i,1);persistTdlIfBackfill();renderTDL();}));
 }
-document.getElementById('tdl-add').addEventListener('click',()=>{curRows().push({theme:'',task:'',confirmed:false});persistTdlIfBackfill();renderTDL();});
+document.getElementById('tdl-add').addEventListener('click',()=>{if(tdlEditCtx==='today')tdlPlanEdited=true;curRows().push({theme:'',task:'',confirmed:false});persistTdlIfBackfill();renderTDL();});
 
 // ── DIARY autosave ────────────────────────────────────
 ['hl','rf','gr','quote'].forEach(k=>{
@@ -3306,7 +3335,10 @@ document.getElementById('plant-btn').addEventListener('click',async()=>{
   }
 
   const _now=Date.now();localStorage.setItem('grandol_live_ts',String(_now));
-  const entry={date:curDay(),checked:[...Object.keys(S.checked)],diary:{...d},exp:S.exp,streak:S.streak,tdl:S.tomorrowTDL,tdlTotal:(S.todayTDL||[]).length,tdlDone:Object.keys(S.tdlDone).length,tdlItems:buildTdlSnapshot(S.todayTDL,S.tdlDone),photos:(S.todayPhotos||[]),health:JSON.parse(JSON.stringify(S.health||emptyHealth())),savedAt:_now};
+  // 種下也走同一套防護：今天的明細若當下是空的（還沒同步回來），不可以拿空的覆蓋掉
+  const _existing=S.entries.find(e=>e.date===curDay());
+  const _safe=safeTdlFields(_existing);
+  const entry={date:curDay(),checked:[...Object.keys(S.checked)],diary:{...d},exp:S.exp,streak:S.streak,tdl:S.tomorrowTDL,tdlTotal:_safe.tdlTotal,tdlDone:_safe.tdlDone,tdlItems:_safe.tdlItems,photos:(S.todayPhotos||[]),health:JSON.parse(JSON.stringify(S.health||emptyHealth())),savedAt:_now};
   const idx=S.entries.findIndex(e=>e.date===curDay());
   if(idx>=0)S.entries[idx]=entry;else S.entries.push(entry);
 
@@ -5092,11 +5124,7 @@ initStickyDrag();
 initStickyResize();
 initPuppy(document.getElementById('puppy'),document.getElementById('scene-stage'),90);
 loadCloud();
-// Google Fonts 是用 <link> 動態載入的（display=swap），開頁當下量到的是備援字型的行高，
-// 字型換上後 .sticky-top 實際高度會變，便利貼清單卻沒跟著重算，於是留下一截空白，
-// 要等使用者拖一下（重新觸發 fitNoteList）才會自己修正。字型就緒後補算一次即可。
-if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{if(typeof fitNoteList==='function')fitNoteList();}).catch(()=>{});
-window.addEventListener('load',()=>{if(typeof fitNoteList==='function')fitNoteList();});
+watchNoteSize();
 </script>
 <script>
 // ═══ PWA + 設定頁（v7.9 PWA 升級新增，不動原有邏輯） ═══
@@ -6023,18 +6051,36 @@ function applyViewDate(switchPage){
     window.scrollTo(0,0);
   }
 }
+// ── 存檔防護：「清單是空的」不等於「使用者把它清空了」──────────────
+// 存 entry 是整筆覆蓋。以前只要編輯列或今天的清單當下是空的（例如剛跨日、
+// 雲端還沒回填、或這台裝置根本還沒同步到），任何一次自動存草稿——哪怕只是
+// 記了個喝水——都會把「明天的計畫」和「今天的打勾明細」寫成空的推上雲端，
+// 另一台裝置再同步下來就整批消失。這就是「昨天記的今天都不見」的原因。
+//
+// 規則：只有使用者真的動手清空（在編輯列刪到空、或從便利貼刪掉／順延掉）
+// 才允許寫入空值；否則一律沿用既有內容，不覆蓋。
+let tdlPlanEdited=false;   // 使用者編輯過「明天 TDL」
+let todayListEdited=false; // 使用者動過今天便利貼上的項目
+function safeTdlFields(existing){
+  const ex=existing||{};
+  const rows=tdlRows.filter(r=>r.theme||r.task).map(r=>({theme:r.theme,task:r.task,c:+((r&&r.c)||0)||0}));
+  const oldPlan=Array.isArray(ex.tdl)?ex.tdl:[];
+  const tdl=rows.length?rows:(tdlPlanEdited?[]:oldPlan);
+  const snap=buildTdlSnapshot(S.todayTDL,S.tdlDone);
+  const oldItems=Array.isArray(ex.tdlItems)?ex.tdlItems:[];
+  const tdlItems=snap.length?snap:(todayListEdited?[]:oldItems);
+  return {tdl,tdlItems,tdlTotal:tdlItems.length,tdlDone:tdlItems.filter(x=>x&&x.done).length};
+}
 // 把當天內容寫進 entry（純資料，不碰按鈕動畫）。手動存草稿與自動存草稿共用這一份。
 function writeDraftEntry(){
   if(!ctxIsToday())return false;
   const d=S.diary;
-  const all=tdlRows.filter(r=>r.theme||r.task);
-  S.tomorrowTDL=all.map(r=>({theme:r.theme,task:r.task,c:+((r&&r.c)||0)||0}));
   const existing=S.entries.find(e=>e.date===curDay());
   const keepStreak=existing?(+existing.streak||0):0;
-  // 存草稿一樣要帶當天的 TDL 快照：這裡是整筆覆蓋 entry，漏掉 tdlItems 會把已存的明細清空，
-  // 接著 syncEntryFor 又會把空的明細推上雲端，等於把紀錄洗掉
+  const tdlSafe=safeTdlFields(existing);
+  S.tomorrowTDL=tdlSafe.tdl;
   const _now=Date.now();localStorage.setItem('grandol_live_ts',String(_now));
-  const entry={date:curDay(),checked:[...Object.keys(S.checked)],diary:{...d},exp:S.exp,streak:keepStreak,tdl:S.tomorrowTDL,tdlTotal:(S.todayTDL||[]).length,tdlDone:Object.keys(S.tdlDone).length,tdlItems:buildTdlSnapshot(S.todayTDL,S.tdlDone),photos:(S.todayPhotos||[]),health:JSON.parse(JSON.stringify(S.health||emptyHealth())),savedAt:_now};
+  const entry={date:curDay(),checked:[...Object.keys(S.checked)],diary:{...d},exp:S.exp,streak:keepStreak,tdl:tdlSafe.tdl,tdlTotal:tdlSafe.tdlTotal,tdlDone:tdlSafe.tdlDone,tdlItems:tdlSafe.tdlItems,photos:(S.todayPhotos||[]),health:JSON.parse(JSON.stringify(S.health||emptyHealth())),savedAt:_now};
   const idx=S.entries.findIndex(e=>e.date===curDay());
   if(idx>=0)S.entries[idx]=entry;else S.entries.push(entry);
   sv(S);
@@ -6077,6 +6123,10 @@ document.addEventListener('visibilitychange',()=>{
   if(document.hidden)return;
   if(!rolloverToToday())return;
   viewDate=null;
+  // 頁面跨過午夜還開著時，換日已經把 S.tomorrowTDL 清空，但編輯列還停在昨天排的內容。
+  // 不跟著重設的話，那份舊計畫會被當成「今天排給明天的」再存一次。
+  tdlRows=[{theme:'',task:'',confirmed:false},{theme:'',task:'',confirmed:false},{theme:'',task:'',confirmed:false}];
+  tdlPlanEdited=false;todayListEdited=false; // 新的一天，使用者還沒動過任何東西
   applyViewDate(false);
   if(typeof renderFlowers==='function')renderFlowers();
   if(typeof renderFruits==='function')renderFruits();
