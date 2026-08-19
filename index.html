@@ -126,9 +126,9 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 .sticky-note:active{cursor:grabbing;}
 /* 自由調整寬高：拖右下角 */
 .sticky-note.sized{display:flex;flex-direction:column;max-width:none;min-width:0;}
-/* 拉大後清單自己撐出捲軸，高度由 JS 直接算好填滿（fitNoteList），
-   這裡不再用 flex:1 撐，兩邊搶著決定高度會讓捲軸卡在便利貼的圓角轉彎處，看起來像貼歪了 */
-.sticky-note.sized #sticky-items{min-height:0;overflow-y:auto;overflow-x:hidden;padding-right:6px;}
+/* 拉大後清單靠 flex 自動填滿剩餘高度並自己撐出捲軸；
+   min-height:0 是必要的，否則 flex 項目不會縮到比內容小、也就不會出現捲軸 */
+.sticky-note.sized #sticky-items{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;padding-right:6px;}
 /* 捲軸改細窄圓角、配色跟著紙條的暖棕色走，不要用瀏覽器預設的灰色直角樣式 */
 .sticky-note.sized #sticky-items{scrollbar-width:thin;scrollbar-color:#C9AE73 transparent;}
 .sticky-note.sized #sticky-items::-webkit-scrollbar{width:5px;}
@@ -1654,7 +1654,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v101';
+const APP_VER='v102';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
@@ -2541,9 +2541,9 @@ function renderStickyNote(){
       });
     });
   }
-  // 便利貼可自由縮放之後，高度一律由 fitNoteList() 依實際尺寸決定。
-  // 這裡若再依項目數硬塞 maxHeight，會把算好的高度蓋掉（>5 項時直接壓成 118px，
-  // 下面就空一大塊）。只有「沒自訂大小」時才沿用舊的固定上限。
+  // 便利貼可自由縮放之後，高度交給 CSS flex。這裡若再依項目數硬塞 maxHeight，
+  // 會把 flex 算好的高度蓋掉（>5 項時直接壓成 118px，下面就空一大塊）。
+  // 只有「沒自訂大小」的便利貼才沿用舊的固定上限。
   if(!(S.noteSize&&+S.noteSize.w>0)){
     box.style.maxHeight=items.length>5?'118px':'';
     box.style.overflowY=items.length>5?'auto':'';
@@ -2561,41 +2561,24 @@ const NOTE_SCALES=[0.85,1,1.2,1.45,1.7];
 function noteSizeLimit(){
   const st=document.getElementById('scene-stage');
   const w=st?st.clientWidth:360,h=st?st.clientHeight:320;
+  // 舞台還沒版面化時（首次繪製、被隱藏的分頁、圖片還沒把版面撐開）量到的是 0 或極小值。
+  // 這時候若照樣夾，便利貼會被壓成最小尺寸，而且那個值就寫死在行內樣式裡回不去了
+  // ——畫面上就是「一進來清單很短、下面一大塊空白，手動拉一下才正常」。
+  // 量不到就先不夾，用存起來的尺寸，等版面定案後的重繪自然會校正。
+  if(w<120||h<120)return {w:Infinity,h:Infinity};
   return {w:Math.max(130,Math.min(460,w-20)),h:Math.max(90,Math.min(520,h-20))};
 }
-// 清單高度直接算出來填滿剩餘空間。原本只靠 flex:1，實際上會被外層的高度限制卡住，
-// 便利貼拉高之後下面就空一大塊——改成明算，不受環境影響。
+// 清單高度交給 CSS flex 決定（.sticky-note.sized 是 flex column，清單 flex:1 自動填滿）。
+// 先前改用 JS 明算，是為了繞過一行會硬塞 maxHeight 的舊程式；那行修掉之後，
+// 明算反而變成問題來源——它依賴「在對的時機量到對的尺寸」，而首次繪製、字型換上、
+// 分頁還沒顯示時量到的都是暫時值，於是清單卡在錯的高度，非得手動拉一下才會重算。
+// CSS 版本沒有時機問題：版面一變瀏覽器就自己重算。
+// 這裡只負責把舊版留下的行內高度清掉，免得它繼續蓋過 flex。
 function fitNoteList(){
-  const note=document.getElementById('sticky-note'),it=document.getElementById('sticky-items');
-  if(!note||!it)return;
-  const sized=note.classList.contains('sized');
-  if(S.noteCollapsed||!sized){it.style.height='';it.style.maxHeight='';return;}
-  const top=note.querySelector('.sticky-top');
-  const cs=getComputedStyle(note);
-  const pad=parseFloat(cs.paddingTop||0)+parseFloat(cs.paddingBottom||0);
-  const topH=top?top.offsetHeight+parseFloat(getComputedStyle(top).marginBottom||0):0;
-  const avail=Math.max(40,note.clientHeight-pad-topH);
-  it.style.height=avail+'px';it.style.maxHeight=avail+'px';
-}
-// 便利貼的實際高度會在很多時候才定案：字型換上、圖片載完把版面撐開、雲端同步回來重繪、
-// 視窗縮放…以前是逐一去猜「哪些時機要重算」，漏掉一個清單就停在舊高度、下面留一截空白，
-// 非得手動拉一下才會修正。改成直接盯著尺寸變化，任何原因造成的改變都會自動補算。
-// （fitNoteList 只改子元素高度，不會回頭改變 note 本身的尺寸，所以不會無限循環。）
-let _noteRO=null;
-function watchNoteSize(){
-  if(!window.ResizeObserver)return;
-  const note=document.getElementById('sticky-note');
-  if(!note)return;
-  if(_noteRO)_noteRO.disconnect();
-  let pending=false;
-  _noteRO=new ResizeObserver(()=>{
-    if(pending)return;
-    pending=true;
-    requestAnimationFrame(()=>{pending=false;fitNoteList();});
-  });
-  _noteRO.observe(note);
-  const top=note.querySelector('.sticky-top');
-  if(top)_noteRO.observe(top); // 標題列會因字型換上而變高，也要一起盯
+  const it=document.getElementById('sticky-items');
+  if(!it)return;
+  if(it.style.height)it.style.height='';
+  if(it.style.maxHeight)it.style.maxHeight='';
 }
 function applyNoteStyle(){
   const note=document.getElementById('sticky-note');
@@ -2646,7 +2629,6 @@ function initStickyResize(){
     note.classList.add('sized');
     note.style.minWidth='0';note.style.maxWidth='none';
     note.style.width=w+'px';note.style.height=ht+'px';
-    fitNoteList(); // 拖的當下清單就跟著長高，不用等放開
   });
   const end=e=>{
     if(!on)return;on=false;e.stopPropagation();
@@ -5129,7 +5111,6 @@ initStickyDrag();
 initStickyResize();
 initPuppy(document.getElementById('puppy'),document.getElementById('scene-stage'),90);
 loadCloud();
-watchNoteSize();
 </script>
 <script>
 // ═══ PWA + 設定頁（v7.9 PWA 升級新增，不動原有邏輯） ═══
