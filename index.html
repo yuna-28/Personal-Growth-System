@@ -1654,7 +1654,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v100';
+const APP_VER='v101';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
@@ -2541,8 +2541,13 @@ function renderStickyNote(){
       });
     });
   }
-  box.style.maxHeight=items.length>5?'118px':'';
-  box.style.overflowY=items.length>5?'auto':'';
+  // 便利貼可自由縮放之後，高度一律由 fitNoteList() 依實際尺寸決定。
+  // 這裡若再依項目數硬塞 maxHeight，會把算好的高度蓋掉（>5 項時直接壓成 118px，
+  // 下面就空一大塊）。只有「沒自訂大小」時才沿用舊的固定上限。
+  if(!(S.noteSize&&+S.noteSize.w>0)){
+    box.style.maxHeight=items.length>5?'118px':'';
+    box.style.overflowY=items.length>5?'auto':'';
+  }
   if(S.notePos){
     const stage=document.getElementById('scene-stage');
     note.style.left=S.notePos.x+'px';note.style.top=S.notePos.y+'px';note.style.right='auto';
@@ -6091,6 +6096,10 @@ function writeDraftEntry(){
 let _autoDraftT=null;
 function autoDraftDebounced(){
   if(!ctxIsToday())return;
+  // 時間戳要「當下」就蓋，不能等 debounce。它是多裝置判斷「誰比較新」的唯一依據，
+  // 而寫入 entry 要 2 秒後才發生——這段空窗期內只要剛好同步一次雲端，
+  // 剛打的勾就會被雲端的舊版本蓋回去（勾了卻沒記到）。
+  localStorage.setItem('grandol_live_ts',String(Date.now()));
   clearTimeout(_autoDraftT);
   _autoDraftT=setTimeout(()=>{
     if(!writeDraftEntry())return;
