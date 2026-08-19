@@ -126,7 +126,15 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 .sticky-note:active{cursor:grabbing;}
 /* 自由調整寬高：拖右下角 */
 .sticky-note.sized{display:flex;flex-direction:column;max-width:none;min-width:0;}
-.sticky-note.sized #sticky-items{flex:1;min-height:0;overflow-y:auto;}
+/* 拉大後清單自己撐出捲軸，高度由 JS 直接算好填滿（fitNoteList），
+   這裡不再用 flex:1 撐，兩邊搶著決定高度會讓捲軸卡在便利貼的圓角轉彎處，看起來像貼歪了 */
+.sticky-note.sized #sticky-items{min-height:0;overflow-y:auto;overflow-x:hidden;padding-right:6px;}
+/* 捲軸改細窄圓角、配色跟著紙條的暖棕色走，不要用瀏覽器預設的灰色直角樣式 */
+.sticky-note.sized #sticky-items{scrollbar-width:thin;scrollbar-color:#C9AE73 transparent;}
+.sticky-note.sized #sticky-items::-webkit-scrollbar{width:5px;}
+.sticky-note.sized #sticky-items::-webkit-scrollbar-track{background:transparent;}
+.sticky-note.sized #sticky-items::-webkit-scrollbar-thumb{background:#C9AE73;border-radius:999px;}
+.sticky-note.sized #sticky-items::-webkit-scrollbar-thumb:hover{background:#B79A55;}
 .sticky-resize{position:absolute;right:1px;bottom:1px;width:18px;height:18px;cursor:nwse-resize;touch-action:none;z-index:9;opacity:.45;transition:opacity .15s;}
 .sticky-resize::before{content:'';position:absolute;right:4px;bottom:4px;width:8px;height:8px;border-right:2px solid #B79A55;border-bottom:2px solid #B79A55;border-radius:0 0 3px 0;}
 .sticky-note:hover .sticky-resize{opacity:.9;}
@@ -1646,7 +1654,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v97';
+const APP_VER='v98';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
