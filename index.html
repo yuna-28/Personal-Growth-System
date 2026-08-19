@@ -1654,7 +1654,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v98';
+const APP_VER='v99';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
@@ -5092,6 +5092,11 @@ initStickyDrag();
 initStickyResize();
 initPuppy(document.getElementById('puppy'),document.getElementById('scene-stage'),90);
 loadCloud();
+// Google Fonts 是用 <link> 動態載入的（display=swap），開頁當下量到的是備援字型的行高，
+// 字型換上後 .sticky-top 實際高度會變，便利貼清單卻沒跟著重算，於是留下一截空白，
+// 要等使用者拖一下（重新觸發 fitNoteList）才會自己修正。字型就緒後補算一次即可。
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{if(typeof fitNoteList==='function')fitNoteList();}).catch(()=>{});
+window.addEventListener('load',()=>{if(typeof fitNoteList==='function')fitNoteList();});
 </script>
 <script>
 // ═══ PWA + 設定頁（v7.9 PWA 升級新增，不動原有邏輯） ═══
