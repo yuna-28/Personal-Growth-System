@@ -1654,7 +1654,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v102';
+const APP_VER='v103';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
@@ -3225,13 +3225,23 @@ function healthNoteDebounced(){clearTimeout(_healthNoteT);_healthNoteT=setTimeou
 let tdlRows=S.tomorrowTDL.length?S.tomorrowTDL.map(r=>({...r,confirmed:r.confirmed||false})):[{theme:'',task:'',confirmed:false},{theme:'',task:'',confirmed:false},{theme:'',task:'',confirmed:false}];
 let tdlEditCtx='today',backfillRows=[];
 function curRows(){return tdlEditCtx==='today'?tdlRows:backfillRows;}
-function persistTdlIfBackfill(){
+// TDL 編輯列的存檔。補記模式寫進那天的 entry；今天模式寫的是「明天的計畫」。
+// 今天模式以前在這裡什麼都不做——全 App 只有這個欄位沒有自動存檔（日記每打一個字就存、
+// 習慣和健康也都會存），內容只活在記憶體的 tdlRows 裡。所以「只打了明天 TDL、
+// 沒再碰其他欄位」就關掉 App 的話，它從來沒落地過，隔天跨日自然是一片空白。
+function persistTdlEdit(){
   if(tdlEditCtx&&tdlEditCtx!=='today'){
     const en=getOrCreateEntry(tdlEditCtx);
     en.tdl=backfillRows.filter(r=>r.theme||r.task).map(r=>({theme:r.theme,task:r.task}));
     sv(S);syncEntryDebounced();
     mirrorYesterdayTdlToToday(tdlEditCtx);
+    return;
   }
+  // 先立刻寫進 localStorage（不等 debounce），這樣就算下一秒關掉 App 也不會掉；
+  // 再交給自動存草稿把它寫進 entry 並同步上雲端。
+  S.tomorrowTDL=tdlRows.filter(r=>r.theme||r.task).map(r=>({theme:r.theme,task:r.task,c:+((r&&r.c)||0)||0}));
+  sv(S);
+  autoDraftDebounced();
 }
 // 昨天的 TDL＝今天的計畫：補記改了昨天的 TDL，今天的便利貼要即時跟上
 function mirrorYesterdayTdlToToday(ds){
@@ -3261,11 +3271,11 @@ function renderTDL(){
   // 標記「使用者真的動過明天的計畫」——沒有這個標記就無法分辨
   // 「他把計畫刪光了」和「這台裝置還沒同步到計畫」，只能一律保守不覆蓋
   const markPlan=()=>{if(tdlEditCtx==='today')tdlPlanEdited=true;};
-  document.querySelectorAll('#tdl-rows input').forEach(el=>el.addEventListener('input',()=>{markPlan();curRows()[+el.dataset.i][el.dataset.f]=el.value;persistTdlIfBackfill();}));
-  document.querySelectorAll('#tdl-rows .tdl-confirm-btn').forEach(b=>b.addEventListener('click',()=>{markPlan();curRows()[+b.dataset.i].confirmed=!curRows()[+b.dataset.i].confirmed;renderTDL();}));
-  document.querySelectorAll('#tdl-rows .tdl-del-btn').forEach(b=>b.addEventListener('click',()=>{markPlan();curRows().splice(+b.dataset.i,1);persistTdlIfBackfill();renderTDL();}));
+  document.querySelectorAll('#tdl-rows input').forEach(el=>el.addEventListener('input',()=>{markPlan();curRows()[+el.dataset.i][el.dataset.f]=el.value;persistTdlEdit();}));
+  document.querySelectorAll('#tdl-rows .tdl-confirm-btn').forEach(b=>b.addEventListener('click',()=>{markPlan();curRows()[+b.dataset.i].confirmed=!curRows()[+b.dataset.i].confirmed;persistTdlEdit();renderTDL();}));
+  document.querySelectorAll('#tdl-rows .tdl-del-btn').forEach(b=>b.addEventListener('click',()=>{markPlan();curRows().splice(+b.dataset.i,1);persistTdlEdit();renderTDL();}));
 }
-document.getElementById('tdl-add').addEventListener('click',()=>{if(tdlEditCtx==='today')tdlPlanEdited=true;curRows().push({theme:'',task:'',confirmed:false});persistTdlIfBackfill();renderTDL();});
+document.getElementById('tdl-add').addEventListener('click',()=>{if(tdlEditCtx==='today')tdlPlanEdited=true;curRows().push({theme:'',task:'',confirmed:false});persistTdlEdit();renderTDL();});
 
 // ── DIARY autosave ────────────────────────────────────
 ['hl','rf','gr','quote'].forEach(k=>{
