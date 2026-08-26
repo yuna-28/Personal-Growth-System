@@ -1654,7 +1654,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v103';
+const APP_VER='v104';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
@@ -1946,13 +1946,6 @@ function buildTdlSnapshot(items,doneMap){
 // 以下三個函式是唯一的寫入管道：一律用「主題＋任務」當身分，c 一律保留。
 function tdlKey(r){return (((r&&r.theme)||'')+'').trim()+'␟'+(((r&&r.task)||'')+'').trim();}
 function tdlNorm(r){return {theme:((r&&r.theme)||'')+'',task:((r&&r.task)||'')+'',c:Math.max(0,+((r&&r.c)||0)||0)};}
-// 今天的清單＝給今天的計畫 ＋ 順延過來、計畫裡沒有的（不重複）
-function tdlMergePlanCarry(plan,carried){
-  const out=(plan||[]).map(tdlNorm);
-  const seen={};out.forEach(r=>{seen[tdlKey(r)]=1;});
-  (carried||[]).forEach(r=>{const k=tdlKey(r);if(!seen[k]){out.push(tdlNorm(r));seen[k]=1;}});
-  return out;
-}
 // 設定今天的清單。doneOf 省略＝沿用目前的完成狀態（依身分對應，不看位置）；
 // 傳函式＝用指定來源決定（例如從雲端 entry 還原）。
 function setTodayTDL(list,doneOf){
@@ -1989,9 +1982,10 @@ function rolloverToToday(){
   if(S.lastPlant===t||S.lastStreak===t){S.dayKey=t;sv(S);return true;}
   S.tdlHist=S.tdlHist||{};
   if(S.dayKey&&Object.keys(S.tdlDone||{}).length)S.tdlHist[S.dayKey]=S.tdlDone;
-  // 昨天沒打勾的 TDL → 自動順延到今天，並把順延次數 +1（一直沒做就會一直累加）
+  // 沒做完的不再自動順延——當天沒完成就如實記成沒完成。要延就自己按 ⏩（會進到明天的計畫）。
+  // 這同時解決了裝置不同步：自動順延是各台裝置「依自己的打勾狀態」各算各的，
+  // 兩邊算出來的清單本來就會不一樣。現在今天的清單＝昨天存在雲端的計畫，只有單一來源。
   const _snap=S.dayKey?buildTdlSnapshot(S.todayTDL,S.tdlDone):[];
-  const _carry=_snap.filter(x=>!x.done).map(x=>({theme:x.theme,task:x.task,c:(+x.c||0)+1}));
   // 先把舊那天的紀錄落地到它自己的 entry：下面就會把 checked/diary/todayTDL 全部清空，
   // 沒按過「種下今天」的那天，這些資料會就此消失。已有內容的欄位不覆蓋
   // （已種下的那天，entry 裡的才是權威版本）
@@ -2017,8 +2011,8 @@ function rolloverToToday(){
   const _hk=Object.keys(S.tdlHist).sort();
   while(_hk.length>60){delete S.tdlHist[_hk.shift()];}
   S.checked={};S.diary={hl:'',rf:'',gr:'',quote:''};S.todayPhotos=[];
-  // 今天的清單＝昨天排給今天的計畫 ＋ 昨天沒做完自動順延過來的（不重複）。新的一天一律未完成。
-  setTodayTDL(tdlMergePlanCarry(S.tomorrowTDL,_carry),()=>false);
+  // 今天的清單＝昨天排給今天的計畫。新的一天一律未完成。
+  setTodayTDL(S.tomorrowTDL,()=>false);
   S.tomorrowTDL=[];
   S.health=emptyHealth(); // 新的一天，健康記錄歸零
   S.dayKey=t;sv(S);
@@ -2051,6 +2045,7 @@ async function syncEntry(entry){
 }
 let stateTimer=null;
 function syncStateDebounced(){clearTimeout(stateTimer);stateTimer=setTimeout(syncState,1500);}
+let _stateRetry=false; // 衝突自動重試中的旗標，避免無限互推
 async function syncState(){
   if(VIEWER_MODE){setSync('ok','👀 監督模式（唯讀）');return;}
   if(!GAS_URL){setSync('error','尚未設定雲端（設定→雲端同步）');return;}
@@ -2081,7 +2076,16 @@ async function syncState(){
     });
     const _j=await _res.json().catch(()=>null);
     if(_j&&_j.conflict){
-      setSync('error','⚠️ 雲端有另一台裝置的新資料，請重新整理載入後再操作');
+      // 另一台裝置比我們新。以前只是跳錯誤就結束——但 grandol_state_ts 沒更新，
+      // 之後每一次推送都會再撞同一個衝突，這台裝置等於「永遠同步不上去」，
+      // 而錯誤訊息又躲在同步列裡不容易發現。改成自動拉一次最新的再重推。
+      if(!_stateRetry){
+        _stateRetry=true;
+        try{ await loadCloud(); await syncState(); }
+        finally{ _stateRetry=false; }
+      }else{
+        setSync('error','⚠️ 另一台裝置同時在改，請重新整理再試');
+      }
       return;
     }
     localStorage.setItem('grandol_state_ts',String(_now));
@@ -2164,11 +2168,9 @@ async function loadCloud(){
       const _yd=new Date();_yd.setDate(_yd.getDate()-1);const _yds=fmtLocal(_yd);
       const _ye=S.entries.find(e=>e.date===_yds);
       if(_ye&&Array.isArray(_ye.tdl)&&_ye.tdl.length){
-        // 順延過來的（c>0 且不在昨天的計畫裡）要保住——直接用計畫覆蓋會把它們洗掉
+        // 今天的清單就是昨天的計畫，沒有別的來源要合併（已取消自動順延）
         const _plan=_ye.tdl.map(tdlNorm);
-        const _carried=(S.todayTDL||[]).filter(r=>(+r.c||0)>0&&!_plan.some(p=>tdlKey(p)===tdlKey(r)));
-        const _merged=tdlMergePlanCarry(_plan,_carried);
-        if(JSON.stringify(_merged)!==JSON.stringify((S.todayTDL||[]).map(tdlNorm)))setTodayTDL(_merged);
+        if(JSON.stringify(_plan)!==JSON.stringify((S.todayTDL||[]).map(tdlNorm)))setTodayTDL(_plan);
       }
     }
     // 還原「今天」的即時狀態（草稿／已種下的同步核心）：
@@ -3253,9 +3255,7 @@ function mirrorYesterdayTdlToToday(ds){
   if(ds!==fmtLocal(_yd))return;
   const en=S.entries.find(x=>x.date===ds);
   if(!en||!Array.isArray(en.tdl))return;
-  const _plan=en.tdl.map(tdlNorm);
-  const _carried=(S.todayTDL||[]).filter(r=>(+r.c||0)>0&&!_plan.some(p=>tdlKey(p)===tdlKey(r)));
-  setTodayTDL(tdlMergePlanCarry(_plan,_carried));
+  setTodayTDL(en.tdl.map(tdlNorm));
   sv(S);
   if(typeof renderStickyNote==='function')renderStickyNote();
   syncStateDebounced();
