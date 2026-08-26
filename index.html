@@ -151,6 +151,13 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 /* 一律淡淡顯示就好：只在 hover 出現的話，手機上等於找不到 */
 .sticky-del{flex-shrink:0;width:16px;height:16px;border:none;padding:0;border-radius:4px;background:none;color:#B79A55;font-size:11px;line-height:1;cursor:pointer;opacity:.45;transition:opacity .15s,background .15s,color .15s;}
 .sticky-item:hover .sticky-del{opacity:.8;}
+/* 拖曳排序把手（便利貼與明天 TDL 編輯列共用） */
+.row-grip{flex-shrink:0;width:13px;text-align:center;cursor:grab;user-select:none;touch-action:none;
+  color:#B79A55;font-size:12px;line-height:1;opacity:.35;transition:opacity .15s;}
+.sticky-item:hover .row-grip,.tdl-row-wrap:hover .row-grip{opacity:.75;}
+.row-grip:active{cursor:grabbing;opacity:1;}
+.tdl-row-wrap .row-grip{color:var(--tc3);}
+.row-dragging{opacity:.6;transform:scale(.99);}
 /* ⏩ 順延到明天 */
 .sticky-post{flex-shrink:0;width:18px;height:18px;border:none;padding:0;border-radius:5px;background:none;color:#9A8248;font-size:11px;line-height:1;cursor:pointer;opacity:.45;transition:opacity .15s,background .15s,color .15s;}
 .sticky-item:hover .sticky-post{opacity:.85;}
@@ -1654,7 +1661,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v104';
+const APP_VER='v105';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
@@ -2396,7 +2403,7 @@ function stickyCtx(){
   // 當天自己的快照是權威版本；沒有快照才回頭用「前一天規劃的 tdl」
   let items;
   if(en&&Array.isArray(en.tdlItems)&&en.tdlItems.length){
-    items=en.tdlItems.map(x=>({theme:x.theme,task:x.task}));
+    items=en.tdlItems.map(x=>({theme:x.theme,task:x.task,c:Math.max(0,+x.c||0)}));
   }else{
     const prev=new Date(ds+'T00:00:00');prev.setDate(prev.getDate()-1);
     const pe=S.entries.find(x=>x.date===fmtLocal(prev));
@@ -2432,6 +2439,51 @@ function usedThemes(){
 // 刪掉第 i 項後，完成狀態要跟著重新對位。
 // tdlDone 的 key 是位置編號（t0/t1…），少一項之後所有在它後面的都要往前移一格，
 // 不重算的話會變成「刪了 A，B 卻繼承了 A 的打勾」
+// ── TDL 上下拖曳排序（便利貼與編輯列共用）──────────────────
+// 用 pointer 事件（滑鼠與觸控同一套），拖動時直接就地調整 DOM 順序，放手才寫回資料。
+// 每一列帶 data-idx＝它原本的位置，放手時讀 DOM 的順序就得到「新順序←舊位置」的對照表，
+// 交給 onDrop 去重排資料（順便把用位置當 key 的完成狀態一起搬對）。
+function initRowDrag(boxId,rowSel,handleSel,onDrop){
+  const box=document.getElementById(boxId);
+  if(!box)return;
+  box.querySelectorAll(handleSel).forEach(h=>{
+    const row=h.closest(rowSel);
+    if(!row)return;
+    // 便利貼本身可以被拖著移動位置，這裡要攔下來，不然會變成整張紙跟著跑
+    h.addEventListener('mousedown',e=>e.stopPropagation());
+    h.addEventListener('touchstart',e=>e.stopPropagation(),{passive:true});
+    h.addEventListener('pointerdown',e=>{
+      if(e.pointerType==='mouse'&&e.button!==0)return;
+      e.stopPropagation();e.preventDefault();
+      try{h.setPointerCapture(e.pointerId);}catch(_){}
+      row.classList.add('row-dragging');
+      const move=ev=>{
+        const rows=[...box.querySelectorAll(rowSel)];
+        for(const other of rows){
+          if(other===row)continue;
+          const r=other.getBoundingClientRect();
+          if(ev.clientY>r.top&&ev.clientY<r.bottom){
+            // 過了對方的中線才換位，避免在邊界來回抖動
+            const after=ev.clientY>r.top+r.height/2;
+            box.insertBefore(row,after?other.nextSibling:other);
+            break;
+          }
+        }
+      };
+      const end=()=>{
+        h.removeEventListener('pointermove',move);
+        h.removeEventListener('pointerup',end);
+        h.removeEventListener('pointercancel',end);
+        row.classList.remove('row-dragging');
+        const order=[...box.querySelectorAll(rowSel)].map(el=>+el.dataset.idx);
+        if(order.some((v,i)=>v!==i))onDrop(order);
+      };
+      h.addEventListener('pointermove',move);
+      h.addEventListener('pointerup',end);
+      h.addEventListener('pointercancel',end);
+    });
+  });
+}
 function remapDoneAfterDelete(doneMap,idx,len){
   const nd={};
   for(let j=0;j<len;j++){
@@ -2504,7 +2556,8 @@ function renderStickyNote(){
       const key='t'+i;
       const done=!!ctx.done[key];
       const cn=Math.max(0,+r.c||0);
-      return`<div class="sticky-item">
+      return`<div class="sticky-item" data-idx="${i}">
+        <span class="row-grip" title="拖曳調整順序">⠿</span>
         <div class="sticky-check${done?' done':''}" data-k="${key}">${done?'✓':''}</div>
         <span class="sticky-txt" style="${done?'text-decoration:line-through;opacity:.55;':''}">${r.theme?`<b>${esc(r.theme)}：</b>`:''}${esc(r.task||'')}${cn?`<span class="sticky-carry" title="被順延過 ${cn} 次">⏩${cn}</span>`:''}</span>
         ${(ctx.todayMode&&!done)?`<button class="sticky-post" data-i="${i}" title="順延到明天">⏩</button>`:''}
@@ -2541,6 +2594,24 @@ function renderStickyNote(){
         }else autoDraftDebounced(); // 勾選也即時落地，跨日不會白勾
         sv(S);checkLevelUp(oldExp,S.exp);renderExpBar();renderStickyNote();syncStateDebounced();
       });
+    });
+    // 上下拖曳排序。完成狀態的 key 是位置（t0/t1…），順序換了要一起搬，不然會勾錯人
+    initRowDrag('sticky-items','.sticky-item','.row-grip',order=>{
+      const c3=stickyCtx();
+      const newItems=order.map(i=>c3.items[i]);
+      const newDone={};
+      order.forEach((oldIdx,newIdx)=>{if(c3.done['t'+oldIdx])newDone['t'+newIdx]=true;});
+      if(c3.todayMode){
+        S.todayTDL=newItems;S.tdlDone=newDone;
+        sv(S);autoDraftDebounced();
+      }else{
+        S.tdlHist[c3.ds]=newDone;
+        const en=getOrCreateEntry(c3.ds);
+        en.tdlItems=buildTdlSnapshot(newItems,newDone);
+        en.tdlTotal=en.tdlItems.length;en.tdlDone=en.tdlItems.filter(x=>x.done).length;
+        sv(S);syncEntryDebounced();
+      }
+      renderStickyNote();syncStateDebounced();
     });
   }
   // 便利貼可自由縮放之後，高度交給 CSS flex。這裡若再依項目數硬塞 maxHeight，
@@ -3262,7 +3333,8 @@ function renderTDL(){
   // 打成「英文」「英文課」會裂成兩類，所以盡量從既有的挑
   const themeList=`<datalist id="tdl-theme-list">${usedThemes().map(t=>`<option value="${t.replace(/"/g,'&quot;')}"></option>`).join('')}</datalist>`;
   document.getElementById('tdl-rows').innerHTML=themeList+rows.map((r,i)=>`
-    <div class="tdl-row-wrap${r.confirmed?' confirmed-row':''}">
+    <div class="tdl-row-wrap${r.confirmed?' confirmed-row':''}" data-idx="${i}">
+      <span class="row-grip" title="拖曳調整順序">⠿</span>
       <input class="tdl-in" list="tdl-theme-list" placeholder="主題" value="${(r.theme||'').replace(/"/g,'&quot;')}" data-i="${i}" data-f="theme" style="width:75px;flex-shrink:0;"/>
       <input class="tdl-in" placeholder="${showConfirm?'明日目標':'目標'}" value="${(r.task||'').replace(/"/g,'&quot;')}" data-i="${i}" data-f="task" style="flex:1;min-width:0;"/>
       ${showConfirm?`<button class="tdl-confirm-btn${r.confirmed?' confirmed':''}" data-i="${i}" title="確認加入明天">${r.confirmed?'⭐':'✓'}</button>`:''}
@@ -3274,6 +3346,14 @@ function renderTDL(){
   document.querySelectorAll('#tdl-rows input').forEach(el=>el.addEventListener('input',()=>{markPlan();curRows()[+el.dataset.i][el.dataset.f]=el.value;persistTdlEdit();}));
   document.querySelectorAll('#tdl-rows .tdl-confirm-btn').forEach(b=>b.addEventListener('click',()=>{markPlan();curRows()[+b.dataset.i].confirmed=!curRows()[+b.dataset.i].confirmed;persistTdlEdit();renderTDL();}));
   document.querySelectorAll('#tdl-rows .tdl-del-btn').forEach(b=>b.addEventListener('click',()=>{markPlan();curRows().splice(+b.dataset.i,1);persistTdlEdit();renderTDL();}));
+  // 上下拖曳排序：編輯列是純陣列，照新順序重排就好
+  initRowDrag('tdl-rows','.tdl-row-wrap','.row-grip',order=>{
+    markPlan();
+    const rows=curRows();
+    const next=order.map(i=>rows[i]);
+    rows.length=0;rows.push(...next);
+    persistTdlEdit();renderTDL();
+  });
 }
 document.getElementById('tdl-add').addEventListener('click',()=>{if(tdlEditCtx==='today')tdlPlanEdited=true;curRows().push({theme:'',task:'',confirmed:false});persistTdlEdit();renderTDL();});
 
