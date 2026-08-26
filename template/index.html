@@ -152,8 +152,10 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 .sticky-del{flex-shrink:0;width:16px;height:16px;border:none;padding:0;border-radius:4px;background:none;color:#B79A55;font-size:11px;line-height:1;cursor:pointer;opacity:.45;transition:opacity .15s,background .15s,color .15s;}
 .sticky-item:hover .sticky-del{opacity:.8;}
 /* 拖曳排序把手（便利貼與明天 TDL 編輯列共用） */
-.row-grip{flex-shrink:0;width:13px;text-align:center;cursor:grab;user-select:none;touch-action:none;
-  color:#B79A55;font-size:12px;line-height:1;opacity:.35;transition:opacity .15s;}
+/* 把手要好按：13px 的小方塊手指根本點不到，靠左右內距把可觸範圍撐到 ~24px */
+.row-grip{flex-shrink:0;width:10px;padding:6px 7px;margin:-6px -2px -6px -4px;text-align:center;
+  cursor:grab;user-select:none;touch-action:none;
+  color:#B79A55;font-size:13px;line-height:1;opacity:.45;transition:opacity .15s;}
 .sticky-item:hover .row-grip,.tdl-row-wrap:hover .row-grip{opacity:.75;}
 .row-grip:active{cursor:grabbing;opacity:1;}
 .tdl-row-wrap .row-grip{color:var(--tc3);}
@@ -1661,7 +1663,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v105';
+const APP_VER='v106';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
@@ -2459,8 +2461,9 @@ function initRowDrag(boxId,rowSel,handleSel,onDrop){
     h.addEventListener('pointerdown',e=>{
       if(e.pointerType==='mouse'&&e.button!==0)return;
       e.stopPropagation();e.preventDefault();
-      try{h.setPointerCapture(e.pointerId);}catch(_){}
       row.classList.add('row-dragging');
+      // 移動與放開一律聽 window。掛在把手上、靠 setPointerCapture 轉發的話，
+      // 只要捕獲沒成立（指標離開那 13px 的小方塊就可能發生），拖曳就整個沒反應
       const move=ev=>{
         const rows=[...box.querySelectorAll(rowSel)];
         for(const other of rows){
@@ -2475,16 +2478,16 @@ function initRowDrag(boxId,rowSel,handleSel,onDrop){
         }
       };
       const end=()=>{
-        h.removeEventListener('pointermove',move);
-        h.removeEventListener('pointerup',end);
-        h.removeEventListener('pointercancel',end);
+        window.removeEventListener('pointermove',move);
+        window.removeEventListener('pointerup',end);
+        window.removeEventListener('pointercancel',end);
         row.classList.remove('row-dragging');
         const order=[...box.querySelectorAll(rowSel)].map(el=>+el.dataset.idx);
         if(order.some((v,i)=>v!==i))onDrop(order);
       };
-      h.addEventListener('pointermove',move);
-      h.addEventListener('pointerup',end);
-      h.addEventListener('pointercancel',end);
+      window.addEventListener('pointermove',move);
+      window.addEventListener('pointerup',end);
+      window.addEventListener('pointercancel',end);
     });
   });
 }
