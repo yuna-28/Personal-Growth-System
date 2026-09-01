@@ -151,6 +151,19 @@ body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 /* 一律淡淡顯示就好：只在 hover 出現的話，手機上等於找不到 */
 .sticky-del{flex-shrink:0;width:16px;height:16px;border:none;padding:0;border-radius:4px;background:none;color:#B79A55;font-size:11px;line-height:1;cursor:pointer;opacity:.45;transition:opacity .15s,background .15s,color .15s;}
 .sticky-item:hover .sticky-del{opacity:.8;}
+/* 便利貼上直接新增 */
+.sticky-add{margin:3px 2px 0;padding:5px 6px;border:1.5px dashed rgba(183,154,85,.5);border-radius:8px;
+  text-align:center;color:#9A8248;font-weight:700;cursor:pointer;opacity:.7;transition:opacity .15s,background .15s;}
+.sticky-add:hover{opacity:1;background:rgba(183,154,85,.12);}
+.sticky-addrow{display:flex;align-items:center;gap:4px;margin:3px 2px 0;}
+.sticky-addin{min-width:0;background:rgba(255,255,255,.85);border:1.5px solid rgba(183,154,85,.45);border-radius:7px;
+  padding:4px 6px;font-family:'Quicksand',sans-serif;font-size:1em;color:var(--tc);outline:none;}
+.sticky-addin:focus{border-color:rgba(183,154,85,.9);}
+.sticky-addin.th{flex:0 0 42%;}
+.sticky-addin.tk{flex:1;}
+.sticky-addok{flex-shrink:0;width:22px;height:22px;border:none;border-radius:6px;cursor:pointer;
+  background:rgba(183,154,85,.25);color:#7A5F20;font-size:12px;line-height:1;}
+.sticky-addok:hover{background:rgba(183,154,85,.45);}
 /* 拖曳排序把手（便利貼與明天 TDL 編輯列共用） */
 /* 把手要好按：13px 的小方塊手指根本點不到，靠左右內距把可觸範圍撐到 ~24px */
 .row-grip{flex-shrink:0;width:10px;padding:6px 7px;margin:-6px -2px -6px -4px;text-align:center;
@@ -1663,7 +1676,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v107';
+const APP_VER='v108';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
@@ -2546,6 +2559,72 @@ function deleteTdlItem(i){
   }
   renderExpBar();renderStickyNote();syncStateDebounced();
 }
+// ── 直接在便利貼上新增項目 ──────────────────────────────
+let _stickyAdding=false,_stickyAddDraft={theme:'',task:''},_stickyAddFocus='task';
+function addTdlItem(theme,task){
+  const c=stickyCtx();
+  const item={theme:(theme||'').trim(),task:(task||'').trim(),c:0};
+  if(!item.theme&&!item.task)return false;
+  todayListEdited=true;
+  if(c.todayMode){
+    S.todayTDL=(S.todayTDL||[]).concat([item]);   // 加在最後，完成狀態的位置編號不受影響
+    sv(S);autoDraftDebounced();
+  }else{
+    const en=getOrCreateEntry(c.ds);
+    en.tdlItems=buildTdlSnapshot(c.items.concat([item]),c.done);
+    en.tdlTotal=en.tdlItems.length;en.tdlDone=en.tdlItems.filter(x=>x.done).length;
+    sv(S);syncEntryDebounced();
+  }
+  syncStateDebounced();
+  return true;
+}
+function closeStickyAdd(){_stickyAdding=false;_stickyAddDraft={theme:'',task:''};renderStickyNote();}
+function commitStickyAdd(keepOpen){
+  const ok=addTdlItem(_stickyAddDraft.theme,_stickyAddDraft.task);
+  _stickyAddDraft={theme:'',task:''};
+  _stickyAdding=!!keepOpen&&ok;      // 用 Enter 送出就繼續開著，可以連續新增
+  _stickyAddFocus='task';
+  renderStickyNote();
+  return ok;
+}
+function wireStickyAdd(){
+  const stop=e=>e.stopPropagation();   // 便利貼本身可拖動，這些控制項不能觸發它
+  const btn=document.getElementById('sticky-add-btn');
+  if(btn){
+    btn.addEventListener('mousedown',stop);
+    btn.addEventListener('touchstart',stop,{passive:true});
+    btn.addEventListener('click',e=>{e.stopPropagation();_stickyAdding=true;_stickyAddFocus='task';renderStickyNote();});
+  }
+  const row=document.getElementById('sticky-addrow');
+  if(!row)return;
+  row.addEventListener('mousedown',stop);
+  row.addEventListener('touchstart',stop,{passive:true});
+  row.addEventListener('pointerdown',stop);
+  const th=document.getElementById('sticky-add-theme'),tk=document.getElementById('sticky-add-task');
+  const okBtn=document.getElementById('sticky-add-ok');
+  // 每一次按鍵都存進草稿：背景同步重繪時才不會把打到一半的字弄不見
+  [[th,'theme'],[tk,'task']].forEach(([el,k])=>{
+    if(!el)return;
+    el.addEventListener('input',()=>{_stickyAddDraft[k]=el.value;});
+    el.addEventListener('focus',()=>{_stickyAddFocus=k;});
+    el.addEventListener('keydown',e=>{
+      if(e.key==='Enter'){e.preventDefault();commitStickyAdd(true);}
+      else if(e.key==='Escape'){e.preventDefault();closeStickyAdd();}
+    });
+    // 點到別的地方就收起來；已經打了字就順手存下來，不要讓它白打
+    el.addEventListener('blur',()=>setTimeout(()=>{
+      const a=document.activeElement;
+      if(a&&a.closest&&a.closest('#sticky-addrow'))return;   // 只是在兩格之間切換
+      if(!_stickyAdding)return;
+      if(_stickyAddDraft.theme.trim()||_stickyAddDraft.task.trim())commitStickyAdd(false);
+      else closeStickyAdd();
+    },0));
+  });
+  if(okBtn)okBtn.addEventListener('click',e=>{e.stopPropagation();commitStickyAdd(true);});
+  // 重繪後把游標放回原本那一格
+  const target=_stickyAddFocus==='theme'?th:tk;
+  if(target){target.focus();try{target.setSelectionRange(target.value.length,target.value.length);}catch(_){}}
+}
 function renderStickyNote(){
   const note=document.getElementById('sticky-note');
   applyNoteStyle();
@@ -2554,8 +2633,17 @@ function renderStickyNote(){
   document.getElementById('sticky-date').textContent=`${dd.getMonth()+1}/${dd.getDate()}`;
   const items=ctx.items;
   const box=document.getElementById('sticky-items');
+  // 直接在便利貼上新增，不必跑回「明天 TDL」補。輸入中的內容存在 _stickyAddDraft，
+  // 背景同步觸發重繪也不會把打到一半的字弄丟。
+  const addUI=_stickyAdding
+    ?`<div class="sticky-addrow" id="sticky-addrow">
+        <input class="sticky-addin th" id="sticky-add-theme" list="tdl-theme-list" placeholder="主題" value="${esc(_stickyAddDraft.theme)}"/>
+        <input class="sticky-addin tk" id="sticky-add-task" placeholder="要做什麼？" value="${esc(_stickyAddDraft.task)}"/>
+        <button class="sticky-addok" id="sticky-add-ok" title="加入">✓</button>
+      </div>`
+    :`<div class="sticky-add" id="sticky-add-btn">＋ 新增一項</div>`;
   if(!items.length){
-    box.innerHTML=ctx.todayMode?`<div class="sticky-empty">今天還沒有計畫，<br/>去填明天TDL吧 ✨</div>`:`<div class="sticky-empty">前一天沒有規劃 TDL</div>`;
+    box.innerHTML=(ctx.todayMode?`<div class="sticky-empty">今天還沒有計畫 ✨</div>`:`<div class="sticky-empty">前一天沒有規劃 TDL</div>`)+addUI;
   }else{
     box.innerHTML=items.map((r,i)=>{
       const key='t'+i;
@@ -2568,7 +2656,7 @@ function renderStickyNote(){
         ${(ctx.todayMode&&!done)?`<button class="sticky-post" data-i="${i}" title="順延到明天">⏩</button>`:''}
         <button class="sticky-del" data-i="${i}" title="刪除這一項">✕</button>
       </div>`;
-    }).join('');
+    }).join('')+addUI;
     box.querySelectorAll('.sticky-post').forEach(el=>{
       el.addEventListener('mousedown',e=>e.stopPropagation());
       el.addEventListener('touchstart',e=>e.stopPropagation(),{passive:true});
@@ -2619,6 +2707,7 @@ function renderStickyNote(){
       renderStickyNote();syncStateDebounced();
     });
   }
+  wireStickyAdd();
   // 便利貼可自由縮放之後，高度交給 CSS flex。這裡若再依項目數硬塞 maxHeight，
   // 會把 flex 算好的高度蓋掉（>5 項時直接壓成 118px，下面就空一大塊）。
   // 只有「沒自訂大小」的便利貼才沿用舊的固定上限。
