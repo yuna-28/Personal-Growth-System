@@ -1676,7 +1676,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v109';
+const APP_VER='v110';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // ── 注音／中文輸入法保護 ──────────────────────────────
@@ -2394,7 +2394,7 @@ function userBusy(){
 }
 async function pullCloud(force){
   if(VIEWER_MODE||!GAS_URL||_pulling)return;
-  if(!force&&(document.hidden||userBusy()||Date.now()-_lastPullTry<10000))return;
+  if(!force&&(document.hidden||userBusy()||Date.now()-_lastPullTry<30000))return;
   _pulling=true;_lastPullTry=Date.now();
   try{ if(await loadCloud())await flushSync(); }
   finally{ _pulling=false; }
@@ -6561,7 +6561,7 @@ document.addEventListener('visibilitychange',()=>{
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)pullCloud();});
 window.addEventListener('focus',()=>pullCloud());
 window.addEventListener('online',()=>pullCloud(true));
-setInterval(()=>pullCloud(),60000);
+setInterval(()=>pullCloud(),5*60000); // 開著的頁面每 5 分鐘拉一次（太頻繁會把 GAS 塞車，日曆跟著失敗）
 // 切到背景／關掉頁面：把還在倒數的東西立刻送出去。
 // 手機切走後計時器會被凍結，以前在這之前打的勾、寫的字常常就停在本機沒送上去。
 function flushOnHide(){
@@ -6821,34 +6821,73 @@ function isReminderEvent(ev){
 function updateCalStatus(){
   const el=document.getElementById('cal-status');
   if(!el)return;
-  el.textContent=calConnected?'✅ 已連上你的日曆':'尚未連線（需 GAS v2.8＋日曆授權）';
+  el.textContent=!calConnected?'尚未連線（需 GAS v2.8＋日曆授權）':calStale?'⏳ 日曆連線較慢，先顯示上次的行程，稍後自動更新':'✅ 已連上你的日曆';
   el.style.color=calConnected?'#0F6E56':'var(--tc3)';
 }
-async function fetchCalMonth(y,m,force){
-  const key=y+'-'+m;
-  if(!force&&calFetchedMonths[key]){renderTodayEvents();return;}
-  const first=fmtLocal(new Date(y,m,1)),last=fmtLocal(new Date(y,m+1,0));
+// 後端（GAS）有時會慢到幾十秒、偶爾直接失敗。以前只要失敗一次，行程卡就整張藏起來，
+// 看起來像「日曆不見了」。現在：抓到的行程存在這台裝置上，開 App 先顯示上次的，
+// 背景再更新；失敗就保留舊的、稍後自動重試，不會讓行程消失。
+function calCacheLoad(){try{return JSON.parse(localStorage.getItem('grandol_cal_cache')||'{}')||{};}catch(e){return {};}}
+function calCacheSave(key,list){
   try{
-    const res=await fetch(GAS_URL+'?action=getCalEvents&start='+first+'&end='+last+codeQ());
-    const j=await res.json();
-    if(!j.ok)throw new Error(j.error||'');
-    Object.keys(calEvents).forEach(ds=>{if(ds>=first&&ds<=last)delete calEvents[ds];});
-    (j.data||[]).forEach(ev=>{
-      const _s=ev.date,_e=ev.endDate||ev.date;
-      if(_e>_s){
-        let _cur=new Date(_s+'T00:00:00');const _end=new Date(_e+'T00:00:00');
-        while(_cur<=_end){const _k=fmtLocal(_cur);(calEvents[_k]=calEvents[_k]||[]).push(ev);_cur.setDate(_cur.getDate()+1);}
-      }else{
-        (calEvents[ev.date]=calEvents[ev.date]||[]).push(ev);
-      }
-    });
-    Object.values(calEvents).forEach(a=>a.sort((x,z)=>(x.allDay?'':x.time)<(z.allDay?'':z.time)?-1:1));
-    calFetchedMonths[key]=true;calConnected=true;calLastFetch=Date.now();
-  }catch(e){calConnected=false;}
-  updateCalStatus();
-  const popup=document.getElementById('cal-popup');
-  if(popup&&popup.style.display!=='none')renderPopCal();
-  renderTodayEvents();
+    const c=calCacheLoad();c[key]={ts:Date.now(),data:list};
+    const keys=Object.keys(c).sort((x,z)=>c[z].ts-c[x].ts);
+    keys.slice(6).forEach(k=>delete c[k]); // 只留最近 6 個月
+    localStorage.setItem('grandol_cal_cache',JSON.stringify(c));
+  }catch(e){}
+}
+function calApplyMonth(y,m,list){
+  const first=fmtLocal(new Date(y,m,1)),last=fmtLocal(new Date(y,m+1,0));
+  Object.keys(calEvents).forEach(ds=>{
+    // 只清掉「起始日在本月」的事件（跨月的多日事件由它起始的那個月負責）
+    calEvents[ds]=calEvents[ds].filter(ev=>!(ev.date>=first&&ev.date<=last));
+    if(!calEvents[ds].length)delete calEvents[ds];
+  });
+  (list||[]).forEach(ev=>{
+    const _s=ev.date,_e=ev.endDate||ev.date;
+    let _cur=new Date(_s+'T00:00:00');const _end=new Date((_e>_s?_e:_s)+'T00:00:00');
+    while(_cur<=_end){
+      const _k=fmtLocal(_cur);const arr=(calEvents[_k]=calEvents[_k]||[]);
+      if(!arr.some(x=>x.id===ev.id&&x.date===ev.date))arr.push(ev);
+      _cur.setDate(_cur.getDate()+1);
+    }
+  });
+  Object.values(calEvents).forEach(a=>a.sort((x,z)=>(x.allDay?'':x.time)<(z.allDay?'':z.time)?-1:1));
+}
+// 開頁先用快取把行程畫出來
+var calStale=false,_calInflight={},_calRetry={};
+(function(){
+  const c=calCacheLoad();
+  Object.keys(c).forEach(key=>{const[y,m]=key.split('-').map(Number);calApplyMonth(y,m,c[key].data);});
+  if(Object.keys(c).length){calConnected=true;calStale=true;}
+})();
+function fetchCalMonth(y,m,force){
+  const key=y+'-'+m;
+  if(!force&&calFetchedMonths[key]){renderTodayEvents();return Promise.resolve();}
+  if(_calInflight[key])return _calInflight[key]; // 同一個月已經在抓，不重複打後端
+  const first=fmtLocal(new Date(y,m,1)),last=fmtLocal(new Date(y,m+1,0));
+  _calInflight[key]=(async()=>{
+    try{
+      const res=await fetch(GAS_URL+'?action=getCalEvents&start='+first+'&end='+last+codeQ());
+      const j=await res.json();
+      if(!j.ok)throw new Error(j.error||'');
+      calApplyMonth(y,m,j.data||[]);
+      calCacheSave(key,j.data||[]);
+      calFetchedMonths[key]=true;calConnected=true;calStale=false;calLastFetch=Date.now();
+      _calRetry[key]=0;
+    }catch(e){
+      // 以前連上過（有快取）就繼續顯示舊的，稍後重試；從沒連上過才當作沒有日曆
+      const n=(_calRetry[key]||0)+1;_calRetry[key]=n;
+      if(!Object.keys(calCacheLoad()).length)calConnected=false;
+      else calStale=true;
+      if(n<=4)setTimeout(()=>fetchCalMonth(y,m,true),[20,60,180,600][n-1]*1000);
+    }finally{delete _calInflight[key];}
+    updateCalStatus();
+    const popup=document.getElementById('cal-popup');
+    if(popup&&popup.style.display!=='none')renderPopCal();
+    renderTodayEvents();
+  })();
+  return _calInflight[key];
 }
 function calEvRow(ev,delBtn){
   const _c=(ev.color&&CAL_COLORS[ev.color])?'<span style="width:8px;height:8px;border-radius:50%;background:'+CAL_COLORS[ev.color]+';flex-shrink:0;"></span>':'';
