@@ -32,11 +32,14 @@ src = src.replace(
     'puppy.png')
 
 # 4) 沒設定 GAS 時給清楚訊息，而不是靜靜失敗
+# syncEntry／syncState 開頭的「沒網址就回 false」換成會提示去設定的版本
+if "  if(!GAS_URL)return false;\n" not in src:
+    raise SystemExit('找不到防呆插入點，index.html 可能改過：if(!GAS_URL)return false;')
+src = src.replace("  if(!GAS_URL)return false;\n",
+                  "  if(!GAS_URL){setSync('error','尚未設定雲端（設定→雲端同步）');return false;}\n")
 guards = [
-    ("  if(VIEWER_MODE)throw new Error('viewer-readonly');",
-     "\n  if(!GAS_URL)throw new Error('尚未設定 GAS 網址');"),
-    ("  if(VIEWER_MODE){setSync('ok','👀 監督模式（唯讀）');return;}",
-     "\n  if(!GAS_URL){setSync('error','尚未設定雲端（設定→雲端同步）');return;}"),
+    ("  if(VIEWER_MODE)return Promise.reject(new Error('viewer-readonly'));",
+     "\n  if(!GAS_URL)return Promise.reject(new Error('尚未設定 GAS 網址'));"),
     ("async function loadCloud(){",
      "\n  if(!GAS_URL){setSync('error','尚未設定雲端（設定→雲端同步）');return;}"),
 ]
