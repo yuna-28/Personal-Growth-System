@@ -1676,7 +1676,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v110';
+const APP_VER='v111';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // ── 注音／中文輸入法保護 ──────────────────────────────
@@ -3852,7 +3852,18 @@ document.getElementById('cal-popup').addEventListener('click',e=>{if(e.target.id
 const CAL_BAR_H=15,CAL_BAR_GAP=2;
 function isMultiDayEvent(ev){return ev.endDate&&ev.endDate!==ev.date;}
 function renderPopCal(){
-  document.getElementById('pop-cal-title').textContent=`${popCalYear}年${popCalMonth+1}月`;
+  // 後端慢的時候，這個月的行程可能還沒回來——要讓人看得出「還在讀」，不是「沒有行程」
+  {
+    const _k=popCalYear+'-'+popCalMonth;
+    let _st='';
+    if(typeof _calInflight!=='undefined'&&!calFetchedMonths[_k]){
+      const _cached=!!calCacheLoad()[_k];
+      if(_calInflight[_k])_st=_cached?'更新中…':'讀取中…';
+      else if(_calRetry[_k])_st=_cached?'連線慢，先顯示上次的':'連線慢，稍後自動重試';
+    }
+    document.getElementById('pop-cal-title').innerHTML=`${popCalYear}年${popCalMonth+1}月`+
+      (_st?`<div style="font-family:inherit;font-size:11px;font-weight:600;letter-spacing:0;color:var(--tc3);text-align:center;">⏳ ${_st}</div>`:'');
+  }
   const startDay=new Date(popCalYear,popCalMonth,1).getDay();
   const daysInMonth=new Date(popCalYear,popCalMonth+1,0).getDate();
   const rowDatesArr=[];
@@ -6865,6 +6876,8 @@ function fetchCalMonth(y,m,force){
   if(_calInflight[key])return _calInflight[key]; // 同一個月已經在抓，不重複打後端
   const first=fmtLocal(new Date(y,m,1)),last=fmtLocal(new Date(y,m+1,0));
   _calInflight[key]=(async()=>{
+    await null; // 先讓下面登記「讀取中」，再開始
+    let ok=false;
     try{
       const res=await fetch(GAS_URL+'?action=getCalEvents&start='+first+'&end='+last+codeQ());
       const j=await res.json();
@@ -6872,7 +6885,7 @@ function fetchCalMonth(y,m,force){
       calApplyMonth(y,m,j.data||[]);
       calCacheSave(key,j.data||[]);
       calFetchedMonths[key]=true;calConnected=true;calStale=false;calLastFetch=Date.now();
-      _calRetry[key]=0;
+      _calRetry[key]=0;ok=true;
     }catch(e){
       // 以前連上過（有快取）就繼續顯示舊的，稍後重試；從沒連上過才當作沒有日曆
       const n=(_calRetry[key]||0)+1;_calRetry[key]=n;
@@ -6880,12 +6893,22 @@ function fetchCalMonth(y,m,force){
       else calStale=true;
       if(n<=4)setTimeout(()=>fetchCalMonth(y,m,true),[20,60,180,600][n-1]*1000);
     }finally{delete _calInflight[key];}
-    updateCalStatus();
+    calRefreshViews();
+    // 月曆正開著這個月 → 順手把前後一個月也抓好，往前往後翻就不用等
     const popup=document.getElementById('cal-popup');
-    if(popup&&popup.style.display!=='none')renderPopCal();
-    renderTodayEvents();
+    if(ok&&popup&&popup.style.display!=='none'&&popCalYear===y&&popCalMonth===m){
+      const nx=new Date(y,m+1,1),pv=new Date(y,m-1,1);
+      fetchCalMonth(nx.getFullYear(),nx.getMonth()).then(()=>fetchCalMonth(pv.getFullYear(),pv.getMonth()));
+    }
   })();
+  calRefreshViews(); // 讓月曆先顯示「讀取中」
   return _calInflight[key];
+}
+function calRefreshViews(){
+  updateCalStatus();
+  const popup=document.getElementById('cal-popup');
+  if(popup&&popup.style.display!=='none')renderPopCal();
+  renderTodayEvents();
 }
 function calEvRow(ev,delBtn){
   const _c=(ev.color&&CAL_COLORS[ev.color])?'<span style="width:8px;height:8px;border-radius:50%;background:'+CAL_COLORS[ev.color]+';flex-shrink:0;"></span>':'';
