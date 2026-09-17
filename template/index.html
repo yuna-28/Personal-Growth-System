@@ -1678,7 +1678,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v113';
+const APP_VER='v114';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // ── 注音／中文輸入法保護 ──────────────────────────────
@@ -1784,7 +1784,12 @@ function softToast(msg,ms){
   document.body.appendChild(t);
   setTimeout(()=>{t.style.transition='opacity .4s';t.style.opacity='0';setTimeout(()=>t.remove(),400);},ms||4200);
 }
-function today(){return fmtLocal(new Date());}
+// 換日時間：凌晨 4 點前都還算「前一天」。
+// 常常是半夜才在寫今天的小記、排明天的 TDL，以前一過 12 點 App 就換日，
+// 正在排的「明天計畫」會瞬間被搬進今天的便利貼、編輯區變空白，看起來就像整批不見。
+const DAY_CUTOFF_H=4;
+function today(){return fmtLocal(new Date(Date.now()-DAY_CUTOFF_H*3600000));}
+function shiftDay(ds,n){const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n);return fmtLocal(d);}
 
 // ── 健康模組（睡眠/飲食/運動/喝水）──────────────────────
 // 取代原本的 早起/早睡/跳舞 三個習慣（會被自動封存）。四項各自：當天有記錄
@@ -2017,6 +2022,9 @@ function getOrCreateEntry(ds){
 function rolloverToToday(){
   const t=today();
   if(S.dayKey===t)return false;
+  // 只往前換日：舊版在午夜就換過日的裝置，凌晨 4 點前 dayKey 會比 today() 新，
+  // 這時維持原狀，等時間追上來就好（往回換會把今天的清單清掉）
+  if(S.dayKey&&S.dayKey>t)return false;
   // 今天已經種下／記錄過 → 現在記憶體裡的就是今天的資料，只要把 dayKey 對齊，不可以清空
   if(S.lastPlant===t||S.lastStreak===t){S.dayKey=t;sv(S);return true;}
   S.tdlHist=S.tdlHist||{};
@@ -2340,7 +2348,7 @@ async function loadCloud(){
     // 今天的清單一旦被動過（打勾、新增、刪除、順延、排序），它就記在今天的 entry 裡，
     // 由下面的時間戳還原負責；不能再拿昨天的計畫把它整份蓋回去。
     {
-      const _yd=new Date();_yd.setDate(_yd.getDate()-1);const _yds=fmtLocal(_yd);
+      const _yds=shiftDay(curDay(),-1);
       const _ye=S.entries.find(e=>e.date===_yds);
       const _te=S.entries.find(e=>e.date===curDay());
       const _ownList=!!(_te&&Array.isArray(_te.tdlItems)&&_te.tdlItems.length);
@@ -3696,8 +3704,7 @@ function persistTdlEdit(){
 }
 // 昨天的 TDL＝今天的計畫：補記改了昨天的 TDL，今天的便利貼要即時跟上
 function mirrorYesterdayTdlToToday(ds){
-  const _yd=new Date();_yd.setDate(_yd.getDate()-1);
-  if(ds!==fmtLocal(_yd))return;
+  if(ds!==shiftDay(curDay(),-1))return;
   const en=S.entries.find(x=>x.date===ds);
   if(!en||!Array.isArray(en.tdl))return;
   setTodayTDL(en.tdl.map(tdlNorm));
@@ -3783,11 +3790,11 @@ document.getElementById('plant-btn').addEventListener('click',async()=>{
   const toSave=confirmed.length?confirmed:all;
   if(!toSave.length){alert('明天 TDL 還沒填 🌙');return;}
 
-  const yd=new Date();yd.setDate(yd.getDate()-1);const yesterday=fmtLocal(yd);
+  const yesterday=shiftDay(curDay(),-1);
   if(!replant){
     // 溫柔連續：只空一天、且「空掉的那天」所屬的週還沒用過休息緩衝
     // → 連續不歸零（每週最多一次）。中斷不是歸零，是暫停。
-    const bd=new Date();bd.setDate(bd.getDate()-2);const beforeYesterday=fmtLocal(bd);
+    const beforeYesterday=shiftDay(curDay(),-2);
     const restWk=weekKeyOf(yesterday);
     if(S.lastStreak===yesterday){
       S.streak=S.streak+1;
@@ -3994,7 +4001,7 @@ function renderPopCal(){
   }));
 }
 function selectPopCalDate(ds){
-  if(ds>today()){renderCalDayPanel(ds);return;}
+  if(ds>curDay()){renderCalDayPanel(ds);return;}
   viewDate=(ds===curDay())?null:ds;
   toggleCalPopup();
   applyViewDate(true);
@@ -4043,7 +4050,7 @@ function mondayOf(d){
 }
 function fmtISO(d){return fmtLocal(d);}
 function weekDates(offset){
-  const base=mondayOf(new Date());base.setDate(base.getDate()+offset*7);
+  const base=mondayOf(new Date(curDay()+'T00:00:00'));base.setDate(base.getDate()+offset*7);
   return Array.from({length:7},(_,i)=>{const d=new Date(base);d.setDate(d.getDate()+i);return fmtISO(d);});
 }
 function weekLabel(offset){
@@ -4053,12 +4060,12 @@ function weekLabel(offset){
   return`${tag}（${s.getMonth()+1}/${s.getDate()}-${e.getMonth()+1}/${e.getDate()}）`;
 }
 function monthDates(offset){
-  const now=new Date();const y=now.getFullYear(),m=now.getMonth()+offset;
+  const now=new Date(curDay()+'T00:00:00');const y=now.getFullYear(),m=now.getMonth()+offset;
   const daysIn=new Date(y,m+1,0).getDate();
   return Array.from({length:daysIn},(_,i)=>fmtISO(new Date(y,m,i+1)));
 }
 function monthLabel(offset){
-  const now=new Date();const d=new Date(now.getFullYear(),now.getMonth()+offset,1);
+  const now=new Date(curDay()+'T00:00:00');const d=new Date(now.getFullYear(),now.getMonth()+offset,1);
   const tag=offset===0?'本月':offset===-1?'上月':offset===1?'下月':'';
   return tag?`${tag}（${d.getFullYear()}年${d.getMonth()+1}月）`:`${d.getFullYear()}年${d.getMonth()+1}月`;
 }
@@ -6574,7 +6581,7 @@ let _autoDraftT=null;
 function flushAutoDraft(){
   if(!_autoDraftT)return;
   clearTimeout(_autoDraftT);_autoDraftT=null;
-  writeDraftEntry();
+  writeDraftEntry(true);
 }
 function autoDraftDebounced(){
   if(!ctxIsToday())return;
@@ -6586,7 +6593,8 @@ function autoDraftDebounced(){
   clearTimeout(_autoDraftT);
   _autoDraftT=setTimeout(()=>{
     _autoDraftT=null;
-    if(!writeDraftEntry())return;
+    // force：打完字 2 秒內就切到別天的話，以前這裡會直接放棄，今天的草稿就沒寫進去、也沒推上雲端
+    if(!writeDraftEntry(true))return;
     const b=document.getElementById('draft-btn');
     if(b&&!b.disabled){b.dataset.auto='1';b.innerHTML='💾 已自動存草稿 ✓';
       setTimeout(()=>{if(b.dataset.auto==='1'){b.innerHTML='💾 儲存草稿（先存不種）';delete b.dataset.auto;}},1800);}
@@ -6605,21 +6613,25 @@ const _draftBtn=document.getElementById('draft-btn');
 if(_draftBtn)_draftBtn.addEventListener('click',saveDraft);
 document.getElementById('backfill-exit').addEventListener('click',()=>{
   viewDate=null;
-  // 「回到今天」就是要回到真正的今天。頁面跨過午夜還開著時，這個階段可能還停在昨天，
+  // 「回到今天」就是要回到真正的今天。頁面跨過換日時間還開著時，這個階段可能還停在昨天，
   // 這裡要主動前進，不然按了只會回到那個舊的「今天」
-  rolloverToToday();
+  if(rolloverToToday())resetEditorsForNewDay();
   applyViewDate(true);
 });
+// 換日後：S.tomorrowTDL 已經變成今天的清單，編輯列還停在昨天排的內容。
+// 不跟著重設的話，那份舊計畫會被當成「今天排給明天的」再存一次（兩邊重複）。
+function resetEditorsForNewDay(){
+  tdlRows=[{theme:'',task:'',confirmed:false},{theme:'',task:'',confirmed:false},{theme:'',task:'',confirmed:false}];
+  tdlPlanEdited=false;todayListEdited=false; // 新的一天，使用者還沒動過任何東西
+  softToast('🌅 新的一天開始了：昨天排的 TDL 已經放到今天的便利貼',3600);
+}
 // 從背景切回 APP 時對齊日期：重新打開卻停在昨天最不合理。
 // 在前景使用中（例如正在半夜寫東西）不會主動換日，避免畫面被清掉打斷。
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden)return;
   if(!rolloverToToday())return;
   viewDate=null;
-  // 頁面跨過午夜還開著時，換日已經把 S.tomorrowTDL 清空，但編輯列還停在昨天排的內容。
-  // 不跟著重設的話，那份舊計畫會被當成「今天排給明天的」再存一次。
-  tdlRows=[{theme:'',task:'',confirmed:false},{theme:'',task:'',confirmed:false},{theme:'',task:'',confirmed:false}];
-  tdlPlanEdited=false;todayListEdited=false; // 新的一天，使用者還沒動過任何東西
+  resetEditorsForNewDay();
   applyViewDate(false);
   if(typeof renderFlowers==='function')renderFlowers();
   if(typeof renderFruits==='function')renderFruits();
