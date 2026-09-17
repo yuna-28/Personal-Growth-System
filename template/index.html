@@ -734,6 +734,8 @@ body.viewer-mode .neo-chip,body.viewer-mode .sticky-check,body.viewer-mode .habi
 .ebtn:active{transform:scale(.9);}
 .ebtn.on{background:rgba(var(--tertiary-rgb),.6);border-color:var(--tertiary);box-shadow:0 0 0 2.5px rgba(var(--tertiary-rgb),.45);}
 .ebtn.num{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:15px;color:var(--secondary);}
+.ex-dur-edit input{width:38px;border:none;background:transparent;text-align:center;font:inherit;color:inherit;outline:none;padding:0;-moz-appearance:textfield;}
+.ex-dur-edit input::-webkit-outer-spin-button,.ex-dur-edit input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 .ebtn.on.num{color:var(--ok);}
 .ebtn.eadd{border-style:dashed;border-color:rgba(var(--primary-rgb),.35);color:var(--tc3);font-size:19px;font-weight:800;background:rgba(255,255,255,.45);box-shadow:none;}
 .ebtn[data-dietchip]{touch-action:none;}
@@ -1676,7 +1678,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v112';
+const APP_VER='v113';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // ── 注音／中文輸入法保護 ──────────────────────────────
@@ -1844,7 +1846,9 @@ function dietIconHTML(t,size){const c=customOpt('diet',t);return (c&&c.e)?iconHT
 function actIconHTML(a,size){const c=customOpt('sleepActs',a);return (c&&c.e)?iconHTML(c.e,size):fi(actEmoji(a),size);}
 function exIconHTML(t,size){const c=customOpt('exercise',t);return (c&&c.e)?iconHTML(c.e,size):fi(exEmojiOf(t),size);}
 function dietEmoji(t){return DIET_EMOJI[t]||'1f37d';}
-function emptyHealth(){return {sleep:{sleepTime:'',wakeTime:'',ease:'',acts:[],note:''},diet:{tags:[],note:''},exercise:{type:'',duration:0,note:''},water:{amount:0,note:''},scored:{}};}
+// 運動可以多選：types 是完整清單；type 保留「第一項」，舊資料和舊的判斷（有沒有運動）照樣能用
+function exTypesOf(e){if(!e)return [];if(Array.isArray(e.types))return e.types.filter(Boolean);return e.type?[e.type]:[];}
+function emptyHealth(){return {sleep:{sleepTime:'',wakeTime:'',ease:'',acts:[],note:''},diet:{tags:[],note:''},exercise:{type:'',types:[],duration:0,note:''},water:{amount:0,note:''},scored:{}};}
 // 這個項目今天有沒有記錄（決定要不要給 EXP／花）
 function healthHas(h,k){
   if(!h)return false;
@@ -1870,7 +1874,7 @@ function healthCopyText(h){
   const L=['🌿 健康：'];
   if(healthHas(h,'sleep')){const s=h.sleep,dm=sleepMinutes(s);L.push(`  🌙 睡眠：${s.sleepTime||'?'}→${s.wakeTime||'?'}${dm!=null?'（'+fmtSleepDur(dm)+'）':''}${s.ease?' · '+easeLabel(s.ease):''}${(s.acts&&s.acts.length)?' · 睡前:'+s.acts.join('/'):''}${s.note?' · '+s.note:''}`);}
   if(healthHas(h,'diet')){const d=h.diet;L.push(`  🍽️ 飲食：${(d.tags||[]).join('、')||'—'}${d.note?' · '+d.note:''}`);}
-  if(healthHas(h,'exercise')){const e=h.exercise;L.push(`  🏃 運動：${e.type}${e.duration?' '+e.duration+'分':''}${e.note?' · '+e.note:''}`);}
+  if(healthHas(h,'exercise')){const e=h.exercise;L.push(`  🏃 運動：${exTypesOf(e).join('、')}${e.duration?' '+e.duration+'分':''}${e.note?' · '+e.note:''}`);}
   if(healthHas(h,'water')){L.push(`  💧 喝水：${h.water.amount}ml`);}
   return L.join('\n')+'\n';
 }
@@ -3172,7 +3176,9 @@ function updateHealthChrome(k){
 function healthSummary(h,k){
   if(k==='sleep'){const s=h.sleep||{};if(!s.sleepTime&&!s.wakeTime)return '';const dur=sleepMinutes(s);return (s.sleepTime||'?')+' → '+(s.wakeTime||'?')+(dur!=null?' · '+fmtSleepDur(dur):'');}
   if(k==='diet'){const d=h.diet||{};const n=(d.tags||[]).length;return n?(d.tags.slice(0,2).join('、')+(n>2?' +'+(n-2):'')):(d.note?'有備註':'');}
-  if(k==='exercise'){const e=h.exercise||{};if(!e.type)return '';return e.type+(e.duration?' · '+e.duration+'分':'');}
+  if(k==='exercise'){const e=h.exercise||{};const ts=exTypesOf(e);
+    if(!ts.length)return e.duration?'⏱ '+e.duration+'分 · 選一下做了什麼運動':'';
+    return ts.slice(0,2).join('、')+(ts.length>2?' +'+(ts.length-2):'')+(e.duration?' · '+e.duration+'分':'');}
   if(k==='water'){const w=+((h.water||{}).amount)||0;return w?w+' / '+WATER_GOAL+'ml':'';}
   return '';
 }
@@ -3256,11 +3262,11 @@ function healthEditorHTML(k,h){
       noteHTML('hz-diet-note',d.note,'今天的飲食想多記什麼都可以');
   }
   if(k==='exercise'){
-    const e=h.exercise||{};
-    return `<div class="hz-sub">今天做了什麼運動</div>`+
-      `<div class="ebtns">${exerciseTypes().map(t=>`<span class="ebtn${e.type===t?' on':''}" data-extype="${esc(t)}"${cAttr('exercise',t)} data-lbl="${esc(t)}" title="${esc(t)}">${exIconHTML(t,28)}</span>`).join('')}${addChips('exercise')}</div>`+
-      `<div class="hz-sub">做了多久</div>`+
-      `<div class="ebtns" id="hz-ex-durs">${[15,30,45,60].map(m=>`<span class="ebtn num${+e.duration===m?' on':''}" data-exdur="${m}" data-lbl="${m} 分鐘" title="${m} 分鐘">${m}</span>`).join('')}<span class="ebtn eadd" data-exdur="custom" data-lbl="自訂分鐘" title="自訂分鐘">⋯</span></div>`+
+    const e=h.exercise||{};const ts=exTypesOf(e);
+    return `<div class="hz-sub">今天做了什麼運動 <span style="font-weight:500;opacity:.7;">（可多選）</span></div>`+
+      `<div class="ebtns">${exerciseTypes().map(t=>`<span class="ebtn${ts.indexOf(t)>=0?' on':''}" data-extype="${esc(t)}"${cAttr('exercise',t)} data-lbl="${esc(t)}" title="${esc(t)}">${exIconHTML(t,28)}</span>`).join('')}${addChips('exercise')}</div>`+
+      `<div class="hz-sub">總共做了多久</div>`+
+      `<div class="ebtns" id="hz-ex-durs">${exDurChipsHTML(+e.duration||0)}</div>`+
       noteHTML('hz-ex-note',e.note,'例如：跑步聽了喜歡的 podcast');
   }
   if(k==='water'){
@@ -3356,6 +3362,45 @@ function mngIntercept(el,grp){
   openOptDialog(grp,el.dataset.cname||el.dataset.lbl);
   return true;
 }
+// 運動時間：15／30／45／60 一點就選；其他分鐘數直接在「⋯」上輸入，輸入後按鈕會顯示那個數字
+function exDurChipsHTML(dur,editing){
+  const pre=[15,30,45,60];
+  const custom=dur>0&&pre.indexOf(dur)<0;
+  return pre.map(m=>`<span class="ebtn num${dur===m?' on':''}" data-exdur="${m}" data-lbl="${m} 分鐘" title="${m} 分鐘">${m}</span>`).join('')+
+    (editing
+      ?`<span class="ebtn num on ex-dur-edit"><input id="hz-ex-durin" type="number" inputmode="numeric" min="1" max="600" value="${custom?dur:''}" placeholder="分"/></span>`
+      :`<span class="ebtn ${custom?'num on':'eadd'}" data-exdur="custom" data-lbl="自訂分鐘" title="自訂分鐘（點一下輸入）">${custom?dur:'⋯'}</span>`);
+}
+function wireExDur(h,editing){
+  const wrap=document.getElementById('hz-ex-durs');if(!wrap)return;
+  const redraw=ed=>{wrap.innerHTML=exDurChipsHTML(+((h.exercise||{}).duration)||0,ed);wireExDur(h,ed);};
+  wrap.querySelectorAll('[data-exdur]').forEach(el=>el.addEventListener('click',()=>{
+    h.exercise=h.exercise||{};
+    if(el.dataset.exdur==='custom'){redraw(true);return;}
+    h.exercise.duration=(+h.exercise.duration===+el.dataset.exdur)?0:+el.dataset.exdur;
+    redraw(false);commitHealth();
+  }));
+  const inp=document.getElementById('hz-ex-durin');
+  if(inp){
+    inp.focus();
+    let done=false;
+    const finish=save=>{
+      if(done)return;done=true;
+      if(save){
+        const n=parseInt(inp.value,10);
+        h.exercise=h.exercise||{};
+        h.exercise.duration=(!isNaN(n)&&n>0)?Math.min(n,600):0;
+        commitHealth();
+      }
+      redraw(false);
+    };
+    inp.addEventListener('keydown',e=>{
+      if(e.key==='Enter'){if(isImeEnter(e))return;e.preventDefault();finish(true);}
+      else if(e.key==='Escape'){e.preventDefault();finish(false);}
+    });
+    inp.addEventListener('blur',()=>finish(true));
+  }
+}
 function wireHealthEditors(h){
   const box=document.getElementById('health-grid');
   box.querySelectorAll('[data-add]').forEach(el=>el.addEventListener('click',()=>addHealthOpt(el.dataset.add)));
@@ -3436,17 +3481,13 @@ function wireHealthEditors(h){
   box.querySelectorAll('[data-extype]').forEach(el=>el.addEventListener('click',()=>{
     if(mngIntercept(el,'exercise'))return;
     h.exercise=h.exercise||{};
-    h.exercise.type=(h.exercise.type===el.dataset.extype)?'':el.dataset.extype;
-    el.parentElement.querySelectorAll('[data-extype]').forEach(x=>x.classList.toggle('on',!!h.exercise.type&&x.dataset.extype===h.exercise.type));
+    const ts=exTypesOf(h.exercise),t=el.dataset.extype,i=ts.indexOf(t);
+    if(i>=0)ts.splice(i,1);else ts.push(t);           // 點一下加入、再點一下拿掉
+    h.exercise.types=ts;h.exercise.type=ts[0]||'';
+    el.classList.toggle('on',ts.indexOf(t)>=0);
     commitHealth();
   }));
-  box.querySelectorAll('[data-exdur]').forEach(el=>el.addEventListener('click',()=>{
-    h.exercise=h.exercise||{};
-    if(el.dataset.exdur==='custom'){const v=prompt('運動幾分鐘？');const n=parseInt(v,10);if(!isNaN(n)&&n>0)h.exercise.duration=n;}
-    else h.exercise.duration=(+h.exercise.duration===+el.dataset.exdur)?0:+el.dataset.exdur;
-    document.querySelectorAll('#hz-ex-durs [data-exdur]').forEach(x=>x.classList.toggle('on',x.dataset.exdur!=='custom'&&+h.exercise.duration>0&&+x.dataset.exdur===+h.exercise.duration));
-    commitHealth();
-  }));
+  wireExDur(h);
   const en=document.getElementById('hz-ex-note');
   if(en)en.addEventListener('input',()=>{h.exercise=h.exercise||{};h.exercise.note=en.value;healthNoteDebounced();});
   // ── 喝水 ──
@@ -4480,14 +4521,15 @@ function renderHealthReview(cur,prefix,dates){
   const exDays=hd.filter(x=>x.h.exercise&&x.h.exercise.type);
   if(exDays.length){
     show(prefix+'-exercise-card',true);
-    const typeFreq={};let totMin=0;exDays.forEach(x=>{typeFreq[x.h.exercise.type]=(typeFreq[x.h.exercise.type]||0)+1;totMin+=(+x.h.exercise.duration||0);});
+    const typeFreq={};let totMin=0;exDays.forEach(x=>{exTypesOf(x.h.exercise).forEach(t=>{typeFreq[t]=(typeFreq[t]||0)+1;});totMin+=(+x.h.exercise.duration||0);});
     let html=wit('🏃 這'+(isWeek?'週':'個月')+'你讓身體動了 <b>'+exDays.length+'</b> 天'+(totMin?'，共 <b>'+totMin+'</b> 分鐘':'')+'。有動就很好，身體會記得。');
     const exEmoji=t=>t==='跑步'?'1f3c3':(t==='跳舞'?'1f483':'1f4aa');
     const first=new Date(period[0]+'T00:00:00');let lead=(first.getDay()+6)%7;
     html+='<div class="hcal">'+['一','二','三','四','五','六','日'].map(w=>'<div class="hcal-w">'+w+'</div>').join('');
     for(let i=0;i<lead;i++)html+='<div></div>';
     period.forEach(ds=>{const h=hmap[ds];const d=new Date(ds+'T00:00:00');const ex=h&&h.exercise&&h.exercise.type;
-      html+='<div class="hplate'+(ex?' ex':' empty')+'"><span class="hpn">'+d.getDate()+'</span>'+(ex?exIconHTML(h.exercise.type,20):'')+'</div>';
+      const _n=ex?exTypesOf(h.exercise).length:0;
+      html+='<div class="hplate'+(ex?' ex':' empty')+'" title="'+(ex?esc(exTypesOf(h.exercise).join('、')):'')+'"><span class="hpn">'+d.getDate()+'</span>'+(ex?exIconHTML(h.exercise.type,20):'')+(_n>1?'<span style="position:absolute;right:2px;bottom:1px;font-size:9px;font-weight:800;color:var(--secondary);">+'+(_n-1)+'</span>':'')+'</div>';
     });
     html+='</div>';
     html+='<div style="font-size:12px;color:var(--tc2);margin-top:8px;">'+Object.keys(typeFreq).map(t=>esc(t)+' × '+typeFreq[t]).join('　')+'</div>';
@@ -4801,7 +4843,7 @@ document.getElementById('copy-month-btn').addEventListener('click',async()=>{
     const tdlPart=(items&&items.length)?`｜TDL ${items.filter(x=>x.done).length}/${items.length}`
                  :((e&&e.tdlTotal)?`｜TDL ${e.tdlDone||0}/${e.tdlTotal}`:'');
     let hPart='';
-    if(hasHealth){const p=[],s=dayH.sleep;if(healthHas(dayH,'sleep'))p.push('🌙'+(s.sleepTime||'?')+'→'+(s.wakeTime||'?'));if(healthHas(dayH,'diet'))p.push('🍽️'+(dayH.diet.tags||[]).length+'項');if(healthHas(dayH,'exercise'))p.push('🏃'+dayH.exercise.type);if(healthHas(dayH,'water'))p.push('💧'+dayH.water.amount+'ml');hPart='｜'+p.join(' ');}
+    if(hasHealth){const p=[],s=dayH.sleep;if(healthHas(dayH,'sleep'))p.push('🌙'+(s.sleepTime||'?')+'→'+(s.wakeTime||'?'));if(healthHas(dayH,'diet'))p.push('🍽️'+(dayH.diet.tags||[]).length+'項');if(healthHas(dayH,'exercise'))p.push('🏃'+exTypesOf(dayH.exercise).join('、'));if(healthHas(dayH,'water'))p.push('💧'+dayH.water.amount+'ml');hPart='｜'+p.join(' ');}
     lines.push(`📅 ${ds}：${names.join('、')||'無'}${tdlPart}${hPart}`);
     if(diary.hl)lines.push(`  🌟 ${diary.hl}`);
     if(diary.rf)lines.push(`  📖 ${diary.rf}`);
