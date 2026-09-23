@@ -465,28 +465,24 @@ body.viewer-mode .neo-chip,body.viewer-mode .sticky-check,body.viewer-mode .habi
 /* IDENTITY CHIPS */
 .identity-wall{display:flex;flex-wrap:wrap;gap:10px;}
 /* 💛 誇誇牆：別人說的話 → 自己也認得的話 → 回贈出去的感謝 */
-.praise-wall{display:flex;flex-wrap:wrap;gap:13px;align-items:flex-start;}
-.praise-card{position:relative;width:108px;padding:9px 9px 8px;border-radius:9px;background:#FFFDF7;
-  box-shadow:0 3px 10px rgba(90,74,58,.14);cursor:pointer;transition:transform .18s,box-shadow .18s;}
-.praise-card:nth-child(3n){transform:rotate(-1.6deg);}
-.praise-card:nth-child(3n+2){transform:rotate(1.4deg);}
-.praise-card:hover{transform:rotate(0) translateY(-3px);box-shadow:0 7px 18px rgba(90,74,58,.2);}
-.praise-card.own{background:linear-gradient(180deg,#FFFBEE,#FFF6DC);}
-.praise-card.given{background:linear-gradient(180deg,#F4FBF4,#EAF6EA);}
-.pc-tape{position:absolute;top:-7px;left:50%;transform:translateX(-50%) rotate(-2deg);width:44px;height:14px;border-radius:2px;
-  background:rgba(var(--secondary-rgb),.38);}
-.praise-card.own .pc-tape{background:rgba(var(--gold-rgb),.6);}
-.praise-card.given .pc-tape{background:rgba(var(--tertiary-rgb),.6);}
-.pc-img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;background:rgba(var(--secondary-rgb),.14);display:block;}
-.pc-noimg{width:100%;aspect-ratio:1;border-radius:6px;background:rgba(var(--secondary-rgb),.14);display:flex;align-items:center;
-  justify-content:center;font-size:12px;color:var(--tc2);text-align:center;padding:7px;line-height:1.45;overflow:hidden;}
-.pc-from{font-size:11px;font-weight:700;color:var(--tc2);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.pc-badge{position:absolute;right:5px;bottom:5px;font-size:12px;line-height:1;width:21px;height:21px;border-radius:50%;
-  background:rgba(255,255,255,.92);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(90,74,58,.22);}
+/* 誇誇牆頁籤：舞台換成黑板（深綠板面＋木框＋粉筆灰） */
+#book-stage.chalk{background-image:none!important;background:#31473F!important;
+  box-shadow:inset 0 0 0 9px #9A6E45,inset 0 0 0 11px rgba(0,0,0,.25),inset 0 14px 40px rgba(0,0,0,.35);}
+#book-stage.chalk::before{content:'';position:absolute;inset:11px;pointer-events:none;
+  background:radial-gradient(circle at 22% 18%,rgba(255,255,255,.07),transparent 42%),
+             radial-gradient(circle at 78% 72%,rgba(255,255,255,.05),transparent 38%);}
+#book-stage.chalk .bi-card{background:#FFFDF7;}
+.chalk-add{display:inline-flex;align-items:center;justify-content:center;width:96px;height:118px;margin-top:9px;
+  border:1.5px dashed rgba(255,255,255,.45);border-radius:8px;color:rgba(255,255,255,.75);font-size:12px;
+  font-family:'Quicksand',sans-serif;cursor:pointer;text-align:center;line-height:1.5;padding:8px;}
+.chalk-add:hover{border-color:#fff;color:#fff;background:rgba(255,255,255,.08);}
+.bi-praise-from{font-size:11px;font-weight:700;color:var(--tc2);margin-top:4px;text-align:center;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bi-praise-badge{position:absolute;right:4px;top:4px;font-size:11px;line-height:1;width:19px;height:19px;border-radius:50%;
+  background:rgba(255,255,255,.92);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.25);}
 .praise-stats{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--tc3);margin-bottom:11px;}
 .praise-stats b{font-family:'Baloo 2',sans-serif;font-size:13px;color:var(--secondary);}
 .praise-arc{font-size:11px;color:var(--ok);margin:9px 0 0;}
-.praise-empty{font-size:12px;color:var(--tc3);padding:10px 0;}
 .pd-mask{position:fixed;inset:0;z-index:9992;background:rgba(25,35,70,.4);backdrop-filter:blur(4px);display:flex;
   align-items:center;justify-content:center;padding:18px;}
 .pd-box{background:var(--card);border-radius:18px;padding:16px;width:min(420px,100%);max-height:88vh;overflow-y:auto;
@@ -1389,11 +1385,23 @@ button{-webkit-tap-highlight-color:transparent;}
 
 <!-- ══════ SUPPORT SYSTEM ══════ -->
 <div class="page" id="page-support">
+<div class="gcard-scene" style="margin-top:4px;">
+  <div class="sec-hd" id="book-scene-title" style="position:relative;z-index:1;">📖 我的資源書</div>
+  <div id="res-cat-tabs" style="position:relative;z-index:1;display:flex;gap:6px;flex-wrap:wrap;margin-bottom:0;"></div>
+  <div id="book-stage" style="position:relative;height:380px;border-radius:0 12px 12px 12px;overflow:hidden;background-image:url('pic/cloud%20bkg.jpg');background-size:cover;background-position:center;">
+    <div style="position:absolute;inset:0;background:rgba(255,255,255,.16);pointer-events:none;"></div>
+    <div id="book-page-l" style="position:absolute;inset:10px;overflow-y:auto;display:flex;flex-wrap:wrap;align-content:flex-start;gap:7px 5px;padding:6px;"></div>
+    <button id="book-prev" class="book-arrow left">‹</button>
+    <button id="book-next" class="book-arrow right">›</button>
+    <div id="book-empty" style="position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);font-size:12px;color:#3A3A3A;display:none;white-space:nowrap;">桌面還空空的，從下面收進資源吧 ✨</div>
+    <div id="book-more" style="position:absolute;bottom:6px;left:50%;transform:translateX(-50%);font-size:10px;color:#3A3A3A;background:rgba(255,255,255,.7);border-radius:999px;padding:2px 10px;display:none;"></div>
+  </div>
+  <p id="book-scene-foot" style="text-align:center;font-size:11px;color:var(--tc3);margin-top:6px;position:relative;z-index:1;">你收藏的書、音樂、影片、人...都會住進這本書裡</p>
+</div>
 <div class="gcard" style="margin-top:4px;">
   <div class="sec-hd">💛 誇誇牆</div>
-  <p style="font-size:11px;color:var(--tc3);margin-bottom:10px;">別人看見的我 · 慢慢變成我自己知道的我</p>
+  <p style="font-size:11px;color:var(--tc3);margin-bottom:10px;">貼上來的誇誇會掛在上面的黑板上，點一下可以打開來寫</p>
   <div class="praise-stats" id="praise-stats"></div>
-  <div class="praise-wall" id="praise-wall"></div>
   <p class="praise-arc" id="praise-arc" style="display:none;"></p>
   <div class="export-row">
     <button class="export-new-btn" data-kind="praise">📋 複製新項目給 Claude</button>
@@ -1413,19 +1421,6 @@ button{-webkit-tap-highlight-color:transparent;}
     </div>
   </div>
   <button id="add-praise-btn" style="background:none;border:1.5px dashed rgba(var(--secondary-rgb),.35);border-radius:11px;padding:8px;font-family:'Quicksand',sans-serif;font-size:12px;color:var(--tc3);cursor:pointer;width:100%;margin-top:10px;">＋ 貼一張誇誇</button>
-</div>
-<div class="gcard-scene" style="margin-top:4px;">
-  <div class="sec-hd" style="position:relative;z-index:1;">📖 我的資源書</div>
-  <div id="res-cat-tabs" style="position:relative;z-index:1;display:flex;gap:6px;flex-wrap:wrap;margin-bottom:0;"></div>
-  <div id="book-stage" style="position:relative;height:380px;border-radius:0 12px 12px 12px;overflow:hidden;background-image:url('pic/cloud%20bkg.jpg');background-size:cover;background-position:center;">
-    <div style="position:absolute;inset:0;background:rgba(255,255,255,.16);pointer-events:none;"></div>
-    <div id="book-page-l" style="position:absolute;inset:10px;overflow-y:auto;display:flex;flex-wrap:wrap;align-content:flex-start;gap:7px 5px;padding:6px;"></div>
-    <button id="book-prev" class="book-arrow left">‹</button>
-    <button id="book-next" class="book-arrow right">›</button>
-    <div id="book-empty" style="position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);font-size:12px;color:#3A3A3A;display:none;white-space:nowrap;">桌面還空空的，從下面收進資源吧 ✨</div>
-    <div id="book-more" style="position:absolute;bottom:6px;left:50%;transform:translateX(-50%);font-size:10px;color:#3A3A3A;background:rgba(255,255,255,.7);border-radius:999px;padding:2px 10px;display:none;"></div>
-  </div>
-  <p style="text-align:center;font-size:11px;color:var(--tc3);margin-top:6px;position:relative;z-index:1;">你收藏的書、音樂、影片、人...都會住進這本書裡</p>
 </div>
 <div id="resource-categories"></div>
 <div class="export-row" style="margin:0 0 16px;">
@@ -1742,7 +1737,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v115';
+const APP_VER='v116';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // ── 注音／中文輸入法保護 ──────────────────────────────
@@ -4951,23 +4946,15 @@ function ensureSupportDefaults(){
 function praiseItems(){return (S.treasures||[]).map((t,i)=>({t,i})).filter(x=>x.t&&x.t.type==='praise');}
 function praiseStage(t){return t.thanks&&t.thanks.trim()?'given':(t.mine&&t.mine.trim()?'own':'got');}
 function renderPraiseWall(){
-  const wall=document.getElementById('praise-wall');if(!wall)return;
   const list=praiseItems();
+  // 牆面本體在上面的場景（黑板頁籤）；這張卡只顯示進度與弧線
+  // typeof：這個函式在頁面初始化時就會跑一次，那時下面的 selectedResCat 還沒宣告
+  if(typeof selectedResCat!=='undefined'&&selectedResCat==='praise'&&document.getElementById('book-stage'))renderPraiseBoard();
+  const stats=document.getElementById('praise-stats');
+  if(!stats)return;
   const n={got:0,own:0,given:0};list.forEach(x=>{n[praiseStage(x.t)]++;});
-  document.getElementById('praise-stats').innerHTML=
-    `<span>收到 <b>${list.length}</b></span><span>我也這麼覺得 <b>${n.own+n.given}</b></span><span>已回贈 <b>${n.given}</b></span>`;
-  wall.innerHTML=list.length?list.map(x=>{
-    const t=x.t,st=praiseStage(t);
-    const badge=st==='given'?'💌':(st==='own'?'✨':'');
-    const face=t.img?`<img class="pc-img" src="${esc(t.img)}" onerror="this.outerHTML='<div class=\'pc-noimg\'>圖片讀不到</div>'"/>`
-      :`<div class="pc-noimg">${esc((t.desc||'還沒寫下他說了什麼').slice(0,42))}</div>`;
-    return `<div class="praise-card ${st}" data-i="${x.i}" title="點開來看看">
-      <span class="pc-tape"></span>${face}
-      <div class="pc-from">${esc(t.title||'某個人')}</div>
-      ${badge?`<span class="pc-badge">${badge}</span>`:''}
-    </div>`;
-  }).join(''):`<div class="praise-empty">還沒有誇誇。收到讓你心裡一暖的話，就貼一張上來 💛</div>`;
-  wall.querySelectorAll('.praise-card').forEach(el=>el.addEventListener('click',()=>openPraiseDetail(+el.dataset.i)));
+  stats.innerHTML=`<span>收到 <b>${list.length}</b></span><span>我也這麼覺得 <b>${n.own+n.given}</b></span><span>已回贈 <b>${n.given}</b></span>`
+    +(list.length?'':`<span style="color:var(--tc3);">收到讓你心裡一暖的話，就貼一張上去 💛</span>`);
   // 成長弧線：整面牆的話，自己都已經認得了
   const arc=document.getElementById('praise-arc');
   if(arc){
@@ -6307,7 +6294,8 @@ function renderResCatTabs(){
   if(!box)return;
   const all=`<div class="rcat-tab${selectedResCat==='all'?' on':''}" data-rc="all" style="background:${selectedResCat==='all'?'var(--primary)':'#B4B2A9'};">全部</div>`;
   const tabs=S.resourceCats.map(cat=>`<div class="rcat-tab${selectedResCat===cat.id?' on':''}" data-rc="${cat.id}" style="background:${cat.color||'#95BCC6'};">${esc(cat.label)}</div>`).join('');
-  box.innerHTML=all+tabs+`<div class="rcat-tab rcat-add" id="rcat-add-btn">＋ 新增分類</div>`;
+  const praise=`<div class="rcat-tab${selectedResCat==='praise'?' on':''}" data-rc="praise" style="background:${selectedResCat==='praise'?'#31473F':'#5C7268'};">💛 誇誇牆</div>`;
+  box.innerHTML=all+tabs+praise+`<div class="rcat-tab rcat-add" id="rcat-add-btn">＋ 新增分類</div>`;
   box.querySelectorAll('.rcat-tab[data-rc]').forEach(el=>el.addEventListener('click',()=>{
     selectedResCat=el.dataset.rc;bookPage=0;renderBookItems();
   }));
@@ -6377,6 +6365,15 @@ function shortLink(u){
 function renderBookItems(){
   bindBookGlobals();
   renderResCatTabs();
+  // 同一個舞台，兩種內容：資源書（雲朵桌面）或誇誇牆（黑板）
+  const stage=document.getElementById('book-stage');
+  const title=document.getElementById('book-scene-title');
+  const foot=document.getElementById('book-scene-foot');
+  const isPraise=selectedResCat==='praise';
+  if(stage)stage.classList.toggle('chalk',isPraise);
+  if(title)title.textContent=isPraise?'💛 誇誇牆':'📖 我的資源書';
+  if(foot)foot.textContent=isPraise?'別人看見的我 · 慢慢變成我自己知道的我':'你收藏的書、音樂、影片、人...都會住進這本書裡';
+  if(isPraise){renderPraiseBoard();return;}
   const all=[];
   (S.resourceCats||[]).forEach(cat=>(cat.items||[]).forEach(it=>all.push(Object.assign({_catId:cat.id,_catColor:cat.color},it))));
   const filtered=selectedResCat==='all'?all:all.filter(it=>it._catId===selectedResCat);
@@ -6408,6 +6405,47 @@ function renderBookItems(){
   empty.style.display=filtered.length?'none':'block';
   const pv=document.getElementById('book-prev'),nx=document.getElementById('book-next');
   if(filtered.length>per){
+    pv.style.display=bookPage>0?'flex':'none';
+    nx.style.display=bookPage<totalPages-1?'flex':'none';
+    ind.style.display='block';ind.textContent=`第 ${bookPage+1} / ${totalPages} 頁`;
+  }else{pv.style.display='none';nx.style.display='none';ind.style.display='none';}
+}
+// 黑板上的誇誇：沿用資源書那套卡片（膠帶、微微傾斜、可拖可點），點一下就打開同一個編輯視窗
+function renderPraiseBoard(){
+  const l=document.getElementById('book-page-l');if(!l)return;
+  const empty=document.getElementById('book-empty'),ind=document.getElementById('book-more');
+  const list=praiseItems();
+  const per=24,totalPages=Math.max(1,Math.ceil(list.length/per));
+  if(bookPage>=totalPages)bookPage=totalPages-1;
+  if(bookPage<0)bookPage=0;
+  const shown=list.slice(bookPage*per,bookPage*per+per);
+  l.innerHTML=shown.map((x,i)=>{
+    const t=x.t,st=praiseStage(t);
+    const rot=((i*53)%17-8),mt=(i%3)*9;
+    const tape=st==='given'?'#8FD3B6':(st==='own'?'#F2D08A':'#E8E2D2');
+    const badge=st==='given'?'💌':(st==='own'?'✨':'');
+    const face=t.img?`<img class="bi-img" src="${esc(t.img)}" draggable="false"/>`
+      :`<div style="font-size:11px;color:var(--tc2);line-height:1.5;padding:6px;text-align:center;overflow:hidden;">${esc((t.desc||'').slice(0,34))}</div>`;
+    return`<div class="book-item" data-pi="${x.i}" style="margin-top:${mt}px;cursor:grab;">`+
+      `<div class="bi-card" style="--bi-rot:rotate(${rot}deg);">`+
+      `<span class="tape" style="background:${tape}CC;"></span><div class="bi-photo">${face}</div>`+
+      `<div class="bi-praise-from">${esc(t.title||'某個人')}</div>`+
+      (badge?`<span class="bi-praise-badge">${badge}</span>`:'')+
+      `</div></div>`;
+  }).join('')+`<div class="chalk-add" id="chalk-add">＋<br>貼一張誇誇</div>`;
+  l.querySelectorAll('.book-item').forEach(el=>{
+    const tap=()=>openPraiseDetail(+el.dataset.pi);
+    el.addEventListener('mousedown',e=>bkStart(el,tap,e));
+    el.addEventListener('touchstart',e=>bkStart(el,tap,e),{passive:false});
+  });
+  const addEl=document.getElementById('chalk-add');
+  if(addEl)addEl.addEventListener('click',()=>{
+    openPraiseForm();
+    document.getElementById('praise-form').scrollIntoView({behavior:'smooth',block:'center'});
+  });
+  empty.style.display='none';
+  const pv=document.getElementById('book-prev'),nx=document.getElementById('book-next');
+  if(list.length>per){
     pv.style.display=bookPage>0?'flex':'none';
     nx.style.display=bookPage<totalPages-1?'flex':'none';
     ind.style.display='block';ind.textContent=`第 ${bookPage+1} / ${totalPages} 頁`;
