@@ -464,6 +464,45 @@ body.viewer-mode .neo-chip,body.viewer-mode .sticky-check,body.viewer-mode .habi
 
 /* IDENTITY CHIPS */
 .identity-wall{display:flex;flex-wrap:wrap;gap:10px;}
+/* 💛 誇誇牆：別人說的話 → 自己也認得的話 → 回贈出去的感謝 */
+.praise-wall{display:flex;flex-wrap:wrap;gap:13px;align-items:flex-start;}
+.praise-card{position:relative;width:108px;padding:9px 9px 8px;border-radius:9px;background:#FFFDF7;
+  box-shadow:0 3px 10px rgba(90,74,58,.14);cursor:pointer;transition:transform .18s,box-shadow .18s;}
+.praise-card:nth-child(3n){transform:rotate(-1.6deg);}
+.praise-card:nth-child(3n+2){transform:rotate(1.4deg);}
+.praise-card:hover{transform:rotate(0) translateY(-3px);box-shadow:0 7px 18px rgba(90,74,58,.2);}
+.praise-card.own{background:linear-gradient(180deg,#FFFBEE,#FFF6DC);}
+.praise-card.given{background:linear-gradient(180deg,#F4FBF4,#EAF6EA);}
+.pc-tape{position:absolute;top:-7px;left:50%;transform:translateX(-50%) rotate(-2deg);width:44px;height:14px;border-radius:2px;
+  background:rgba(var(--secondary-rgb),.38);}
+.praise-card.own .pc-tape{background:rgba(var(--gold-rgb),.6);}
+.praise-card.given .pc-tape{background:rgba(var(--tertiary-rgb),.6);}
+.pc-img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;background:rgba(var(--secondary-rgb),.14);display:block;}
+.pc-noimg{width:100%;aspect-ratio:1;border-radius:6px;background:rgba(var(--secondary-rgb),.14);display:flex;align-items:center;
+  justify-content:center;font-size:12px;color:var(--tc2);text-align:center;padding:7px;line-height:1.45;overflow:hidden;}
+.pc-from{font-size:11px;font-weight:700;color:var(--tc2);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pc-badge{position:absolute;right:5px;bottom:5px;font-size:12px;line-height:1;width:21px;height:21px;border-radius:50%;
+  background:rgba(255,255,255,.92);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(90,74,58,.22);}
+.praise-stats{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--tc3);margin-bottom:11px;}
+.praise-stats b{font-family:'Baloo 2',sans-serif;font-size:13px;color:var(--secondary);}
+.praise-arc{font-size:11px;color:var(--ok);margin:9px 0 0;}
+.praise-empty{font-size:12px;color:var(--tc3);padding:10px 0;}
+.pd-mask{position:fixed;inset:0;z-index:9992;background:rgba(25,35,70,.4);backdrop-filter:blur(4px);display:flex;
+  align-items:center;justify-content:center;padding:18px;}
+.pd-box{background:var(--card);border-radius:18px;padding:16px;width:min(420px,100%);max-height:88vh;overflow-y:auto;
+  box-shadow:0 14px 40px rgba(40,30,20,.3);}
+.pd-img{width:100%;max-height:230px;object-fit:contain;border-radius:11px;background:rgba(var(--secondary-rgb),.12);margin-bottom:10px;}
+.pd-step{font-size:11px;font-weight:700;color:var(--tc2);margin:12px 0 5px;display:flex;align-items:center;gap:6px;}
+.pd-step .pd-dot{width:8px;height:8px;border-radius:50%;background:rgba(var(--secondary-rgb),.45);flex-shrink:0;}
+.pd-step.done .pd-dot{background:var(--gold);}
+.pd-step.done.give .pd-dot{background:var(--tertiary);}
+.pd-ta{width:100%;min-height:58px;border:1.5px solid rgba(var(--secondary-rgb),.3);border-radius:11px;padding:8px 10px;
+  font-family:'Quicksand',sans-serif;font-size:13px;color:var(--tc);background:rgba(255,255,255,.7);resize:vertical;outline:none;}
+.pd-ta:focus{border-color:var(--secondary);}
+.pd-hint{font-size:11px;color:var(--tc3);margin:3px 0 0;}
+.praise-drop{border:1.5px dashed rgba(var(--secondary-rgb),.4);border-radius:11px;padding:14px;text-align:center;font-size:12px;
+  color:var(--tc3);margin-bottom:8px;cursor:pointer;}
+.praise-drop.hot{border-color:var(--secondary);background:rgba(var(--secondary-rgb),.1);color:var(--tc2);}
 .id-tag{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;border:none;background:linear-gradient(145deg,#fff,#EEF0F5);box-shadow:var(--nm);font-size:12.5px;font-weight:600;color:var(--tc3);transition:all .3s;}
 .id-tag.lit{background:rgba(var(--secondary-rgb),.16);box-shadow:none;color:var(--primary);}
 .id-tag.gold{background:rgba(var(--gold-rgb),.22);box-shadow:none;color:#7A5A00;}
@@ -1350,6 +1389,31 @@ button{-webkit-tap-highlight-color:transparent;}
 
 <!-- ══════ SUPPORT SYSTEM ══════ -->
 <div class="page" id="page-support">
+<div class="gcard" style="margin-top:4px;">
+  <div class="sec-hd">💛 誇誇牆</div>
+  <p style="font-size:11px;color:var(--tc3);margin-bottom:10px;">別人看見的我 · 慢慢變成我自己知道的我</p>
+  <div class="praise-stats" id="praise-stats"></div>
+  <div class="praise-wall" id="praise-wall"></div>
+  <p class="praise-arc" id="praise-arc" style="display:none;"></p>
+  <div class="export-row">
+    <button class="export-new-btn" data-kind="praise">📋 複製新項目給 Claude</button>
+    <button class="export-all-btn" data-kind="praise">複製全部</button>
+  </div>
+  <div id="praise-form" style="display:none;">
+    <div class="praise-drop" id="praise-drop">📋 直接貼上截圖（⌘/Ctrl + V），或點這裡選圖片</div>
+    <input type="file" id="praise-file" accept="image/*" style="display:none;"/>
+    <button type="button" class="mini-btn" id="praise-upload-btn" style="display:none;"></button>
+    <img id="praise-upload-preview" style="display:none;width:100%;max-height:170px;object-fit:contain;border-radius:11px;margin-bottom:7px;"/>
+    <input class="tdl-in" id="praise-img" placeholder="或貼上圖片網址（選填）" style="width:100%;margin-bottom:7px;"/>
+    <input class="tdl-in" id="praise-from" placeholder="誰說的" style="width:100%;margin-bottom:7px;"/>
+    <input class="tdl-in" id="praise-text" placeholder="他說了什麼（選填，沒有圖片時會顯示這段）" style="width:100%;margin-bottom:8px;"/>
+    <div style="display:flex;gap:8px;">
+      <button class="mini-btn" id="praise-save" style="flex:1;">貼上牆</button>
+      <button class="mini-btn" id="praise-cancel" style="flex:1;background:rgba(var(--secondary-rgb),.4);color:var(--tc2);">取消</button>
+    </div>
+  </div>
+  <button id="add-praise-btn" style="background:none;border:1.5px dashed rgba(var(--secondary-rgb),.35);border-radius:11px;padding:8px;font-family:'Quicksand',sans-serif;font-size:12px;color:var(--tc3);cursor:pointer;width:100%;margin-top:10px;">＋ 貼一張誇誇</button>
+</div>
 <div class="gcard-scene" style="margin-top:4px;">
   <div class="sec-hd" style="position:relative;z-index:1;">📖 我的資源書</div>
   <div id="res-cat-tabs" style="position:relative;z-index:1;display:flex;gap:6px;flex-wrap:wrap;margin-bottom:0;"></div>
@@ -1678,7 +1742,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v114';
+const APP_VER='v115';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // ── 注音／中文輸入法保護 ──────────────────────────────
@@ -4876,6 +4940,136 @@ function ensureSupportDefaults(){
     sv(S);
   }
 }
+// ══ 💛 誇誇牆 ══════════════════════════════════════
+// 三個階段，都存在同一張卡片上：
+//   ① 收到：別人說的話（截圖／一句話）
+//   ② 內化：我自己也這麼覺得嗎——寫下自己的版本，卡片變金色
+//   ③ 回贈：想對他說的感謝——卡片變綠色，可以複製傳給對方
+// 資料放在 S.treasures（type:'praise'），沿用既有的同步欄位，不用改後端。
+function praiseItems(){return (S.treasures||[]).map((t,i)=>({t,i})).filter(x=>x.t&&x.t.type==='praise');}
+function praiseStage(t){return t.thanks&&t.thanks.trim()?'given':(t.mine&&t.mine.trim()?'own':'got');}
+function renderPraiseWall(){
+  const wall=document.getElementById('praise-wall');if(!wall)return;
+  const list=praiseItems();
+  const n={got:0,own:0,given:0};list.forEach(x=>{n[praiseStage(x.t)]++;});
+  document.getElementById('praise-stats').innerHTML=
+    `<span>收到 <b>${list.length}</b></span><span>我也這麼覺得 <b>${n.own+n.given}</b></span><span>已回贈 <b>${n.given}</b></span>`;
+  wall.innerHTML=list.length?list.map(x=>{
+    const t=x.t,st=praiseStage(t);
+    const badge=st==='given'?'💌':(st==='own'?'✨':'');
+    const face=t.img?`<img class="pc-img" src="${esc(t.img)}" onerror="this.outerHTML='<div class=\'pc-noimg\'>圖片讀不到</div>'"/>`
+      :`<div class="pc-noimg">${esc((t.desc||'還沒寫下他說了什麼').slice(0,42))}</div>`;
+    return `<div class="praise-card ${st}" data-i="${x.i}" title="點開來看看">
+      <span class="pc-tape"></span>${face}
+      <div class="pc-from">${esc(t.title||'某個人')}</div>
+      ${badge?`<span class="pc-badge">${badge}</span>`:''}
+    </div>`;
+  }).join(''):`<div class="praise-empty">還沒有誇誇。收到讓你心裡一暖的話，就貼一張上來 💛</div>`;
+  wall.querySelectorAll('.praise-card').forEach(el=>el.addEventListener('click',()=>openPraiseDetail(+el.dataset.i)));
+  // 成長弧線：整面牆的話，自己都已經認得了
+  const arc=document.getElementById('praise-arc');
+  if(arc){
+    let msg='';
+    if(list.length>=3&&n.got===0&&n.given<list.length)msg='🌿 這面牆上的話，你現在自己也說得出來了。';
+    if(list.length>=3&&n.given===list.length)msg='💞 這些話都變成流出去的感謝了。';
+    arc.textContent=msg;arc.style.display=msg?'':'none';
+  }
+}
+// 點開卡片：看大圖、寫下自己的版本、寫下想回贈的話
+function openPraiseDetail(idx){
+  const t=S.treasures[idx];if(!t)return;
+  const mask=document.createElement('div');mask.className='pd-mask';
+  const st=praiseStage(t);
+  mask.innerHTML=`<div class="pd-box">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+      <div style="flex:1;font-weight:800;color:var(--tc);">${esc(t.title||'某個人')} 說</div>
+      <button class="mini-btn" id="pd-del" style="background:rgba(var(--secondary-rgb),.3);color:var(--tc2);padding:5px 10px;">刪除</button>
+      <button class="mini-btn" id="pd-close" style="padding:5px 12px;">完成</button>
+    </div>
+    ${t.img?`<img class="pd-img" src="${esc(t.img)}"/>`:''}
+    ${t.desc?`<div style="font-size:13px;color:var(--tc);line-height:1.6;margin-bottom:4px;">「${esc(t.desc)}」</div>`:''}
+    <div class="pd-step${st!=='got'?' done':''}"><span class="pd-dot"></span>我自己也這麼覺得嗎？</div>
+    <textarea class="pd-ta" id="pd-mine" placeholder="用自己的話寫一次。寫下來，它就不只是別人說的了">${esc(t.mine||'')}</textarea>
+    <div class="pd-step${st==='given'?' done give':''}"><span class="pd-dot"></span>想回他的話</div>
+    <textarea class="pd-ta" id="pd-thanks" placeholder="謝謝他看見你的那一刻——寫好可以複製傳給他">${esc(t.thanks||'')}</textarea>
+    <p class="pd-hint">寫完點「完成」就會存起來。卡片會跟著變色：收到 → ✨我也這麼覺得 → 💌已回贈</p>
+    <button class="mini-btn" id="pd-copy" style="width:100%;margin-top:9px;background:rgba(var(--tertiary-rgb),.5);color:var(--ok);">📋 複製回贈的話</button>
+  </div>`;
+  document.body.appendChild(mask);
+  const close=save=>{
+    if(save){
+      const mine=document.getElementById('pd-mine').value.trim();
+      const th=document.getElementById('pd-thanks').value.trim();
+      if(mine!==(t.mine||'')||th!==(t.thanks||'')){
+        t.mine=mine;t.thanks=th;sv(S);syncStateDebounced();
+      }
+    }
+    mask.remove();renderPraiseWall();
+  };
+  mask.addEventListener('click',e=>{if(e.target===mask)close(true);});
+  document.getElementById('pd-close').addEventListener('click',()=>close(true));
+  document.getElementById('pd-del').addEventListener('click',()=>{
+    if(!confirm('把這張誇誇從牆上拿下來？'))return;
+    S.treasures.splice(idx,1);sv(S);syncStateDebounced();mask.remove();renderPraiseWall();
+  });
+  document.getElementById('pd-copy').addEventListener('click',async()=>{
+    const v=document.getElementById('pd-thanks').value.trim();
+    if(!v){softToast('還沒寫想回他的話喔 💛',2400);return;}
+    try{await navigator.clipboard.writeText(v);softToast('已複製，可以傳給他了 💌',2600);}catch(e){softToast('複製失敗，長按選取複製吧',2600);}
+  });
+}
+function openPraiseForm(){
+  ['praise-img','praise-from','praise-text'].forEach(id=>{document.getElementById(id).value='';});
+  const prev=document.getElementById('praise-upload-preview');prev.style.display='none';prev.removeAttribute('src');
+  const drop=document.getElementById('praise-drop');drop.textContent='📋 直接貼上截圖（⌘/Ctrl + V），或點這裡選圖片';drop.classList.remove('hot');
+  document.getElementById('praise-form').style.display='block';
+  document.getElementById('add-praise-btn').style.display='none';
+  document.getElementById('praise-from').focus();
+}
+function closePraiseForm(){
+  document.getElementById('praise-form').style.display='none';
+  document.getElementById('add-praise-btn').style.display='';
+}
+async function praiseUploadFile(f){
+  const drop=document.getElementById('praise-drop');
+  drop.textContent='⏳ 上傳中...';drop.classList.add('hot');
+  try{
+    const url=await uploadImageToGAS(f);
+    document.getElementById('praise-img').value=url;
+    const prev=document.getElementById('praise-upload-preview');prev.src=url;prev.style.display='block';
+    drop.textContent='✅ 圖片好了，可以再貼一張換掉它';
+  }catch(e){
+    drop.textContent='🥲 上傳失敗，再試一次（或貼圖片網址）';
+  }
+  drop.classList.remove('hot');
+}
+function wirePraise(){
+  const add=document.getElementById('add-praise-btn');if(!add)return;
+  add.addEventListener('click',openPraiseForm);
+  document.getElementById('praise-cancel').addEventListener('click',closePraiseForm);
+  const fileEl=document.getElementById('praise-file');
+  document.getElementById('praise-drop').addEventListener('click',()=>fileEl.click());
+  fileEl.addEventListener('change',()=>{const f=fileEl.files&&fileEl.files[0];if(f)praiseUploadFile(f);fileEl.value='';});
+  // 截圖直接貼上：誇誇多半是對話截圖，不用先存檔再挑檔案
+  document.addEventListener('paste',e=>{
+    const form=document.getElementById('praise-form');
+    if(!form||form.style.display==='none')return;
+    const it=[...((e.clipboardData&&e.clipboardData.items)||[])].find(x=>x.type&&x.type.indexOf('image')===0);
+    if(!it)return;
+    const f=it.getAsFile();if(!f)return;
+    e.preventDefault();praiseUploadFile(f);
+  });
+  document.getElementById('praise-save').addEventListener('click',()=>{
+    const img=document.getElementById('praise-img').value.trim();
+    const from=document.getElementById('praise-from').value.trim();
+    const text=document.getElementById('praise-text').value.trim();
+    if(!img&&!text){alert('貼一張截圖，或寫下他說的話 💛');return;}
+    S.treasures=S.treasures||[];
+    S.treasures.push({type:'praise',img:img,title:from,desc:text,mine:'',thanks:'',ts:Date.now(),exported:false});
+    sv(S);syncStateDebounced();closePraiseForm();renderPraiseWall();
+    softToast('貼上牆了 💛',2400);
+  });
+}
 function renderSupportPage(){
   ensureSupportDefaults();
   const box=document.getElementById('support-categories');
@@ -5413,11 +5607,14 @@ function openTreasureForm(idx){
   document.getElementById('treasure-form').style.display='block';
   document.getElementById('add-treasure-btn').style.display='none';
 }
+// 誇誇卡跟收藏品放在同一個陣列裡（共用雲端欄位），所以這裡要帶著原本的索引一起過濾，
+// 刪除／編輯才不會刪到別張
+function treasureItems(){return (S.treasures||[]).map((t,i)=>({t,i})).filter(x=>x.t&&x.t.type!=='praise');}
 function renderTreasureList(){
   const mode=getViewMode('treasure');
   let inner;
   if(mode==='grid'){
-    inner=`<div class="treasure-grid">`+S.treasures.map((t,i)=>`
+    inner=`<div class="treasure-grid">`+treasureItems().map(({t,i})=>`
       <div class="treasure-card tgrid${t.exported?' exported':''}">
         <button class="exp-toggle" data-i="${i}" title="${t.exported?'已匯出（點取消）':'標記已匯出'}">${t.exported?'✅':'⬜'}</button>
         <button class="card-edit" data-i="${i}">✏️</button>
@@ -5428,7 +5625,7 @@ function renderTreasureList(){
         ${t.desc?`<div class="treasure-desc" style="font-size:11px;">${t.desc}</div>`:''}
       </div>`).join('')+`</div>`;
   }else{
-    inner=S.treasures.map((t,i)=>`
+    inner=treasureItems().map(({t,i})=>`
       <div class="treasure-row${t.exported?' exported':''}">
         <button class="exp-toggle" data-i="${i}" title="${t.exported?'已匯出（點取消）':'標記已匯出'}">${t.exported?'✅':'⬜'}</button>
         ${t.img?`<img class="tr-thumb" src="${t.img}" onerror="this.style.display='none'"/>`:`<div class="tr-thumb" style="display:flex;align-items:center;justify-content:center;font-size:24px;background:rgba(255,255,255,.5);">${t.emoji||'💎'}</div>`}
@@ -5592,7 +5789,7 @@ document.querySelectorAll('.nav-btn').forEach(btn=>{
     if(p==='week')renderWeekly();
     if(p==='month')renderMonthly();
     if(p==='garden')renderGarden();
-    if(p==='support'){bookPage=0;renderSupportPage();renderResourcePage();}
+    if(p==='support'){bookPage=0;renderSupportPage();renderResourcePage();renderPraiseWall();}
     if(p==='info'){renderAchievements();renderExpLog();}
     if(p==='settings')renderSettings();
   });
@@ -5611,12 +5808,14 @@ function renderAll(){
   }
   if(typeof applyViewDate==='function')applyViewDate(false);
   if(document.getElementById('page-garden').classList.contains('active'))renderGarden();
+  if(typeof renderPraiseWall==='function'&&document.getElementById('page-support').classList.contains('active'))renderPraiseWall();
 }
 migrateFlowers();
 renderAll();
 initStickyDrag();
 initStickyResize();
 initPuppy(document.getElementById('puppy'),document.getElementById('scene-stage'),90);
+wirePraise();renderPraiseWall();
 pullCloud(true);
 </script>
 <script>
@@ -6855,7 +7054,13 @@ if(_exportBtn)_exportBtn.addEventListener('click',()=>{
 const EXPORT_META={
   quotes:{title:'💬 金句收藏',refs:()=>S.quotes,line:q=>{let s='「'+qText(q)+'」';if(q.desc)s+='\n  '+q.desc;if(q.link)s+='\n  來源：'+q.link;return s;},render:()=>renderQuoteList()},
   people:{title:'🐾 我的人',refs:()=>S.myPeople,line:p=>{let s='🐾 '+(p.name||'');if(p.note)s+=' — '+p.note;if(p.img)s+='\n  圖片：'+p.img;return s;},render:()=>renderPeopleList()},
-  treasures:{title:'💎 豐盛收藏庫',refs:()=>S.treasures,line:t=>{let s=(t.type==='person'?'🫂 ':'🎁 ')+(t.title||'');if(t.desc)s+='\n  '+t.desc;if(t.img)s+='\n  圖片：'+t.img;return s;},render:()=>renderTreasureList()},
+  praise:{title:'💛 誇誇牆',refs:()=>praiseItems().map(x=>x.t),line:t=>{
+    let s='💛 '+(t.title||'某個人')+' 說';if(t.desc)s+='：「'+t.desc+'」';
+    if(t.img)s+='\n  圖片：'+t.img;
+    if(t.mine)s+='\n  我自己的版本：'+t.mine;
+    if(t.thanks)s+='\n  想回他的話：'+t.thanks;
+    return s;},render:()=>renderPraiseWall()},
+  treasures:{title:'💎 豐盛收藏庫',refs:()=>treasureItems().map(x=>x.t),line:t=>{let s=(t.type==='person'?'🫂 ':'🎁 ')+(t.title||'');if(t.desc)s+='\n  '+t.desc;if(t.img)s+='\n  圖片：'+t.img;return s;},render:()=>renderTreasureList()},
   resource:{title:'📖 我的資源',refs:()=>{const a=[];(S.resourceCats||[]).forEach(c=>(c.items||[]).forEach(it=>a.push(it)));return a;},line:it=>{const t=(typeof RESOURCE_TYPES!=='undefined')?((RESOURCE_TYPES.find(x=>x.id===it.type)||{}).labelText||''):'';let s='📖 '+(it.title||'')+(t?'（'+t+'）':'');if(it.desc)s+='\n  '+it.desc;if(it.link)s+='\n  連結：'+it.link;return s;},render:()=>renderResourcePage()}
 };
 function fallbackCopy(text){const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(e){}ta.remove();}
