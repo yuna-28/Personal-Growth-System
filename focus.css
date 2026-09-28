@@ -1,0 +1,34 @@
+/* 🌱 這陣子：首頁的一條小條。平常只按，需要時才打開設定 */
+.focus-strip{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;}
+.focus-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0;}
+.focus-line+.focus-line{padding-top:9px;margin-top:2px;border-top:1px solid rgba(var(--secondary-rgb),.22);width:100%;}
+.focus-lbl{font-size:12px;font-weight:700;color:var(--tc2);flex-shrink:0;}
+.focus-note{font-size:11px;color:var(--tc3);}
+.focus-note.warn{color:#C0703A;}
+.focus-btn{border:1.5px solid rgba(var(--secondary-rgb),.4);background:rgba(255,255,255,.62);border-radius:999px;
+  padding:6px 13px;font-family:'Quicksand',sans-serif;font-size:12px;font-weight:700;color:var(--tc2);cursor:pointer;
+  transition:transform .12s,background .15s,border-color .15s;}
+.focus-btn:hover{transform:translateY(-1px);border-color:var(--secondary);}
+.focus-btn.done{background:rgba(var(--tertiary-rgb),.45);border-color:transparent;color:var(--ok);}
+.focus-btn.rest{background:rgba(var(--gold-rgb),.4);border-color:transparent;color:#854F0B;}
+.focus-chip{width:auto;padding:0 11px;height:34px;border-radius:12px;}
+.focus-chip.on{outline:2.5px solid var(--primary);outline-offset:-1px;}
+.focus-time{width:74px;border:1.5px solid var(--secondary);border-radius:999px;padding:5px 9px;font-family:'Quicksand',sans-serif;
+  font-size:12px;color:var(--tc);background:#fff;outline:none;}
+.focus-dots{display:flex;gap:4px;align-items:center;}
+.focus-dot{width:9px;height:9px;border-radius:50%;background:rgba(var(--secondary-rgb),.25);}
+.focus-dot.ontime{background:var(--tertiary);}
+.focus-dot.late{background:var(--gold);}
+.focus-panel{margin-top:11px;border-top:1px solid rgba(var(--secondary-rgb),.22);padding-top:11px;}
+.focus-panel summary{font-size:12px;color:var(--tc3);cursor:pointer;list-style:none;}
+.focus-panel summary::-webkit-details-marker{display:none;}
+.focus-panel summary:hover{color:var(--tc2);}
+.focus-fields{display:flex;flex-wrap:wrap;gap:8px;margin:9px 0;}
+.focus-fields label{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--tc2);flex:1 1 130px;min-width:0;}
+.focus-fields label.wide{flex-basis:100%;}
+.focus-fields input,.focus-fields select,.focus-fields textarea{width:100%;border:1.5px solid rgba(var(--secondary-rgb),.3);
+  border-radius:11px;padding:7px 9px;font-family:'Quicksand',sans-serif;font-size:12px;color:var(--tc);
+  background:rgba(255,255,255,.72);outline:none;}
+.focus-fields input:focus,.focus-fields select:focus,.focus-fields textarea:focus{border-color:var(--secondary);}
+.focus-fields textarea{min-height:52px;resize:vertical;}
+@media(max-width:560px){.focus-line{width:100%;}}

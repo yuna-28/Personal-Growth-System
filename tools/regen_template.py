@@ -50,6 +50,12 @@ for anchor, add in guards:
 
 (ROOT / 'template' / 'index.html').write_text(src, encoding='utf-8')
 
+# Public defaults contain no personal project or deadline.
+p = ROOT / 'template' / 'index.html'
+p.write_text(p.read_text(encoding='utf-8').replace('data-project="完成動畫" data-due="2026-10-10"', 'data-project="" data-due=""'), encoding='utf-8')
+for asset in ('focus-core.js', 'focus.js', 'focus.css'):
+    (ROOT / 'template' / asset).write_bytes((ROOT / asset).read_bytes())
+
 # 5) 出貨前自我檢查：個人資料一個都不能漏
 leaks = {name: src.count(name) for name in ('格蘭朵', '妳', 'AKfyc', 'yuna-28/Personal')}
 bad = {k: v for k, v in leaks.items() if v}

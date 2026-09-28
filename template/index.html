@@ -1069,6 +1069,8 @@ button{-webkit-tap-highlight-color:transparent;}
 @keyframes pageIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
 .page.active{animation:pageIn .22s ease;}
 </style>
+<link rel="stylesheet" href="focus.css">
+<script src="focus-core.js"></script>
 </head>
 <body>
 <!-- 這四個彈窗特意放在 <body> 最前面、所有 <script> 之前：
@@ -1236,6 +1238,7 @@ button{-webkit-tap-highlight-color:transparent;}
   </div>
 </div>
 
+<section id="focus-hub" data-project="" data-due="" aria-label="這陣子的小目標"></section>
 <div class="home-row2">
   <div class="col-diary">
     <div class="gcard-nb">
@@ -1737,7 +1740,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v116';
+const APP_VER='v119';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // ── 注音／中文輸入法保護 ──────────────────────────────
@@ -1867,7 +1870,7 @@ const HEALTH=[
 // 內建選項＋每項的 emoji（fluent 圖示碼）。使用者可自訂新增（存 S.healthOpts）。
 const DIET_TAGS=['原型食物為主','麵包/貝果','飯','麵','零食','含糖飲料','無糖飲料','鮮奶茶','外食'];
 const DIET_EMOJI={'原型食物為主':'1f957','麵包/貝果':'1f35e','飯':'1f35a','麵':'1f35c','零食':'1f370','含糖飲料':'1f964','無糖飲料':'1f375','鮮奶茶':'1f9cb','外食':'1f35f'};
-const EXERCISE_TYPES=['跑步','跳舞','其他'];
+const EXERCISE_TYPES=['跑步','跳舞','走路','伸展','肌力','其他'];
 const EXERCISE_EMOJI={'跑步':'1f3c3','跳舞':'1f483','其他':'1f4aa'};
 const PRE_SLEEP_ACTS=['看劇','看直播','聽直播','小說','漫畫','閱讀'];
 const ACT_EMOJI={'看劇':'1f4fa','看直播':'1f3a5','聽直播':'1f3a7','小說':'1f4d6','漫畫':'1f4d8','閱讀':'1f4da'};
@@ -1921,7 +1924,7 @@ function emptyHealth(){return {sleep:{sleepTime:'',wakeTime:'',ease:'',acts:[],n
 // 這個項目今天有沒有記錄（決定要不要給 EXP／花）
 function healthHas(h,k){
   if(!h)return false;
-  if(k==='sleep'){const s=h.sleep;return !!(s&&(s.sleepTime||s.wakeTime||s.ease||(s.acts&&s.acts.length)||s.note));}
+  if(k==='sleep'){const s=h.sleep;return !!(s&&(s.sleepTime||s.wakeTime||(s.windDown&&(s.windDown.inBedAt||s.windDown.phoneAwayAt))||s.ease||(s.acts&&s.acts.length)||s.note));}
   if(k==='diet')return !!(h.diet&&((h.diet.tags&&h.diet.tags.length)||h.diet.note));
   if(k==='exercise')return !!(h.exercise&&h.exercise.type);
   if(k==='water')return !!(h.water&&(+h.water.amount||0)>0);
@@ -1939,8 +1942,10 @@ function sleepMinutes(sl){
 function fmtSleepDur(min){if(min==null)return '';const h=Math.floor(min/60),m=min%60;return h+'小時'+(m?m+'分':'');}
 // 「複製給 Claude」用的健康摘要文字
 function healthCopyText(h){
-  if(!h||!HEALTH.some(H=>healthHas(h,H.k)))return '🌿 健康：無記錄\n';
+  if(!h||(!HEALTH.some(H=>healthHas(h,H.k))&&!h.exercise?.restDay))return '🌿 健康：無記錄\n';
   const L=['🌿 健康：'];
+  if(h.sleep?.windDown){const w=h.sleep.windDown;L.push('  🌙 收手機：'+(w.phoneAwayAt||'未記錄')+'；上床：'+(w.inBedAt||'未記錄'));}
+  if(h.exercise?.restDay)L.push('  🌿 今天休息');
   if(healthHas(h,'sleep')){const s=h.sleep,dm=sleepMinutes(s);L.push(`  🌙 睡眠：${s.sleepTime||'?'}→${s.wakeTime||'?'}${dm!=null?'（'+fmtSleepDur(dm)+'）':''}${s.ease?' · '+easeLabel(s.ease):''}${(s.acts&&s.acts.length)?' · 睡前:'+s.acts.join('/'):''}${s.note?' · '+s.note:''}`);}
   if(healthHas(h,'diet')){const d=h.diet;L.push(`  🍽️ 飲食：${(d.tags||[]).join('、')||'—'}${d.note?' · '+d.note:''}`);}
   if(healthHas(h,'exercise')){const e=h.exercise;L.push(`  🏃 運動：${exTypesOf(e).join('、')}${e.duration?' '+e.duration+'分':''}${e.note?' · '+e.note:''}`);}
@@ -1979,7 +1984,7 @@ function reconcileHealthExp(h,ds){
 }
 function defaults(){
   return{exp:0,flowers:[],apples:[],bigApples:0,goldFruits:0,seedlings:0,trees:1,
-    streak:0,lastStreak:'',checked:{},diary:{hl:'',rf:'',gr:'',quote:''},
+    focus:FocusCore.clean(null),streak:0,lastStreak:'',checked:{},diary:{hl:'',rf:'',gr:'',quote:''},
     lastPlant:'',tomorrowTDL:[],todayTDL:[],tdlDone:{},entries:[],
     achievements:[],quotes:[],calNotes:{},myPeople:[],treasures:[],gardenPos:{},notePos:null,noteSize:null,notifications:null,todayPhotos:[],resourceCats:null,expLog:[],tdlHist:{},archivedHabits:[],calRecur:{},health:emptyHealth(),healthMigrated:false,healthOpts:{diet:[],exercise:[],sleepActs:[],water:[]}};
 }
@@ -2041,6 +2046,7 @@ migrateHealth();
 function buildTdlSnapshot(items,doneMap){
   const dm=doneMap||{};
   return (items||[]).map((r,i)=>({
+    ...tdlMeta(r),
     theme:((r&&r.theme)||'').trim(),
     task:((r&&r.task)||'').trim(),
     done:!!dm['t'+i],
@@ -2052,8 +2058,9 @@ function buildTdlSnapshot(items,doneMap){
 // 今天的清單被四個地方寫過（換日、雲端同步、補記昨天…），各自用「位置」對應完成狀態，
 // 順序一變就會勾錯人，順延次數也常被抹成 0 → 已完成的事又被當成沒做、天天順延回來。
 // 以下三個函式是唯一的寫入管道：一律用「主題＋任務」當身分，c 一律保留。
-function tdlKey(r){return (((r&&r.theme)||'')+'').trim()+'␟'+(((r&&r.task)||'')+'').trim();}
-function tdlNorm(r){return {theme:((r&&r.theme)||'')+'',task:((r&&r.task)||'')+'',c:Math.max(0,+((r&&r.c)||0)||0)};}
+function tdlKey(r){if(r&&r.id)return 'id:'+r.id;return (((r&&r.theme)||'')+'').trim()+'␟'+(((r&&r.task)||'')+'').trim();}
+function tdlMeta(r){const o={};for(const k of ['id','goalId','milestoneId','actionId'])if(r&&typeof r[k]==='string')o[k]=r[k];return o;}
+function tdlNorm(r){return {...tdlMeta(r),theme:((r&&r.theme)||'')+'',task:((r&&r.task)||'')+'',c:Math.max(0,+((r&&r.c)||0)||0)};}
 // 設定今天的清單。doneOf 省略＝沿用目前的完成狀態（依身分對應，不看位置）；
 // 傳函式＝用指定來源決定（例如從雲端 entry 還原）。
 function setTodayTDL(list,doneOf){
@@ -2105,7 +2112,7 @@ function rolloverToToday(){
     const _dy=S.diary||{};
     const _hasDiary=!!(_dy.hl||_dy.rf||_dy.gr||_dy.quote);
     // 只填了健康、其他都沒動的那天，也要落地——不然下面 S.health 一歸零就永遠不見了
-    const _hasHealth=!!(S.health&&HEALTH.some(H=>healthHas(S.health,H.k)));
+    const _hasHealth=!!(S.health&&(HEALTH.some(H=>healthHas(S.health,H.k))||S.health.exercise?.restDay||S.health.sleep?.windDown));
     if(_snap.length||_ck.length||_hasDiary||_hasHealth){
       const _en=getOrCreateEntry(S.dayKey);
       if(_snap.length&&!(_en.tdlItems&&_en.tdlItems.length)){
@@ -2297,7 +2304,8 @@ async function syncState(opts){
       calColorTags:JSON.stringify(S.calColorTags||{}),
       archivedHabits:JSON.stringify(S.archivedHabits||[]),
       calRecur:JSON.stringify(S.calRecur||{}),
-      healthOpts:JSON.stringify(S.healthOpts||{})
+      healthOpts:JSON.stringify(S.healthOpts||{}),
+      focus:JSON.stringify(FocusCore.clean(S.focus))
     },opts);
     const _j=await gasJson(_res);
     if(_j.conflict){
@@ -2315,6 +2323,7 @@ async function syncState(opts){
       }
     }
     if(_j.ok===false)throw new Error(_j.error||'saveState failed');
+    if(window.FocusUI)FocusUI.setCloudSupport(_j.focusVersion===1);
     localStorage.setItem('grandol_state_ts',String(_now));
     clearDirty('state',t0);syncDone();return true;
   }catch(e){syncFailed();return false;}
@@ -2332,6 +2341,7 @@ async function loadCloud(){
     // 下面到 renderAll 之間都是同步執行的：先拍一張快照，最後沒有任何變化就不重繪，
     // 定時同步才不會一直把畫面（打開的面板、捲動位置）刷掉
     const _before=JSON.stringify(S);
+    if(window.FocusUI)FocusUI.setCloudSupport(st.focusVersion===1);
     if((st&&st.role==='viewer')||(en&&en.role==='viewer')){VIEWER_MODE=true;enterViewerMode();}
     if(st&&st.ok===false&&/unauthorized/.test(st.error||'')){
       setSync('error','需要通行碼：請到設定輸入');
@@ -2345,6 +2355,9 @@ async function loadCloud(){
       const d=st.data;
       // 記下這次看到的雲端版本戳（多裝置防護的基準點）
       if(d.updatedAt)localStorage.setItem('grandol_state_ts',String(Number(d.updatedAt)||0));
+      const _remoteFocus=parseJ(d.focus,null);
+      S.focus=FocusCore.merge(_remoteFocus,S.focus);
+      if(st.focusVersion===1&&JSON.stringify(FocusCore.clean(_remoteFocus))!==JSON.stringify(S.focus))markDirty('state');
       S.flowers=parseJ(d.flowers,S.flowers);
       S.apples=parseJ(d.apples,S.apples);
       S.bigApples=+d.bigApples||0;S.goldFruits=+d.goldFruits||0;
@@ -2390,6 +2403,18 @@ async function loadCloud(){
         const idx=S.entries.findIndex(e=>e.date===dateStr);
         if(idx>=0){
           const _old=S.entries[idx];
+          const _oldWind=_old.health?.sleep?.windDown;
+          const _newWind=entry.health?.sleep?.windDown;
+          const _mergedWind=FocusCore.mergeWind(_oldWind,_newWind);
+          if(_mergedWind){
+            const differs=JSON.stringify(_mergedWind)!==JSON.stringify(_newWind);
+            if(!entry.health)entry.health=emptyHealth();if(!entry.health.sleep)entry.health.sleep={};
+            entry.health.sleep.windDown=_mergedWind;
+            if(!_old.health)_old.health=emptyHealth();if(!_old.health.sleep)_old.health.sleep={};
+            _old.health.sleep.windDown=_mergedWind;
+            if(dateStr===curDay())S.health.sleep.windDown=FocusCore.mergeWind(S.health.sleep.windDown,_mergedWind);
+            if(differs)markDirty('e:'+dateStr);
+          }
           // 本機這天比雲端新（剛改完還沒推上去、或上次推送失敗）→ 保留本機，並確保之後會推
           // 以前是不管新舊一律用雲端蓋掉，剛補記的內容就這樣被舊資料吃掉
           if((+_old.savedAt||0)>entry.savedAt){if(!isDirty('e:'+dateStr))markDirty('e:'+dateStr);return;}
@@ -2403,7 +2428,7 @@ async function loadCloud(){
       S.entries.forEach(x=>{
         if(_cloudDates.has(x.date))return;
         const has=(x.tdl&&x.tdl.length)||(x.tdlItems&&x.tdlItems.length)||(x.checked&&x.checked.length)
-          ||(x.diary&&(x.diary.hl||x.diary.rf||x.diary.gr||x.diary.quote))||(x.health&&HEALTH.some(H=>healthHas(x.health,H.k)));
+          ||(x.diary&&(x.diary.hl||x.diary.rf||x.diary.gr||x.diary.quote))||(x.health&&(HEALTH.some(H=>healthHas(x.health,H.k))||x.health.exercise?.restDay||x.health.sleep?.windDown));
         if(has&&!isDirty('e:'+x.date))markDirty('e:'+x.date);
       });
       S.entries.sort((a,b)=>a.date<b.date?-1:1);
@@ -2677,7 +2702,7 @@ function stickyCtx(){
   // 當天自己的快照是權威版本；沒有快照才回頭用「前一天規劃的 tdl」
   let items;
   if(en&&Array.isArray(en.tdlItems)&&en.tdlItems.length){
-    items=en.tdlItems.map(x=>({theme:x.theme,task:x.task,c:Math.max(0,+x.c||0)}));
+    items=en.tdlItems.map(x=>tdlNorm(x));
   }else{
     const prev=new Date(ds+'T00:00:00');prev.setDate(prev.getDate()-1);
     const pe=S.entries.find(x=>x.date===fmtLocal(prev));
@@ -2777,15 +2802,15 @@ function postponeTdlItem(i){
   if(!c.todayMode)return postponePastTdlItem(c,i);
   todayListEdited=true;markTodayListEdited(); // 使用者真的動了今天的清單，之後才准寫入空值
   const nc=(+item.c||0)+1;
-  const idk=r=>(((r&&r.theme)||'')+'').trim()+'␟'+(((r&&r.task)||'')+'').trim();
+  const idk=tdlKey;
   // 今天移除
   S.tdlDone=remapDoneAfterDelete(c.done,i,c.items.length);
   S.todayTDL.splice(i,1);
   // 明天加入（已經在明天清單裡就只更新次數，不重複新增）
   const ex=tdlRows.find(r=>idk(r)===idk(item));
   if(ex)ex.c=Math.max(+ex.c||0,nc);
-  else tdlRows.push({theme:item.theme||'',task:item.task||'',confirmed:true,c:nc});
-  S.tomorrowTDL=tdlRows.filter(r=>r.theme||r.task).map(r=>({theme:r.theme,task:r.task,c:+((r&&r.c)||0)||0}));
+  else tdlRows.push({...tdlNorm(item),confirmed:true,c:nc});
+  S.tomorrowTDL=tdlRows.filter(r=>r.theme||r.task).map(r=>tdlNorm(r));
   sv(S);autoDraftDebounced();
   renderStickyNote();renderTDL();syncStateDebounced();
   softToast('⏩ 已順延到明天'+(nc>1?'（第 '+nc+' 次了）':''),2800);
@@ -2797,7 +2822,7 @@ function postponePastTdlItem(c,i){
   if(T>curDay())return;
   const item=c.items[i];
   const nc=(+item.c||0)+1;
-  const moved={theme:((item.theme||'')+'').trim(),task:((item.task||'')+'').trim(),c:nc};
+  const moved={...tdlNorm(item),c:nc};
   const k=tdlKey(moved);
   // 1. 從那天移除（完成狀態的位置編號跟著往前挪）
   const rest=c.items.slice();rest.splice(i,1);
@@ -2945,6 +2970,7 @@ function wireStickyAdd(){
   if(target){target.focus();try{target.setSelectionRange(target.value.length,target.value.length);}catch(_){}}
 }
 function renderStickyNote(){
+  if(window.FocusUI)FocusUI.render();
   const note=document.getElementById('sticky-note');
   applyNoteStyle();
   const ctx=stickyCtx();
@@ -3221,6 +3247,8 @@ function healthTarget(){
 // 只持久化＋更新每張卡的「標題摘要／已記錄」外框，絕不重建整個 health-grid
 // （重建會讓四張卡的動畫全部重播＝先前那個 bug 的根源）
 function commitHealth(){
+  // Keep activity/rest mutually exclusive.
+  const _fh=healthTarget().h;if(_fh.exercise&&exTypesOf(_fh.exercise).length)_fh.exercise.restDay=false;
   const t=healthTarget();
   const oldExp=S.exp;
   reconcileHealthExp(t.h,t.ds);
@@ -3234,6 +3262,7 @@ function commitHealth(){
   }
   sv(S);checkLevelUp(oldExp,S.exp);
   HEALTH.forEach(H=>updateHealthChrome(H.k));
+  if(window.FocusUI)FocusUI.render();
   renderFlowers();renderExpBar();checkAchievements();syncStateDebounced();
 }
 // 就地更新單張健康卡的外框（on 狀態＋標題摘要），不動內容、不重播動畫
@@ -3246,7 +3275,7 @@ function updateHealthChrome(k){
   if(sum)sum.textContent=healthSummary(h,k)||'快速記錄';
 }
 function healthSummary(h,k){
-  if(k==='sleep'){const s=h.sleep||{};if(!s.sleepTime&&!s.wakeTime)return '';const dur=sleepMinutes(s);return (s.sleepTime||'?')+' → '+(s.wakeTime||'?')+(dur!=null?' · '+fmtSleepDur(dur):'');}
+  if(k==='sleep'){const s=h.sleep||{};if(!s.sleepTime&&!s.wakeTime)return s.windDown?.inBedAt?'已記錄上床':s.windDown?.phoneAwayAt?'已收手機':'';const dur=sleepMinutes(s);return (s.sleepTime||'?')+' → '+(s.wakeTime||'?')+(dur!=null?' · '+fmtSleepDur(dur):'');}
   if(k==='diet'){const d=h.diet||{};const n=(d.tags||[]).length;return n?(d.tags.slice(0,2).join('、')+(n>2?' +'+(n-2):'')):(d.note?'有備註':'');}
   if(k==='exercise'){const e=h.exercise||{};const ts=exTypesOf(e);
     if(!ts.length)return e.duration?'⏱ '+e.duration+'分 · 選一下做了什麼運動':'';
@@ -3255,6 +3284,7 @@ function healthSummary(h,k){
   return '';
 }
 function renderHealth(){
+  if(window.FocusUI)FocusUI.render();
   const box=document.getElementById('health-grid');
   if(!box)return;
   const t=healthTarget();const h=t.h;
@@ -3294,6 +3324,7 @@ function healthEditorHTML(k,h){
     const s=h.sleep||{};
     const stars=[[14,18],[38,10],[62,26],[82,14],[50,32]].map(p=>`<span class="ss-star" style="left:${p[0]}%;top:${p[1]}px;"></span>`).join('');
     return `<div class="sleep-wrap">`+
+      (s.windDown?`<p style="font-size:12px;color:var(--tc2)">${s.windDown.phoneAwayAt?'✓ 已收手機　':''}${s.windDown.inBedAt?'✓ 已記錄上床':''}（時間可在上方目標卡修正）</p>`:'')+
       `<div class="sleep-scene" id="hz-sleep-scene">`+
         `<div class="ss-sky">${stars}<span class="ss-sun">${fi('2600',22)}</span><span class="ss-moon">${fi('1f319',20)}</span></div>`+
         `<div class="ss-ground"></div>`+
@@ -3755,14 +3786,14 @@ function curRows(){return tdlEditCtx==='today'?tdlRows:backfillRows;}
 function persistTdlEdit(){
   if(tdlEditCtx&&tdlEditCtx!=='today'){
     const en=getOrCreateEntry(tdlEditCtx);
-    en.tdl=backfillRows.filter(r=>r.theme||r.task).map(r=>({theme:r.theme,task:r.task,c:+((r&&r.c)||0)||0}));
+    en.tdl=backfillRows.filter(r=>r.theme||r.task).map(r=>tdlNorm(r));
     sv(S);syncEntryDebounced(tdlEditCtx);
     mirrorYesterdayTdlToToday(tdlEditCtx);
     return;
   }
   // 先立刻寫進 localStorage（不等 debounce），這樣就算下一秒關掉 App 也不會掉；
   // 再交給自動存草稿把它寫進 entry 並同步上雲端。
-  S.tomorrowTDL=tdlRows.filter(r=>r.theme||r.task).map(r=>({theme:r.theme,task:r.task,c:+((r&&r.c)||0)||0}));
+  S.tomorrowTDL=tdlRows.filter(r=>r.theme||r.task).map(r=>tdlNorm(r));
   sv(S);
   autoDraftDebounced();
 }
@@ -3870,7 +3901,7 @@ document.getElementById('plant-btn').addEventListener('click',async()=>{
     }
     S.lastStreak=curDay();
   }
-  S.tomorrowTDL=toSave.map(r=>({theme:r.theme,task:r.task,c:+((r&&r.c)||0)||0}));
+  S.tomorrowTDL=toSave.map(r=>tdlNorm(r));
   S.lastPlant=curDay();
 
   const oldExp=S.exp;
@@ -4442,7 +4473,7 @@ function renderHealthReview(cur,prefix,dates){
   if(!sleepDays.length){
     show(prefix+'-sleep-card',true);
     document.getElementById(prefix+'-sleep').innerHTML=
-      '<div class="witness-line">🌙 這'+(isWeek?'週':'個月')+'還沒有睡眠紀錄。到「今天」的睡眠卡選好入睡／起床時間，按 <b>✓ 記錄</b> 就會出現在這裡。</div>';
+      '<div class="witness-line">🌙 這'+(isWeek?'週':'個月')+'還沒有入睡／起床紀錄。上床時間請看首頁「最近七晚」；睡眠卡的入睡／起床時間會另外統計。</div>';
   }
   if(sleepDays.length){
     show(prefix+'-sleep-card',true);
@@ -6721,7 +6752,7 @@ async function plantBackfill(){
   const e=getOrCreateEntry(ds);
   const hasContent=(e.checked&&e.checked.length)||e.diary.hl||e.diary.rf||e.diary.gr||(e.photos&&e.photos.length);
   if(!hasContent){alert('這一天還是空的，先勾個習慣或寫點小記再種下 📖');return;}
-  if(tdlEditCtx===ds)e.tdl=backfillRows.filter(r=>r.theme||r.task).map(r=>({theme:r.theme,task:r.task,c:+((r&&r.c)||0)||0}));
+  if(tdlEditCtx===ds)e.tdl=backfillRows.filter(r=>r.theme||r.task).map(r=>tdlNorm(r));
   mirrorYesterdayTdlToToday(ds);
   const planted=(+e.streak||0)>=1;
   if(planted&&!confirm('這一天已經種過了！要用目前內容更新這天的紀錄嗎？'))return;
@@ -6749,6 +6780,7 @@ async function plantBackfill(){
   renderPlantBtn();
 }
 function applyViewDate(switchPage){
+  if(window.FocusUI)FocusUI.render();
   const isT=ctxIsToday();
   const note=document.getElementById('sticky-note');
   if(note)note.style.display='';
@@ -6756,7 +6788,7 @@ function applyViewDate(switchPage){
   const tdlCol=document.querySelector('.home-row2 .col-tdl');
   if(tdlCol)tdlCol.style.display=''; // TDL 卡今天與過去日期都可編輯
   if(isT){tdlEditCtx='today';}
-  else{tdlEditCtx=viewDate;const _en=S.entries.find(x=>x.date===viewDate);backfillRows=(_en&&Array.isArray(_en.tdl)&&_en.tdl.length)?_en.tdl.map(r=>({theme:r.theme,task:r.task,c:+((r&&r.c)||0)||0,confirmed:false})):[{theme:'',task:'',confirmed:false}];}
+  else{tdlEditCtx=viewDate;const _en=S.entries.find(x=>x.date===viewDate);backfillRows=(_en&&Array.isArray(_en.tdl)&&_en.tdl.length)?_en.tdl.map(r=>({...tdlNorm(r),confirmed:false})):[{theme:'',task:'',confirmed:false}];}
   const tt=document.getElementById('tdl-title');
   if(tt){if(isT)tt.textContent='明天 TDL';else{const _dd=new Date(viewDate+'T00:00:00');tt.textContent=`${_dd.getMonth()+1}/${_dd.getDate()} 的 TDL`;}}
   if(typeof renderTDL==='function')renderTDL();
@@ -6797,7 +6829,7 @@ let tdlPlanEdited=false;   // 使用者編輯過「明天 TDL」
 let todayListEdited=todayListWasEdited(); // 使用者動過今天便利貼上的項目（重新整理後也記得）
 function safeTdlFields(existing){
   const ex=existing||{};
-  const rows=tdlRows.filter(r=>r.theme||r.task).map(r=>({theme:r.theme,task:r.task,c:+((r&&r.c)||0)||0}));
+  const rows=tdlRows.filter(r=>r.theme||r.task).map(r=>tdlNorm(r));
   const oldPlan=Array.isArray(ex.tdl)?ex.tdl:[];
   const tdl=rows.length?rows:(tdlPlanEdited?[]:oldPlan);
   const snap=buildTdlSnapshot(S.todayTDL,S.tdlDone);
@@ -7090,6 +7122,7 @@ function buildExportText(){
     lines.push('');
   });
   if(S.quotes&&S.quotes.length){lines.push('━━━ 💬 金句收藏 ━━━');S.quotes.forEach(q=>lines.push('・'+qText(q)+(q.link?' （'+q.link+'）':'')));lines.push('');}
+  if(window.FocusUI)lines.push(...FocusUI.exportLines());
   return lines.join('\n');
 }
 const _exportBtn=document.getElementById('export-txt-btn');
@@ -7609,5 +7642,6 @@ document.addEventListener('visibilitychange',()=>{
 
 
 
+<script src="focus.js"></script>
 </body>
 </html>

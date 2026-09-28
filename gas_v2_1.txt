@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════
-// 格蘭朵魔法森林 GAS v3.8（新增：健康自訂選項 healthOpts 同步）
+// 格蘭朵魔法森林 GAS v3.9（新增：階段目標 focus 同步與能力回報）
 // ═══════════════════════════════════════════════════════
 // 【從舊版升級：只要這兩步】
 // 1. 擴充功能 → Apps Script → 全選刪掉舊程式碼 → 貼上這份 → 儲存
@@ -44,7 +44,7 @@ const ENTRY_COLS = ['date','checked','hl','rf','gr','quote','tdl','exp','streak'
 const STATE_COLS = ['flowers','apples','bigApples','goldFruits','seedlings','trees',
                     'achievements','quotes','calNotes','myPeople','treasures',
                     'lastPlant','lastStreak','streak','exp','gardenPos','supportCategories',
-                    'notifications','supportResources','todaySession','expLog','calColorTags','updatedAt','archivedHabits','calRecur','healthOpts'];
+                    'notifications','supportResources','todaySession','expLog','calColorTags','updatedAt','archivedHabits','calRecur','healthOpts','focus'];
 
 // 這個函式只是用來手動觸發 Google Drive 授權，之後留著也沒關係
 function testDriveAuth(){
@@ -104,7 +104,7 @@ function json(obj){
 }
 
 // ── GET ──────────────────────────────────────────────
-var GAS_VER = '3.8';
+var GAS_VER = '3.9';
 function doGet(e){
   const action = (e.parameter.action||'').trim();
   try{
@@ -112,7 +112,7 @@ function doGet(e){
     if(!checkViewCode_(e)) return json({ok:false,error:'unauthorized'});
     const role = isViewer_(e)?'viewer':'owner';
     if(action==='getEntries') return json({ok:true,role:role,data:getEntries_()});
-    if(action==='getState')   return json({ok:true,role:role,data:getState_()});
+    if(action==='getState')   return json({ok:true,role:role,focusVersion:1,data:getState_()});
     if(action==='getCalEvents') return json({ok:true,role:role,data:getCalEvents_(e.parameter.start, e.parameter.end)});
     return json({ok:false,error:'unknown action: '+action});
   }catch(err){
@@ -156,7 +156,7 @@ function doPost(e){
     if(!checkCode_(e)) return json({ok:false,error:'unauthorized'});
     const payload = JSON.parse(e.postData.contents||'{}');
     if(action==='saveEntry') return json({ok:saveEntry_(payload)});
-    if(action==='saveState'){const r=saveState_(payload);return json(r==='conflict'?{ok:false,conflict:true}:{ok:r});}
+    if(action==='saveState'){const r=saveState_(payload);return json(r==='conflict'?{ok:false,conflict:true}:{ok:r,focusVersion:1});}
     if(action==='uploadImage') return json({ok:true,url:uploadImageToDrive_(payload)});
     if(action==='clearAll') return json({ok:clearAll_()});
     if(action==='addCalEvent') return json({ok:true,id:addCalEvent_(payload)});
@@ -168,6 +168,19 @@ function doPost(e){
     return json({ok:false,error:String(err)});
   }
 }
+
+  function mergeWind_(a,b){
+    if(!a)return b;if(!b)return a;
+    const newer=(+b.updatedAt||0)>=(+a.updatedAt||0)?b:a;
+    const out={...newer,fieldUpdatedAt:{}};
+    for(const key of ['phoneAwayAt','inBedAt','obstacle']){
+      const stamp=x=>x.fieldUpdatedAt?.[key]??(Object.prototype.hasOwnProperty.call(x,key)?(+x.updatedAt||0):-1);
+      const sa=stamp(a),sb=stamp(b),winner=sb>=sa?b:a;
+      if(Object.prototype.hasOwnProperty.call(winner,key))out[key]=winner[key];else delete out[key];
+      if(Math.max(sa,sb)>=0)out.fieldUpdatedAt[key]=Math.max(sa,sb);
+    }
+    return out;
+  }
 
 function saveEntry_(p){
   const sh = getSheet('entries');
@@ -190,6 +203,16 @@ function saveEntry_(p){
       cell = Utilities.formatDate(cell, Session.getScriptTimeZone(), 'yyyy-MM-dd');
     }
     if(String(cell).slice(0,10)===dateStr){
+      // Preserve new sleep events across independent/older-client entry writes.
+      const hi=header.indexOf('health');
+      if(hi>=0){
+        try{
+          const oldHealth=typeof values[r][hi]==='string'?JSON.parse(values[r][hi]||'{}'):(values[r][hi]||{});
+          const incoming=typeof rowData[hi]==='string'?JSON.parse(rowData[hi]||'{}'):(rowData[hi]||{});
+          const wind=mergeWind_(oldHealth.sleep&&oldHealth.sleep.windDown,incoming.sleep&&incoming.sleep.windDown);
+          if(wind){incoming.sleep=incoming.sleep||{};incoming.sleep.windDown=wind;rowData[hi]=JSON.stringify(incoming);}
+        }catch(err){throw new Error('invalid health JSON');}
+      }
       sh.getRange(r+1,1,1,rowData.length).setValues([rowData]);
       return true;
     }
@@ -212,6 +235,7 @@ function saveState_(p){
   }
   const rowData = header.map(h=>{
     let v = p[h];
+    if(h==='focus' && v===undefined && values.length>1) v=values[1][header.indexOf(h)];
     if(v===undefined||v===null) v = '';
     if(typeof v==='object') v = JSON.stringify(v);
     return v;

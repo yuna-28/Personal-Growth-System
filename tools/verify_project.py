@@ -98,7 +98,7 @@ def check_template_zip() -> None:
 
 for manifest_path in ('manifest.json', 'template/manifest.json'):
     check_manifest(manifest_path)
-for js_path in ('sw.js', 'template/sw.js'):
+for js_path in ('sw.js', 'template/sw.js', 'focus-core.js', 'focus.js', 'template/focus-core.js', 'template/focus.js'):
     check_javascript(js_path)
 for html_path in ('index.html', 'template/index.html'):
     check_html_scripts(html_path)
