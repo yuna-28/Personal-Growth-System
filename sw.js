@@ -3,7 +3,8 @@
 // 策略：network first，失敗才用快取（GAS API 一律不快取）
 // 更新版本時把 CACHE_NAME 的數字 +1，舊快取會自動清掉
 // ═══════════════════════════════════════════════════════
-const CACHE_NAME = 'grandol-cache-v116';
+const CACHE_PREFIX = 'grandol-cache-';
+const CACHE_NAME = CACHE_PREFIX + 'v117';
 
 const PRECACHE = [
   './',
@@ -11,6 +12,8 @@ const PRECACHE = [
   './manifest.json',
   './puppy.png',
   './puppy_icon.png',
+  './icon-192.png',
+  './icon-512.png',
   './background.png',
   './background_web.png'
 ];
@@ -28,7 +31,8 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))
+      // Cache Storage 以整個網域共用；只刪本 App 的舊版，避免影響同網域其他 PWA。
+      .then(keys => Promise.all(keys.filter(k => k.startsWith(CACHE_PREFIX) && k !== CACHE_NAME).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });

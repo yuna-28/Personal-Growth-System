@@ -22,8 +22,9 @@
 
 | 檔案 | 職責 |
 |---|---|
-| `index.html` | 全部的 UI＋邏輯（HTML/CSS/JS 都在裡面，約 4700 行） |
+| `index.html` | 全部的 UI＋邏輯（HTML/CSS/JS 都在裡面，約 7600 行） |
 | `sw.js` | Service Worker：network-first 快取（GAS API 一律不快取）；改版時 `CACHE_NAME` 數字 +1 |
+| `icon-192.png` / `icon-512.png` | 尺寸符合 manifest 宣告的 PWA 安裝圖示 |
 | `manifest.json` | PWA 設定（名稱、圖示、加入主畫面） |
 | `GAS後端程式碼.txt` | 貼到 Apps Script 的後端（不會被網頁載入，放在 repo 只是備份） |
 

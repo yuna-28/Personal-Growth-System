@@ -1812,6 +1812,11 @@ const BURST_E=['🌸','✨','🌟','💫','🌈','🎉','🌺','💐','⭐','�
 // 使用者輸入的文字要進 innerHTML 前一律先過這裡：
 // 不跳脫的話，內容裡的「<」會被當成 HTML 標籤開頭，後面整段被吃掉
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+// 雲端資料也可能被手動修改；插入 href/src 前只允許一般網頁協定。
+function safeWebUrl(value){
+  const raw=String(value||'').trim();if(!raw)return'';
+  try{const u=new URL(raw,location.href);return u.protocol==='http:'||u.protocol==='https:'?u.href:'';}catch(e){return'';}
+}
 function fmtLocal(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 // 某天所屬的週（以週一為一週的開始），休息日機制用它判斷「這週用過緩衝了沒」
 function weekKeyOf(ds){const d=new Date(ds+'T00:00:00');const dow=(d.getDay()+6)%7;d.setDate(d.getDate()-dow);return fmtLocal(d);}
@@ -4095,7 +4100,7 @@ function diaryBlock(diary){
 }
 function photosBlock(photos){
   if(!photos||!photos.length)return'';
-  return`<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">${photos.map(p=>`<div style="width:64px;"><img src="${p.url}" style="width:64px;height:64px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,.7);"/>${p.caption?`<div style="font-size:10px;color:var(--tc3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;">${esc(p.caption)}</div>`:''}</div>`).join('')}</div>`;
+  return`<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">${photos.map(p=>{const url=safeWebUrl(p.url);return url?`<div style="width:64px;"><img src="${esc(url)}" style="width:64px;height:64px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,.7);"/>${p.caption?`<div style="font-size:10px;color:var(--tc3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;">${esc(p.caption)}</div>`:''}</div>`:'';}).join('')}</div>`;
 }
 
 // ── DATE / PERIOD HELPERS ─────────────────────────────
@@ -4973,7 +4978,7 @@ function openPraiseDetail(idx){
       <button class="mini-btn" id="pd-del" style="background:rgba(var(--secondary-rgb),.3);color:var(--tc2);padding:5px 10px;">刪除</button>
       <button class="mini-btn" id="pd-close" style="padding:5px 12px;">完成</button>
     </div>
-    ${t.img?`<img class="pd-img" src="${esc(t.img)}"/>`:''}
+    ${safeWebUrl(t.img)?`<img class="pd-img" src="${esc(safeWebUrl(t.img))}"/>`:''}
     ${t.desc?`<div style="font-size:13px;color:var(--tc);line-height:1.6;margin-bottom:4px;">「${esc(t.desc)}」</div>`:''}
     <div class="pd-step${st!=='got'?' done':''}"><span class="pd-dot"></span>我自己也這麼覺得嗎？</div>
     <textarea class="pd-ta" id="pd-mine" placeholder="用自己的話寫一次。寫下來，它就不只是別人說的了">${esc(t.mine||'')}</textarea>
@@ -5425,7 +5430,8 @@ function renderGarden(){
     const el=document.createElement('div');
     el.className='gd-sprite';
     el.style.cssText=`left:${pos.x}px;${pos.top!==undefined?`top:${pos.top}px;`:`bottom:${pos.bottom}px;`}z-index:7;`;
-    const visual=p.img?`<img class="main" src="${p.img}" width="81" height="81" style="display:block;object-fit:contain;" onerror="grFallback(this,'${p.emoji||'1f436'}',81)"/>`:`<img class="main" src="${CDN}${p.emoji||'1f436'}_3d.png" width="81" height="81" style="display:block;"/>`;
+    const personImg=safeWebUrl(p.img);
+    const visual=personImg?`<img class="main" src="${esc(personImg)}" width="81" height="81" style="display:block;object-fit:contain;" onerror="grFallback(this,'1f436',81)"/>`:`<img class="main" src="${CDN}${esc(p.emoji||'1f436')}_3d.png" width="81" height="81" style="display:block;"/>`;
     el.innerHTML=`<div class="sprite-label">${esc(p.name||'')}${p.note?` · ${esc(p.note)}`:''}</div>${visual}`;
     dyn.appendChild(el);
     initCharSprite(el,canvas,81);
@@ -5442,11 +5448,12 @@ function renderGarden(){
     el.className='gd-sprite';
     const isPerson=t.type==='person';
     el.style.cssText=`left:${pos.x}px;${pos.top!==undefined?`top:${pos.top}px;`:`bottom:${pos.bottom}px;`}${isPerson?'z-index:7;':`animation:gdFloat ${2+(i%3)*.4}s ease-in-out infinite ${i*.25}s;`}`;
-    const visual=t.img
+    const treasureImg=safeWebUrl(t.img);
+    const visual=treasureImg
       ?(isPerson
-        ?`<img class="main" src="${t.img}" width="52" height="52" style="display:block;object-fit:contain;"/>`
-        :`<img class="main" src="${t.img}" width="52" height="52" style="display:block;object-fit:contain;"/>`)
-      :`<span class="main" style="font-size:44px;display:block;">${t.emoji||'💎'}</span>`;
+        ?`<img class="main" src="${esc(treasureImg)}" width="52" height="52" style="display:block;object-fit:contain;"/>`
+        :`<img class="main" src="${esc(treasureImg)}" width="52" height="52" style="display:block;object-fit:contain;"/>`)
+      :`<span class="main" style="font-size:44px;display:block;">${esc(t.emoji||'💎')}</span>`;
     el.innerHTML=`<div class="sprite-label">${esc(t.title||'')}${t.desc?` · ${esc(t.desc)}`:''}</div>${visual}`;
     dyn.appendChild(el);
     if(isPerson){
@@ -5499,13 +5506,13 @@ function renderPeopleList(){
         <button class="exp-toggle" data-i="${i}" title="${p.exported?'已匯出（點取消）':'標記已匯出'}">${p.exported?'✅':'⬜'}</button>
         <button class="card-edit" data-i="${i}">✏️</button>
         <button class="card-del" data-i="${i}">✕</button>
-        <div class="person-emoji">${p.img?`<img src="${p.img}"/>`:fi(p.emoji||'1f436',36)}</div>
+        <div class="person-emoji">${safeWebUrl(p.img)?`<img src="${esc(safeWebUrl(p.img))}"/>`:fi(p.emoji||'1f436',36)}</div>
         <div class="person-name">${esc(p.name||'')}</div>
         <div class="person-note">${esc(p.note||'')}</div>
       </div>`;
     }
     return`<div class="person-card${p.exported?' exported':''}">
-      <div class="person-emoji">${p.img?`<img src="${p.img}"/>`:fi(p.emoji||'1f436',30)}</div>
+      <div class="person-emoji">${safeWebUrl(p.img)?`<img src="${esc(safeWebUrl(p.img))}"/>`:fi(p.emoji||'1f436',30)}</div>
       <div class="person-info"><div class="person-name">${esc(p.name||'')}</div><div class="person-note">${esc(p.note||'')}</div></div>
       <button class="exp-toggle" data-i="${i}" title="${p.exported?'已匯出（點取消）':'標記已匯出'}">${p.exported?'✅':'⬜'}</button>
       <button class="card-edit" data-i="${i}">✏️</button>
@@ -5601,28 +5608,28 @@ function renderTreasureList(){
   const mode=getViewMode('treasure');
   let inner;
   if(mode==='grid'){
-    inner=`<div class="treasure-grid">`+treasureItems().map(({t,i})=>`
+    inner=`<div class="treasure-grid">`+treasureItems().map(({t,i})=>{const img=safeWebUrl(t.img),type=t.type==='person'?'person':'object';return`
       <div class="treasure-card tgrid${t.exported?' exported':''}">
         <button class="exp-toggle" data-i="${i}" title="${t.exported?'已匯出（點取消）':'標記已匯出'}">${t.exported?'✅':'⬜'}</button>
         <button class="card-edit" data-i="${i}">✏️</button>
         <button class="card-del" data-i="${i}">✕</button>
-        ${t.img?`<img class="tg-img" src="${t.img}" onerror="this.style.display='none'"/>`:`<div class="tg-emoji">${t.emoji||'💎'}</div>`}
-        <span class="treasure-type ${t.type}">${t.type==='person'?'🫂 人':'🎁 物'}</span>
-        <div class="treasure-title" style="font-size:12px;margin-top:4px;">${t.title||''}</div>
-        ${t.desc?`<div class="treasure-desc" style="font-size:11px;">${t.desc}</div>`:''}
-      </div>`).join('')+`</div>`;
+        ${img?`<img class="tg-img" src="${esc(img)}" onerror="this.style.display='none'"/>`:`<div class="tg-emoji">${esc(t.emoji||'💎')}</div>`}
+        <span class="treasure-type ${type}">${type==='person'?'🫂 人':'🎁 物'}</span>
+        <div class="treasure-title" style="font-size:12px;margin-top:4px;">${esc(t.title||'')}</div>
+        ${t.desc?`<div class="treasure-desc" style="font-size:11px;">${esc(t.desc)}</div>`:''}
+      </div>`;}).join('')+`</div>`;
   }else{
-    inner=treasureItems().map(({t,i})=>`
+    inner=treasureItems().map(({t,i})=>{const img=safeWebUrl(t.img),type=t.type==='person'?'person':'object';return`
       <div class="treasure-row${t.exported?' exported':''}">
         <button class="exp-toggle" data-i="${i}" title="${t.exported?'已匯出（點取消）':'標記已匯出'}">${t.exported?'✅':'⬜'}</button>
-        ${t.img?`<img class="tr-thumb" src="${t.img}" onerror="this.style.display='none'"/>`:`<div class="tr-thumb" style="display:flex;align-items:center;justify-content:center;font-size:24px;background:rgba(255,255,255,.5);">${t.emoji||'💎'}</div>`}
+        ${img?`<img class="tr-thumb" src="${esc(img)}" onerror="this.style.display='none'"/>`:`<div class="tr-thumb" style="display:flex;align-items:center;justify-content:center;font-size:24px;background:rgba(255,255,255,.5);">${esc(t.emoji||'💎')}</div>`}
         <div style="flex:1;min-width:0;">
-          <div class="treasure-title" style="font-size:13px;margin-bottom:1px;">${t.title||''} <span class="treasure-type ${t.type}" style="margin-bottom:0;">${t.type==='person'?'🫂 人':'🎁 物'}</span></div>
-          <div class="treasure-desc" style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.desc||''}</div>
+          <div class="treasure-title" style="font-size:13px;margin-bottom:1px;">${esc(t.title||'')} <span class="treasure-type ${type}" style="margin-bottom:0;">${type==='person'?'🫂 人':'🎁 物'}</span></div>
+          <div class="treasure-desc" style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(t.desc||'')}</div>
         </div>
         <button class="card-edit" data-i="${i}">✏️</button>
         <button class="card-del" data-i="${i}">✕</button>
-      </div>`).join('');
+      </div>`;}).join('');
   }
   document.getElementById('treasure-list').innerHTML=
     `<div style="display:flex;justify-content:flex-end;margin-bottom:8px;">${viewToggleHTML('treasure')}</div>`+inner;
@@ -5667,16 +5674,17 @@ function renderQuoteList(){
   box.innerHTML=S.quotes.length?S.quotes.map((q,i)=>{
     if(i===editQuoteIdx){
       return`<div class="quote-item" style="flex-direction:column;align-items:stretch;gap:6px;">
-        <input class="tdl-in qedit-text" value="${qText(q).replace(/"/g,'&quot;')}" placeholder="金句本文"/>
-        <input class="tdl-in qedit-desc" value="${(q.desc||'').replace(/"/g,'&quot;')}" placeholder="敘述（選填）"/>
+        <input class="tdl-in qedit-text" value="${esc(qText(q))}" placeholder="金句本文"/>
+        <input class="tdl-in qedit-desc" value="${esc(q.desc||'')}" placeholder="敘述（選填）"/>
         <div style="display:flex;gap:6px;">
-          <input class="tdl-in qedit-link" value="${(q.link||'').replace(/"/g,'&quot;')}" placeholder="連結（選填）" style="flex:1;min-width:0;"/>
+          <input class="tdl-in qedit-link" value="${esc(q.link||'')}" placeholder="連結（選填）" style="flex:1;min-width:0;"/>
           <button class="mini-btn qedit-save" data-i="${i}" style="flex-shrink:0;">✓</button>
           <button class="mini-btn qedit-cancel" style="flex-shrink:0;background:rgba(var(--secondary-rgb),.4);color:var(--tc2);">✕</button>
         </div>
       </div>`;
     }
-    const link=q.link?` <a href="${q.link}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="text-decoration:none;">🔗</a>`:'';
+    const quoteLink=safeWebUrl(q.link);
+    const link=quoteLink?` <a href="${esc(quoteLink)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="text-decoration:none;">🔗</a>`:'';
     return`<div class="quote-item${q.exported?' exported':''}">
       <button class="exp-toggle" data-i="${i}" title="${q.exported?'已匯出（點取消標記）':'標記為已匯出'}">${q.exported?'✅':'⬜'}</button>
       <div class="quote-text">"${esc(qText(q))}"${link}${q.desc?`<div class="quote-desc">${esc(q.desc)}</div>`:''}</div>
@@ -6207,7 +6215,7 @@ function renderTodayPhotos(){
   box.innerHTML=ps.map((p,i)=>`
     <div style="width:88px;">
       <div style="position:relative;">
-        <img class="photo-thumb-img" data-i="${i}" src="${p.url}" style="width:88px;height:88px;object-fit:cover;border-radius:12px;border:1.5px solid rgba(255,255,255,.8);box-shadow:0 2px 8px rgba(var(--primary-rgb),.15);cursor:pointer;"/>
+        <img class="photo-thumb-img" data-i="${i}" src="${esc(safeWebUrl(p.url))}" style="width:88px;height:88px;object-fit:cover;border-radius:12px;border:1.5px solid rgba(255,255,255,.8);box-shadow:0 2px 8px rgba(var(--primary-rgb),.15);cursor:pointer;"/>
         <button class="photo-del" data-i="${i}" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:none;background:rgba(240,120,120,.9);color:#fff;font-size:11px;cursor:pointer;line-height:1;">✕</button>
       </div>
       ${p.caption?`<div style="font-size:10px;color:var(--tc2);margin-top:2px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(p.caption)}</div>`:''}
@@ -6358,7 +6366,7 @@ function bindBookGlobals(){
   if(nx)nx.addEventListener('click',()=>{bookPage=bookPage+1;renderBookItems();});
 }
 function shortLink(u){
-  try{const h=new URL(u).hostname.replace(/^www\./,'');return'🔗 '+h;}catch(e){return'🔗 '+String(u).slice(0,18);}
+  try{const h=new URL(u).hostname.replace(/^www\./,'');return esc('🔗 '+h);}catch(e){return esc('🔗 '+String(u).slice(0,18));}
 }
 function renderBookItems(){
   bindBookGlobals();
@@ -6386,7 +6394,8 @@ function renderBookItems(){
     const rot=((i*53)%17-8);
     const mt=(i%3)*9;
     const tapeColor=it._catColor||RCAT_PALETTE[i%RCAT_PALETTE.length];
-    const icon=it.img?`<img class="bi-img" src="${it.img}" draggable="false"/>`:`<span class="bi-icon">${fi(it.emoji||'1f4da',48)}</span>`;
+    const img=safeWebUrl(it.img);
+    const icon=img?`<img class="bi-img" src="${esc(img)}" draggable="false"/>`:`<span class="bi-icon">${fi(it.emoji||'1f4da',48)}</span>`;
     const desc=it.desc?`<div class="bi-desc">${esc(it.desc.slice(0,26))}</div>`:'';
     const link=it.link?`<div class="bi-link">${shortLink(it.link)}</div>`:'';
     return`<div class="book-item" data-rid="${it.id||''}" style="margin-top:${mt}px;cursor:grab;">`+
@@ -6422,7 +6431,8 @@ function renderPraiseBoard(){
     const rot=((i*53)%17-8),mt=(i%3)*9;
     const tape=st==='given'?'#8FD3B6':(st==='own'?'#F2D08A':'#E8E2D2');
     const badge=st==='given'?'💌':(st==='own'?'✨':'');
-    const face=t.img?`<img class="bi-img" src="${esc(t.img)}" draggable="false"/>`
+    const praiseImg=safeWebUrl(t.img);
+    const face=praiseImg?`<img class="bi-img" src="${esc(praiseImg)}" draggable="false"/>`
       :`<div style="font-size:11px;color:var(--tc2);line-height:1.5;padding:6px;text-align:center;overflow:hidden;">${esc((t.desc||'').slice(0,34))}</div>`;
     return`<div class="book-item" data-pi="${x.i}" style="margin-top:${mt}px;cursor:grab;">`+
       `<div class="bi-card" style="--bi-rot:rotate(${rot}deg);">`+
@@ -6483,10 +6493,11 @@ function renderResEmojiPicker(){
   }));
 }
 function resItemHTML(it,ci,ii,mode){
-  const linkA=it.link?`<a href="${it.link}" target="_blank" rel="noopener" style="text-decoration:none;font-size:14px;flex-shrink:0;" title="前往連結">🔗</a>`:'';
+  const link=safeWebUrl(it.link),img=safeWebUrl(it.img);
+  const linkA=link?`<a href="${esc(link)}" target="_blank" rel="noopener" style="text-decoration:none;font-size:14px;flex-shrink:0;" title="前往連結">🔗</a>`:'';
   const btns=`<button class="support-item-del res-item-edit" data-ci="${ci}" data-ii="${ii}" title="編輯">✏️</button><button class="support-item-del res-item-del" data-ci="${ci}" data-ii="${ii}">✕</button>`;
   if(mode==='grid'){
-    const visual=it.img?`<img src="${it.img}" style="width:100%;height:72px;object-fit:contain;display:block;margin-bottom:6px;"/>`:`<div style="height:72px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.4);border-radius:10px;margin-bottom:6px;">${fi(it.emoji||'1f4da',40)}</div>`;
+    const visual=img?`<img src="${esc(img)}" style="width:100%;height:72px;object-fit:contain;display:block;margin-bottom:6px;"/>`:`<div style="height:72px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.4);border-radius:10px;margin-bottom:6px;">${fi(it.emoji||'1f4da',40)}</div>`;
     return`<div class="res-gcard${it.exported?' exported':''}">
       <button class="exp-toggle res-exp" data-ci="${ci}" data-ii="${ii}" title="${it.exported?'已匯出（點取消）':'標記已匯出'}">${it.exported?'✅':'⬜'}</button>
       <div style="position:absolute;top:4px;right:6px;display:flex;gap:2px;">${btns}</div>
@@ -6497,7 +6508,7 @@ function resItemHTML(it,ci,ii,mode){
   }
   return`<div class="support-item-row${it.exported?' exported':''}" style="align-items:center;">
     <button class="exp-toggle res-exp" data-ci="${ci}" data-ii="${ii}" title="${it.exported?'已匯出（點取消）':'標記已匯出'}">${it.exported?'✅':'⬜'}</button>
-    ${it.img?`<img src="${it.img}" style="width:34px;height:34px;object-fit:contain;flex-shrink:0;"/>`:`<span style="flex-shrink:0;">${fi(it.emoji||'1f4da',22)}</span>`}
+    ${img?`<img src="${esc(img)}" style="width:34px;height:34px;object-fit:contain;flex-shrink:0;"/>`:`<span style="flex-shrink:0;">${fi(it.emoji||'1f4da',22)}</span>`}
     <div style="flex:1;min-width:0;">
       <div>${esc(it.title||'')}</div>
       ${it.desc?`<div style="font-size:11px;color:var(--tc3);">${esc(it.desc)}</div>`:''}
@@ -6919,14 +6930,15 @@ function bindViewToggle(container,rerender){
 // ═══ 資源彈窗 ═══
 function showResPopup(it){
   const t=(typeof RESOURCE_TYPES!=='undefined')?RESOURCE_TYPES.find(x=>x.id===it.type):null;
-  document.getElementById('res-popup-visual').innerHTML=it.img?`<img src="${it.img}" style="width:110px;height:110px;object-fit:contain;"/>`:fi(it.emoji||'1f4da',64);
+  const img=safeWebUrl(it.img),link=safeWebUrl(it.link);
+  document.getElementById('res-popup-visual').innerHTML=img?`<img src="${esc(img)}" style="width:110px;height:110px;object-fit:contain;"/>`:fi(it.emoji||'1f4da',64);
   document.getElementById('res-popup-type').innerHTML=t?`<span style="font-size:11px;background:rgba(var(--secondary-rgb),.35);border-radius:999px;padding:3px 10px;color:#5A4A8A;">${fi(t.chip,13)} ${t.labelText}</span>`:'';
   document.getElementById('res-popup-title').textContent=it.title||'';
   const de=document.getElementById('res-popup-desc');
   de.textContent=it.desc||'';
   de.style.display=it.desc?'block':'none';
   const a=document.getElementById('res-popup-link');
-  if(it.link){a.href=it.link;a.style.display='flex';}else{a.style.display='none';}
+  if(link){a.href=link;a.style.display='flex';}else{a.removeAttribute('href');a.style.display='none';}
   // 記住這是哪一筆，編輯鈕才知道要開哪一項（便利貼上的物件帶著 _catId）
   const eb=document.getElementById('res-popup-edit');
   const ci=(S.resourceCats||[]).findIndex(c=>c.id===it._catId);

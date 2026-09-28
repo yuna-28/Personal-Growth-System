@@ -7,7 +7,7 @@
   2. 抽掉私人的 GAS 網址與本機圖片路徑
   3. 補上「還沒設定雲端」的防呆（範本預設沒有後端）
 """
-import re, pathlib
+import re, pathlib, zipfile
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 src = (ROOT / 'index.html').read_text(encoding='utf-8')
@@ -55,4 +55,14 @@ leaks = {name: src.count(name) for name in ('格蘭朵', '妳', 'AKfyc', 'yuna-2
 bad = {k: v for k, v in leaks.items() if v}
 if bad:
     raise SystemExit(f'❌ 範本仍殘留個人資料：{bad}')
+
+# 6) 重新打包公開範本，避免 repo 內的 ZIP 長期落後於 template/ 目錄
+template_dir = ROOT / 'template'
+zip_path = ROOT / 'forest-template-2.0.zip'
+with zipfile.ZipFile(zip_path, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
+    for path in sorted(p for p in template_dir.rglob('*')
+                       if p.is_file() and not any(part.startswith('.') for part in p.relative_to(template_dir).parts)):
+        zf.write(path, pathlib.Path('template') / path.relative_to(template_dir))
+
 print(f'✅ template 已更新（{len(src)} bytes），中和檢查通過')
+print(f'✅ {zip_path.name} 已重新打包')
