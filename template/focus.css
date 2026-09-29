@@ -68,3 +68,56 @@
 .focus-hr{border:none;border-top:1px solid rgba(var(--secondary-rgb),.22);margin:12px 0;}
 .focus-note{font-size:11px;color:var(--tc3);}
 @media(max-width:560px){.tonight-acts{margin-left:0;}}
+/* ── v123：現在要做／階段清單／今晚時間軸／編輯彈窗 ── */
+.now-card{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px!important;
+  background:linear-gradient(135deg,rgba(var(--secondary-rgb),.28),rgba(var(--tertiary-rgb),.22))!important;}
+.now-ic{font-size:26px;line-height:1;}
+.now-txt{flex:1;min-width:180px;}
+.now-lbl{font-size:12px;color:var(--tc2);font-weight:700;}
+.now-main{font-family:'Baloo 2',sans-serif;font-size:19px;font-weight:800;color:var(--tc);line-height:1.3;word-break:break-word;}
+.now-sub{font-size:12px;color:var(--tc2);margin-top:2px;}
+.now-sub.alert{color:#B0402A;font-weight:700;}
+.goal-edit{border:none;background:none;cursor:pointer;font-size:15px;color:var(--tc3);padding:2px 4px;border-radius:8px;}
+.goal-edit:hover{background:rgba(var(--secondary-rgb),.18);color:var(--tc);}
+.ms-list{display:flex;flex-direction:column;gap:3px;}
+.ms-row{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--tc2);padding:4px 8px;margin:0 -8px;border-radius:10px;}
+.ms-row.cur{background:rgba(var(--gold-rgb),.3);color:#6B420A;font-weight:700;}
+.ms-row.over{background:rgba(192,64,42,.12);color:#9A2F1F;font-weight:700;}
+.ms-row.done .ms-name{text-decoration:line-through;opacity:.55;}
+.ms-dot{border:none;background:none;cursor:pointer;padding:0;font-size:15px;line-height:1;width:20px;flex-shrink:0;}
+.ms-name{flex:1;min-width:0;word-break:break-word;}
+.ms-date{font-size:12px;white-space:nowrap;}
+.ms-date.hard{color:#B0402A;font-weight:700;}
+.dots-row{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--tc2);}
+.dots-row .dl{width:68px;flex-shrink:0;}
+.dots-row .dd{display:flex;gap:3px;flex-wrap:wrap;}
+.dots-row .dd i{width:10px;height:10px;border-radius:50%;background:rgba(var(--secondary-rgb),.22);display:inline-block;}
+.dots-row .dd i.on{background:var(--tertiary);}
+.dots-row .dn{margin-left:auto;font-weight:700;color:var(--tc);}
+.dots-row.hit .dn{color:var(--ok);}
+.tl{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:6px;}
+.tl-step{border:1.5px solid transparent;border-radius:12px;padding:8px 4px;text-align:center;cursor:pointer;
+  background:rgba(255,255,255,.5);font-family:'Quicksand',sans-serif;color:var(--tc2);transition:transform .12s;}
+.tl-step:hover{transform:translateY(-1px);}
+.tl-step .t{font-size:11px;color:var(--tc3);}
+.tl-step .n{font-size:13px;font-weight:700;}
+.tl-step.done{background:rgba(var(--tertiary-rgb),.42);color:var(--ok);}
+.tl-step.done .t{color:var(--ok);}
+.tl-step.next{border-color:var(--secondary);background:rgba(var(--secondary-rgb),.18);color:var(--tc);}
+.fm-row{display:grid;grid-template-columns:minmax(0,1fr) 76px 30px 26px;gap:6px;align-items:center;margin-bottom:6px;}
+.fm-in{width:100%;border:1.5px solid rgba(var(--secondary-rgb),.3);border-radius:10px;padding:7px 9px;font-family:'Quicksand',sans-serif;
+  font-size:13px;color:var(--tc);background:rgba(255,255,255,.8);outline:none;min-width:0;}
+.fm-in:focus{border-color:var(--secondary);}
+.fm-in.bad{border-color:#C0402A;}
+.fm-flag,.fm-del{border:none;background:none;cursor:pointer;font-size:15px;padding:0;opacity:.35;}
+.fm-flag.on{opacity:1;}
+.fm-del{opacity:.5;font-size:13px;}
+.fm-lbl{font-size:11px;color:var(--tc2);margin:10px 0 4px;font-weight:700;}
+.fm-hint{font-size:11px;color:var(--tc3);margin-top:4px;}
+.fm-step{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:13px;color:var(--tc2);}
+.fm-step .fs-l{flex:1;}
+.fm-step button{width:30px;height:30px;border-radius:50%;border:1.5px solid rgba(var(--secondary-rgb),.4);background:#fff;cursor:pointer;font-size:15px;color:var(--tc2);}
+.fm-step .fs-n{width:26px;text-align:center;font-weight:800;color:var(--tc);}
+.fm-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:center;}
+.goal-more{font-size:12px;color:var(--tc3);cursor:pointer;background:none;border:none;padding:2px 4px;margin:0 0 12px;font-family:'Quicksand',sans-serif;}
+.goal-more:hover{color:var(--tc2);}

@@ -1742,7 +1742,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v122';
+const APP_VER='v123';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // ── 注音／中文輸入法保護 ──────────────────────────────
@@ -1968,7 +1968,7 @@ function sleepMinutes(sl){
 function fmtSleepDur(min){if(min==null)return '';const h=Math.floor(min/60),m=min%60;return h+'小時'+(m?m+'分':'');}
 // 「複製給 Claude」用的健康摘要文字
 // 這天有沒有任何健康相關紀錄（含只做了肩背、只標了休息的日子）
-function healthAny(h){return !!(h&&(HEALTH.some(H=>healthHas(h,H.k))||h.exercise?.restDay||h.body?.shoulder));}
+function healthAny(h){return !!(h&&(HEALTH.some(H=>healthHas(h,H.k))||h.exercise?.restDay||h.body?.shoulder||h.night?.off||h.night?.shower));}
 function hhmmOf(iso){if(!iso)return '';const d=new Date(iso);return isNaN(d)?'':String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
 function healthCopyText(h){
   if(!healthAny(h))return '🌿 健康：無記錄\n';
@@ -1977,7 +1977,7 @@ function healthCopyText(h){
     // 以前直接印 ISO 字串（UTC、看不懂），也沒有目標可對照
     const w=h.sleep.windDown,t=w.targetSnapshot;
     const r=(typeof FocusCore!=='undefined'&&t)?FocusCore.result(w,null,w.nightDate||'',new Date()):null;
-    L.push('  🌙 收尾：'+(t?'目標 '+t.bed+' 上床｜':'')+'收手機 '+(hhmmOf(w.phoneAwayAt)||'未記錄')+'｜上床 '+(hhmmOf(w.inBedAt)||'未記錄')+(r&&r.kind!=='missing'?'｜'+r.label:''));
+    L.push('  🌙 收尾：'+(t?'目標 '+t.bed+' 上床｜':'')+(h.night?.off?'收工 '+hhmmOf(new Date(h.night.off).toISOString())+'｜':'')+'收手機 '+(hhmmOf(w.phoneAwayAt)||'未記錄')+'｜上床 '+(hhmmOf(w.inBedAt)||'未記錄')+(r&&r.kind!=='missing'?'｜'+r.label:''));
   }
   if(h.body?.shoulder)L.push('  💪 肩背彈力帶 ✓');
   if(h.exercise?.restDay)L.push('  🌿 今天休息');
