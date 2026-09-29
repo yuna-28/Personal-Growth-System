@@ -1,34 +1,70 @@
-/* 🌱 這陣子：首頁的一條小條。平常只按，需要時才打開設定 */
-.focus-strip{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;}
-.focus-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0;}
-.focus-line+.focus-line{padding-top:9px;margin-top:2px;border-top:1px solid rgba(var(--secondary-rgb),.22);width:100%;}
-.focus-lbl{font-size:12px;font-weight:700;color:var(--tc2);flex-shrink:0;}
-.focus-note{font-size:11px;color:var(--tc3);}
-.focus-note.warn{color:#C0703A;}
+/* 🎯 目標優先的首頁：兩張目標卡＋今晚收尾條。全部用 App 既有的配色與圓角 */
+.goal-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;margin-bottom:12px;}
+.goal-card{margin:0!important;display:flex;flex-direction:column;gap:10px;}
+.goal-hd{display:flex;align-items:center;gap:8px;}
+.goal-title{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:17px;color:var(--tc);}
+.goal-due{margin-left:auto;border:none;cursor:pointer;font-family:'Quicksand',sans-serif;font-size:12px;font-weight:700;
+  padding:4px 11px;border-radius:999px;background:rgba(var(--gold-rgb),.38);color:#854F0B;white-space:nowrap;}
+.goal-due.body{background:rgba(var(--secondary-rgb),.3);color:#3C4E8A;}
+.goal-due.late{background:rgba(192,112,58,.2);color:#9A4F1F;}
+.goal-due:hover{filter:brightness(.96);}
+.goal-segs{display:flex;gap:4px;}
+.goal-seg{flex:1;height:9px;border-radius:5px;background:rgba(var(--secondary-rgb),.2);cursor:pointer;border:none;padding:0;transition:background .15s;}
+.goal-seg.done{background:var(--tertiary);}
+.goal-seg.cur{background:rgba(var(--tertiary-rgb),.45);}
+.goal-sub{font-size:12px;color:var(--tc2);}
+.goal-sub.muted{color:var(--tc3);}
+.goal-sub.warn{color:#B0602A;font-weight:700;}
+.goal-sub.ok{color:var(--ok);font-weight:700;}
+.goal-step{border-top:1px solid rgba(var(--secondary-rgb),.22);padding-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.goal-step-txt{flex:1;min-width:0;}
+.goal-step-lbl{font-size:11px;color:var(--tc3);}
+.goal-step-task{font-size:14px;font-weight:700;color:var(--tc);word-break:break-word;}
+.goal-in{flex:1;min-width:140px;border:1.5px solid rgba(var(--secondary-rgb),.35);border-radius:11px;padding:7px 10px;
+  font-family:'Quicksand',sans-serif;font-size:13px;color:var(--tc);background:rgba(255,255,255,.75);outline:none;}
+.goal-in:focus{border-color:var(--secondary);}
+.goal-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:8px;}
+.goal-stat{background:rgba(255,255,255,.5);border-radius:12px;padding:8px 10px;}
+.goal-stat-l{font-size:11px;color:var(--tc2);}
+.goal-stat-n{font-family:'Baloo 2',sans-serif;font-size:20px;font-weight:800;color:var(--tc);line-height:1.2;}
+.goal-stat-n small{font-size:11px;font-weight:600;color:var(--tc3);}
+.goal-stat.hit .goal-stat-n{color:var(--ok);}
+.goal-chips{display:flex;flex-wrap:wrap;gap:6px;}
 .focus-btn{border:1.5px solid rgba(var(--secondary-rgb),.4);background:rgba(255,255,255,.62);border-radius:999px;
   padding:6px 13px;font-family:'Quicksand',sans-serif;font-size:12px;font-weight:700;color:var(--tc2);cursor:pointer;
-  transition:transform .12s,background .15s,border-color .15s;}
+  transition:transform .12s,background .15s,border-color .15s;white-space:nowrap;}
 .focus-btn:hover{transform:translateY(-1px);border-color:var(--secondary);}
-.focus-btn.done{background:rgba(var(--tertiary-rgb),.45);border-color:transparent;color:var(--ok);}
-.focus-btn.rest{background:rgba(var(--gold-rgb),.4);border-color:transparent;color:#854F0B;}
-.focus-chip{width:auto;padding:0 11px;height:34px;border-radius:12px;}
-.focus-chip.on{outline:2.5px solid var(--primary);outline-offset:-1px;}
-.focus-time{width:74px;border:1.5px solid var(--secondary);border-radius:999px;padding:5px 9px;font-family:'Quicksand',sans-serif;
+.focus-btn.primary{background:var(--primary);border-color:transparent;color:#fff;}
+.focus-btn.done{background:rgba(var(--tertiary-rgb),.5);border-color:transparent;color:var(--ok);}
+.focus-btn.rest{background:rgba(var(--gold-rgb),.42);border-color:transparent;color:#854F0B;}
+.tonight{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-bottom:12px!important;}
+.tonight-lbl{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:15px;color:var(--tc);}
+.tonight-note{font-size:11px;color:var(--tc3);}
+.tonight-note.warn{color:#B0602A;}
+.tonight-acts{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:auto;}
+.tonight-arrow{color:var(--tc3);font-size:11px;}
+.focus-time{width:78px;border:1.5px solid var(--secondary);border-radius:999px;padding:5px 9px;font-family:'Quicksand',sans-serif;
   font-size:12px;color:var(--tc);background:#fff;outline:none;}
-.focus-dots{display:flex;gap:4px;align-items:center;}
+.focus-dots{display:flex;gap:4px;align-items:center;margin-left:4px;}
 .focus-dot{width:9px;height:9px;border-radius:50%;background:rgba(var(--secondary-rgb),.25);}
 .focus-dot.ontime{background:var(--tertiary);}
 .focus-dot.late{background:var(--gold);}
-.focus-panel{margin-top:11px;border-top:1px solid rgba(var(--secondary-rgb),.22);padding-top:11px;}
-.focus-panel summary{font-size:12px;color:var(--tc3);cursor:pointer;list-style:none;}
-.focus-panel summary::-webkit-details-marker{display:none;}
-.focus-panel summary:hover{color:var(--tc2);}
+.focus-panel{margin:0 0 12px;}
+.focus-panel>summary{font-size:12px;color:var(--tc3);cursor:pointer;list-style:none;padding:2px 4px;}
+.focus-panel>summary::-webkit-details-marker{display:none;}
+.focus-panel>summary:hover{color:var(--tc2);}
+.focus-panel .gcard{margin-top:8px;}
+.focus-sec{font-size:13px;font-weight:800;color:var(--tc);margin:4px 0 2px;}
 .focus-fields{display:flex;flex-wrap:wrap;gap:8px;margin:9px 0;}
 .focus-fields label{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--tc2);flex:1 1 130px;min-width:0;}
 .focus-fields label.wide{flex-basis:100%;}
+.focus-fields label.chk{flex-direction:row;align-items:center;gap:6px;}
 .focus-fields input,.focus-fields select,.focus-fields textarea{width:100%;border:1.5px solid rgba(var(--secondary-rgb),.3);
   border-radius:11px;padding:7px 9px;font-family:'Quicksand',sans-serif;font-size:12px;color:var(--tc);
   background:rgba(255,255,255,.72);outline:none;}
+.focus-fields label.chk input{width:auto;}
 .focus-fields input:focus,.focus-fields select:focus,.focus-fields textarea:focus{border-color:var(--secondary);}
 .focus-fields textarea{min-height:52px;resize:vertical;}
-@media(max-width:560px){.focus-line{width:100%;}}
+.focus-hr{border:none;border-top:1px solid rgba(var(--secondary-rgb),.22);margin:12px 0;}
+.focus-note{font-size:11px;color:var(--tc3);}
+@media(max-width:560px){.tonight-acts{margin-left:0;}}
