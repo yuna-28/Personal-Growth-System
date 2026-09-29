@@ -189,7 +189,7 @@ function goalForm(g){
   return `<form data-form="goal" data-id="${esc(g.id)}"><div class="focus-sec">${isBody?'🏃':'🎬'} ${esc(g.title)}</div><div class="focus-fields">
     <label>目標名稱<input name="title" value="${esc(g.title)}" maxlength="60" required/></label>
     <label>日期<input name="due" type="date" value="${esc(g.dueDate||'')}"/></label>
-    ${isBody?`<label>那一天是（選填）<input name="event" value="${esc(g.event||'')}" placeholder="例如：見粉肝" maxlength="20"/></label>`:''}
+    ${isBody?`<label>那一天是（選填）<input name="event" value="${esc(g.event||'')}" placeholder="例如：見朋友、旅行" maxlength="20"/></label>`:''}
     ${isBody?BODY_METRICS.map(m=>`<label>${m.l}（每週幾${m.unit}，0＝不追）<input name="t_${m.k}" type="number" min="0" max="7" step="1" value="${+t[m.k]||0}"/></label>`).join(''):''}
     ${!isBody?`<label class="wide">階段（一行一個，照順序）<textarea name="stages" rows="4" maxlength="1000" placeholder="分鏡&#10;原畫&#10;中割&#10;上色合成&#10;聲音輸出">${esc((g.milestones||[]).map(m=>m.title).join('\n'))}</textarea></label>
       <label class="wide">今天這一步<input name="next" value="${esc(g.next?.text||'')}" maxlength="200"/></label>
