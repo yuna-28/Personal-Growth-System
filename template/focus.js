@@ -34,7 +34,7 @@ function seed(){
     dueDate:hub.dataset.due||'',status:'active',milestones:[],next:{id:'seed-anim-next',text:'',small:''},createdAt:0,updatedAt:0});
   if(!f.projects.some(p=>p.id==='seed-body'))f.projects.push({id:'seed-body',kind:'body',title:'體態',
     dueDate:hub.dataset.bodyDue||'',event:hub.dataset.bodyEvent||'',status:'active',
-    targets:{move:7,shoulder:7,bed:7},milestones:[],next:null,createdAt:0,updatedAt:0});
+    targets:{move:7,shoulder:7,bed:7},milestones:[],next:null,startOn:curDay(),createdAt:0,updatedAt:0});
   S.focus=f;
 }
 function goals(){return data().projects.filter(p=>p.status==='active');}
@@ -291,7 +291,9 @@ hub.addEventListener('click',ev=>{
   if(el.dataset.unarchive){const g=data().projects.find(x=>x.id===el.dataset.unarchive);if(g){g.status='active';saveGoal(g);}return;}
   if(el.dataset.seg!==undefined){
     const g=data().projects.find(x=>x.id===el.dataset.g);const m=g&&g.milestones[+el.dataset.seg];if(!m)return;
-    m.done=!m.done;saveGoal(g);
+    m.done=!m.done;
+    if(m.done)m.doneOn=ds();else delete m.doneOn;
+    saveGoal(g);
     if(m.done)softToast(`🎉 「${m.title}」完成了`,2400);
     return;
   }
@@ -352,7 +354,7 @@ hub.addEventListener('click',ev=>{
   if(a==='new-goal'){
     const isBody=el.dataset.kind==='body';
     const g={id:uid(),kind:isBody?'body':'project',title:isBody?'新的身體目標':'新的作品',dueDate:'',event:'',status:'active',
-      milestones:[],next:isBody?null:{id:uid(),text:'',small:''},targets:isBody?{move:7,shoulder:0,bed:7}:undefined,createdAt:Date.now(),updatedAt:Date.now()};
+      milestones:[],next:isBody?null:{id:uid(),text:'',small:''},targets:isBody?{move:7,shoulder:0,bed:7}:undefined,startOn:curDay(),createdAt:Date.now(),updatedAt:Date.now()};
     data().projects.push(g);editGoal=g.id;saveGoal(g);return;
   }
   if(a==='export'){
@@ -448,7 +450,124 @@ hub.addEventListener('submit',ev=>{
     saveGoal(g);softToast('目標更新了 ✓',2200);
   }
 });
+// ══ 回顧與分析：一段期間（一週／一個月）的目標進度 ══════════
+// 回顧頁的卡片和「複製給 Claude」都用這一份，兩邊的數字才會一致
+function nightInfo(day){
+  const f=data(),wd=health(day).sleep?.windDown;
+  const r=C.result(wd,C.planFor(f,day),day,new Date());
+  const t=(wd&&wd.targetSnapshot)||C.snapshot(C.planFor(f,day),day);
+  // 今晚還沒到時間 → pending，不算「沒記錄」
+  const kind=(r.kind==='missing'&&r.label==='尚未到時間')?'pending':r.kind;
+  return {day,target:t?t.bed:'',phone:clock(wd&&wd.phoneAwayAt),bed:clock(wd&&wd.inBedAt),kind,label:r.label,delta:r.delta};
+}
+// 身體目標從哪天開始算：有 startOn 用它；早期版本沒記，就用第一次記錄肩背或收尾的那天
+function bodyStart(g){
+  if(g.startOn)return g.startOn;
+  const hit=(S.entries||[]).filter(e=>e.health&&(e.health.body?.shoulder||e.health.sleep?.windDown)).map(e=>e.date).sort()[0];
+  return hit||curDay();
+}
+function periodGoals(dates){
+  const last=dates[dates.length-1],upto=dates.filter(d=>d<=curDay());
+  const out=[];
+  goals().forEach(g=>{
+    if(g.kind==='body'){
+      const t=g.targets||{},c={move:0,shoulder:0,bed:0,rest:0,minutes:0};
+      const start=bodyStart(g),counted=upto.filter(day=>day>=start);
+      counted.forEach(day=>{
+        const h=health(day)||{};
+        if(exTypesOf(h.exercise).length){c.move++;c.minutes+=(+h.exercise.duration||0);}
+        if(h.exercise&&h.exercise.restDay)c.rest++;
+        if(h.body&&h.body.shoulder)c.shoulder++;
+        if(nightInfo(day).kind==='onTime')c.bed++;
+      });
+      // 目標是「每週幾次」→ 依「目標開始後、到今天為止」的天數換算，
+      // 不會出現目標才開始兩天、分母卻是整個月的情況
+      const scale=counted.length/7;
+      const want={};BODY_METRICS.forEach(m=>{const tt=+t[m.k]||0;want[m.k]=tt&&counted.length?Math.max(1,Math.round(tt*scale)):0;});
+      // 上床看的是「已經過去的夜晚」：今晚還沒到，不算進分母
+      const nightsPast=counted.filter(day=>nightInfo(day).kind!=='pending').length;
+      if(+t.bed)want.bed=nightsPast?Math.max(1,Math.round(+t.bed*nightsPast/7)):0;
+      out.push({g,kind:'body',c,want,days:counted.length,start});
+    }else{
+      const ms=g.milestones||[];
+      const doneIn=ms.filter(m=>m.done&&m.doneOn&&dates.indexOf(m.doneOn)>=0);
+      let steps=0,stepsDone=0;const stepList=[];
+      upto.forEach(day=>{(tdlItemsOf(day)||[]).forEach(x=>{if(x.goalId===g.id||(!x.goalId&&x.theme===g.title)){steps++;if(x.done)stepsDone++;stepList.push({day,task:x.task,done:!!x.done});}});});
+      const done=ms.filter(m=>m.done).length,remaining=ms.length-done;
+      const left=g.dueDate?daysBetween(curDay(),g.dueDate)+1:null;
+      out.push({g,kind:'project',ms,done,remaining,doneIn,steps,stepsDone,stepList,left});
+    }
+  });
+  const nights=upto.map(nightInfo).filter(n=>n.target);
+  return {goals:out,nights,last};
+}
+function paceText(x){
+  if(!x.ms.length)return '還沒拆階段';
+  if(!x.remaining)return '全部階段完成';
+  if(x.left==null)return `還有 ${x.remaining} 段`;
+  if(x.left<=0)return `已過截止日，還有 ${x.remaining} 段`;
+  const per=x.left/x.remaining;
+  return per>=1?`還有 ${x.remaining} 段、${x.left} 天：每 ${Math.floor(per*10)/10} 天要完成 1 段`:`還有 ${x.remaining} 段、${x.left} 天：每天要完成 ${Math.ceil(x.remaining/x.left)} 段`;
+}
+function reviewHTML(dates,isWeek){
+  const P=periodGoals(dates);
+  if(!P.goals.length&&!P.nights.length)return '';
+  const unit=isWeek?'這週':'這個月';
+  const blocks=P.goals.map(x=>{
+    if(x.kind==='body'){
+      const row=BODY_METRICS.filter(m=>x.want[m.k]>0).map(m=>{
+        const n=x.c[m.k],w=x.want[m.k];
+        return `<div class="goal-stat${n>=w?' hit':''}"><div class="goal-stat-l">${m.l}</div><div class="goal-stat-n">${n}<small> / ${w} ${m.unit}</small></div></div>`;
+      }).join('');
+      return `<div style="margin-bottom:12px;"><div class="goal-sub" style="font-weight:800;color:var(--tc);margin-bottom:6px;">${fi('1f3c3',16)} ${esc(x.g.title)}${x.g.dueDate?' · '+md(x.g.dueDate)+(x.g.event?' '+esc(x.g.event):''):''}</div>
+        ${row?`<div class="goal-stats">${row}</div>`:''}
+        <div class="goal-sub muted" style="margin-top:5px;">從 ${md(x.start)} 開始算 ${x.days} 天 · 活動共 ${x.c.minutes} 分鐘${x.c.rest?`，休息 ${x.c.rest} 天`:''}</div></div>`;
+    }
+    const segs=x.ms.length?`<div class="goal-segs" style="margin:6px 0;">${x.ms.map(m=>`<span class="goal-seg${m.done?' done':''}" style="cursor:default;" title="${esc(m.title)}"></span>`).join('')}</div>`:'';
+    return `<div style="margin-bottom:12px;"><div class="goal-sub" style="font-weight:800;color:var(--tc);">${fi('1f3ac',16)} ${esc(x.g.title)}${x.g.dueDate?' · '+md(x.g.dueDate)+' 截止':''}</div>
+      ${segs}
+      <div class="goal-sub">${x.doneIn.length?`${unit}完成的階段：${x.doneIn.map(m=>esc(m.title)).join('、')}`:`${unit}沒有新完成的階段`}</div>
+      <div class="goal-sub">${unit}的每日一步：完成 ${x.stepsDone} / ${x.steps}</div>
+      <div class="goal-sub${x.remaining&&x.left!=null&&x.left/x.remaining<2?' warn':' muted'}">${esc(paceText(x))}</div></div>`;
+  }).join('');
+  const nights=P.nights.length?`<div class="goal-sub" style="font-weight:800;color:var(--tc);margin-bottom:6px;">${fi('1f319',16)} 收尾與上床（綠＝準時、金＝晚了、灰＝沒記錄）</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;">${P.nights.map(n=>`<div title="${esc(n.label)}" style="text-align:center;font-size:11px;color:var(--tc2);min-width:44px;">
+      <div class="focus-dot${n.kind==='onTime'?' ontime':(n.kind==='late'?' late':'')}" style="margin:0 auto 3px;width:11px;height:11px;"></div>
+      ${md(n.day)}<br/>${n.bed||'—'}</div>`).join('')}</div>
+    <div class="goal-sub muted" style="margin-top:6px;">準時 ${P.nights.filter(n=>n.kind==='onTime').length} 晚 · 晚了 ${P.nights.filter(n=>n.kind==='late').length} 晚 · 沒記錄 ${P.nights.filter(n=>n.kind==='missing').length} 晚</div>`:'';
+  return `<div class="gcard"><div class="sec-hd">🎯 目標進度</div>${blocks}${nights}</div>`;
+}
+// 給 Claude 的文字：先講目標是什麼，再講這段期間做到多少，分析才有對照
+function copyLines(dates,label){
+  const P=periodGoals(dates);
+  if(!P.goals.length&&!P.nights.length)return [];
+  const nextP={'今天':'明天','這週':'下週','這個月':'下個月'}[label]||'接下來';
+  const L=[`🎯 目前的目標（請對照這些目標分析我的進度，給我${nextP}具體可行的調整）`];
+  P.goals.forEach(x=>{
+    if(x.kind==='body'){
+      L.push(`  🏃 ${x.g.title}${x.g.dueDate?'：'+x.g.dueDate+(x.g.event?' '+x.g.event:''):''}`);
+      L.push('    每週目標：'+BODY_METRICS.filter(m=>(+((x.g.targets||{})[m.k])||0)>0).map(m=>m.l+' '+(+x.g.targets[m.k])+' '+m.unit).join('、'));
+      L.push(`    ${label}實際（${md(x.start)} 開始算，共 ${x.days} 天）：`+BODY_METRICS.filter(m=>x.want[m.k]>0).map(m=>`${m.l} ${x.c[m.k]}/${x.want[m.k]} ${m.unit}`).join('、')+`；活動共 ${x.c.minutes} 分鐘${x.c.rest?`、休息 ${x.c.rest} 天`:''}`);
+    }else{
+      L.push(`  🎬 ${x.g.title}${x.g.dueDate?'：'+x.g.dueDate+' 截止':''}`);
+      if(x.ms.length)L.push('    階段：'+x.ms.map(m=>(m.done?'✓':'○')+m.title+(m.doneOn?'('+md(m.doneOn)+')':'')).join(' → '));
+      L.push(`    ${label}完成的階段：${x.doneIn.map(m=>m.title).join('、')||'無'}；每日一步完成 ${x.stepsDone}/${x.steps}`);
+      x.stepList.forEach(s2=>L.push(`      ${s2.done?'✅':'⬜'} ${md(s2.day)} ${s2.task}`));
+      L.push('    進度：'+paceText(x));
+      if(x.g.next&&x.g.next.text)L.push('    目前的下一步：'+x.g.next.text+(x.g.next.small?'（沒電版：'+x.g.next.small+'）':''));
+    }
+  });
+  const p=C.planFor(data(),P.last>curDay()?curDay():P.last);
+  if(p)L.push(`  🌙 作息練習：${p.phone} 收手機、${p.bed} 上床、${p.wake} 起床${p.status==='paused'?'（暫停中）':''}`);
+  if(P.nights.length){
+    L.push(`  🌙 ${label}收尾：準時 ${P.nights.filter(n=>n.kind==='onTime').length} 晚、晚了 ${P.nights.filter(n=>n.kind==='late').length} 晚、沒記錄 ${P.nights.filter(n=>n.kind==='missing').length} 晚`);
+    P.nights.forEach(n=>L.push(`      ${md(n.day)} 目標 ${n.target}｜收手機 ${n.phone||'—'}｜上床 ${n.bed||'—'}｜${n.label}`));
+  }
+  L.push('');
+  return L;
+}
 window.FocusUI={
+  periodGoals,reviewHTML,copyLines,
   render(){render(false);},
   setCloudSupport(v){cloudSupported=v;render(false);},
   exportLines(){
