@@ -1742,7 +1742,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v121';
+const APP_VER='v122';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // ── 注音／中文輸入法保護 ──────────────────────────────
@@ -1758,6 +1758,30 @@ document.addEventListener('compositionend',()=>{_imeOn=false;_imeEndAt=Date.now(
 ['keydown','keypress','keyup'].forEach(t=>window.addEventListener(t,e=>{
   if(isImeEnter(e))e.stopImmediatePropagation(); // 不 preventDefault：輸入法自己還需要這個 Enter
 },true));
+// ── 打字保護 ─────────────────────────────────────────
+// 背景同步會把畫面整個重畫：輸入框被換掉 → 游標消失、注音還沒選字的那幾個字直接不見，
+// 接下來打的字也全部落空（「打到一半跳掉、要重打」）。
+// 規則：使用者正在打字（游標在文字欄位裡、或注音組字中）時，重畫一律延後到打完再做。
+function isTyping(){
+  if(_imeOn)return true;
+  const a=document.activeElement;
+  if(!a||a===document.body)return false;
+  if(a.isContentEditable||a.tagName==='TEXTAREA')return true;
+  return a.tagName==='INPUT'&&!/^(checkbox|radio|button|submit|range|file|color|date|time|datetime-local|month|week)$/i.test(a.type||'');
+}
+var _idleQ=new Map(),_idleT=null;
+// 同一個 key 只排一次；打完字（離開欄位、選完字）後 0.4 秒再跑
+function whenIdle(key,fn){_idleQ.set(key,fn);_scheduleIdle();}
+function _scheduleIdle(){
+  clearTimeout(_idleT);
+  _idleT=setTimeout(()=>{
+    if(isTyping()){_scheduleIdle();return;}      // 還在打 → 再等
+    const q=[..._idleQ.values()];_idleQ.clear();
+    q.forEach(fn=>{try{fn();}catch(e){console.error(e);}});
+  },400);
+}
+document.addEventListener('focusout',()=>{if(_idleQ.size)_scheduleIdle();},true);
+document.addEventListener('compositionend',()=>{if(_idleQ.size)_scheduleIdle();},true);
 // 這個工作階段認定的「今天」＝開頁時決定的 dayKey。
 // 絕對不要用 today()（即時時鐘）當寫入目標：跨日處理只在開啟頁面時跑一次，
 // 頁面跨過午夜還開著時，畫面和資料都還停在昨天、today() 卻已經跳到新的一天，
@@ -2318,6 +2342,11 @@ async function syncState(opts){
       focus:JSON.stringify(FocusCore.clean(S.focus))
     },opts);
     const _j=await gasJson(_res);
+    if(_j.conflict&&isTyping()&&!_stateRetry){
+      whenIdle('flush',()=>flushSync());
+      setSync('syncing','等你打完字再同步…');
+      return false;
+    }
     if(_j.conflict){
       // 另一台裝置比我們新。以前只是跳錯誤就結束——但 grandol_state_ts 沒更新，
       // 之後每一次推送都會再撞同一個衝突，這台裝置等於「永遠同步不上去」，
@@ -2347,6 +2376,14 @@ async function loadCloud(){
       gasGet('getEntries',30000)
     ]);
     const st=await stRes.json(),en=await enRes.json();
+    // 正在打字：先不套用，打完字再拉一次。這裡如果繼續，雲端資料可能把正在編輯的物件換掉、
+    // 再整頁重畫，輸入框就會在手指底下消失
+    if(isTyping()&&!_stateRetry){
+      whenIdle('pull',()=>pullCloud(true));
+      setSync('syncing','等你打完字再同步…');
+      if(typeof hideLoadSkeleton==='function')hideLoadSkeleton();
+      return 'busy';
+    }
     // 下面到 renderAll 之間都是同步執行的：先拍一張快照，最後沒有任何變化就不重繪，
     // 定時同步才不會一直把畫面（打開的面板、捲動位置）刷掉
     const _before=JSON.stringify(S);
@@ -2495,7 +2532,7 @@ async function loadCloud(){
       tdlRows=S.tomorrowTDL.map(r=>({...r,confirmed:r.confirmed||false}));
       tdlPlanEdited=false;
     }
-    if(JSON.stringify(S)!==_before){sv(S);renderAll();}
+    if(JSON.stringify(S)!==_before){sv(S);if(isTyping())whenIdle('renderAll',renderAll);else renderAll();}
     _lastPullOk=Date.now();
     syncDone();if(typeof hideLoadSkeleton==='function')hideLoadSkeleton();
     return true;
@@ -2516,7 +2553,8 @@ async function pullCloud(force){
   _pulling=true;_lastPullTry=Date.now();
   try{
     const r=await loadCloud();
-    if(r){_pullRetryN=0;await flushSync();}
+    if(r==='busy'){}                          // 打完字會自己再拉
+    else if(r){_pullRetryN=0;await flushSync();}
     else if(r===false&&_pullRetryN<4){ // 後端暫時出狀況：過一下再試，不用等下次切換視窗
       const sec=[10,30,90,300][_pullRetryN++];
       clearTimeout(_pullRetryT);_pullRetryT=setTimeout(()=>pullCloud(true),sec*1000);
@@ -2979,6 +3017,8 @@ function wireStickyAdd(){
   if(target){target.focus();try{target.setSelectionRange(target.value.length,target.value.length);}catch(_){}}
 }
 function renderStickyNote(){
+  // 便利貼上新增項目時按 Enter 要立刻看到結果，所以只在「注音組字中」延後（組字會被重畫打斷）
+  {const _n=document.getElementById('sticky-note');if(_imeOn&&_n&&_n.contains(document.activeElement)){whenIdle('renderSticky',renderStickyNote);return;}}
   if(window.FocusUI)FocusUI.render();
   const note=document.getElementById('sticky-note');
   applyNoteStyle();
@@ -3296,6 +3336,8 @@ function renderHealth(){
   if(window.FocusUI)FocusUI.render();
   const box=document.getElementById('health-grid');
   if(!box)return;
+  // 正在健康卡裡打字（備註、自訂分鐘）→ 整格重建會把輸入框換掉，打完再畫
+  if(isTyping()&&box.contains(document.activeElement)){whenIdle('renderHealth',renderHealth);return;}
   const t=healthTarget();const h=t.h;
   box.innerHTML=HEALTH.map(H=>{
     const has=healthHas(h,H.k);
@@ -3782,7 +3824,12 @@ function waterCelebrate(glass){
   setTimeout(()=>wrap.remove(),2500);
 }
 let _healthNoteT=null;
-function healthNoteDebounced(){clearTimeout(_healthNoteT);_healthNoteT=setTimeout(()=>commitHealth(),900);}
+function healthNoteDebounced(){
+  sv(S);   // 先落地到手機：0.9 秒內切出 App（iOS 會凍結計時器），字也不會不見
+  if(ctxIsToday())localStorage.setItem('grandol_live_ts',String(Date.now()));
+  clearTimeout(_healthNoteT);_healthNoteT=setTimeout(()=>{_healthNoteT=null;commitHealth();},900);
+}
+function flushHealthNote(){if(_healthNoteT){clearTimeout(_healthNoteT);_healthNoteT=null;commitHealth();}}
 
 // ── TOMORROW TDL ──────────────────────────────────────
 let tdlRows=S.tomorrowTDL.length?S.tomorrowTDL.map(r=>({...r,confirmed:r.confirmed||false})):[{theme:'',task:'',confirmed:false},{theme:'',task:'',confirmed:false},{theme:'',task:'',confirmed:false}];
@@ -3829,6 +3876,8 @@ function isEditingPlan(){
   return !!(a&&a.closest&&a.closest('#tdl-rows'));
 }
 function renderTDL(){
+  // 游標在編輯列裡＝這次重畫不是使用者按的（按鈕會把焦點帶走），是背景觸發的 → 打完再畫
+  {const _t=document.getElementById('tdl-rows');if(_t&&isTyping()&&_t.contains(document.activeElement)){whenIdle('renderTDL',renderTDL);return;}}
   const rows=curRows();const showConfirm=(tdlEditCtx==='today');
   // 重繪會整個換掉輸入框，正在打字的話游標會消失、輸入被打斷（背景同步隨時可能觸發重繪）。
   // 先記住游標在哪一格、第幾個字，畫完再放回去。
@@ -5039,12 +5088,14 @@ function openPraiseDetail(idx){
     if(save){
       const mine=document.getElementById('pd-mine').value.trim();
       const th=document.getElementById('pd-thanks').value.trim();
-      if(mine!==(t.mine||'')||th!==(t.thanks||'')){
-        t.mine=mine;t.thanks=th;sv(S);syncStateDebounced();
-      }
+      t.mine=mine;t.thanks=th;sv(S);syncStateDebounced();
     }
     mask.remove();renderPraiseWall();
   };
+  // 打一個字存一個字：寫到一半切出 App 也不會白寫
+  ['pd-mine','pd-thanks'].forEach(id=>document.getElementById(id).addEventListener('input',e=>{
+    t[id==='pd-mine'?'mine':'thanks']=e.target.value;sv(S);syncStateDebounced();
+  }));
   mask.addEventListener('click',e=>{if(e.target===mask)close(true);});
   document.getElementById('pd-close').addEventListener('click',()=>close(true));
   document.getElementById('pd-del').addEventListener('click',()=>{
@@ -6052,7 +6103,7 @@ async function checkGasVersion(){
     if(j&&j.ok&&j.ver){
       // 後端「至少要」這個版本（GAS 檔案裡的 GAS_VER 改了，這裡要一起改）。
       // 用數字比大小而不是 ===，後端比這裡新的時候才不會被誤判成舊版。
-      const NEED_GAS='3.8';
+      const NEED_GAS='3.9';
       const cmpVer=(a,b)=>{const pa=String(a).split('.'),pb=String(b).split('.');
         for(let i=0;i<Math.max(pa.length,pb.length);i++){const d=(+pa[i]||0)-(+pb[i]||0);if(d)return d<0?-1:1;}
         return 0;};
@@ -6816,9 +6867,9 @@ function applyViewDate(switchPage){
     document.getElementById('backfill-date-lbl').textContent=`✏️ 補記中：${d.getMonth()+1}月${d.getDate()}日 週${wdArr[d.getDay()]}`;
   }
   const dv=isT?S.diary:((S.entries.find(x=>x.date===viewDate)||{}).diary||{hl:'',rf:'',gr:'',quote:''});
-  ['hl','rf','gr','quote'].forEach(k=>{document.getElementById('d-'+k).value=dv[k]||'';});
+  ['hl','rf','gr','quote'].forEach(k=>{const el=document.getElementById('d-'+k);const v=dv[k]||'';if(el!==document.activeElement&&el.value!==v)el.value=v;});
   const noteEl=document.getElementById('d-note');
-  if(noteEl)noteEl.value=S.calNotes[isT?curDay():viewDate]||'';
+  if(noteEl&&noteEl!==document.activeElement)noteEl.value=S.calNotes[isT?curDay():viewDate]||'';
   renderTopDate();renderHabits();renderHealth();renderExpBar();renderPlantBtn();
   if(typeof renderTodayPhotos==='function')renderTodayPhotos();
   if(typeof renderTodayEvents==='function')renderTodayEvents();
@@ -6941,6 +6992,7 @@ setInterval(()=>pullCloud(),5*60000); // 開著的頁面每 5 分鐘拉一次（
 // 手機切走後計時器會被凍結，以前在這之前打的勾、寫的字常常就停在本機沒送上去。
 function flushOnHide(){
   if(VIEWER_MODE||!GAS_URL)return;
+  if(typeof flushHealthNote==='function')flushHealthNote();
   flushAutoDraft();
   clearTimeout(stateTimer);
   Object.keys(_entryTimers).forEach(k=>{clearTimeout(_entryTimers[k]);delete _entryTimers[k];});

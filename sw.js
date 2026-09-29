@@ -4,7 +4,7 @@
 // 更新版本時把 CACHE_NAME 的數字 +1，舊快取會自動清掉
 // ═══════════════════════════════════════════════════════
 const CACHE_PREFIX = 'grandol-cache-';
-const CACHE_NAME = CACHE_PREFIX + 'v121';
+const CACHE_NAME = CACHE_PREFIX + 'v122';
 
 const PRECACHE = [
   './',
