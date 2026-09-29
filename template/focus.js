@@ -107,8 +107,18 @@ function routine(d){
   steps.push({k:'shower',label:'洗澡洗漱',hint:'熱水澡幫助入睡',at:hm(ph-20),done:n.shower});
   steps.push({k:'phone',label:'收手機',hint:'放到床上拿不到的地方',at:p.phone,done:w.phoneAwayAt});
   steps.push({k:'bed',label:'上床',hint:'晚安 🌙',at:p.bed,done:w.inBedAt});
-  steps.forEach(s=>{s.abs=C.targetAt(d,s.at);});
-  return {p,steps,next:steps.find(s=>!s.done)};
+  const skip=n.skip||{},now=new Date();
+  steps.forEach(s=>{s.abs=C.targetAt(d,s.at);s.skipped=!s.done&&!!skip[s.k];});
+  // 現在這一步：第一個「還沒做、沒跳過」的步驟——但如果下一步的時間已經到了，
+  // 就當它錯過了往前走，不會卡在沒做的那一步
+  let next=null;
+  for(let i=0;i<steps.length;i++){
+    const st=steps[i];if(st.done||st.skipped)continue;
+    const after=steps[i+1];
+    if(!after||now<after.abs||d!==curDay()){next=st;break;}
+    st.missed=true;
+  }
+  return {p,steps,next};
 }
 // ── ① 現在要做 ────────────────────────────────────
 function nowCard(){
@@ -123,7 +133,8 @@ function nowCard(){
       return `<div class="gcard now-card"><span class="now-ic">🌙</span><div class="now-txt">
         <div class="now-lbl">${late?'現在該做':'下一步 · 還有 '+(mins>=60?Math.floor(mins/60)+' 小時 '+(mins%60)+' 分':mins+' 分')}</div>
         <div class="now-main">${esc(s.at)} ${esc(s.label)}</div><div class="now-sub">${esc(s.hint)}</div></div>
-        <button class="focus-btn primary" data-step="${s.k}">做完了</button></div>`;
+        <div style="display:flex;gap:6px;"><button class="focus-btn" data-skip="${s.k}" title="今天沒做，先跳到下一步">跳過</button>
+        <button class="focus-btn primary" data-step="${s.k}">做完了</button></div></div>`;
     }
   }
   if(!pg)return '';
@@ -214,8 +225,9 @@ function tonightCard(){
       return `<div class="tl-step next"><div class="t">幾點${esc(s.label)}？</div><input class="focus-time" type="time" data-edit="${s.k}" value="${esc(clock(s.done))}" style="width:88px;margin:3px auto 0;display:block;"/>
         <button class="focus-btn" data-action="clear-time" data-k="${s.k}" style="margin-top:4px;padding:3px 9px;">清除</button></div>`;
     const doneAt=(s.k==='phone'||s.k==='bed')?clock(s.done):'';
-    return `<button class="tl-step${s.done?' done':(isNext?' next':'')}" data-step="${s.k}" title="${esc(s.hint)}">
-      <div class="t">${s.done&&doneAt?'✓ '+doneAt:esc(s.at)}</div><div class="n">${s.done&&!doneAt?'✓ ':''}${esc(s.label)}</div></button>`;
+    const off=!s.done&&(s.skipped||s.missed);
+    return `<button class="tl-step${s.done?' done':(isNext?' next':(off?' missed':''))}" data-step="${s.k}" title="${off?'沒做 · 補做了就點一下':esc(s.hint)}">
+      <div class="t">${s.done&&doneAt?'✓ '+doneAt:(off?'沒做 · ':'')+esc(s.at)}</div><div class="n">${s.done&&!doneAt?'✓ ':''}${esc(s.label)}</div></button>`;
   }).join('');
   return `<div class="gcard" style="margin-bottom:12px;"><div class="goal-hd" style="margin-bottom:10px;"><span>${fi('1f319',19)}</span>
       <span class="goal-title">今晚 ${esc(r.p.bed)} 上床</span>
@@ -486,6 +498,8 @@ function setNext(g,text){
 }
 function doStep(k){
   const d=ds();
+  // 補做了跳過的步驟 → 跳過標記清掉
+  {const h0=health(d);if(h0.night&&h0.night.skip&&h0.night.skip[k]){h0.night={...h0.night,skip:{...h0.night.skip}};delete h0.night.skip[k];}}
   if(k==='phone'||k==='bed'){
     const key=k==='phone'?'phoneAwayAt':'inBedAt',w=health(d).sleep?.windDown||{};
     if(w[key]||d!==curDay()){editing=k;render(true);return;}
@@ -500,7 +514,7 @@ function doStep(k){
   saveHealth(d,h);
 }
 hub.addEventListener('click',ev=>{
-  const el=ev.target.closest('[data-action],[data-move],[data-ms],[data-edit-goal],[data-step]');
+  const el=ev.target.closest('[data-action],[data-move],[data-ms],[data-edit-goal],[data-step],[data-skip]');
   if(!el)return;
   if(el.tagName==='A')ev.preventDefault();
   if(el.dataset.editGoal){const g=data().projects.find(x=>x.id===el.dataset.editGoal);if(g)(g.kind==='body'?openBodyEditor:openProjectEditor)(g);return;}
@@ -509,6 +523,10 @@ hub.addEventListener('click',ev=>{
   if(a==='more'){openMore();return;}
   if(!writable())return;
   const d=ds();
+  if(el.dataset.skip){
+    const h=health(d);h.night={...(h.night||{})};h.night.skip={...(h.night.skip||{}),[el.dataset.skip]:Date.now()};
+    saveHealth(d,h);softToast('沒關係，下一步就好 🌙',2000);return;
+  }
   if(el.dataset.step){doStep(el.dataset.step);return;}
   if(el.dataset.ms!==undefined){
     const g=data().projects.find(x=>x.id===el.dataset.g);const m=g&&g.milestones[+el.dataset.ms];if(!m)return;
