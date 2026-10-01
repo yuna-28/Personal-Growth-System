@@ -52,7 +52,7 @@ for anchor, add in guards:
 
 # Public defaults contain no personal project or deadline.
 p = ROOT / 'template' / 'index.html'
-p.write_text(p.read_text(encoding='utf-8').replace('data-project="完成動畫" data-due="2026-10-10" data-body-due="2026-10-31" data-body-event="見粉肝"', 'data-project="" data-due="" data-body-due="" data-body-event=""'), encoding='utf-8')
+p.write_text(p.read_text(encoding='utf-8').replace('data-project="完成動畫" data-due="2026-10-10" data-body-due="2026-10-31" data-body-event="見粉肝" data-night-extra="20:00 戴牙套"', 'data-project="" data-due="" data-body-due="" data-body-event="" data-night-extra=""'), encoding='utf-8')
 for asset in ('focus-core.js', 'focus.js', 'focus.css'):
     (ROOT / 'template' / asset).write_bytes((ROOT / asset).read_bytes())
 

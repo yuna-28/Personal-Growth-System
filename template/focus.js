@@ -52,6 +52,15 @@ function seed(){
   f.projects.forEach(p=>(p.milestones||[]).forEach(m=>{const c=cleanTitle(m.title);if(c&&c!==m.title)m.title=c;}));
   S.focus=f;
 }
+// 頁面上 data-night-extra="20:00 戴牙套" → 預設的固定項目（公開範本是空的）
+function defaultExtras(){
+  return String(hub.dataset.nightExtra||'').split(/[,，]/).map(t=>t.trim().match(/^(\d{1,2}:\d{2})\s+(.+)$/)).filter(Boolean)
+    .map(mm=>({id:'x'+mm[1].replace(':',''),label:mm[2],at:mm[1].padStart(5,'0')})).filter(x=>C.validTime(x.at));
+}
+function seedExtras(){
+  const p=C.planFor(data(),curDay());
+  if(p&&p.extras===undefined){const ex=defaultExtras();if(ex.length){p.extras=ex;p.updatedAt=Date.now();sv(S);syncStateDebounced();}}
+}
 function goals(){return data().projects.filter(p=>p.status==='active');}
 function projectGoal(){return goals().find(g=>g.kind!=='body');}
 function bodyGoal(){return goals().find(g=>g.kind==='body');}
@@ -107,15 +116,19 @@ function routine(d){
   steps.push({k:'shower',label:'洗澡洗漱',hint:'熱水澡幫助入睡',at:hm(ph-20),done:n.shower});
   steps.push({k:'phone',label:'收手機',hint:'放到床上拿不到的地方',at:p.phone,done:w.phoneAwayAt});
   steps.push({k:'bed',label:'上床',hint:'晚安 🌙',at:p.bed,done:w.inBedAt});
+  // 自己加的固定時間項目（例如 20:00 戴牙套）
+  (p.extras||[]).forEach(x=>{if(x&&x.label&&C.validTime(x.at))steps.push({k:'x_'+x.id,label:x.label,hint:'固定時間',at:x.at,done:n['x_'+x.id],extra:true});});
   const skip=n.skip||{},now=new Date();
   steps.forEach(s=>{s.abs=C.targetAt(d,s.at);s.skipped=!s.done&&!!skip[s.k];});
+  steps.sort((a,b)=>a.abs-b.abs);
   // 現在這一步：第一個「還沒做、沒跳過」的步驟——但如果下一步的時間已經到了，
   // 就當它錯過了往前走，不會卡在沒做的那一步
   let next=null;
   for(let i=0;i<steps.length;i++){
     const st=steps[i];if(st.done||st.skipped)continue;
     const after=steps[i+1];
-    if(!after||now<after.abs||d!==curDay()){next=st;break;}
+    const expired=st.extra&&now>=new Date(+st.abs+60*60000);
+    if(d!==curDay()||(!expired&&(!after||now<after.abs))){next=st;break;}
     st.missed=true;
   }
   return {p,steps,next};
@@ -126,8 +139,9 @@ function nowCard(){
   const now=new Date(),r=routine(d),pg=projectGoal();
   // 晚上：收工前 90 分鐘起，到上床後 3 小時
   if(r&&r.next){
-    const first=r.steps[0].abs,bedAbs=r.steps[r.steps.length-1].abs;
-    if(now>=new Date(first-90*60000)&&now<new Date(+bedAbs+180*60000)){
+    const bedAbs=r.steps.find(x=>x.k==='bed').abs;
+    const lead=(r.next.extra?15:90)*60000;
+    if(now>=new Date(r.next.abs-lead)&&now<new Date(+bedAbs+180*60000)){
       const s=r.next,late=now>=s.abs;
       const mins=Math.round((s.abs-now)/60000);
       return `<div class="gcard now-card"><span class="now-ic">🌙</span><div class="now-txt">
@@ -392,6 +406,13 @@ function openBodyEditor(g){
     });
   });
 }
+function extraRowHTML(x){
+  return `<div class="fm-row" data-extra style="grid-template-columns:minmax(0,1fr) 110px 26px;">
+    <input class="fm-in" data-f="label" value="${esc(x.label||'')}" placeholder="例如：戴牙套" maxlength="20"/>
+    <input class="fm-in" type="time" data-f="at" value="${esc(x.at||'20:00')}"/>
+    <button type="button" class="fm-del" data-del title="刪除">✕</button>
+    <input type="hidden" data-f="id" value="${esc(x.id||'')}"/></div>`;
+}
 function openPlanEditor(){
   const p=C.planFor(data(),ds());
   modal('調整今晚的時間',`
@@ -403,9 +424,16 @@ function openPlanEditor(){
       <label>上床<input class="fm-in" type="time" id="gp-bed" value="${esc(p?.bed||'01:00')}"/></label>
       <label>起床<input class="fm-in" type="time" id="gp-wake" value="${esc(p?.wake||'08:30')}"/></label></div>
     <div class="fm-hint">收工、肩背、洗澡會依「收手機」自動往前推：收工＝前 60 分、肩背＝前 50 分、洗澡＝前 20 分。今晚起生效。</div>
+    <div class="fm-lbl">固定時間要做的事（例如戴牙套、吃藥）</div>
+    <div id="gp-extras">${(p?.extras||[]).map(extraRowHTML).join('')}</div>
+    <button type="button" class="focus-btn" id="gp-add-extra">＋ 新增一項</button>
     <div class="fm-actions"><button class="focus-btn" id="gp-pause">${p?.status==='paused'?'恢復練習':'先暫停'}</button>
       <button class="focus-btn primary" id="gp-save" style="margin-left:auto;">儲存</button></div>`,
   (m,close)=>{
+    const box=m.querySelector('#gp-extras');
+    const bindX=r=>r.querySelector('[data-del]').addEventListener('click',()=>r.remove());
+    box.querySelectorAll('[data-extra]').forEach(bindX);
+    m.querySelector('#gp-add-extra').addEventListener('click',()=>{box.insertAdjacentHTML('beforeend',extraRowHTML({}));bindX(box.lastElementChild);box.lastElementChild.querySelector('input').focus();});
     m.querySelectorAll('[data-stage]').forEach(b=>b.addEventListener('click',()=>{
       const s=C.stages.find(x=>x.id===b.dataset.stage);
       m.querySelector('#gp-phone').value=s.phone;m.querySelector('#gp-bed').value=s.bed;m.querySelector('#gp-wake').value=s.wake;
@@ -416,7 +444,9 @@ function openPlanEditor(){
       if(![ph,bd,wk].every(C.validTime)){softToast('時間格式怪怪的',2400);return false;}
       if(C.targetAt(today(),ph)>C.targetAt(today(),bd)){softToast('收手機要在上床之前喔',2600);return false;}
       const st=C.stages.find(x=>x.phone===ph&&x.bed===bd);
-      data().revisions.push({id:uid(),stageId:st?st.id:'custom',effectiveFrom:today(),phone:ph,bed:bd,wake:wk,status,updatedAt:Date.now()});
+      const extras=[...m.querySelectorAll('[data-extra]')].map(r=>({id:r.querySelector('[data-f="id"]').value||uid(),
+        label:r.querySelector('[data-f="label"]').value.trim(),at:r.querySelector('[data-f="at"]').value})).filter(x=>x.label&&C.validTime(x.at));
+      data().revisions.push({id:uid(),stageId:st?st.id:'custom',effectiveFrom:today(),phone:ph,bed:bd,wake:wk,status,extras,updatedAt:Date.now()});
       sv(S);syncStateDebounced();return true;
     };
     m.querySelector('#gp-save').addEventListener('click',()=>{if(push('active')){close();softToast('今晚照這個時間 🌙',2200);}});
@@ -560,7 +590,8 @@ hub.addEventListener('click',ev=>{
   }
   if(a==='quick-plan'){
     const s=C.stages.find(x=>x.id===el.dataset.stage)||C.stages[0];
-    data().revisions.push({id:uid(),stageId:s.id,effectiveFrom:today(),phone:s.phone,bed:s.bed,wake:s.wake,status:'active',updatedAt:Date.now()});
+    const prev=C.planFor(data(),today());
+    data().revisions.push({id:uid(),stageId:s.id,effectiveFrom:today(),phone:s.phone,bed:s.bed,wake:s.wake,status:'active',extras:prev&&prev.extras?prev.extras:defaultExtras(),updatedAt:Date.now()});
     sv(S);syncStateDebounced();render(true);softToast(`🌙 今晚：${s.phone} 收手機、${s.bed} 上床`,3000);return;
   }
 });
@@ -721,5 +752,6 @@ window.FocusUI={
   }
 };
 seed();
+seedExtras();
 render(true);
 })();
