@@ -1069,8 +1069,8 @@ button{-webkit-tap-highlight-color:transparent;}
 @keyframes pageIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
 .page.active{animation:pageIn .22s ease;}
 </style>
-<link rel="stylesheet" href="focus.css?v=129">
-<script src="focus-core.js?v=129"></script>
+<link rel="stylesheet" href="focus.css?v=130">
+<script src="focus-core.js?v=130"></script>
 <style>
 /* ═══ v127 改版：迴圈主軸（今天／回顧／方向／我）═══ */
 .ui2-zone{font-family:'Baloo 2',sans-serif;font-size:13px;font-weight:800;color:var(--tc2);margin:18px 4px 8px;letter-spacing:.5px;}
@@ -1205,7 +1205,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 .sleep-scene.night .ss-panel{background:rgba(28,36,64,.88)!important;}
 @media(min-width:1300px){.wrap{max-width:1256px;}}
 </style>
-<link rel="stylesheet" href="ds.css?v=129">
+<link rel="stylesheet" href="ds.css?v=130">
 </head>
 <body>
 <!-- 這四個彈窗特意放在 <body> 最前面、所有 <script> 之前：
@@ -1415,7 +1415,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 
 <!-- ══════ 回顧（週／月）══════ -->
 <div class="page" id="page-review">
-<div class="ui2-seg" id="rv-seg"><button data-rv="week">這週</button><button data-rv="month">這個月</button></div>
+<div class="pg-head"><h1>回顧</h1><div class="ui2-seg" id="rv-seg"><button data-rv="week">這週</button><button data-rv="month">這個月</button></div></div>
 <!-- ══════ WEEK ══════ -->
 <div class="rv-pane" id="page-week">
 <div class="period-nav">
@@ -1536,6 +1536,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 
 <!-- ══════ 方向 ══════ -->
 <div class="page" id="page-direction">
+<div class="pg-head"><h1>方向</h1><span class="pg-sub">這陣子要去哪裡：目標、作息、實驗、習慣</span></div>
 <div id="focus-goals"></div>
 <div class="gcard">
   <div class="sec-hd">🌿 習慣清單</div>
@@ -1546,7 +1547,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 
 <!-- ══════ 我（沉澱）══════ -->
 <div class="page" id="page-me">
-<div class="ui2-seg" id="me-seg"><button data-me="garden">我是誰</button><button data-me="support">支持我的</button><button data-me="info">成就</button></div>
+<div class="pg-head"><h1>我</h1><div class="ui2-seg" id="me-seg"><button data-me="garden">我是誰</button><button data-me="support">支持我的</button><button data-me="info">成就</button></div></div>
 <!-- ══════ SUPPORT SYSTEM ══════ -->
 <div class="me-pane" id="page-support">
 <div class="gcard-scene" style="margin-top:4px;">
@@ -1907,7 +1908,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v129';
+const APP_VER='v130';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // ── 注音／中文輸入法保護 ──────────────────────────────
@@ -4989,6 +4990,35 @@ function renderInsights(cardId,boxId,cur,prev,dates,label,opt){
   box.innerHTML=items.map(t=>`<div class="ins-item">${t}</div>`).join('')+(sug?`<div class="ins-sug">${sug}</div>`:'');
 }
 // .rd-pair 是固定兩兩配對；其中一張因沒資料被隱藏時，讓剩下那張補滿整列
+// ── 每日明細：表格（週＝每一天；月＝有寫東西的日子，新的在上）。點一列展開完整日記 ──
+function dayTableHTML(dates,opts){
+  const rows=[];
+  dates.forEach(ds=>{
+    const isT=ds===curDay(),e=S.entries.find(x=>x.date===ds);
+    const diary=(isT?S.diary:e&&e.diary)||{},h=(isT?S.health:e&&e.health)||{};
+    const ck=isT?Object.keys(S.checked||{}):((e&&e.checked)||[]);
+    const items=tdlItemsOf(ds)||[];
+    const has=!!(e||ck.length||items.length||diary.hl||diary.rf||diary.gr);
+    if(!has&&!opts.all)return;
+    const d=new Date(ds+'T00:00:00'),dl=`${d.getMonth()+1}/${d.getDate()} 週${wdArr[d.getDay()]}`;
+    if(!has){rows.push(`<tr class="dt-empty"><td>${dl}</td><td colspan="5">沒有紀錄</td></tr>`);return;}
+    const habs=HABITS.filter(x=>ck.includes(x.k)).map(x=>fi(x.c,16)).join('');
+    const tdl=items.length?`${items.filter(x=>x.done).length}/${items.length}`:'—';
+    const sl=h.sleep&&(h.sleep.sleepTime||h.sleep.wakeTime)?`${h.sleep.sleepTime||'?'}–${h.sleep.wakeTime||'?'}`:'—';
+    const ex=typeof exTypesOf==='function'&&h.exercise?exTypesOf(h.exercise).join('、'):'';
+    const tdlList=items.length?`<div class="dt-tdl">${items.map(x=>`<span>${x.done?'✅':'⬜'} ${esc((x.theme?x.theme+'：':'')+x.task)}</span>`).join('')}</div>`:'';
+    rows.push(`<tr class="dt-row${isT?' today':''}" title="點一下看完整日記"><td>${dl}${isT?' <span class="dt-now">今天</span>':''}</td><td class="dt-habs">${habs||'—'}</td>
+      <td>${tdl}</td><td>${sl}</td><td>${esc(ex)||'—'}</td><td class="dt-hl"><div class="dt-clamp">${esc(diary.hl||'')}</div></td></tr>
+      <tr class="dt-detail" hidden><td colspan="6">${diaryBlock(diary)}${photosBlock((isT?S.todayPhotos:e&&e.photos)||[])}${tdlList}</td></tr>`);
+  });
+  if(!rows.length)return `<div class="gcard"><div class="sec-hd">每日明細</div><div class="goal-sub">這段期間還沒有日記</div></div>`;
+  return `<div class="gcard dt-card"><div class="sec-hd" style="justify-content:space-between;"><span>每日明細</span><span class="goal-sub" style="font-weight:600;">點一列看完整日記</span></div>
+    <div class="dt-wrap"><table class="ds-table"><thead><tr><th>日期</th><th>習慣</th><th>TDL</th><th>睡眠</th><th>運動</th><th>Highlights</th></tr></thead><tbody>${rows.join('')}</tbody></table></div></div>`;
+}
+document.addEventListener('click',ev=>{
+  const r=ev.target.closest('tr.dt-row');if(!r)return;
+  const det=r.nextElementSibling;if(det&&det.classList.contains('dt-detail')){det.hidden=!det.hidden;r.classList.toggle('open',!det.hidden);}
+});
 function fixRdPairs(scopeId){
   document.querySelectorAll('#'+scopeId+' .rd-pair').forEach(pair=>{
     const kids=[...pair.children];
@@ -5060,20 +5090,7 @@ function renderWeekly(){
   fixRdPairs('page-week');
 
   if(cur.days===0){document.getElementById('week-entries').innerHTML=`<div class="empty-state">${fi('1f331',32)}<br/>這週還沒有紀錄</div>`;return;}
-  document.getElementById('week-entries').innerHTML=dates.map(ds=>{
-    const d=new Date(ds+'T00:00:00');
-    const isToday=ds===curDay();
-    const e=S.entries.find(x=>x.date===ds);
-    if(!e)return`<div class="week-card" data-empty="1" style="opacity:.4;"><div class="week-day-hd"><span>${d.getMonth()+1}/${d.getDate()} 週${wdArr[d.getDay()]}</span><span style="font-size:11px;color:var(--tc3);">無紀錄</span></div></div>`;
-    const ck=e.checked||[];
-    const dots=HABITS.filter(h=>!isArchived(h.k)||ck.includes(h.k)).map(h=>`<div class="habit-dot ${ck.includes(h.k)?'done':'miss'}">${fi(h.c,14)}</div>`).join('');
-    const tdlHtml=(e.tdl||[]).length?`<div style="font-size:11px;color:var(--tc2);margin-top:5px;">📝 TDL：${e.tdl.map(r=>esc(`${r.theme?r.theme+'：':''}${r.task}`)).join('、')}</div>`:'';
-    return`<div class="week-card" style="${isToday?'border-color:rgba(var(--primary-rgb),.4);':''}">
-      <div class="week-day-hd"><span>${d.getMonth()+1}/${d.getDate()} 週${wdArr[d.getDay()]}${isToday?' ⭐':''}</span><span class="exp-badge">+${ck.length*10+20} EXP</span></div>
-      <div class="habit-dots">${dots}</div>
-      ${diaryBlock(e.diary)}${photosBlock(e.photos)}${tdlHtml}
-    </div>`;
-  }).join('');
+  document.getElementById('week-entries').innerHTML=dayTableHTML(dates,{all:true});
 }
 document.getElementById('wk-prev').addEventListener('click',()=>{weekOffset--;renderWeekly();});
 document.getElementById('wk-next').addEventListener('click',()=>{weekOffset++;renderWeekly();});
@@ -5180,12 +5197,7 @@ function renderMonthly(){
     return`<div class="week-card"><div class="week-day-hd"><span>第${wi+1}週</span><span class="exp-badge">${wH*10+wE.length*20} EXP</span></div><div style="font-size:13px;color:var(--tc2);">記錄${wE.length}天 · 完成${wH}個習慣</div></div>`;
   }).join('');
 
-  document.getElementById('month-entries').innerHTML=dates.slice().reverse().map(ds=>{
-    const e=S.entries.find(x=>x.date===ds);
-    if(!e||(!e.diary?.hl&&!e.diary?.rf&&!e.diary?.gr&&!(e.photos&&e.photos.length)))return'';
-    const d=new Date(ds+'T00:00:00');
-    return`<div class="week-card"><div class="week-day-hd"><span>${d.getMonth()+1}/${d.getDate()} 週${wdArr[d.getDay()]}</span></div>${diaryBlock(e.diary)}${photosBlock(e.photos)}</div>`;
-  }).join('');
+  document.getElementById('month-entries').innerHTML=dayTableHTML(dates.slice().reverse(),{all:false});
 }
 document.getElementById('mo-prev').addEventListener('click',()=>{monthOffset--;renderMonthly();});
 document.getElementById('mo-next').addEventListener('click',()=>{monthOffset++;renderMonthly();});
@@ -7965,6 +7977,6 @@ document.addEventListener('visibilitychange',()=>{
 
 
 
-<script src="focus.js?v=129"></script>
+<script src="focus.js?v=130"></script>
 </body>
 </html>
