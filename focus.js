@@ -266,7 +266,7 @@ function render(force){
   const keep={};hub.querySelectorAll('[data-next-in]').forEach(x=>{if(x.value)keep[x.dataset.nextIn]=x.value;});
   const gs=goals();
   const cards=gs.map(g=>g.kind==='body'?bodyCard(g):projectCard(g)).join('');
-  hub.innerHTML=`${nowCard()}${cards?`<div class="goal-grid">${cards}</div>`:''}${tonightCard()}
+  hub.innerHTML=`${nowCard()}${cards?`<div class="goal-grid">${cards}</div>`:''}${homeExperiments()}${tonightCard()}
     <button class="goal-more" data-action="more">⚙️ 新增目標・封存・備份</button>`;
   hub.querySelectorAll('[data-next-in]').forEach(x=>{if(keep[x.dataset.nextIn])x.value=keep[x.dataset.nextIn];});
   if(editing==='phone'||editing==='bed')hub.querySelector('[data-edit]')?.focus();
@@ -738,8 +738,296 @@ function copyLines(dates,label){
   L.push('');
   return L;
 }
+// ══ 回顧 → 實驗 → 每天 → 下次回顧 的迴圈 ══════════════════
+// 回顧帶走最多 3 個「實驗」，放進 App 每天會看到的地方；下次回顧先檢查上次的實驗。
+// 日記深讀的「我是怎樣的人」存成 insights，內心花園按月排成時間線。
+const DEEP_PROMPT=['請從我這段期間的日記（Highlights／Reflection／Gratitude／金句）深讀，分成：',
+'1. 人際關係：我常提到誰、和他們的互動帶給我什麼感受、有沒有變化',
+'2. 內在：我反覆出現的想法、在意的事、對自己說話的語氣',
+'3. 感受：情緒怎麼起伏，什麼時候輕鬆、什麼時候卡住',
+'4. 進步：和上一期的觀察相比，我哪裡不一樣了',
+'5. 我是怎樣一個人：3～5 個你從文字裡看到的特質',
+'每一點都附上日記的日期或原句當證據，並分清楚「從文字看到的」和「你的推測」。語氣溫和但誠實，不要只說好聽的。'];
+const PLACES={night:'今晚流程',tdl:'便利貼（今天）',checkin:'每天打卡'};
+function exps(){return data().experiments;}
+function insightsAll(){return data().insights;}
+function insightsShown(){return insightsAll().filter(x=>!x.deleted);}
+function saveFocus(){sv(S);syncStateDebounced();}
+function monthKeyOf(d){return d.slice(0,7);}
+function prevMonthKey(k){const [y,m]=k.split('-').map(Number);const d=new Date(y,m-2,1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+function periodKey(dates,kind){return kind==='week'?'w:'+dates[0]:'m:'+monthKeyOf(dates[0]);}
+// 這段期間有在進行的實驗（開始得比期間結束早、而且沒在期間開始前就結束）
+function expsIn(dates){
+  const a=dates[0],b=dates[dates.length-1];
+  return exps().filter(e=>(e.startOn||'')<=b&&!(e.status==='archived'&&e.endedOn&&e.endedOn<a));
+}
+function expLabelFreq(e){return e.freq==='daily'?'每天':(e.freq==='weekly'?'每週 '+(e.n||1)+' 次':'一次');}
+// 自動算出實際做了幾次（打卡、今晚流程打勾、便利貼完成）
+function expCount(e,dates){
+  const upto=dates.filter(d=>d<=curDay());
+  if(e.place==='night')return upto.filter(d=>(health(d).night||{})['x_'+e.extraId]).length;
+  if(e.place==='tdl'){let done=0;upto.forEach(d=>(tdlItemsOf(d)||[]).forEach(x=>{if(x.id===e.tdlId&&x.done)done++;}));return done;}
+  return upto.filter(d=>(e.log||{})[d]).length;
+}
+function expCountText(e,dates){
+  const n=expCount(e,dates);
+  if(e.place==='tdl')return n?'已完成':'還沒完成';
+  return (e.place==='night'?'做了 ':'打卡 ')+n+' 天';
+}
+// ── 首頁：進行中的實驗（今晚流程和便利貼的，已經在那兩個地方了，這裡只放打卡型）
+function homeExperiments(){
+  const d=ds(),list=exps().filter(e=>e.status!=='archived'&&e.place==='checkin');
+  if(!list.length)return '';
+  const mon=mondayOfDs(d),week=[...Array(7)].map((_,i)=>shiftDay(mon,i));
+  return `<div class="gcard" style="margin-bottom:12px;"><div class="goal-hd" style="margin-bottom:8px;"><span>🧪</span><span class="goal-title">進行中的實驗</span>
+    <span class="goal-sub muted" style="margin-left:auto;">點一下＝今天做了</span></div>
+    <div style="display:flex;flex-direction:column;gap:7px;">${list.map(e=>{
+      const on=!!(e.log||{})[d],wk=week.filter(x=>x<=d&&(e.log||{})[x]).length;
+      const goal=e.freq==='weekly'?(e.n||1):(e.freq==='daily'?7:1);
+      return `<div class="dots-row"><span style="flex:1;min-width:0;">${esc(e.text)}</span>
+        <span class="goal-sub muted">${e.freq==='once'?'':'本週 '+wk+'/'+goal}</span>
+        <button class="focus-btn${on?' done':''}" data-exp-log="${esc(e.id)}">${on?'✓ 今天做了':'今天做了'}</button></div>`;}).join('')}</div></div>`;
+}
+// ── 回顧頁最上面：上次的實驗 ──────────────────────
+function loopReviewHTML(dates,kind){
+  const key=periodKey(dates,kind),list=expsIn(dates);
+  const title=kind==='week'?'這週的實驗':'這個月的實驗';
+  const rows=list.map(e=>{
+    const r=(e.reviews||{})[key]||{};
+    const btn=(v,l,cls)=>`<button class="focus-btn${r.status===v?' '+cls:''}" data-exp-review="${esc(e.id)}" data-key="${key}" data-v="${v}">${l}</button>`;
+    return `<div style="border-top:1px solid rgba(var(--secondary-rgb),.18);padding-top:9px;margin-top:9px;">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span style="flex:1;min-width:160px;font-size:13px;color:var(--tc);font-weight:700;">${esc(e.text)}
+          <span class="goal-sub muted" style="font-weight:500;">· ${expLabelFreq(e)} · ${PLACES[e.place]||''} · ${expCountText(e,dates)}${e.status==='archived'?' · 已結束':''}</span></span>
+        ${btn('done','做到','done')}${btn('half','一半','rest')}${btn('no','沒做','rest')}
+      </div>
+      <input class="goal-in" data-exp-note="${esc(e.id)}" data-key="${key}" value="${esc(r.note||'')}" placeholder="一句話：為什麼？（選填）" style="width:100%;margin-top:6px;"/>
+      ${e.status!=='archived'?`<button class="goal-more" data-exp-end="${esc(e.id)}" style="margin:4px 0 0;">結束這個實驗</button>`:''}
+    </div>`;
+  }).join('');
+  return `<div class="gcard"><div class="sec-hd">🧪 ${title}</div>
+    ${rows||`<div class="goal-sub muted">還沒有實驗。回顧完把 Claude 的建議貼回來，或自己加一個。</div>`}
+    <div class="goal-chips" style="margin-top:12px;">
+      <button class="focus-btn primary" data-loop-paste="${esc(dates[0])}" data-kind="${kind}">貼上 Claude 的回覆</button>
+      <button class="focus-btn" data-loop-add="1">＋ 自己加一個實驗</button></div></div>`;
+}
+// ── 複製給 Claude：開頭放上次的實驗結果；結尾請 Claude 用固定格式回答 ──
+function loopCopyLines(dates,kind){
+  const key=periodKey(dates,kind),list=expsIn(dates);
+  if(!list.length)return [];
+  const st={done:'做到',half:'做了一半',no:'沒做'};
+  const L=[`🧪 ${kind==='week'?'這週':'這個月'}的實驗結果`];
+  list.forEach(e=>{const r=(e.reviews||{})[key]||{};
+    L.push(`  • ${e.text}（${expLabelFreq(e)}，${PLACES[e.place]||''}）→ ${st[r.status]||'還沒回顧'}；${expCountText(e,dates)}${r.note?'；我的想法：'+r.note:''}`);});
+  L.push('');return L;
+}
+function loopRequestLines(dates,kind,opts){
+  opts=opts||{};
+  const L=[];
+  if(opts.deep){
+    L.push('━━━ 日記深讀 ━━━',...DEEP_PROMPT);
+    if(opts.prev){
+      const pk=prevMonthKey(monthKeyOf(dates[0])),prev=insightsShown().filter(x=>x.period===pk);
+      if(prev.length){
+        const re={yes:'（我覺得像我）',no:'（我覺得不太像）'};
+        L.push('','上一期你看見的我（請和這次比較）：',...prev.map(x=>`  ${x.kind==='progress'?'✦ 進步':'◆ 特質'}：${x.text}${re[x.reaction]||''}`));
+      }
+    }
+    L.push('');
+  }
+  L.push('最後請用這個格式整理（我會貼回 App）：');
+  if(opts.deep)L.push('◆ 特質：……｜證據：……','✦ 進步：……｜證據：……');
+  L.push('▶ 實驗：……｜頻率：一次／每天／每週 N 次｜放哪：便利貼／今晚流程／每天打卡',
+    `（實驗最多 3 個，要小到${kind==='week'?'下週':'這週'}就能開始）`);
+  return L;
+}
+// ── 貼回 Claude 的回覆：拆成實驗卡與觀察卡 ───────────
+function parseReply(text){
+  const out={exps:[],traits:[]};
+  const fields=line=>line.split(/[｜|]/).map(x=>x.trim()).filter(Boolean);
+  const val=(fs,k)=>{const f=fs.find(x=>x.startsWith(k));return f?f.replace(new RegExp('^'+k+'\\s*[:：]?\\s*'),''):'';};
+  String(text||'').split(/\n/).forEach(raw=>{
+    const line=raw.trim().replace(/^[-*•]\s*/,'');
+    let m;
+    if((m=line.match(/^[▶►➤]\s*(?:實驗\s*[:：])?\s*(.+)$/))){
+      const fs=fields(m[1]),t=fs[0].replace(/^實驗\s*[:：]\s*/,'');
+      const fq=val(fs,'頻率'),pl=val(fs,'放哪');
+      let freq='once',n=1;
+      if(/每天|每日/.test(fq))freq='daily';
+      else if(/每週|每周/.test(fq)){freq='weekly';n=+((fq.match(/(\d+)/)||[])[1])||1;}
+      let place=/今晚|睡前|流程/.test(pl)?'night':(/便利貼|TDL/i.test(pl)?'tdl':'checkin');
+      if(place==='tdl'&&freq!=='once')place='checkin';
+      const at=(t.match(/(\d{1,2}:\d{2})/)||[])[1]||'';
+      if(t)out.exps.push({text:t,freq,n,place,at});
+    }else if((m=line.match(/^([◆◇✦✧])\s*(?:(特質|進步)\s*[:：])?\s*(.+)$/))){
+      const fs=fields(m[3]);
+      const kind=(m[2]==='進步'||m[1]==='✦'||m[1]==='✧')?'progress':'trait';
+      if(fs[0])out.traits.push({text:fs[0],evidence:val(fs,'證據'),kind});
+    }
+  });
+  out.exps=out.exps.slice(0,3);
+  return out;
+}
+function openPasteModal(startDate,kind){
+  modal('貼上 Claude 的回覆',`
+    <div class="fm-hint">整段貼上就好，App 會找出「▶ 實驗」「◆ 特質」「✦ 進步」那幾行。</div>
+    <textarea class="fm-in" id="lp-text" rows="7" style="margin-top:8px;resize:vertical;" placeholder="▶ 實驗：23:30 收工時寫下明天第一步｜頻率：每天｜放哪：今晚流程"></textarea>
+    <div class="fm-actions"><button class="focus-btn primary" id="lp-parse" style="margin-left:auto;">拆開來看</button></div>
+    <div id="lp-out"></div>`,
+  (m,close)=>{
+    m.querySelector('#lp-parse').addEventListener('click',()=>{
+      const r=parseReply(m.querySelector('#lp-text').value);
+      if(!r.exps.length&&!r.traits.length){softToast('找不到 ▶／◆／✦ 開頭的行，請確認 Claude 有照格式整理',3200);return;}
+      const box=m.querySelector('#lp-out');
+      box.innerHTML=(r.exps.length?`<div class="fm-lbl">🧪 實驗（選要放哪，不要的選「不要」）</div>`+r.exps.map((e,i)=>`
+        <div data-lp-exp="${i}" style="margin-bottom:10px;"><div style="font-size:13px;color:var(--tc);font-weight:700;">${esc(e.text)} <span class="goal-sub muted">· ${expLabelFreq(e)}</span></div>
+          <div class="goal-chips" style="margin-top:5px;align-items:center;">${['night','tdl','checkin','skip'].map(pl=>`<button type="button" class="focus-btn${e.place===pl?' done':''}" data-pl="${pl}">${pl==='skip'?'不要':PLACES[pl]}</button>`).join('')}
+          <input class="focus-time" type="time" data-at value="${esc(e.at||'22:00')}" style="${e.place==='night'?'':'display:none;'}"/></div></div>`).join(''):'')+
+        (r.traits.length?`<div class="fm-lbl">🌱 Claude 看見的我（會存進內心花園）</div>`+r.traits.map((t,i)=>`
+        <div data-lp-trait="${i}" style="margin-bottom:9px;"><div style="font-size:13px;color:var(--tc);">${t.kind==='progress'?'✦ ':''}${esc(t.text)}</div>
+          ${t.evidence?`<div class="goal-sub muted">證據：${esc(t.evidence)}</div>`:''}
+          <div class="goal-chips" style="margin-top:4px;">${[['yes','像我'],['no','不太像'],['skip','不存']].map(([v,l])=>`<button type="button" class="focus-btn" data-re="${v}">${l}</button>`).join('')}</div></div>`).join(''):'')+
+        `<div class="fm-actions"><button class="focus-btn primary" id="lp-save" style="margin-left:auto;">存起來</button></div>`;
+      box.querySelectorAll('[data-lp-exp]').forEach(row=>row.querySelectorAll('[data-pl]').forEach(b=>b.addEventListener('click',()=>{
+        row.querySelectorAll('[data-pl]').forEach(x=>x.classList.toggle('done',x===b));
+        row.querySelector('[data-at]').style.display=b.dataset.pl==='night'?'':'none';
+      })));
+      box.querySelectorAll('[data-lp-trait]').forEach(row=>row.querySelectorAll('[data-re]').forEach(b=>b.addEventListener('click',()=>{
+        row.querySelectorAll('[data-re]').forEach(x=>x.classList.toggle('done',x===b));
+      })));
+      box.querySelector('#lp-save').addEventListener('click',()=>{
+        let nE=0,nT=0;
+        box.querySelectorAll('[data-lp-exp]').forEach(row=>{
+          const e=r.exps[+row.dataset.lpExp],pl=(row.querySelector('[data-pl].done')||{}).dataset?.pl||e.place;
+          if(pl==='skip')return;
+          addExperiment({...e,place:pl,at:row.querySelector('[data-at]').value});nE++;
+        });
+        const period=monthKeyOf(startDate);
+        box.querySelectorAll('[data-lp-trait]').forEach(row=>{
+          const t=r.traits[+row.dataset.lpTrait],re=(row.querySelector('[data-re].done')||{}).dataset?.re||'';
+          if(re==='skip')return;
+          insightsAll().push({id:uid(),period,text:t.text,evidence:t.evidence,kind:t.kind,reaction:re,createdAt:Date.now(),updatedAt:Date.now()});nT++;
+        });
+        saveFocus();close();refreshPages();
+        softToast(`存好了：${nE} 個實驗、${nT} 則觀察 ✓`,2800);
+      });
+    });
+  });
+}
+// 新增一個實驗，並放到它該在的地方
+function addExperiment(e){
+  // 便利貼只放得下「今天做一次」的事；重複的實驗改放每天打卡，下週才會繼續出現
+  if(e.place==='tdl'&&e.freq&&e.freq!=='once')e={...e,place:'checkin'};
+  const x={id:uid(),text:e.text,freq:e.freq||'once',n:e.n||1,place:e.place||'checkin',startOn:curDay(),status:'active',
+    log:{},reviews:{},createdAt:Date.now(),updatedAt:Date.now()};
+  if(x.place==='night'){
+    const p=C.planFor(data(),today());
+    if(!p){x.place='checkin';softToast('還沒設定今晚的時間，這個實驗先放「每天打卡」',3200);}
+    else{
+      x.extraId='e'+x.id.slice(0,8);
+      const extras=[...(p.extras||[]),{id:x.extraId,label:x.text.replace(/\d{1,2}:\d{2}\s*/,'').slice(0,20),at:C.validTime(e.at)?e.at:'22:00'}];
+      data().revisions.push({...p,id:uid(),effectiveFrom:today(),extras,updatedAt:Date.now()});
+    }
+  }
+  if(x.place==='tdl'){
+    x.tdlId='exp-'+x.id.slice(0,8);
+    const c=stickyCtx();
+    if(c.todayMode){setTodayTDL([...c.items,{id:x.tdlId,theme:'實驗',task:x.text,c:0}]);todayListEdited=true;markTodayListEdited();writeDraftEntry(true);markDirty('e:'+curDay());syncEntryFor(curDay()).catch(()=>{});renderStickyNote();}
+  }
+  exps().push(x);
+  return x;
+}
+function openAddExperiment(){
+  modal('自己加一個實驗',`
+    <div class="fm-lbl">想試什麼？（越小越好）</div>
+    <input class="fm-in" id="ae-text" placeholder="例如：每週一傳訊息給一個朋友" maxlength="60"/>
+    <div class="fm-lbl">多常</div>
+    <div class="goal-chips" id="ae-freq">${[['once','一次'],['daily','每天'],['weekly','每週']].map(([v,l],i)=>`<button type="button" class="focus-btn${i===1?' done':''}" data-v="${v}">${l}</button>`).join('')}
+      <input class="fm-in" id="ae-n" type="number" min="1" max="7" value="3" style="width:64px;display:none;"/></div>
+    <div class="fm-lbl">放哪</div>
+    <div class="goal-chips" id="ae-place">${Object.entries(PLACES).map(([v,l],i)=>`<button type="button" class="focus-btn${v==='checkin'?' done':''}" data-v="${v}">${l}</button>`).join('')}
+      <input class="focus-time" id="ae-at" type="time" value="22:00" style="display:none;"/></div>
+    <div class="fm-actions"><button class="focus-btn primary" id="ae-save" style="margin-left:auto;">開始</button></div>`,
+  (m,close)=>{
+    const pick=(id,cb)=>m.querySelectorAll('#'+id+' [data-v]').forEach(b=>b.addEventListener('click',()=>{m.querySelectorAll('#'+id+' [data-v]').forEach(x=>x.classList.toggle('done',x===b));cb&&cb(b.dataset.v);}));
+    pick('ae-freq',v=>{m.querySelector('#ae-n').style.display=v==='weekly'?'':'none';});
+    pick('ae-place',v=>{m.querySelector('#ae-at').style.display=v==='night'?'':'none';});
+    m.querySelector('#ae-save').addEventListener('click',()=>{
+      const text=m.querySelector('#ae-text').value.trim();if(!text){softToast('寫一下想試什麼',2200);return;}
+      const freq=m.querySelector('#ae-freq .done').dataset.v,place=m.querySelector('#ae-place .done').dataset.v;
+      addExperiment({text,freq,n:+m.querySelector('#ae-n').value||1,place,at:m.querySelector('#ae-at').value});
+      saveFocus();close();refreshPages();softToast('🧪 實驗開始',2000);
+    });
+  });
+}
+// ── 內心花園：每個月的我 ────────────────────────────
+function insightsHTML(){
+  const all=insightsShown();
+  if(!all.length)return `<div class="goal-sub muted">月回顧時勾「日記深讀」，把 Claude 的回覆貼回來，這裡就會一個月一個月長出來。</div>`;
+  const periods=[...new Set(all.map(x=>x.period))].sort().reverse();
+  return periods.map(pk=>{
+    const items=all.filter(x=>x.period===pk);
+    return `<div style="display:flex;gap:12px;padding:8px 0;border-top:1px solid rgba(var(--secondary-rgb),.15);">
+      <span style="width:46px;flex-shrink:0;font-size:12px;color:var(--tc3);font-weight:700;">${+pk.slice(5)} 月</span>
+      <div style="flex:1;display:flex;flex-direction:column;gap:5px;">${items.map(x=>`
+        <div style="font-size:13px;color:${x.kind==='progress'?'var(--ok)':'var(--tc)'};" title="${esc(x.evidence?'證據：'+x.evidence:'')}">
+          <span style="${x.reaction==='no'?'opacity:.45;text-decoration:line-through;':''}">${x.kind==='progress'?'✦ 進步：':''}${esc(x.text)}</span>
+          <span style="white-space:nowrap;margin-left:4px;">
+            <button class="goal-edit" data-ins="${esc(x.id)}" data-re="yes" title="像我" style="font-size:12px;${x.reaction==='yes'?'color:var(--ok);font-weight:800;':''}">${x.reaction==='yes'?'✓ 像我':'像我'}</button>
+            <button class="goal-edit" data-ins="${esc(x.id)}" data-re="no" title="不太像" style="font-size:12px;${x.reaction==='no'?'font-weight:800;':''}">不太像</button>
+            <button class="goal-edit" data-ins-del="${esc(x.id)}" title="刪除" style="font-size:11px;">✕</button></span></div>`).join('')}</div></div>`;
+  }).join('');
+}
+function renderInsights(){const el=document.getElementById('insights-timeline');if(el)el.innerHTML=insightsHTML();}
+function refreshPages(){
+  render(true);renderInsights();
+  if(document.getElementById('page-week')?.classList.contains('active')&&typeof renderWeekly==='function')renderWeekly();
+  if(document.getElementById('page-month')?.classList.contains('active')&&typeof renderMonthly==='function')renderMonthly();
+}
+// 回顧頁、內心花園的按鈕是 index.html 畫出來的，用全域代理接事件
+document.addEventListener('click',ev=>{
+  const el=ev.target.closest('[data-exp-review],[data-exp-end],[data-loop-paste],[data-loop-add],[data-ins],[data-ins-del],[data-exp-log]');
+  if(!el)return;
+  if(el.dataset.loopPaste){openPasteModal(el.dataset.loopPaste,el.dataset.kind);return;}
+  if(!writable())return;
+  if(el.dataset.loopAdd){openAddExperiment();return;}
+  if(el.dataset.expLog){
+    const e=exps().find(x=>x.id===el.dataset.expLog);if(!e)return;
+    e.log={...(e.log||{})};const d=ds();if(e.log[d])delete e.log[d];else e.log[d]=Date.now();
+    e.updatedAt=Date.now();saveFocus();render(true);if(e.log[d])softToast('🧪 記下了',1600);return;
+  }
+  if(el.dataset.expReview){
+    const e=exps().find(x=>x.id===el.dataset.expReview);if(!e)return;
+    e.reviews={...(e.reviews||{})};const r={...(e.reviews[el.dataset.key]||{})};
+    r.status=r.status===el.dataset.v?'':el.dataset.v;e.reviews[el.dataset.key]=r;
+    e.updatedAt=Date.now();saveFocus();refreshPages();return;
+  }
+  if(el.dataset.expEnd){
+    const e=exps().find(x=>x.id===el.dataset.expEnd);if(!e||!confirm(`結束「${e.text}」這個實驗？（紀錄會留著）`))return;
+    e.status='archived';e.endedOn=curDay();e.updatedAt=Date.now();
+    // 放在今晚流程的，從之後的流程拿掉
+    if(e.place==='night'&&e.extraId){const p=C.planFor(data(),today());if(p&&(p.extras||[]).some(x=>x.id===e.extraId))data().revisions.push({...p,id:uid(),effectiveFrom:today(),extras:p.extras.filter(x=>x.id!==e.extraId),updatedAt:Date.now()});}
+    saveFocus();refreshPages();return;
+  }
+  if(el.dataset.ins){
+    const x=insightsAll().find(i=>i.id===el.dataset.ins);if(!x)return;
+    x.reaction=x.reaction===el.dataset.re?'':el.dataset.re;x.updatedAt=Date.now();saveFocus();renderInsights();return;
+  }
+  if(el.dataset.insDel){
+    const f=data(),i=f.insights.findIndex(x=>x.id===el.dataset.insDel);if(i<0||!confirm('刪掉這則觀察？'))return;
+    // 刪除也要能同步：標記成 deleted 而不是直接移除（另一台裝置的舊資料才不會把它合併回來）
+    f.insights[i]={...f.insights[i],deleted:true,text:f.insights[i].text,updatedAt:Date.now()};saveFocus();renderInsights();
+  }
+});
+document.addEventListener('input',ev=>{
+  const el=ev.target.closest('[data-exp-note]');if(!el)return;
+  const e=exps().find(x=>x.id===el.dataset.expNote);if(!e)return;
+  e.reviews={...(e.reviews||{})};e.reviews[el.dataset.key]={...(e.reviews[el.dataset.key]||{}),note:el.value};
+  e.updatedAt=Date.now();saveFocus();
+});
+
 window.FocusUI={
-  periodGoals,reviewHTML,copyLines,
+  periodGoals,reviewHTML,copyLines,loopReviewHTML,loopCopyLines,loopRequestLines,renderInsights,
   render(){render(false);},
   setCloudSupport(v){cloudSupported=v;render(false);},
   exportLines(){

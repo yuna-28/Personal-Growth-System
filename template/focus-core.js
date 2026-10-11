@@ -19,12 +19,16 @@
   }
   function clean(v){
     v=v&&typeof v==='object'?v:{};
-    return {version:1,revisions:Array.isArray(v.revisions)?v.revisions.filter(x=>x&&typeof x.id==='string'&&validDate(x.effectiveFrom)&&validTime(x.bed)&&validTime(x.phone)&&validTime(x.wake)):[],projects:Array.isArray(v.projects)?v.projects.filter(x=>x&&typeof x.id==='string'&&typeof x.title==='string').map(x=>({...x,milestones:Array.isArray(x.milestones)?x.milestones.filter(m=>m&&typeof m.title==='string'):[],next:x.next&&typeof x.next==='object'?x.next:null})):[]};
+    // experiments：回顧帶走的實驗；insights：Claude 從日記看見的我（每月一批）
+    const arr=(x,ok)=>Array.isArray(x)?x.filter(o=>o&&typeof o.id==='string'&&ok(o)):[];
+    const extra={experiments:arr(v.experiments,o=>typeof o.text==='string'),insights:arr(v.insights,o=>typeof o.text==='string')};
+    return {...extra,version:1,revisions:Array.isArray(v.revisions)?v.revisions.filter(x=>x&&typeof x.id==='string'&&validDate(x.effectiveFrom)&&validTime(x.bed)&&validTime(x.phone)&&validTime(x.wake)):[],projects:Array.isArray(v.projects)?v.projects.filter(x=>x&&typeof x.id==='string'&&typeof x.title==='string').map(x=>({...x,milestones:Array.isArray(x.milestones)?x.milestones.filter(m=>m&&typeof m.title==='string'):[],next:x.next&&typeof x.next==='object'?x.next:null})):[]};
   }
   function merge(a,b){
     a=clean(a);b=clean(b);
     const combine=(xs,ys)=>{const m=new Map();[...xs,...ys].forEach(x=>{const p=m.get(x.id);if(!p||(+x.updatedAt||0)>=(+p.updatedAt||0))m.set(x.id,x);});return [...m.values()];};
-    return {version:1,revisions:combine(a.revisions,b.revisions),projects:combine(a.projects,b.projects)};
+    return {version:1,revisions:combine(a.revisions,b.revisions),projects:combine(a.projects,b.projects),
+      experiments:combine(a.experiments,b.experiments),insights:combine(a.insights,b.insights)};
   }
   function planFor(f,ds){return clean(f).revisions.filter(x=>x.effectiveFrom<=ds).sort((a,b)=>a.effectiveFrom.localeCompare(b.effectiveFrom)||(+a.updatedAt||0)-(+b.updatedAt||0)).at(-1)||null;}
   function snapshot(p,ds){if(!p||p.status==='paused')return null;return {stageId:p.stageId,revisionId:p.id,phone:p.phone,bed:p.bed,wake:p.wake,bedAt:targetAt(ds,p.bed).toISOString(),phoneAt:targetAt(ds,p.phone).toISOString()};}

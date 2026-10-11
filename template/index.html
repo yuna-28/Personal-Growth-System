@@ -1288,6 +1288,7 @@ button{-webkit-tap-highlight-color:transparent;}
 </div>
 <div id="wk-jump-today" class="jump-today-btn" style="display:none;">回到本週</div>
 
+<div id="wk-loop"></div>
 <div class="rd-zone">🌱 這週總覽</div>
 <div class="witness-card" id="wk-witness"></div>
 <div id="wk-goals"></div>
@@ -1343,6 +1344,7 @@ button{-webkit-tap-highlight-color:transparent;}
 </div>
 <div id="mo-jump-today" class="jump-today-btn" style="display:none;">回到本月</div>
 
+<div id="mo-loop"></div>
 <div class="rd-zone">🌱 這個月總覽</div>
 <div class="witness-card" id="mo-witness"></div>
 <div id="mo-goals"></div>
@@ -1384,6 +1386,11 @@ button{-webkit-tap-highlight-color:transparent;}
 <div class="rd-pair">
   <div class="gcard" id="mo-keyword-card" style="display:none;"><div class="sec-hd">💭 這個月常出現的詞</div><div id="mo-keywords"></div></div>
   <div class="gcard" id="mo-highlight-card" style="display:none;"><div class="sec-hd">🌟 這個月的一句話</div><div id="mo-highlight"></div></div>
+</div>
+<div id="mo-copy-opts" style="display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--tc2);margin:4px 0 8px;">
+  <label><input type="checkbox" data-copt="num" checked/> 數字分析（習慣、TDL、睡眠、目標）</label>
+  <label><input type="checkbox" data-copt="deep" checked/> 日記深讀（人際、內在、感受、進步、我是怎樣的人）</label>
+  <label><input type="checkbox" data-copt="prev" checked/> 附上上個月的觀察</label>
 </div>
 <button class="ghost-btn" id="copy-month-btn"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4cb_3d.png" width="15" height="15"/> 複製這月紀錄給 Claude</button>
 </div>
@@ -1491,6 +1498,11 @@ button{-webkit-tap-highlight-color:transparent;}
   <div id="proof-board"></div>
 </div>
 
+<div class="gcard">
+  <div class="sec-hd">🌱 每個月的我</div>
+  <p style="font-size:11px;color:var(--tc3);margin-bottom:8px;">Claude 從日記看見的我 · 標「像我」「不太像」，看自己怎麼一個月一個月改變</p>
+  <div id="insights-timeline"></div>
+</div>
 <div class="gcard">
   <div class="sec-hd">🐾 我的人</div>
   <p style="font-size:11px;color:var(--tc3);margin-bottom:12px;">他們會在花園裡陪你</p>
@@ -1742,7 +1754,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v125';
+const APP_VER='v126';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // ── 注音／中文輸入法保護 ──────────────────────────────
@@ -4861,6 +4873,7 @@ function renderWeekly(){
   renderInsights('wk-insight-card','wk-insight',cur,prev,dates,'週',{dailyRates:rateArr});
   renderHealthReview(cur,'wk',dates);
   {const gEl=document.getElementById('wk-goals');if(gEl)gEl.innerHTML=window.FocusUI?FocusUI.reviewHTML(dates,true):'';}
+  {const lEl=document.getElementById('wk-loop');if(lEl&&!(isTyping()&&lEl.contains(document.activeElement)))lEl.innerHTML=window.FocusUI?FocusUI.loopReviewHTML(dates,'week'):'';}
   fixRdPairs('page-week');
 
   if(cur.days===0){document.getElementById('week-entries').innerHTML=`<div class="empty-state">${fi('1f331',32)}<br/>這週還沒有紀錄</div>`;return;}
@@ -4886,6 +4899,7 @@ document.getElementById('copy-week-btn').addEventListener('click',async()=>{
   const dates=weekDates(weekOffset);
   await ensureCalMonthsLoaded(dates);
   const lines=[`📊 ${weekLabel(weekOffset)}的小森林紀錄（請幫我分析）`,''];
+  if(window.FocusUI)lines.push(...FocusUI.loopCopyLines(dates,'week'));
   if(window.FocusUI)lines.push(...FocusUI.copyLines(dates,'這週'));
   dates.forEach(ds=>{
     const e=S.entries.find(x=>x.date===ds);
@@ -4898,7 +4912,7 @@ document.getElementById('copy-week-btn').addEventListener('click',async()=>{
     const hasHealth=healthAny(dayH);
     const d=new Date(ds+'T00:00:00');
     const dl=`${d.getMonth()+1}/${d.getDate()} 週${wdArr[d.getDay()]}`;
-    if(!e&&!checkedArr.length&&!(items&&items.length)&&!hasHealth){lines.push(`${dl}：無紀錄`);return;}
+    if(!e&&!checkedArr.length&&!(items&&items.length)&&!hasHealth&&!(diary.hl||diary.rf||diary.gr||diary.quote)){lines.push(`${dl}：無紀錄`);return;}
     const names=HABITS.filter(h=>checkedArr.includes(h.k)).map(h=>h.l);
     lines.push(`📅 ${dl}`);
     lines.push(`  ✅ 完成習慣：${names.join('、')||'無'}`);
@@ -4921,6 +4935,7 @@ document.getElementById('copy-week-btn').addEventListener('click',async()=>{
   if(wkHsum.length){lines.push('');lines.push(...wkHsum);lines.push('');}
   const calT=calLinesForDates(dates);
   if(calT.length){lines.push('📅 本週行程');lines.push(...calT);lines.push('');}
+  if(window.FocusUI)lines.push(...FocusUI.loopRequestLines(dates,'week',{deep:false}));
   navigator.clipboard.writeText(lines.join('\n')).then(()=>{
     const b=document.getElementById('copy-week-btn');b.innerHTML=`${fi('2705',15)} 已複製！`;setTimeout(()=>{b.innerHTML=`${fi('1f4cb',15)} 複製這週紀錄給 Claude`;},2000);
   });
@@ -4970,6 +4985,7 @@ function renderMonthly(){
   renderInsights('mo-insight-card','mo-insight',cur,prev,dates,'個月',{weekday:{counts:weekdayCounts,totals:weekdayTotals}});
   renderHealthReview(cur,'mo',dates);
   {const gEl=document.getElementById('mo-goals');if(gEl)gEl.innerHTML=window.FocusUI?FocusUI.reviewHTML(dates,false):'';}
+  {const lEl=document.getElementById('mo-loop');if(lEl&&!(isTyping()&&lEl.contains(document.activeElement)))lEl.innerHTML=window.FocusUI?FocusUI.loopReviewHTML(dates,'month'):'';}
   renderCarry('mo-carry-card','mo-carry',cur,'個月');
   fixRdPairs('page-month');
 
@@ -4991,11 +5007,22 @@ function renderMonthly(){
 document.getElementById('mo-prev').addEventListener('click',()=>{monthOffset--;renderMonthly();});
 document.getElementById('mo-next').addEventListener('click',()=>{monthOffset++;renderMonthly();});
 document.getElementById('mo-jump-today').addEventListener('click',()=>{monthOffset=0;renderMonthly();});
+// 月複製的勾選記在這台裝置上
+(function(){
+  let o={};try{o=JSON.parse(localStorage.getItem('grandol_copy_opts')||'{}');}catch(e){}
+  document.querySelectorAll('#mo-copy-opts [data-copt]').forEach(el=>{
+    if(o[el.dataset.copt]!==undefined)el.checked=!!o[el.dataset.copt];
+    el.addEventListener('change',()=>{o[el.dataset.copt]=el.checked;try{localStorage.setItem('grandol_copy_opts',JSON.stringify(o));}catch(e){}});
+  });
+})();
+function copyOpt(k){const el=document.querySelector(`#mo-copy-opts [data-copt="${k}"]`);return !el||el.checked;}
 document.getElementById('copy-month-btn').addEventListener('click',async()=>{
   const dates=monthDates(monthOffset);
   await ensureCalMonthsLoaded(dates);
-  const lines=[`📊 ${monthLabel(monthOffset)}的小森林紀錄（請幫我分析）`,''];
-  if(window.FocusUI)lines.push(...FocusUI.copyLines(dates,'這個月'));
+  const optNum=copyOpt('num'),optDeep=copyOpt('deep');
+  const lines=[`📊 ${monthLabel(monthOffset)}的小森林紀錄（請幫我分析${optNum&&optDeep?'數字和日記':(optDeep?'日記':'')}）`,''];
+  if(window.FocusUI)lines.push(...FocusUI.loopCopyLines(dates,'month'));
+  if(window.FocusUI&&optNum)lines.push(...FocusUI.copyLines(dates,'這個月'));
   dates.forEach(ds=>{
     const e=S.entries.find(x=>x.date===ds);
     const isT=ds===curDay();
@@ -5004,7 +5031,7 @@ document.getElementById('copy-month-btn').addEventListener('click',async()=>{
     const items=tdlItemsOf(ds);
     const dayH=(isT?S.health:(e&&e.health))||null;
     const hasHealth=healthAny(dayH);
-    if(!e&&!checkedArr.length&&!(items&&items.length)&&!hasHealth)return;
+    if(!e&&!checkedArr.length&&!(items&&items.length)&&!hasHealth&&!(diary.hl||diary.rf||diary.gr||diary.quote))return;
     const names=HABITS.filter(h=>checkedArr.includes(h.k)).map(h=>h.l);
     // 一個月逐項列會太長，這裡每天只給 TDL 完成比例＋健康摘要，逐項明細留給週複製
     const tdlPart=(items&&items.length)?`｜TDL ${items.filter(x=>x.done).length}/${items.length}`
@@ -5017,11 +5044,14 @@ document.getElementById('copy-month-btn').addEventListener('click',async()=>{
     if(diary.gr)lines.push(`  🥹 ${diary.gr}`);
   });
   lines.push('');
-  lines.push(...tdlSummaryLines(periodStats(dates),monthLabel(monthOffset)));
-  const moHsum=healthCopySummary(periodStats(dates),monthLabel(monthOffset));
-  if(moHsum.length){lines.push('');lines.push(...moHsum);}
-  const calT=calLinesForDates(dates);
-  if(calT.length){lines.push('');lines.push('📅 本月行程');lines.push(...calT);}
+  if(optNum){
+    lines.push(...tdlSummaryLines(periodStats(dates),monthLabel(monthOffset)));
+    const moHsum=healthCopySummary(periodStats(dates),monthLabel(monthOffset));
+    if(moHsum.length){lines.push('');lines.push(...moHsum);}
+    const calT=calLinesForDates(dates);
+    if(calT.length){lines.push('');lines.push('📅 本月行程');lines.push(...calT);}
+  }
+  if(window.FocusUI){lines.push('');lines.push(...FocusUI.loopRequestLines(dates,'month',{deep:optDeep,prev:copyOpt('prev')}));}
   navigator.clipboard.writeText(lines.join('\n')).then(()=>{
     const b=document.getElementById('copy-month-btn');b.innerHTML=`${fi('2705',15)} 已複製！`;setTimeout(()=>{b.innerHTML=`${fi('1f4cb',15)} 複製這月紀錄給 Claude`;},2000);
   });
@@ -5465,6 +5495,7 @@ function openQuotePopup(){
   document.getElementById('quote-popup').style.display='flex';
 }
 function renderGarden(){
+  if(window.FocusUI&&FocusUI.renderInsights)FocusUI.renderInsights();
   const canvas=document.getElementById('garden-canvas');
   document.getElementById('gd-statics').innerHTML=gdStaticsHTML();
   const dyn=document.getElementById('gd-dynamics');
