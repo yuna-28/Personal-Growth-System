@@ -149,53 +149,73 @@ function isEvening(){
   const core=r.steps.find(x=>x.k==='off'),bed=r.steps.find(x=>x.k==='bed'),now=new Date();
   return now>=new Date(core.abs-90*60000)&&now<new Date(+bed.abs+180*60000);
 }
+function heroOpen(){try{return localStorage.getItem('grandol_hero_ms')==='1';}catch(e){return false;}}
 function nowCard(){
   const d=ds();if(d!==curDay())return '';                 // 補記過去的日子不顯示
   const now=new Date(),r=routine(d),pg=projectGoal();
-  // 晚上：收工前 90 分鐘起，到上床後 3 小時
+  // 晚上：收工前 90 分鐘起（自訂固定項目提前 15 分），到上床後 3 小時 → 顯示現在該做的收尾步驟
   if(r&&r.next){
     const bedAbs=r.steps.find(x=>x.k==='bed').abs;
     const lead=(r.next.extra?15:90)*60000;
     if(now>=new Date(r.next.abs-lead)&&now<new Date(+bedAbs+180*60000)){
-      const s=r.next,late=now>=s.abs;
-      const mins=Math.round((s.abs-now)/60000);
-      return `<div class="gcard now-card"><span class="now-ic">🌙</span><div class="now-txt">
-        <div class="now-lbl">${late?'現在該做':'下一步 · 還有 '+(mins>=60?Math.floor(mins/60)+' 小時 '+(mins%60)+' 分':mins+' 分')}</div>
-        <div class="now-main">${esc(s.at)} ${esc(s.label)}</div><div class="now-sub">${esc(s.hint)}</div></div>
-        <div style="display:flex;gap:6px;"><button class="focus-btn" data-skip="${s.k}" title="今天沒做，先跳到下一步">跳過</button>
-        <button class="focus-btn primary" data-step="${s.k}">做完了</button></div></div>`;
+      const s=r.next,late=now>=s.abs,mins=Math.round((s.abs-now)/60000);
+      const when=late?'現在該做':'下一步 · 還有 '+(mins>=60?Math.floor(mins/60)+' 小時 '+(mins%60)+' 分':mins+' 分');
+      return `<div class="gcard hero night"><div class="hero-top"><span>🌙 今晚 ${esc(r.p.bed)} 上床 · ${when}</span>
+          <span class="hero-meta">${r.steps.filter(x=>x.done).length}/${r.steps.length} 步</span></div>
+        <div class="hero-main"><span class="hero-txt">${esc(s.at)} ${esc(s.label)}</span>
+          <button class="focus-btn" data-skip="${s.k}">跳過</button><button class="focus-btn primary" data-step="${s.k}">做完了</button></div>
+        <div class="hero-sub">${esc(s.hint)}</div></div>`;
     }
   }
-  return '';
-  // （v127 起白天不再用這張卡：動畫這一步放進「今天要做」清單）
-  // eslint-disable-next-line no-unreachable
   if(!pg)return '';
-  const ms=pg.milestones||[],cur=ms.find(m=>!m.done);
-  let alert='';
-  const hard=ms.filter(m=>!m.done&&m.due&&m.hard).sort((a,b)=>a.due.localeCompare(b.due))[0];
-  if(hard){const left=daysBetween(d,hard.due);if(left<=3)alert=left<0?`🚩 ${hard.title} 已經過了期限 ${md(hard.due)}`:`🚩 ${hard.title} ${left===0?'就是今天':'還有 '+left+' 天'}（${md(hard.due)}）`;}
-  else if(cur&&cur.due&&daysBetween(d,cur.due)<0)alert=`「${cur.title}」原定 ${md(cur.due)}，已經晚了 ${-daysBetween(d,cur.due)} 天`;
+  // 白天：動畫今天這一步＋階段進度（點「階段」展開每段日期）
+  const ms=pg.milestones||[],curI=ms.findIndex(m=>!m.done),cur=curI>=0?ms[curI]:null,done=ms.filter(m=>m.done).length;
+  let meta='';
+  if(cur){meta=esc(cur.title);if(cur.due){const left=daysBetween(d,cur.due);meta+=left<0?` · <b style="color:#B0402A">晚了 ${-left} 天</b>`:` · ${left===0?'今天':'還有 '+left+' 天'}`;}}
+  const hard=ms.filter(m=>!m.done&&m.due&&m.hard).sort((x,y)=>x.due.localeCompare(y.due))[0];
+  if(hard&&daysBetween(d,hard.due)<=5)meta+=` · <b style="color:#B0402A">🚩 ${esc(hard.title)} ${md(hard.due)}</b>`;
   const n=pg.next||{};
   const i=n.id?stickyCtx().items.findIndex(x=>x.id===n.id):-1;
   const isDone=i>=0&&!!stickyCtx().done['t'+i];
-  if(!n.text||justDone===pg.id)
-    return `<div class="gcard now-card"><span class="now-ic">🎬</span><div class="now-txt">
-      <div class="now-lbl">${justDone===pg.id?'做完了 ✓ 下一步是？':esc(pg.title)+' · 今天要做哪一步？'}</div>
-      <input class="goal-in" data-next-in="${esc(pg.id)}" placeholder="${cur?'例如：'+esc(cur.title)+'的第一部分':'今天這一小步'}" maxlength="200" style="margin-top:6px;width:100%;"/>
-      ${alert?`<div class="now-sub alert">${esc(alert)}</div>`:''}</div>
+  let main;
+  if(!n.text||justDone===pg.id){
+    main=`<div class="hero-main"><input class="goal-in" data-next-in="${esc(pg.id)}" style="flex:1;min-width:220px;" maxlength="200"
+        placeholder="${justDone===pg.id?'做完了 ✓ 下一步是？':(cur?'今天要做「'+esc(cur.title)+'」的哪一步？':'今天要做哪一步？')}"/>
       <button class="focus-btn primary" data-action="set-next" data-g="${esc(pg.id)}">好</button></div>`;
-  return `<div class="gcard now-card"><span class="now-ic">${isDone?'🎉':'🎬'}</span><div class="now-txt">
-    <div class="now-lbl">${isDone?'今天這一步完成了':'今天這一步'}${cur?' · '+esc(cur.title):''}</div>
-    <div class="now-main">${esc(n.text)}</div>
-    ${n.small&&!isDone?`<div class="now-sub">沒電時：${esc(n.small)}</div>`:''}
-    ${alert?`<div class="now-sub alert">${esc(alert)}</div>`:''}</div>
-    <button class="focus-btn${isDone?' done':' primary'}" data-action="step-done" data-g="${esc(pg.id)}">${isDone?'✓ 完成了':'完成'}</button></div>`;
+  }else{
+    main=`<div class="hero-main"><span class="hero-txt" style="${isDone?'text-decoration:line-through;opacity:.6;':''}">${esc(n.text)}</span>
+      <button class="focus-btn${isDone?' done':' primary'}" data-action="step-done" data-g="${esc(pg.id)}">${isDone?'✓ 完成了':'完成'}</button></div>
+      ${n.small&&!isDone?`<div class="hero-sub">沒電時：${esc(n.small)}</div>`:''}`;
+  }
+  const segs=ms.length?`<div class="hero-segs">${ms.map((m,k)=>`<button class="goal-seg${m.done?' done':(k===curI?' cur':'')}" data-ms="${k}" data-g="${esc(pg.id)}" title="${esc(m.title)}${m.due?' · '+md(m.due):''}"></button>`).join('')}
+      <button class="hero-toggle" data-action="hero-ms">階段 ${done}/${ms.length} ${heroOpen()?'▴':'▾'}</button></div>`
+    :`<div class="hero-sub" style="margin-top:10px;"><a href="#" data-edit-goal="${esc(pg.id)}" style="color:var(--secondary);">把作品拆成幾段</a>，每段可以寫日期</div>`;
+  const list=heroOpen()&&ms.length?`<div class="ms-list">${msRows(pg)}</div>`:'';
+  return `<div class="gcard hero day"><div class="hero-top"><span>🎬 ${esc(pg.title)} · 今天這一步</span>
+      <span class="hero-meta">${meta}</span><button class="goal-edit" data-edit-goal="${esc(pg.id)}" title="編輯目標">✏️</button></div>
+    ${main}${segs}${list}</div>`;
 }
 // ── ② 作品型目標卡：階段清單 ─────────────────────
 function dueTxt(g){
   if(!g.dueDate)return '';
   const left=daysBetween(ds(),g.dueDate);
   return `${md(g.dueDate)}${g.event?' '+esc(g.event):''} · ${left>0?left+' 天':(left===0?'今天':'已過 '+(-left)+' 天')}`;
+}
+function msRows(g){
+  const d=ds(),ms=g.milestones||[],cur=ms.findIndex(m=>!m.done);
+  return ms.map((m,i)=>{
+    let cls=m.done?' done':(i===cur?' cur':'');
+    let date='';
+    if(m.due){
+      const left=daysBetween(d,m.due);
+      if(!m.done&&left<0){cls=' over';date=`${md(m.due)} · 晚了 ${-left} 天`;}
+      else if(i===cur)date=`${md(m.due)} · ${left===0?'今天':'還有 '+left+' 天'}`;
+      else date=md(m.due);
+      if(m.hard)date='🚩 '+date;
+    }
+    return `<div class="ms-row${cls}"><button class="ms-dot" data-ms="${i}" data-g="${esc(g.id)}" title="${m.done?'點一下取消完成':'點一下標成完成'}">${m.done?'✅':(i===cur?'🟡':'⚪')}</button>
+      <span class="ms-name">${esc(m.title)}</span>${date?`<span class="ms-date${m.hard?' hard':''}">${date}</span>`:''}</div>`;
+  }).join('');
 }
 function projectCard(g){
   const d=ds(),ms=g.milestones||[],cur=ms.findIndex(m=>!m.done);
@@ -307,7 +327,12 @@ function moveChips(){
 function undoneList(){
   const c=stickyCtx();if(!c.todayMode)return '';
   const rows=c.items.map((x,i)=>({x,i})).filter(o=>!c.done['t'+o.i]);
-  if(!rows.length)return `<div class="goal-sub ok" style="margin-bottom:10px;">今天的清單都做完了 🎉</div>`;
+  if(!rows.length){
+    const pg=projectGoal(),n=pg&&pg.next,j=n?c.items.findIndex(x=>x.id===n.id):-1;
+    const stepLeft=n&&n.text&&!(j>=0&&c.done['t'+j]);
+    return stepLeft?`<div class="goal-sub" style="margin-bottom:10px;">清單做完了，還差動畫這一步：${esc(n.text)}</div>`
+      :`<div class="goal-sub ok" style="margin-bottom:10px;">今天的清單都做完了 🎉</div>`;
+  }
   return `<div class="goal-sub" style="font-weight:700;margin-bottom:4px;">今天還沒做完的 <span class="goal-sub muted" style="font-weight:500;">（不順延就照實記成沒完成）</span></div>
     ${rows.map(o=>`<div class="undone-row"><span>${o.x.theme?esc(o.x.theme)+'：':''}${esc(o.x.task)}${(+o.x.c||0)?' <span class="goal-sub muted">⏩'+o.x.c+'</span>':''}</span>
       <button class="focus-btn" data-postpone="${o.i}">⏩ 排到明天</button></div>`).join('')}
@@ -411,7 +436,9 @@ function render(force){
   if(M.today)M.today.innerHTML=expRows();
   if(M.tonight)M.tonight.innerHTML=tonightCard();
   // 短期目標卡放在「今天」：每天打開就看得到；「方向」只放一行一個的清單，用來調整
-  if(M.cards)M.cards.innerHTML=goalStrip(gs)+(stripOpen()&&cards?`<div class="goal-grid" style="margin-bottom:12px;">${cards}</div>`:'');
+  if(M.cards)M.cards.innerHTML=gs.filter(g=>g.kind==='body').map(bodyCard).join('');
+  {const pg=projectGoal(),tl=document.querySelector('.today-list');
+   if(tl)tl.classList.toggle('hero-on',!!(pg&&pg.next&&pg.next.text&&ds()===curDay()&&!isEvening()));}
   if(M.goalrow)M.goalrow.innerHTML=goalRow();
   if(M.moves)M.moves.innerHTML=moveChips();
   if(M.undone)M.undone.innerHTML=undoneList();
@@ -711,6 +738,7 @@ onMounts('click',ev=>{
   if(el.tagName==='A')ev.preventDefault();
   if(el.dataset.editGoal){const g=data().projects.find(x=>x.id===el.dataset.editGoal);if(g)(g.kind==='body'?openBodyEditor:openProjectEditor)(g);return;}
   const a=el.dataset.action;
+  if(a==='hero-ms'){try{localStorage.setItem('grandol_hero_ms',heroOpen()?'0':'1');}catch(e){}render(true);return;}
   if(a==='strip'){if(ev.target.closest('[data-edit-goal]'))return;try{localStorage.setItem('grandol_strip',stripOpen()?'0':'1');}catch(e){}render(true);return;}
   if(a==='edit-plan'){openPlanEditor();return;}
   if(el.dataset.postpone!==undefined){if(writable()){postponeTdlItem(+el.dataset.postpone);render(true);}return;}

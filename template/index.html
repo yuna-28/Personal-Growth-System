@@ -1069,8 +1069,8 @@ button{-webkit-tap-highlight-color:transparent;}
 @keyframes pageIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
 .page.active{animation:pageIn .22s ease;}
 </style>
-<link rel="stylesheet" href="focus.css?v=127">
-<script src="focus-core.js?v=127"></script>
+<link rel="stylesheet" href="focus.css?v=128">
+<script src="focus-core.js?v=128"></script>
 <style>
 /* ═══ v127 改版：迴圈主軸（今天／回顧／方向／我）═══ */
 .ui2-zone{font-family:'Baloo 2',sans-serif;font-size:13px;font-weight:800;color:var(--tc2);margin:18px 4px 8px;letter-spacing:.5px;}
@@ -1149,6 +1149,61 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 .closing-panel .closing-actions>*{margin:0!important;}
 .undone-row{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13px;color:var(--tc2);}
 .undone-row span{flex:1;min-width:0;}
+/* ═══ v128 電腦版重新設計 ═══ */
+.also-row{display:flex;align-items:flex-start;gap:8px;margin-top:6px;}
+.also-k{width:30px;flex-shrink:0;font-size:11px;font-weight:700;color:var(--tc3);padding-top:6px;}
+.also-row>div{flex:1;min-width:0;}
+#focus-moves .also-chips{margin:0;}
+.rc-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;}
+.rc-right .hz-tabs{margin-top:4px;padding-top:0;border-top:none;}
+.evening-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;}
+.evening-grid>*{margin:0!important;min-width:0;}
+.closing-panel .closing-actions{flex-direction:row;flex-wrap:wrap;align-items:center;}
+.closing-panel .closing-actions .liq-btn{width:auto!important;padding:12px 28px!important;}
+.closing-panel .closing-actions .ghost-btn{width:auto!important;}
+.today-list .sticky-note.inline::before,.today-list .sticky-note.inline::after{display:none!important;}
+.today-list .sticky-empty{display:none;}
+.today-list .sticky-add{text-align:left!important;border-style:solid!important;border-color:rgba(var(--secondary-rgb),.25)!important;
+  background:rgba(255,255,255,.55)!important;color:var(--tc3)!important;padding:9px 12px!important;border-radius:12px!important;}
+.today-list.hero-on .sticky-item.is-goal{display:none;}
+/* 重點大卡 */
+.hero{margin-bottom:12px!important;padding:16px 18px!important;}
+.hero.day{background:linear-gradient(135deg,rgba(var(--gold-rgb),.42),rgba(var(--gold-rgb),.18))!important;}
+.hero.night{background:linear-gradient(135deg,rgba(var(--secondary-rgb),.38),rgba(var(--primary-rgb),.16))!important;}
+.hero-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;font-weight:700;color:var(--tc2);}
+.hero-top .hero-meta{margin-left:auto;font-weight:600;}
+.hero-main{display:flex;align-items:center;gap:12px;margin:8px 0 4px;flex-wrap:wrap;}
+.hero-main .hero-txt{flex:1;min-width:200px;font-family:'Baloo 2',sans-serif;font-size:22px;font-weight:800;color:var(--tc);line-height:1.3;word-break:break-word;}
+.hero-main .goal-in{font-size:15px;padding:10px 12px;}
+.hero-sub{font-size:12px;color:var(--tc2);}
+.hero-segs{display:flex;gap:4px;margin-top:12px;align-items:center;}
+.hero-segs .goal-seg{height:8px;}
+.hero-toggle{border:none;background:none;font-size:12px;color:var(--tc2);cursor:pointer;margin-left:8px;white-space:nowrap;font-family:'Quicksand',sans-serif;}
+.hero .ms-list{margin-top:10px;background:rgba(255,255,255,.5);border-radius:12px;padding:6px 14px;}
+@media(min-width:1000px){
+  .home-cols{grid-template-columns:minmax(0,1.55fr) minmax(0,1fr)!important;}
+  .home-side .home-banner .gcard-scene{margin-bottom:12px;}
+  .home-side .home-banner .scene-stage{height:150px!important;}
+  .home-side .home-banner #tree-wrap{width:120px!important;height:120px!important;}
+  .home-side .home-banner #tree-wrap>img{width:120px!important;height:120px!important;}
+  .home-side .home-banner #fruit-layer{transform:scale(.43);}
+  .rc-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
+  .evening-grid{grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);align-items:start;}
+  .evening-grid .tl{grid-template-columns:minmax(0,1fr)!important;}
+  .evening-grid .tl-step{display:flex;align-items:center;gap:12px;text-align:left;padding:9px 12px;}
+  .evening-grid .tl-step .t{width:62px;flex-shrink:0;}
+  /* 導覽：左側直立 */
+  .bot-nav-wrap{left:14px;right:auto;top:50%;bottom:auto;transform:translateY(-50%);width:84px;}
+  .bot-nav{flex-direction:column;max-width:none;padding:10px 7px;border-radius:30px;gap:6px;}
+  .nav-btn{flex:none;width:100%;padding:11px 4px;border-radius:20px;font-size:11px;gap:4px;}
+  .nav-btn img{width:22px;height:22px;}
+  .bg{padding-left:96px;padding-bottom:40px;}
+  .support-quick-btn{left:26px!important;right:auto!important;bottom:22px!important;}
+}
+/* 睡眠面板的 backdrop-filter 在 CSS zoom 底下有時整塊畫不出來（看得到外框、裡面空白）→ 改不透明底 */
+.ss-panel{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:rgba(255,255,255,.9)!important;}
+.sleep-scene.night .ss-panel{background:rgba(28,36,64,.88)!important;}
+@media(min-width:1300px){.wrap{max-width:1256px;}}
 </style>
 </head>
 <body>
@@ -1266,6 +1321,29 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 <!-- ══════ HOME ══════ -->
 <div class="page active" id="page-home">
 <section id="focus-hub" hidden data-project="" data-due="" data-body-due="" data-body-event="" data-night-extra="" aria-label="我的目標"></section>
+<div class="home-cols">
+<div class="home-col home-main">
+<div id="focus-now"></div>
+<div class="gcard today-list">
+    <div class="sec-hd" style="justify-content:space-between;"><span>✅ 今天要做</span><span id="today-count" style="font-size:12px;font-weight:600;color:var(--tc3);"></span></div>
+    <div class="sticky-note inline" id="sticky-note">
+          <div class="sticky-top">
+            <div class="sticky-header">📋 今日 TDL</div>
+            <div class="sticky-ctrls" id="sticky-ctrls">
+              <button class="sn-btn" id="sn-minus" title="縮小">－</button>
+              <button class="sn-btn" id="sn-plus" title="放大">＋</button>
+              <button class="sn-btn" id="sn-collapse" title="收合">▾</button>
+            </div>
+          </div>
+          <div id="sticky-items"></div>
+          <div id="sticky-date" class="sticky-hw-date"></div>
+          <div class="sticky-resize" id="sticky-resize" title="拖曳調整大小（雙擊還原）"></div>
+        </div>
+    <div id="focus-today-exps"></div>
+    <div class="also-did"><div class="also-lbl">今天也做了（點一下就記）</div><div class="also-row"><span class="also-k">習慣</span><div id="habits" class="also-chips"></div></div><div class="also-row"><span class="also-k">運動</span><div id="focus-moves"></div></div></div>
+  </div>
+</div>
+<div class="home-col home-side">
 <div class="home-banner"><div class="gcard-scene">
       <div style="position:relative;z-index:1;text-align:center;margin-bottom:6px;">
         <span class="level-pill"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f333_3d.png" width="15" height="15"/> 魔法樹 <span id="lv">Lv.1</span></span>
@@ -1291,38 +1369,16 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
         <div id="puppy" style="position:absolute;left:56px;bottom:44px;cursor:pointer;touch-action:none;z-index:5;"></div>
       </div>
     </div></div>
-<div id="focus-now"></div>
 <div id="focus-cards"></div>
-<div class="home-cols">
-<div class="home-col">
-  <div class="gcard today-list">
-    <div class="sec-hd" style="justify-content:space-between;"><span>✅ 今天要做</span><span id="today-count" style="font-size:12px;font-weight:600;color:var(--tc3);"></span></div>
-    <div id="focus-goalrow"></div>
-    <div class="sticky-note inline" id="sticky-note">
-          <div class="sticky-top">
-            <div class="sticky-header">📋 今日 TDL</div>
-            <div class="sticky-ctrls" id="sticky-ctrls">
-              <button class="sn-btn" id="sn-minus" title="縮小">－</button>
-              <button class="sn-btn" id="sn-plus" title="放大">＋</button>
-              <button class="sn-btn" id="sn-collapse" title="收合">▾</button>
-            </div>
-          </div>
-          <div id="sticky-items"></div>
-          <div id="sticky-date" class="sticky-hw-date"></div>
-          <div class="sticky-resize" id="sticky-resize" title="拖曳調整大小（雙擊還原）"></div>
-        </div>
-    <div id="focus-today-exps"></div>
-    <div class="also-did"><div class="also-lbl">今天也做了（點一下）</div><div id="habits" class="also-chips"></div><div id="focus-moves"></div></div>
-  </div>
-  <div class="gcard" id="today-events-card" style="display:none;">
+<div class="gcard" id="today-events-card" style="display:none;">
       <div class="sec-hd" style="justify-content:space-between;margin-bottom:8px;"><span id="today-events-title">📅 今日行程</span><button id="today-event-add" title="新增今天的行程" style="width:26px;height:26px;border:none;border-radius:999px;background:rgba(var(--primary-rgb),.15);color:var(--primary);font-size:16px;cursor:pointer;line-height:1;">＋</button></div>
       <div id="today-events-list"></div>
     </div>
 </div>
-<div class="home-col">
+</div>
 <div class="gcard record-card">
   <div class="sec-hd" style="justify-content:space-between;"><span>📝 今天怎麼樣？</span><span id="today-date" style="font-size:11px;font-weight:500;color:var(--tc3);"></span></div>
-  <div class="diary-section"><div class="diary-label"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f31f_3d.png" width="15" height="15"/> Highlights <span style="font-size:11px;font-weight:500;color:var(--tc3);">亮點事件</span></div><textarea class="diary-ta" id="d-hl" placeholder="今天最讓你閃亮的事..."></textarea></div>
+  <div class="rc-grid"><div class="rc-left"><div class="diary-section"><div class="diary-label"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f31f_3d.png" width="15" height="15"/> Highlights <span style="font-size:11px;font-weight:500;color:var(--tc3);">亮點事件</span></div><textarea class="diary-ta" id="d-hl" placeholder="今天最讓你閃亮的事..."></textarea></div>
       <details class="ui2-more" id="diary-more1"><summary>多寫一點（Reflection・Gratitude）</summary><div class="diary-section"><div class="diary-label"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4d6_3d.png" width="15" height="15"/> Reflection <span style="font-size:11px;font-weight:500;color:var(--tc3);">反思與學習</span></div><textarea class="diary-ta" id="d-rf" placeholder="今天學到什麼或想到什麼..."></textarea></div><div class="diary-section"><div class="diary-label"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f97a_3d.png" width="15" height="15" onerror="this.outerHTML='🥹'"/> Gratitude <span style="font-size:11px;font-weight:500;color:var(--tc3);">感恩的人事物</span></div><textarea class="diary-ta" id="d-gr" placeholder="今天想感謝誰或什麼..."></textarea></div></details>
       <details class="ui2-more" id="diary-more2"><summary>更多（金句・照片・備註）</summary><div class="diary-section" style="margin-bottom:0;"><div class="diary-label">💬 今天讓我有感覺的一句話 <span style="font-size:11px;font-weight:500;color:var(--tc3);">選填·會存進金句收藏</span></div><input class="quote-input" id="d-quote" placeholder="可以是別人說的，也可以是自己想到的..."/></div><div class="diary-section" style="margin:12px 0 0;">
         <div class="diary-label">📷 今日照片 <span style="font-size:11px;font-weight:500;color:var(--tc3);">選填·最多3張</span></div>
@@ -1332,13 +1388,12 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
       </div><div class="diary-section" style="margin:12px 0 0;">
         <div class="diary-label">📝 備註 <span style="font-size:11px;font-weight:500;color:var(--tc3);">選填·會在日曆上顯示黃點</span></div>
         <input class="quote-input" id="d-note" placeholder="給這一天的小備註..." style="font-style:normal;"/>
-      </div></details>
-  <div class="hz-tabs" id="hz-tabs"></div>
-  <div id="health-grid"></div>
-</div>
-</div>
+      </div></details></div>
+  <div class="rc-right"><div class="hz-tabs" id="hz-tabs"></div>
+  <div id="health-grid"></div></div></div>
 </div>
 <div class="ui2-zone">🌙 晚上收尾</div>
+<div class="evening-grid">
 <div id="focus-tonight"></div>
 <div class="gcard closing-panel" id="closing-panel">
   <div class="sec-hd">🌙 收工：排明天 → 種下今天</div>
@@ -1348,6 +1403,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
       <button id="tdl-add" style="background:none;border:1.5px dashed rgba(var(--secondary-rgb),.35);border-radius:11px;padding:7px 12px;font-family:'Quicksand',sans-serif;font-size:12px;color:var(--tc3);cursor:pointer;width:100%;text-align:center;margin-top:2px;">＋ 新增</button>
   <div id="focus-bring-next"></div>
   <div class="closing-actions"><button class="liq-btn" id="plant-btn"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/2728_3d.png" width="17" height="17"/> 種下今天</button><button class="ghost-btn" id="copy-btn"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4cb_3d.png" width="15" height="15"/> 複製今日紀錄給 Claude</button><button class="ghost-btn" id="draft-btn" style="display:none;">💾 儲存草稿（先存不種）</button></div>
+</div>
 </div>
 </div>
 
@@ -1844,7 +1900,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v127';
+const APP_VER='v128';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // ── 注音／中文輸入法保護 ──────────────────────────────
@@ -7059,7 +7115,8 @@ function applyViewDate(switchPage){
   const dv=isT?S.diary:((S.entries.find(x=>x.date===viewDate)||{}).diary||{hl:'',rf:'',gr:'',quote:''});
   ['hl','rf','gr','quote'].forEach(k=>{const el=document.getElementById('d-'+k);const v=dv[k]||'';if(el!==document.activeElement&&el.value!==v)el.value=v;});
   {const m1=document.getElementById('diary-more1'),m2=document.getElementById('diary-more2');
-   if(m1&&(dv.rf||dv.gr))m1.open=true;
+   // 電腦版有空間：反思／感謝預設展開，紀錄卡左邊不會空一大塊
+   if(m1&&(dv.rf||dv.gr||(window.matchMedia&&matchMedia('(min-width:1000px)').matches)))m1.open=true;
    if(m2&&(dv.quote||(S.calNotes&&S.calNotes[isT?curDay():viewDate])))m2.open=true;}
   const noteEl=document.getElementById('d-note');
   if(noteEl&&noteEl!==document.activeElement)noteEl.value=S.calNotes[isT?curDay():viewDate]||'';
@@ -7901,6 +7958,6 @@ document.addEventListener('visibilitychange',()=>{
 
 
 
-<script src="focus.js?v=127"></script>
+<script src="focus.js?v=128"></script>
 </body>
 </html>
