@@ -123,3 +123,5 @@
 .goal-more:hover{color:var(--tc2);}
 .tl-step.missed{background:transparent;border:1.5px dashed rgba(var(--secondary-rgb),.4);color:var(--tc3);}
 .tl-step.missed .n{text-decoration:line-through;opacity:.7;}
+.sticky-item.is-goal{background:rgba(var(--gold-rgb),.28);border-radius:10px;padding-left:4px;padding-right:4px;}
+.sticky-item.is-goal .sticky-txt b{color:#6B420A;}

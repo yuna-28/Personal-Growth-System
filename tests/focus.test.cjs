@@ -32,7 +32,7 @@ let table=[['updatedAt','focus'],[10,'{"projects":[{"id":"a"}]}']];gas.getSheet=
 test('GAS upgraded client round-trips new focus column',()=>{assert.equal(gas.saveState_({updatedAt:20,baseUpdatedAt:10,focus:'{"version":1}'}),true);assert.equal(table[1][1],'{"version":1}');});
 test('GAS old client cannot erase focus by omission',()=>{gas.saveState_({updatedAt:30,baseUpdatedAt:20});assert.equal(table[1][1],'{"version":1}');});
 test('GAS optimistic conflict prevents overwrite',()=>{assert.equal(gas.saveState_({updatedAt:40,baseUpdatedAt:10,focus:'bad'}),'conflict');assert.equal(table[1][1],'{"version":1}');});
-test('module loads outside HTML comments at end',()=>assert.match(html,/<script src="focus.js"><\/script>\s*<\/body>/));
+test('module loads outside HTML comments at end',()=>assert.match(html,/<script src="focus\.js(\?v=\d+)?"><\/script>\s*<\/body>/));
 test('public template has no personal project/date',()=>{const t=fs.readFileSync(require('node:path').join(__dirname,'../template/index.html'),'utf8');assert.match(t,/data-project="" data-due=""/);});
 test('GAS preserves sleep events when old client omits them',()=>{
  table=[['date','health'],['2026-09-28',JSON.stringify({sleep:{windDown:{phoneAwayAt:'2026-09-28T17:30:00Z',updatedAt:1}}})]];

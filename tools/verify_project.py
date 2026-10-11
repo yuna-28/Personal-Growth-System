@@ -110,6 +110,17 @@ for private_marker in ('格蘭朵', '妳', 'AKfyc', 'yuna-28/Personal'):
 
 check_template_zip()
 
+# focus 資源的 ?v= 必須跟 APP_VER 一致，sw.js 預先快取的也要一致（不然會載到舊檔）
+_idx = (ROOT / 'index.html').read_text(encoding='utf-8')
+_m = re.search(r"const APP_VER='v(\d+)'", _idx)
+if _m:
+    _v = _m.group(1)
+    for _asset in ('focus.css', 'focus-core.js', 'focus.js'):
+        if f'{_asset}?v={_v}' not in _idx:
+            fail(f'index.html 的 {_asset} 版本號不是 ?v={_v}（APP_VER 改了要一起改）')
+        if f'./{_asset}?v={_v}' not in (ROOT / 'sw.js').read_text(encoding='utf-8'):
+            fail(f'sw.js 預先快取的 {_asset} 版本號不是 ?v={_v}')
+
 if errors:
     print('❌ 專案檢查失敗：')
     for error in errors:

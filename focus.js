@@ -6,8 +6,16 @@
    每日紀錄仍存在既有的健康卡與 TDL：記一次，健康卡、便利貼、習慣都會一起更新。 */
 (function(){
 'use strict';
-const C=FocusCore, hub=document.getElementById('focus-hub');
+const C=FocusCore, hub=document.getElementById('focus-hub');   // hub 只放預設值（data-*），不再直接畫東西
 if(!hub)return;
+const M={now:document.getElementById('focus-now'),cards:document.getElementById('focus-cards'),today:document.getElementById('focus-today-exps'),
+  goalrow:document.getElementById('focus-goalrow'),moves:document.getElementById('focus-moves'),
+  undone:document.getElementById('focus-undone'),bring:document.getElementById('focus-bring-next'),
+  tonight:document.getElementById('focus-tonight'),goals:document.getElementById('focus-goals')};
+const mounts=Object.values(M).filter(Boolean);
+const inMounts=el=>!!el&&mounts.some(m=>m.contains(el));
+const $q=sel=>{for(const m of mounts){const x=m.querySelector(sel);if(x)return x;}return null;};
+const $qa=sel=>mounts.flatMap(m=>[...m.querySelectorAll(sel)]);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>(crypto.randomUUID?crypto.randomUUID():'id'+Date.now()+Math.random().toString(16).slice(2));
 const MOVES=[{t:'跑步',m:30},{t:'跳舞',m:30},{t:'走路',m:20},{t:'伸展',m:15}];
@@ -134,6 +142,13 @@ function routine(d){
   return {p,steps,next};
 }
 // ── ① 現在要做 ────────────────────────────────────
+// 現在是不是晚上收尾時段（收工前 90 分鐘起，到上床後 3 小時）
+function isEvening(){
+  const d=ds();if(d!==curDay())return false;
+  const r=routine(d);if(!r)return false;
+  const core=r.steps.find(x=>x.k==='off'),bed=r.steps.find(x=>x.k==='bed'),now=new Date();
+  return now>=new Date(core.abs-90*60000)&&now<new Date(+bed.abs+180*60000);
+}
 function nowCard(){
   const d=ds();if(d!==curDay())return '';                 // 補記過去的日子不顯示
   const now=new Date(),r=routine(d),pg=projectGoal();
@@ -151,8 +166,10 @@ function nowCard(){
         <button class="focus-btn primary" data-step="${s.k}">做完了</button></div></div>`;
     }
   }
+  return '';
+  // （v127 起白天不再用這張卡：動畫這一步放進「今天要做」清單）
+  // eslint-disable-next-line no-unreachable
   if(!pg)return '';
-  // 白天：動畫今天這一步；另外提醒快到的硬期限
   const ms=pg.milestones||[],cur=ms.find(m=>!m.done);
   let alert='';
   const hard=ms.filter(m=>!m.done&&m.due&&m.hard).sort((a,b)=>a.due.localeCompare(b.due))[0];
@@ -214,15 +231,139 @@ function bodyCard(g){
     const n=st[m.k],goal=+t[m.k];
     return `<div class="dots-row${n>=goal?' hit':''}"><span class="dl">${m.l}</span><span class="dd">${Array.from({length:goal},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</span><span class="dn">${n}/${goal}</span></div>`;
   }).join('');
-  const e=health(d).exercise||{},types=exTypesOf(e);
-  const chips=MOVES.map(x=>{const on=types.indexOf(x.t)>=0;return `<button class="focus-btn${on?' done':''}" data-move="${esc(x.t)}" data-min="${x.m}">${esc(x.t)} ${x.m}${on?' ✓':''}</button>`;}).join('');
   return `<div class="gcard goal-card"><div class="goal-hd"><span>${fi('1f3c3',20)}</span><span class="goal-title">${esc(g.title)}</span>
       <span class="goal-sub" style="margin-left:auto;">${dueTxt(g)}</span><button class="goal-edit" data-edit-goal="${esc(g.id)}" title="編輯">✏️</button></div>
-    ${rows?`<div class="goal-sub muted">本週（週一重新開始）</div><div style="display:flex;flex-direction:column;gap:7px;">${rows}</div>`:''}
-    <div class="goal-step" style="display:block;"><div class="goal-chips">${chips}
-      <button class="focus-btn${e.restDay?' rest':''}" data-action="rest">${e.restDay?'休息 ✓':'休息'}</button></div>
-      ${types.length?`<div class="goal-sub muted" style="margin-top:6px;">今天：${esc(types.join('、'))} · ${+e.duration||0} 分鐘</div>`:''}</div>
+    ${rows?`<div class="goal-sub muted">本週（週一重新開始）</div><div style="display:flex;flex-direction:column;gap:7px;">${rows}</div>`:'<div class="goal-sub muted">還沒設每週目標，點 ✏️ 設定</div>'}
   </div>`;
+}
+// 今天的清單下面：動一動（每天的行動放在「今天」，體態目標只看本週）
+function movesRow(){
+  if(!bodyGoal())return '';
+  const e=health(ds()).exercise||{},types=exTypesOf(e);
+  const chips=MOVES.map(x=>{const on=types.indexOf(x.t)>=0;return `<button class="focus-btn${on?' done':''}" data-move="${esc(x.t)}" data-min="${x.m}">${esc(x.t)} ${x.m}${on?' ✓':''}</button>`;}).join('');
+  return `<div class="moves-row"><span class="goal-sub" style="font-weight:700;">🌿 今天動一動</span>${chips}
+    <button class="focus-btn${e.restDay?' rest':''}" data-action="rest">${e.restDay?'休息 ✓':'休息'}</button>
+    ${types.length?`<span class="goal-sub muted">${esc(types.join('、'))} · ${+e.duration||0} 分</span>`:''}</div>`;
+}
+// ── 今天頁：目標一條（點開看詳細）────────────────
+function stripOpen(){try{return localStorage.getItem('grandol_strip')==='1';}catch(e){return false;}}
+function goalStrip(gs){
+  if(!gs.length)return '';
+  const d=ds();
+  const items=gs.map(g=>{
+    if(g.kind==='body'){
+      const st=weekStats(d),t=g.targets||{};
+      const parts=BODY_METRICS.filter(m=>+t[m.k]).map(m=>`${m.l} ${st[m.k]}/${t[m.k]}`).join(' · ');
+      return `<span class="gs-item">🏃 <b>${esc(g.title)}</b> · 本週 ${parts||'未設定'}</span>`;
+    }
+    const ms=g.milestones||[],cur=ms.find(m=>!m.done),done=ms.filter(m=>m.done).length;
+    let curTxt='';
+    if(cur){
+      curTxt=esc(cur.title);
+      if(cur.due){const left=daysBetween(d,cur.due);curTxt+=left<0?` <span class="gs-warn">晚了 ${-left} 天</span>`:(left<=2?` <span class="gs-warn">還有 ${left} 天</span>`:` 還有 ${left} 天`);}
+    }
+    const hard=ms.filter(m=>!m.done&&m.due&&m.hard).sort((a,b)=>a.due.localeCompare(b.due))[0];
+    const hardTxt=hard&&daysBetween(d,hard.due)<=3?` · <span class="gs-warn">🚩 ${esc(hard.title)} ${md(hard.due)}</span>`:'';
+    return `<span class="gs-item">🎬 <b>${esc(g.title)}</b> · ${ms.length?`階段 ${done}/${ms.length}${curTxt?' · '+curTxt:''}`:'還沒拆階段'}${hardTxt}</span>`;
+  }).join('');
+  const ev=gs.find(g=>g.kind==='body'&&g.dueDate);
+  const open=stripOpen();
+  return `<div class="gcard goal-strip" data-action="strip" title="點一下${open?'收起':'看詳細'}">${items}
+    <span class="gs-more">${ev?esc((ev.event||'')+' '+daysBetween(d,ev.dueDate)+' 天')+' · ':''}${open?'收起 ▴':'詳細 ▾'}</span></div>`;
+}
+// ── 今天要做：清單最上面的「動畫這一步」───────────────
+function goalRow(){
+  const d=ds(),pg=projectGoal();if(!pg||d!==curDay())return '';
+  const n=pg.next||{};
+  if(!n.text||justDone===pg.id)
+    return `<div class="goal-row"><span class="gr-tag">🎬 ${esc(pg.title)}</span>
+      <input class="goal-in" data-next-in="${esc(pg.id)}" placeholder="${justDone===pg.id?'做完了 ✓ 下一步是？':'今天要做哪一步？'}" maxlength="200" style="flex:1;min-width:160px;"/>
+      <button class="focus-btn primary" data-action="set-next" data-g="${esc(pg.id)}">好</button></div>`;
+  // 已經在清單裡 → 清單那一列會用金色標出來，這裡不重複
+  if(stickyCtx().items.some(x=>x.id===n.id))return '';
+  return `<div class="goal-row"><button class="ms-dot" data-action="step-done" data-g="${esc(pg.id)}" title="完成">⬜</button>
+    <span class="gr-txt">${esc(n.text)}</span><span class="gr-tag">🎬 動畫這一步${n.small?' · 沒電時：'+esc(n.small):''}</span></div>`;
+}
+// 實驗：跟 TDL 長得一樣的一列
+function expRows(){
+  const d=ds(),list=exps().filter(e=>e.status!=='archived'&&e.place==='checkin');
+  if(!list.length)return '';
+  const mon=mondayOfDs(d),week=[...Array(7)].map((_,i)=>shiftDay(mon,i));
+  return list.map(e=>{
+    const on=!!(e.log||{})[d],wk=week.filter(x=>x<=d&&(e.log||{})[x]).length;
+    const goal=e.freq==='weekly'?(e.n||1):(e.freq==='daily'?7:1);
+    return `<div class="exp-row"><button class="er-box${on?' on':''}" data-exp-log="${esc(e.id)}">${on?'✓':''}</button>
+      <span style="${on?'text-decoration:line-through;opacity:.55;':''}">${esc(e.text)}</span>
+      <span class="er-tag">🧪 實驗${e.freq==='once'?'':' · 本週 '+wk+'/'+goal}</span></div>`;
+  }).join('');
+}
+function moveChips(){
+  if(!bodyGoal())return '';
+  const e=health(ds()).exercise||{},types=exTypesOf(e);
+  return `<div class="also-chips">${MOVES.map(x=>{const on=types.indexOf(x.t)>=0;return `<button class="focus-btn${on?' done':''}" data-move="${esc(x.t)}" data-min="${x.m}">${esc(x.t)} ${x.m}${on?' ✓':''}</button>`;}).join('')}
+    <button class="focus-btn${e.restDay?' rest':''}" data-action="rest">${e.restDay?'休息 ✓':'休息'}</button></div>`;
+}
+// ── 收工面板：今天沒做完的（不順延＝如實記成沒完成）＋把動畫下一步排到明天 ──
+function undoneList(){
+  const c=stickyCtx();if(!c.todayMode)return '';
+  const rows=c.items.map((x,i)=>({x,i})).filter(o=>!c.done['t'+o.i]);
+  if(!rows.length)return `<div class="goal-sub ok" style="margin-bottom:10px;">今天的清單都做完了 🎉</div>`;
+  return `<div class="goal-sub" style="font-weight:700;margin-bottom:4px;">今天還沒做完的 <span class="goal-sub muted" style="font-weight:500;">（不順延就照實記成沒完成）</span></div>
+    ${rows.map(o=>`<div class="undone-row"><span>${o.x.theme?esc(o.x.theme)+'：':''}${esc(o.x.task)}${(+o.x.c||0)?' <span class="goal-sub muted">⏩'+o.x.c+'</span>':''}</span>
+      <button class="focus-btn" data-postpone="${o.i}">⏩ 排到明天</button></div>`).join('')}
+    <div style="height:10px;"></div>`;
+}
+function bringNext(){
+  const pg=projectGoal();if(!pg||!pg.next||!pg.next.text)return '';
+  const id=pg.next.id;
+  if((typeof tdlRows!=='undefined'&&tdlRows.some(r=>r.id===id))||(S.tomorrowTDL||[]).some(r=>r.id===id))return '';
+  const c=stickyCtx(),i=c.items.findIndex(x=>x.id===id);
+  if(i>=0&&c.done['t'+i])return '';            // 今天已經做完的就不用帶
+  if(i>=0)return '';                            // 還在今天的清單 → 上面「沒做完的」可以直接排到明天
+  return `<button class="focus-btn" data-action="bring-next" data-g="${esc(pg.id)}" style="margin-top:8px;">＋ 把「${esc(pg.next.text)}」排到明天</button>`;
+}
+function updateCount(){
+  const el=document.getElementById('today-count');if(!el)return;
+  const c=stickyCtx();if(!c.todayMode){el.textContent='';return;}
+  const d=ds(),ex=exps().filter(e=>e.status!=='archived'&&e.place==='checkin');
+  const total=c.items.length+ex.length,done=Object.keys(c.done).filter(k=>c.done[k]).length+ex.filter(e=>(e.log||{})[d]).length;
+  el.textContent=total?`${done}/${total}`:'';
+}
+// 方向頁：這陣子的目標（一行一個，點 ✏️ 調整）
+function goalListCard(gs){
+  const rows=gs.map(g=>{
+    let sub='';
+    if(g.kind==='body'){const t=g.targets||{};sub=BODY_METRICS.filter(m=>+t[m.k]).map(m=>m.l+' '+t[m.k]+m.unit).join('・')||'還沒設每週目標';}
+    else{const ms=g.milestones||[];sub=ms.length?`階段 ${ms.filter(m=>m.done).length}/${ms.length}`:'還沒拆階段';}
+    return `<div class="dots-row" style="padding:7px 0;border-top:1px solid rgba(var(--secondary-rgb),.15);">
+      <span>${g.kind==='body'?'🏃':'🎬'}</span><span style="flex:1;min-width:0;font-weight:700;color:var(--tc);">${esc(g.title)}</span>
+      <span class="goal-sub muted">${sub}${g.dueDate?' · '+dueTxt(g):''}</span>
+      <button class="goal-edit" data-edit-goal="${esc(g.id)}" title="編輯">✏️</button></div>`;
+  }).join('');
+  return `<div class="gcard" style="margin-bottom:12px;"><div class="goal-hd"><span>🎯</span><span class="goal-title">這陣子的目標</span>
+    <span class="goal-sub muted" style="margin-left:auto;">卡片在「今天」</span></div>
+    ${rows||'<div class="goal-sub muted" style="margin-top:6px;">還沒有目標。</div>'}
+    <div class="goal-chips" style="margin-top:10px;"><button class="focus-btn" data-action="more">＋ 新增目標・封存・備份</button></div></div>`;
+}
+// 方向頁：作息一覽＋所有進行中的實驗
+function planSummaryCard(){
+  const p=C.planFor(data(),ds());
+  const ex=(p&&p.extras||[]).map(x=>`${esc(x.at)} ${esc(x.label)}`).join('、');
+  return `<div class="gcard" style="margin-bottom:12px;"><div class="goal-hd"><span>${fi('1f319',19)}</span><span class="goal-title">作息與睡前流程</span>
+    <button class="goal-edit" data-action="edit-plan" title="調整" style="margin-left:auto;">✏️</button></div>
+    ${p?`<div class="goal-sub" style="margin-top:6px;">${p.status==='paused'?'（暫停中）':''}${esc(p.phone)} 收手機 · <b>${esc(p.bed)} 上床</b> · ${esc(p.wake)} 起床</div>
+      <div class="goal-sub muted" style="margin-top:3px;">自動往前推：收工、肩背、洗澡${ex?' · 固定：'+ex:''}</div>`
+      :`<div class="goal-sub muted" style="margin-top:6px;">還沒設定。<a href="#" data-action="edit-plan" style="color:var(--secondary);">設定想幾點上床</a></div>`}</div>`;
+}
+function expOverviewCard(){
+  const list=data().experiments.filter(e=>e.status!=='archived');
+  return `<div class="gcard" style="margin-bottom:12px;"><div class="goal-hd"><span>🧪</span><span class="goal-title">進行中的實驗</span>
+    <span class="goal-sub muted" style="margin-left:auto;">回顧時決定，最多 3 個</span></div>
+    ${list.length?list.map(e=>`<div class="dots-row" style="padding:6px 0;border-top:1px solid rgba(var(--secondary-rgb),.15);">
+        <span style="flex:1;min-width:0;">${esc(e.text)}</span><span class="goal-sub muted">${expLabelFreq(e)} · ${PLACES[e.place]||''}</span>
+        <button class="goal-more" data-exp-end="${esc(e.id)}" style="margin:0;">結束</button></div>`).join('')
+      :'<div class="goal-sub muted" style="margin-top:6px;">還沒有。在「回顧」把 Claude 的建議貼回來，或自己加一個。</div>'}
+    <div class="goal-chips" style="margin-top:10px;"><button class="focus-btn" data-loop-add="1">＋ 自己加一個實驗</button></div></div>`;
 }
 // ── ③ 今晚時間軸 ─────────────────────────────────
 function tonightCard(){
@@ -259,19 +400,28 @@ function sevenDots(d){
   return `<span class="focus-dots" title="最近七晚：綠＝準時、金＝晚了、灰＝沒記錄">${out}</span>`;
 }
 function render(force){
-  if(!hub)return;
+  if(!mounts.length)return;
   const a=document.activeElement;
-  const typing=a&&hub.contains(a)&&/INPUT|TEXTAREA|SELECT/.test(a.tagName||'');
+  const typing=inMounts(a)&&/INPUT|TEXTAREA|SELECT/.test(a.tagName||'');
   if(typing&&!force)return;
-  const keep={};hub.querySelectorAll('[data-next-in]').forEach(x=>{if(x.value)keep[x.dataset.nextIn]=x.value;});
+  const keep={};$qa('[data-next-in]').forEach(x=>{if(x.value)keep[x.dataset.nextIn]=x.value;});
   const gs=goals();
   const cards=gs.map(g=>g.kind==='body'?bodyCard(g):projectCard(g)).join('');
-  hub.innerHTML=`${nowCard()}${cards?`<div class="goal-grid">${cards}</div>`:''}${homeExperiments()}${tonightCard()}
-    <button class="goal-more" data-action="more">⚙️ 新增目標・封存・備份</button>`;
-  hub.querySelectorAll('[data-next-in]').forEach(x=>{if(keep[x.dataset.nextIn])x.value=keep[x.dataset.nextIn];});
-  if(editing==='phone'||editing==='bed')hub.querySelector('[data-edit]')?.focus();
-  if(justDone)hub.querySelector(`[data-next-in="${justDone}"]`)?.focus();
-  if(VIEWER_MODE)hub.querySelectorAll('button,input').forEach(el=>{el.disabled=true;});
+  if(M.now)M.now.innerHTML=nowCard();
+  if(M.today)M.today.innerHTML=expRows();
+  if(M.tonight)M.tonight.innerHTML=tonightCard();
+  // 短期目標卡放在「今天」：每天打開就看得到；「方向」只放一行一個的清單，用來調整
+  if(M.cards)M.cards.innerHTML=goalStrip(gs)+(stripOpen()&&cards?`<div class="goal-grid" style="margin-bottom:12px;">${cards}</div>`:'');
+  if(M.goalrow)M.goalrow.innerHTML=goalRow();
+  if(M.moves)M.moves.innerHTML=moveChips();
+  if(M.undone)M.undone.innerHTML=undoneList();
+  if(M.bring)M.bring.innerHTML=bringNext();
+  updateCount();
+  if(M.goals)M.goals.innerHTML=`${goalListCard(gs)}${planSummaryCard()}${expOverviewCard()}`;
+  $qa('[data-next-in]').forEach(x=>{if(keep[x.dataset.nextIn])x.value=keep[x.dataset.nextIn];});
+  if(editing==='phone'||editing==='bed')$q('[data-edit]')?.focus();
+  if(justDone)$q(`[data-next-in="${justDone}"]`)?.focus();
+  if(VIEWER_MODE)$qa('button,input').forEach(el=>{el.disabled=true;});
 }
 // 「現在要做」跟著時間走：每分鐘更新一次（打字中不動）
 setInterval(()=>{if(!document.hidden)render(false);},60000);
@@ -502,13 +652,15 @@ function openMore(){
   });
 }
 // ══ 首頁上的操作 ═════════════════════════════════
+function onMounts(type,fn){mounts.forEach(m=>m.addEventListener(type,fn));}
 function ensureStepInToday(g){
   const c=stickyCtx();
   const i=c.items.findIndex(x=>x.id===g.next.id);
   if(i>=0)return i;
   const row={id:g.next.id,goalId:g.id,theme:g.title,task:g.next.text,c:0};
   if(c.todayMode){
-    setTodayTDL([...c.items,row]);todayListEdited=true;markTodayListEdited();
+    // 目標的這一步放在清單最上面（完成狀態依「身分」對應，不會因為位置變了而勾錯）
+    setTodayTDL([row,...c.items]);todayListEdited=true;markTodayListEdited();
     writeDraftEntry(true);markDirty('e:'+ds());syncEntryFor(ds()).catch(()=>{});
   }else{
     const e=getOrCreateEntry(ds());
@@ -519,12 +671,22 @@ function ensureStepInToday(g){
   sv(S);renderStickyNote();
   return stickyCtx().items.findIndex(x=>x.id===g.next.id);
 }
+function addStepTomorrow(g){
+  if(typeof tdlRows==='undefined'||!g.next||!g.next.text)return;
+  if(tdlRows.some(r=>r.id===g.next.id))return;
+  const blank=tdlRows.findIndex(r=>!r.theme&&!r.task);
+  const row={id:g.next.id,goalId:g.id,theme:g.title,task:g.next.text,confirmed:true,c:0};
+  if(blank>=0)tdlRows[blank]=row;else tdlRows.push(row);
+  tdlPlanEdited=true;persistTdlEdit();renderTDL();
+}
 function setNext(g,text){
   text=(text||'').trim();if(!text)return;
   document.activeElement?.blur();
   g.next={id:uid(),text,small:(g.next&&g.next.small)||''};
-  justDone='';saveGoal(g);ensureStepInToday(g);render(true);
-  softToast('排進今天的便利貼了 📋',2200);
+  justDone='';saveGoal(g);
+  if(isEvening()){addStepTomorrow(g);softToast('排到明天了 🌙',2200);}
+  else{ensureStepInToday(g);softToast('放進今天要做 ✅',2200);}
+  render(true);
 }
 function doStep(k){
   const d=ds();
@@ -543,13 +705,16 @@ function doStep(k){
   if(h.night[k])delete h.night[k];else h.night[k]=Date.now();
   saveHealth(d,h);
 }
-hub.addEventListener('click',ev=>{
-  const el=ev.target.closest('[data-action],[data-move],[data-ms],[data-edit-goal],[data-step],[data-skip]');
+onMounts('click',ev=>{
+  const el=ev.target.closest('[data-action],[data-move],[data-ms],[data-edit-goal],[data-step],[data-skip],[data-postpone]');
   if(!el)return;
   if(el.tagName==='A')ev.preventDefault();
   if(el.dataset.editGoal){const g=data().projects.find(x=>x.id===el.dataset.editGoal);if(g)(g.kind==='body'?openBodyEditor:openProjectEditor)(g);return;}
   const a=el.dataset.action;
+  if(a==='strip'){if(ev.target.closest('[data-edit-goal]'))return;try{localStorage.setItem('grandol_strip',stripOpen()?'0':'1');}catch(e){}render(true);return;}
   if(a==='edit-plan'){openPlanEditor();return;}
+  if(el.dataset.postpone!==undefined){if(writable()){postponeTdlItem(+el.dataset.postpone);render(true);}return;}
+  if(a==='bring-next'){const g=data().projects.find(x=>x.id===el.dataset.g);if(g&&writable()){addStepTomorrow(g);render(true);softToast('排到明天了 🌙',2000);}return;}
   if(a==='more'){openMore();return;}
   if(!writable())return;
   const d=ds();
@@ -579,7 +744,7 @@ hub.addEventListener('click',ev=>{
     render(true);return;
   }
   if(a==='set-next'){
-    const g=data().projects.find(x=>x.id===el.dataset.g),inp=hub.querySelector(`[data-next-in="${el.dataset.g}"]`);
+    const g=data().projects.find(x=>x.id===el.dataset.g),inp=$q(`[data-next-in="${el.dataset.g}"]`);
     if(g&&inp)setNext(g,inp.value);return;
   }
   if(a==='clear-time'){const key=el.dataset.k==='phone'?'phoneAwayAt':'inBedAt';editing='';updateWind(d,x=>{delete x[key];});return;}
@@ -595,18 +760,18 @@ hub.addEventListener('click',ev=>{
     sv(S);syncStateDebounced();render(true);softToast(`🌙 今晚：${s.phone} 收手機、${s.bed} 上床`,3000);return;
   }
 });
-hub.addEventListener('keydown',ev=>{
+onMounts('keydown',ev=>{
   const inp=ev.target.closest('[data-next-in]');
   if(!inp||ev.key!=='Enter'||isImeEnter(ev))return;
   ev.preventDefault();
   const g=data().projects.find(x=>x.id===inp.dataset.nextIn);if(g)setNext(g,inp.value);
 });
-hub.addEventListener('focusout',ev=>{
+onMounts('focusout',ev=>{
   const inp=ev.target.closest('[data-next-in]');
   if(!inp||inp.value.trim())return;
-  setTimeout(()=>{if(justDone&&!hub.contains(document.activeElement)){justDone='';render(true);}},150);
+  setTimeout(()=>{if(justDone&&!inMounts(document.activeElement)){justDone='';render(true);}},150);
 });
-hub.addEventListener('change',ev=>{
+onMounts('change',ev=>{
   const el=ev.target;
   if(!el.dataset.edit||!writable())return;
   const key=el.dataset.edit==='phone'?'phoneAwayAt':'inBedAt';
@@ -1027,6 +1192,7 @@ document.addEventListener('input',ev=>{
 });
 
 window.FocusUI={
+  updateCount,
   periodGoals,reviewHTML,copyLines,loopReviewHTML,loopCopyLines,loopRequestLines,renderInsights,
   render(){render(false);},
   setCloudSupport(v){cloudSupported=v;render(false);},

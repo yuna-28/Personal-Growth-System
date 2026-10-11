@@ -4,14 +4,14 @@
 // 更新版本時把 CACHE_NAME 的數字 +1，舊快取會自動清掉
 // ═══════════════════════════════════════════════════════
 const CACHE_PREFIX = 'grandol-cache-';
-const CACHE_NAME = CACHE_PREFIX + 'v126';
+const CACHE_NAME = CACHE_PREFIX + 'v127';
 
 const PRECACHE = [
   './',
   './index.html',
-  './focus-core.js',
-  './focus.js',
-  './focus.css',
+  './focus-core.js?v=127',
+  './focus.js?v=127',
+  './focus.css?v=127',
   './manifest.json',
   './puppy.png',
   './puppy_icon.png',
@@ -50,7 +50,9 @@ self.addEventListener('fetch', e => {
 
   // network first → 成功就更新快取；失敗用快取；導覽請求最後退回 index.html
   e.respondWith(
-    fetch(req).then(res => {
+    // 同網域的檔案用 no-cache：一定向伺服器確認是不是最新版（沒變就回 304，很快），
+    // 避免新版 index.html 搭配到瀏覽器快取裡的舊 JS
+    fetch(url.origin === self.location.origin ? new Request(req, { cache: 'no-cache' }) : req).then(res => {
       if (res && (res.ok || res.type === 'opaque')) {
         const clone = res.clone();
         caches.open(CACHE_NAME).then(c => c.put(req, clone)).catch(() => {});

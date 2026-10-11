@@ -1069,8 +1069,87 @@ button{-webkit-tap-highlight-color:transparent;}
 @keyframes pageIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
 .page.active{animation:pageIn .22s ease;}
 </style>
-<link rel="stylesheet" href="focus.css">
-<script src="focus-core.js"></script>
+<link rel="stylesheet" href="focus.css?v=127">
+<script src="focus-core.js?v=127"></script>
+<style>
+/* ═══ v127 改版：迴圈主軸（今天／回顧／方向／我）═══ */
+.ui2-zone{font-family:'Baloo 2',sans-serif;font-size:13px;font-weight:800;color:var(--tc2);margin:18px 4px 8px;letter-spacing:.5px;}
+.ui2-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin-bottom:12px;}
+.ui2-grid>*{margin:0!important;min-width:0;}
+@media(min-width:900px){.ui2-grid{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;}}
+.ui2-seg{display:flex;gap:4px;background:rgba(var(--secondary-rgb),.16);border-radius:999px;padding:4px;margin:4px auto 14px;width:fit-content;max-width:100%;}
+.ui2-seg button{border:none;background:none;border-radius:999px;padding:7px 18px;font-family:'Quicksand',sans-serif;font-size:13px;font-weight:700;color:var(--tc2);cursor:pointer;}
+.ui2-seg button.on{background:#fff;color:var(--tc);box-shadow:0 2px 8px rgba(40,50,90,.12);}
+.rv-pane,.me-pane{display:none;}
+.rv-pane.active,.me-pane.active{display:block;}
+/* 場景縮成橫幅：一打開還是看得到樹和小狗，但不佔半個畫面 */
+.home-banner .gcard-scene{padding-bottom:10px;margin-bottom:12px;}
+.home-banner .scene-stage{height:170px!important;min-height:0!important;}
+.home-banner #tree-wrap{width:150px!important;height:150px!important;bottom:6px!important;}
+.home-banner #tree-wrap>img{width:150px!important;height:150px!important;}
+.home-banner #fruit-layer{width:280px!important;height:280px!important;transform:scale(.536);transform-origin:0 0;}
+.home-banner #exprow,.home-banner #explbl{margin:2px 0!important;}
+/* 便利貼不再浮在場景上：固定在「今天的清單」卡片裡 */
+.sticky-note.inline{position:static!important;left:auto!important;top:auto!important;right:auto!important;transform:none!important;
+  width:auto!important;height:auto!important;min-width:0!important;max-width:none!important;font-size:13px!important;
+  margin:4px 0 6px;box-shadow:none;border-radius:12px;cursor:default;--sn-cb:20px;}
+.sticky-note.inline .sticky-top,.sticky-note.inline .sticky-resize{display:none!important;}
+.sticky-note.inline #sticky-items{display:block!important;max-height:none!important;overflow:visible!important;}
+.sticky-note.inline #sticky-date{display:none!important;}
+.today-list .moves-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(var(--secondary-rgb),.18);}
+details.ui2-more{margin-top:10px;}
+details.ui2-more>summary{font-size:12px;color:var(--tc3);cursor:pointer;list-style:none;padding:4px 0;}
+details.ui2-more>summary::-webkit-details-marker{display:none;}
+details.ui2-more>summary::before{content:'▸ ';}
+details.ui2-more[open]>summary::before{content:'▾ ';}
+.hm-chip{border:1.5px solid rgba(var(--secondary-rgb),.35);background:rgba(255,255,255,.6);border-radius:12px;padding:7px 12px;
+  font-family:'Quicksand',sans-serif;font-size:13px;font-weight:700;color:var(--tc3);cursor:pointer;display:flex;align-items:center;gap:6px;}
+.hm-chip.on{background:rgba(var(--tertiary-rgb),.4);border-color:transparent;color:var(--ok);}
+.hm-chip.fixed{cursor:default;opacity:.6;}
+.ui2-stack{display:flex;flex-direction:column;gap:12px;margin-bottom:12px;}
+.ui2-stack>*{margin:0!important;min-width:0;}
+.home-cols{display:block;}
+@media(min-width:1000px){
+  .home-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start;}
+  .home-col>.ui2-zone:first-child{margin-top:0;}
+}
+.home-col #focus-cards .goal-grid{grid-template-columns:minmax(0,1fr);}
+/* 電腦版優先：大螢幕放寬版面，首頁兩欄才不會擠 */
+@media(min-width:1300px){.wrap{max-width:1160px;}}
+.today-list .sticky-note.inline{background:none!important;padding:0!important;margin:0!important;}
+.also-did{margin-top:12px;padding-top:10px;border-top:1px solid rgba(var(--secondary-rgb),.18);}
+.also-lbl{font-size:11px;color:var(--tc3);font-weight:700;margin-bottom:6px;}
+.also-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.also-chips .neo-chip{padding:6px 11px!important;min-height:0!important;font-size:12px!important;width:auto!important;border-radius:999px!important;gap:5px!important;}
+.also-chips .neo-chip img{width:15px!important;height:15px!important;}
+#focus-moves .moves-row{border:none;margin-top:6px;padding-top:0;}
+.goal-row{display:flex;align-items:center;gap:8px;padding:8px 10px;margin:0 0 6px;border-radius:12px;background:rgba(var(--gold-rgb),.28);flex-wrap:wrap;}
+.goal-row .gr-txt{flex:1;min-width:140px;font-size:14px;font-weight:700;color:#6B420A;}
+.goal-row .gr-tag{font-size:11px;color:#8A5A16;}
+.exp-row{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px;color:var(--tc2);}
+.exp-row .er-box{width:22px;height:22px;border-radius:7px;border:1.5px solid rgba(var(--secondary-rgb),.5);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--ok);flex-shrink:0;}
+.exp-row .er-box.on{background:rgba(var(--tertiary-rgb),.5);border-color:transparent;}
+.exp-row .er-tag{font-size:11px;color:var(--tc3);margin-left:auto;}
+.goal-strip{display:flex;flex-wrap:wrap;align-items:center;gap:6px 22px;cursor:pointer;margin-bottom:12px!important;padding:12px 16px!important;}
+.goal-strip .gs-item{font-size:13px;color:var(--tc2);display:block;line-height:1.6;}
+.goal-strip .gs-item b{white-space:nowrap;}
+.goal-strip .gs-item b{color:var(--tc);}
+.goal-strip .gs-warn{color:#B0602A;font-weight:700;}
+.goal-strip .gs-more{margin-left:auto;font-size:12px;color:var(--tc3);}
+.record-card .diary-section{margin-bottom:8px;}
+.hz-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 10px;padding-top:12px;border-top:1px solid rgba(var(--secondary-rgb),.18);}
+.hz-tab{border:1.5px solid rgba(var(--secondary-rgb),.35);background:rgba(255,255,255,.6);border-radius:999px;padding:6px 14px;font-family:'Quicksand',sans-serif;font-size:12px;font-weight:700;color:var(--tc2);cursor:pointer;}
+.hz-tab.on{background:var(--primary);border-color:transparent;color:#fff;}
+.hz-tab.has:not(.on){border-color:rgba(var(--tertiary-rgb),.8);color:var(--ok);}
+#health-grid[data-tab]{grid-template-columns:minmax(0,1fr)!important;}
+#health-grid[data-tab] .hz-card{display:none;}
+#health-grid[data-tab="sleep"] .hz-card[data-k="sleep"],#health-grid[data-tab="diet"] .hz-card[data-k="diet"],
+#health-grid[data-tab="exercise"] .hz-card[data-k="exercise"],#health-grid[data-tab="water"] .hz-card[data-k="water"]{display:block;}
+.closing-panel .closing-actions{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
+.closing-panel .closing-actions>*{margin:0!important;}
+.undone-row{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13px;color:var(--tc2);}
+.undone-row span{flex:1;min-width:0;}
+</style>
 </head>
 <body>
 <!-- 這四個彈窗特意放在 <body> 最前面、所有 <script> 之前：
@@ -1186,10 +1265,8 @@ button{-webkit-tap-highlight-color:transparent;}
 
 <!-- ══════ HOME ══════ -->
 <div class="page active" id="page-home">
-<section id="focus-hub" data-project="完成動畫" data-due="2026-10-10" data-body-due="2026-10-31" data-body-event="見粉肝" data-night-extra="20:00 戴牙套" aria-label="我的目標"></section>
-<div class="home-row1">
-  <div class="col-scene">
-    <div class="gcard-scene">
+<section id="focus-hub" hidden data-project="完成動畫" data-due="2026-10-10" data-body-due="2026-10-31" data-body-event="見粉肝" data-night-extra="20:00 戴牙套" aria-label="我的目標"></section>
+<div class="home-banner"><div class="gcard-scene">
       <div style="position:relative;z-index:1;text-align:center;margin-bottom:6px;">
         <span class="level-pill"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f333_3d.png" width="15" height="15"/> 格蘭朵樹 <span id="lv">Lv.1</span></span>
       </div>
@@ -1210,7 +1287,18 @@ button{-webkit-tap-highlight-color:transparent;}
           <div id="fruit-layer" style="position:absolute;top:0;left:0;width:280px;height:280px;pointer-events:none;"></div>
         </div>
         <div id="seedling-zone" style="position:absolute;left:12px;bottom:44px;display:flex;gap:4px;align-items:flex-end;z-index:3;"></div>
-        <div class="sticky-note" id="sticky-note">
+        
+        <div id="puppy" style="position:absolute;left:56px;bottom:44px;cursor:pointer;touch-action:none;z-index:5;"></div>
+      </div>
+    </div></div>
+<div id="focus-now"></div>
+<div id="focus-cards"></div>
+<div class="home-cols">
+<div class="home-col">
+  <div class="gcard today-list">
+    <div class="sec-hd" style="justify-content:space-between;"><span>✅ 今天要做</span><span id="today-count" style="font-size:12px;font-weight:600;color:var(--tc3);"></span></div>
+    <div id="focus-goalrow"></div>
+    <div class="sticky-note inline" id="sticky-note">
           <div class="sticky-top">
             <div class="sticky-header">📋 今日 TDL</div>
             <div class="sticky-ctrls" id="sticky-ctrls">
@@ -1223,64 +1311,51 @@ button{-webkit-tap-highlight-color:transparent;}
           <div id="sticky-date" class="sticky-hw-date"></div>
           <div class="sticky-resize" id="sticky-resize" title="拖曳調整大小（雙擊還原）"></div>
         </div>
-        <div id="puppy" style="position:absolute;left:56px;bottom:44px;cursor:pointer;touch-action:none;z-index:5;"></div>
-      </div>
-    </div>
-    <div class="gcard" id="today-events-card" style="display:none;">
+    <div id="focus-today-exps"></div>
+    <div class="also-did"><div class="also-lbl">今天也做了（點一下）</div><div id="habits" class="also-chips"></div><div id="focus-moves"></div></div>
+  </div>
+  <div class="gcard" id="today-events-card" style="display:none;">
       <div class="sec-hd" style="justify-content:space-between;margin-bottom:8px;"><span id="today-events-title">📅 今日行程</span><button id="today-event-add" title="新增今天的行程" style="width:26px;height:26px;border:none;border-radius:999px;background:rgba(var(--primary-rgb),.15);color:var(--primary);font-size:16px;cursor:pointer;line-height:1;">＋</button></div>
       <div id="today-events-list"></div>
     </div>
-  </div>
-  <div class="col-habits">
-    <div class="gcard">
-      <div class="sec-hd"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1fa84_3d.png" width="19" height="19"/> 今天做了什麼</div>
-      <div id="habits" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;"></div>
-    </div>
-  </div>
 </div>
-
-<div class="home-row2">
-  <div class="col-diary">
-    <div class="gcard-nb">
-      <div id="today-date" style="font-size:11px;color:var(--tc3);margin-bottom:6px;"></div>
-      <div class="sec-hd"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4d6_3d.png" width="19" height="19"/> 今日小記</div>
-      <div class="diary-section"><div class="diary-label"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f31f_3d.png" width="15" height="15"/> Highlights <span style="font-size:11px;font-weight:500;color:var(--tc3);">亮點事件</span></div><textarea class="diary-ta" id="d-hl" placeholder="今天最讓你閃亮的事..."></textarea></div>
-      <div class="diary-section"><div class="diary-label"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4d6_3d.png" width="15" height="15"/> Reflection <span style="font-size:11px;font-weight:500;color:var(--tc3);">反思與學習</span></div><textarea class="diary-ta" id="d-rf" placeholder="今天學到什麼或想到什麼..."></textarea></div>
-      <div class="diary-section"><div class="diary-label"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f97a_3d.png" width="15" height="15" onerror="this.outerHTML='🥹'"/> Gratitude <span style="font-size:11px;font-weight:500;color:var(--tc3);">感恩的人事物</span></div><textarea class="diary-ta" id="d-gr" placeholder="今天想感謝誰或什麼..."></textarea></div>
-      <div class="diary-section" style="margin-bottom:0;"><div class="diary-label">💬 今天讓我有感覺的一句話 <span style="font-size:11px;font-weight:500;color:var(--tc3);">選填·會存進金句收藏</span></div><input class="quote-input" id="d-quote" placeholder="可以是別人說的，也可以是自己想到的..."/></div>
-      <div class="diary-section" style="margin:12px 0 0;">
+<div class="home-col">
+<div class="gcard record-card">
+  <div class="sec-hd" style="justify-content:space-between;"><span>📝 今天怎麼樣？</span><span id="today-date" style="font-size:11px;font-weight:500;color:var(--tc3);"></span></div>
+  <div class="diary-section"><div class="diary-label"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f31f_3d.png" width="15" height="15"/> Highlights <span style="font-size:11px;font-weight:500;color:var(--tc3);">亮點事件</span></div><textarea class="diary-ta" id="d-hl" placeholder="今天最讓你閃亮的事..."></textarea></div>
+      <details class="ui2-more" id="diary-more1"><summary>多寫一點（Reflection・Gratitude）</summary><div class="diary-section"><div class="diary-label"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4d6_3d.png" width="15" height="15"/> Reflection <span style="font-size:11px;font-weight:500;color:var(--tc3);">反思與學習</span></div><textarea class="diary-ta" id="d-rf" placeholder="今天學到什麼或想到什麼..."></textarea></div><div class="diary-section"><div class="diary-label"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f97a_3d.png" width="15" height="15" onerror="this.outerHTML='🥹'"/> Gratitude <span style="font-size:11px;font-weight:500;color:var(--tc3);">感恩的人事物</span></div><textarea class="diary-ta" id="d-gr" placeholder="今天想感謝誰或什麼..."></textarea></div></details>
+      <details class="ui2-more" id="diary-more2"><summary>更多（金句・照片・備註）</summary><div class="diary-section" style="margin-bottom:0;"><div class="diary-label">💬 今天讓我有感覺的一句話 <span style="font-size:11px;font-weight:500;color:var(--tc3);">選填·會存進金句收藏</span></div><input class="quote-input" id="d-quote" placeholder="可以是別人說的，也可以是自己想到的..."/></div><div class="diary-section" style="margin:12px 0 0;">
         <div class="diary-label">📷 今日照片 <span style="font-size:11px;font-weight:500;color:var(--tc3);">選填·最多3張</span></div>
         <div id="photo-thumbs" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;"></div>
         <input type="file" id="photo-file" accept="image/*" style="display:none;"/>
         <button type="button" id="photo-add-btn" style="background:none;border:1.5px dashed rgba(var(--secondary-rgb),.35);border-radius:11px;padding:7px 12px;font-family:'Quicksand',sans-serif;font-size:12px;color:var(--tc3);cursor:pointer;width:100%;">📷 新增照片</button>
-      </div>
-      <div class="diary-section" style="margin:12px 0 0;">
+      </div><div class="diary-section" style="margin:12px 0 0;">
         <div class="diary-label">📝 備註 <span style="font-size:11px;font-weight:500;color:var(--tc3);">選填·會在日曆上顯示黃點</span></div>
         <input class="quote-input" id="d-note" placeholder="給這一天的小備註..." style="font-style:normal;"/>
-      </div>
-    </div>
-  </div>
-  <div class="col-tdl">
-    <div class="gcard">
-      <div class="sec-hd"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f319_3d.png" width="19" height="19"/> <span id="tdl-title">明天 TDL</span></div>
-      <div id="tdl-rows"></div>
-      <button id="tdl-add" style="background:none;border:1.5px dashed rgba(var(--secondary-rgb),.35);border-radius:11px;padding:7px 12px;font-family:'Quicksand',sans-serif;font-size:12px;color:var(--tc3);cursor:pointer;width:100%;text-align:center;margin-top:2px;">＋ 新增</button>
-    </div>
-  </div>
-</div>
-
-<div class="gcard health-card">
-  <div class="sec-hd">🌿 健康 <span style="font-size:11px;font-weight:500;color:var(--tc3);">睡眠 · 飲食 · 運動 · 喝水，快速記錄就好</span></div>
+      </div></details>
+  <div class="hz-tabs" id="hz-tabs"></div>
   <div id="health-grid"></div>
 </div>
-
-<button class="liq-btn" id="plant-btn"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/2728_3d.png" width="17" height="17"/> 種下今天</button>
-<button class="ghost-btn" id="draft-btn">💾 儲存草稿（先存不種）</button>
-<button class="ghost-btn" id="copy-btn"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4cb_3d.png" width="15" height="15"/> 複製今日紀錄給 Claude</button>
+</div>
+</div>
+<div class="ui2-zone">🌙 晚上收尾</div>
+<div id="focus-tonight"></div>
+<div class="gcard closing-panel" id="closing-panel">
+  <div class="sec-hd">🌙 收工：排明天 → 種下今天</div>
+  <div id="focus-undone"></div>
+  <div class="sec-hd"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f319_3d.png" width="19" height="19"/> <span id="tdl-title">明天 TDL</span></div>
+      <div id="tdl-rows"></div>
+      <button id="tdl-add" style="background:none;border:1.5px dashed rgba(var(--secondary-rgb),.35);border-radius:11px;padding:7px 12px;font-family:'Quicksand',sans-serif;font-size:12px;color:var(--tc3);cursor:pointer;width:100%;text-align:center;margin-top:2px;">＋ 新增</button>
+  <div id="focus-bring-next"></div>
+  <div class="closing-actions"><button class="liq-btn" id="plant-btn"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/2728_3d.png" width="17" height="17"/> 種下今天</button><button class="ghost-btn" id="copy-btn"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4cb_3d.png" width="15" height="15"/> 複製今日紀錄給 Claude</button><button class="ghost-btn" id="draft-btn" style="display:none;">💾 儲存草稿（先存不種）</button></div>
+</div>
 </div>
 
+<!-- ══════ 回顧（週／月）══════ -->
+<div class="page" id="page-review">
+<div class="ui2-seg" id="rv-seg"><button data-rv="week">這週</button><button data-rv="month">這個月</button></div>
 <!-- ══════ WEEK ══════ -->
-<div class="page" id="page-week">
+<div class="rv-pane" id="page-week">
 <div class="period-nav">
   <button class="period-arrow" id="wk-prev">‹</button>
   <div class="period-label" id="wk-label"></div>
@@ -1336,7 +1411,7 @@ button{-webkit-tap-highlight-color:transparent;}
 </div>
 
 <!-- ══════ MONTH ══════ -->
-<div class="page" id="page-month">
+<div class="rv-pane" id="page-month">
 <div class="period-nav">
   <button class="period-arrow" id="mo-prev">‹</button>
   <div class="period-label" id="mo-label"></div>
@@ -1395,8 +1470,23 @@ button{-webkit-tap-highlight-color:transparent;}
 <button class="ghost-btn" id="copy-month-btn"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4cb_3d.png" width="15" height="15"/> 複製這月紀錄給 Claude</button>
 </div>
 
+</div>
+
+<!-- ══════ 方向 ══════ -->
+<div class="page" id="page-direction">
+<div id="focus-goals"></div>
+<div class="gcard">
+  <div class="sec-hd">🌿 習慣清單</div>
+  <p style="font-size:11px;color:var(--tc3);margin-bottom:10px;">點一下開關。關掉的不會出現在「記錄今天」，紀錄都保留，隨時可以打開。</p>
+  <div id="habit-manage" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+</div>
+</div>
+
+<!-- ══════ 我（沉澱）══════ -->
+<div class="page" id="page-me">
+<div class="ui2-seg" id="me-seg"><button data-me="garden">我是誰</button><button data-me="support">支持我的</button><button data-me="info">成就</button></div>
 <!-- ══════ SUPPORT SYSTEM ══════ -->
-<div class="page" id="page-support">
+<div class="me-pane" id="page-support">
 <div class="gcard-scene" style="margin-top:4px;">
   <div class="sec-hd" id="book-scene-title" style="position:relative;z-index:1;">📖 我的資源書</div>
   <div id="res-cat-tabs" style="position:relative;z-index:1;display:flex;gap:6px;flex-wrap:wrap;margin-bottom:0;"></div>
@@ -1469,7 +1559,7 @@ button{-webkit-tap-highlight-color:transparent;}
 </div>
 
 <!-- ══════ INNER GARDEN ══════ -->
-<div class="page" id="page-garden">
+<div class="me-pane" id="page-garden">
 <div class="garden-wrap" style="margin-top:4px;">
   <div class="garden-scene-wrap">
     <button class="garden-arrow left" id="gd-arrow-l">‹</button>
@@ -1575,7 +1665,7 @@ button{-webkit-tap-highlight-color:transparent;}
 </div>
 
 <!-- ══════ INFO ══════ -->
-<div class="page" id="page-info">
+<div class="me-pane" id="page-info">
 <div class="gcard" style="margin-top:4px;">
   <div class="sec-hd">🏆 成就牆</div>
   <div class="achievement-grid" id="achievement-grid"></div>
@@ -1604,6 +1694,8 @@ button{-webkit-tap-highlight-color:transparent;}
 
 </div>
 
+
+</div>
 
 <!-- ══════ SETTINGS ══════ -->
 <div class="page" id="page-settings">
@@ -1710,11 +1802,9 @@ button{-webkit-tap-highlight-color:transparent;}
 
 <nav class="bot-nav-wrap"><div class="bot-nav">
   <button class="nav-btn active" data-page="home"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f333_3d.png" onerror="this.outerHTML='🌳'"/><span>今天</span></button>
-  <button class="nav-btn" data-page="week"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4ca_3d.png" onerror="this.outerHTML='📊'"/><span>週回顧</span></button>
-  <button class="nav-btn" data-page="month"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4c6_3d.png" onerror="this.outerHTML='📆'"/><span>月回顧</span></button>
-  <button class="nav-btn" data-page="garden"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f338_3d.png" onerror="this.outerHTML='🌸'"/><span>內心花園</span></button>
-  <button class="nav-btn" data-page="support"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1fac2_3d.png" onerror="this.outerHTML='🫂'"/><span>支持</span></button>
-  <button class="nav-btn" data-page="info"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f3c6_3d.png" onerror="this.outerHTML='🏆'"/><span>成就</span></button>
+  <button class="nav-btn" data-page="review"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4ca_3d.png" onerror="this.outerHTML='📊'"/><span>回顧</span></button>
+  <button class="nav-btn" data-page="direction"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f9ed_3d.png" onerror="this.outerHTML='🧭'"/><span>方向</span></button>
+  <button class="nav-btn" data-page="me"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f338_3d.png" onerror="this.outerHTML='🌸'"/><span>我</span></button>
 </div></nav>
 
 <script>
@@ -1754,7 +1844,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v126';
+const APP_VER='v127';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // ── 注音／中文輸入法保護 ──────────────────────────────
@@ -1815,6 +1905,18 @@ const HABITS=[
 
 // 封存的習慣：不出現在打卡清單/分析，但歷史紀錄保留，隨時可解封
 function isArchived(k){return (S.archivedHabits||[]).includes(k);}
+function ui2TidyHabits(){
+  if(S.ui2Tidied)return;
+  const cut=shiftDay(curDay(),-60),cnt={};
+  (S.entries||[]).forEach(e=>{if(e.date>=cut)(e.checked||[]).forEach(k=>{cnt[k]=(cnt[k]||0)+1;});});
+  // 新使用者（還沒什麼紀錄）不動
+  if((S.entries||[]).filter(e=>e.date>=cut).length<14){S.ui2Tidied=true;return;}
+  S.archivedHabits=S.archivedHabits||[];
+  const hidden=HABITS.filter(h=>!isArchived(h.k)&&(cnt[h.k]||0)<2&&!S.checked[h.k]).map(h=>h.k);
+  hidden.forEach(k=>S.archivedHabits.push(k));
+  S.ui2Tidied=true;sv(S);
+  if(hidden.length){syncStateDebounced();setTimeout(()=>softToast(`收起了 ${hidden.length} 個最近沒用的習慣，可以在「方向」打開`,4200),1500);}
+}
 function activeHabits(){return HABITS.filter(h=>!isArchived(h.k));}
 
 const IDENTITY_TAGS=[
@@ -2639,6 +2741,7 @@ function makeDraggable(el,stage,onEnd){
   let drag=false,moved=false,sx,sy,ol,ot,zf=1;
   const xy=e=>e.touches?{x:e.touches[0].clientX,y:e.touches[0].clientY}:{x:e.clientX,y:e.clientY};
   const down=e=>{
+    if(el.classList&&el.classList.contains('inline'))return;   // 固定在卡片裡的便利貼不能拖
     drag=true;moved=false;
     const p=xy(e),r=el.getBoundingClientRect(),sr=stage.getBoundingClientRect();
     /* 若外層有 CSS zoom（web 版整體放大），getBoundingClientRect / clientX 都是「放大後」的視覺像素，
@@ -3055,7 +3158,7 @@ function renderStickyNote(){
       const key='t'+i;
       const done=!!ctx.done[key];
       const cn=Math.max(0,+r.c||0);
-      return`<div class="sticky-item" data-idx="${i}">
+      return`<div class="sticky-item${r.goalId?' is-goal':''}" data-idx="${i}" ${r.goalId?'title="🎬 目標的這一步"':''}>
         <span class="row-grip" title="拖曳調整順序">⠿</span>
         <div class="sticky-check${done?' done':''}" data-k="${key}">${done?'✓':''}</div>
         <span class="sticky-txt" style="${done?'text-decoration:line-through;opacity:.55;':''}">${r.theme?`<b>${esc(r.theme)}：</b>`:''}${esc(r.task||'')}${cn?`<span class="sticky-carry" title="被順延過 ${cn} 次">⏩${cn}</span>`:''}</span>
@@ -3121,13 +3224,14 @@ function renderStickyNote(){
     box.style.maxHeight=items.length>5?'118px':'';
     box.style.overflowY=items.length>5?'auto':'';
   }
-  if(S.notePos){
+  if(S.notePos&&!note.classList.contains('inline')){
     const stage=document.getElementById('scene-stage');
     note.style.left=S.notePos.x+'px';note.style.top=S.notePos.y+'px';note.style.right='auto';
     const maxX=Math.max(0,stage.clientWidth-note.offsetWidth),maxY=Math.max(0,stage.clientHeight-note.offsetHeight);
     const cx=Math.max(0,Math.min(maxX,S.notePos.x)),cy=Math.max(0,Math.min(maxY,S.notePos.y));
     if(cx!==S.notePos.x||cy!==S.notePos.y){S.notePos={x:cx,y:cy};note.style.left=cx+'px';note.style.top=cy+'px';sv(S);}
   }
+  if(window.FocusUI)FocusUI.render();
 }
 const NOTE_SCALES=[0.85,1,1.2,1.45,1.7];
 // 便利貼能拉到多大：以舞台為界，超過就會被裁掉看不到內容
@@ -3156,6 +3260,7 @@ function fitNoteList(){
 function applyNoteStyle(){
   const note=document.getElementById('sticky-note');
   if(!note)return;
+  if(note.classList.contains('inline')){note.style.cssText='';return;}
   const scale=S.noteScale||1;
   note.style.fontSize=(11*scale)+'px';
   note.style.setProperty('--sn-cb',(20*scale)+'px');
@@ -3328,6 +3433,7 @@ function commitHealth(){
 }
 // 就地更新單張健康卡的外框（on 狀態＋標題摘要），不動內容、不重播動畫
 function updateHealthChrome(k){
+  if(typeof renderHealthTabs==='function')setTimeout(renderHealthTabs,0);
   const t=healthTarget(),h=t.h;
   const card=document.querySelector('#health-grid .hz-card[data-k="'+k+'"]');
   if(!card)return;
@@ -3343,6 +3449,19 @@ function healthSummary(h,k){
     return ts.slice(0,2).join('、')+(ts.length>2?' +'+(ts.length-2):'')+(e.duration?' · '+e.duration+'分':'');}
   if(k==='water'){const w=+((h.water||{}).amount)||0;return w?w+' / '+WATER_GOAL+'ml':'';}
   return '';
+}
+function renderHealthTabs(){
+  const grid=document.getElementById('health-grid'),bar=document.getElementById('hz-tabs');
+  if(!grid||!bar)return;
+  let tab='sleep';try{tab=localStorage.getItem('grandol_hztab')||'sleep';}catch(e){}
+  if(!HEALTH.some(H=>H.k===tab))tab=HEALTH[0].k;
+  grid.dataset.tab=tab;
+  const h=healthTarget().h;
+  bar.innerHTML=HEALTH.map(H=>`<button class="hz-tab${H.k===tab?' on':''}${healthHas(h,H.k)?' has':''}" data-hztab="${H.k}">${H.l}${healthHas(h,H.k)?' ✓':''}</button>`).join('');
+  bar.querySelectorAll('[data-hztab]').forEach(b=>b.addEventListener('click',()=>{
+    try{localStorage.setItem('grandol_hztab',b.dataset.hztab);}catch(e){}
+    renderHealthTabs();
+  }));
 }
 function renderHealth(){
   if(window.FocusUI)FocusUI.render();
@@ -3363,6 +3482,7 @@ function renderHealth(){
     </div>`;
   }).join('');
   wireHealthEditors(h);
+  renderHealthTabs();
 }
 // 睡眠時間「正在選、還沒按記錄」的暫存值。背景同步／其他重繪會重建下拉選單，
 // 沒有這層暫存的話，還沒記錄的選擇就會被打回預設值（＝時間一直跳掉）。
@@ -5232,7 +5352,7 @@ function renderSupportPage(){
   }));
   const qlink=document.getElementById('support-quotes-link');
   if(qlink)qlink.addEventListener('click',()=>{
-    document.querySelector('.nav-btn[data-page="garden"]').click();
+    openMe('garden');
     setTimeout(()=>{document.getElementById('quote-list').scrollIntoView({behavior:'smooth',block:'center'});},150);
   });
 }
@@ -5910,14 +6030,48 @@ document.querySelectorAll('.nav-btn').forEach(btn=>{
     document.getElementById('page-'+btn.dataset.page).classList.add('active');
     window.scrollTo(0,0);
     const p=btn.dataset.page;
-    if(p==='week')renderWeekly();
-    if(p==='month')renderMonthly();
-    if(p==='garden')renderGarden();
-    if(p==='support'){bookPage=0;renderSupportPage();renderResourcePage();renderPraiseWall();}
-    if(p==='info'){renderAchievements();renderExpLog();}
+    if(p==='review')showReviewPane();
+    if(p==='me')showMePane();
+    if(p==='direction')renderDirection();
     if(p==='settings')renderSettings();
   });
 });
+// ── 回顧：這週／這個月；我：我是誰／支持我的／成就（記住上次看的是哪一個）──
+function _pref(k,d){try{return localStorage.getItem(k)||d;}catch(e){return d;}}
+function _setPref(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+function showReviewPane(which){
+  const rv=which||_pref('grandol_rv','week');_setPref('grandol_rv',rv);
+  document.querySelectorAll('#rv-seg [data-rv]').forEach(b=>b.classList.toggle('on',b.dataset.rv===rv));
+  document.querySelectorAll('.rv-pane').forEach(x=>x.classList.toggle('active',x.id==='page-'+rv));
+  if(rv==='week')renderWeekly();else renderMonthly();
+}
+function showMePane(which){
+  const me=which||_pref('grandol_me','garden');_setPref('grandol_me',me);
+  document.querySelectorAll('#me-seg [data-me]').forEach(b=>b.classList.toggle('on',b.dataset.me===me));
+  document.querySelectorAll('.me-pane').forEach(x=>x.classList.toggle('active',x.id==='page-'+me));
+  if(me==='garden')renderGarden();
+  if(me==='support'){bookPage=0;renderSupportPage();renderResourcePage();renderPraiseWall();}
+  if(me==='info'){renderAchievements();renderExpLog();}
+}
+function openMe(which){document.querySelector('.nav-btn[data-page="me"]').click();showMePane(which);}
+document.querySelectorAll('#rv-seg [data-rv]').forEach(b=>b.addEventListener('click',()=>{showReviewPane(b.dataset.rv);window.scrollTo(0,0);}));
+document.querySelectorAll('#me-seg [data-me]').forEach(b=>b.addEventListener('click',()=>{showMePane(b.dataset.me);window.scrollTo(0,0);}));
+// ── 方向：習慣清單開關 ──
+function renderDirection(){
+  if(window.FocusUI)FocusUI.render();
+  const box=document.getElementById('habit-manage');if(!box)return;
+  box.innerHTML=HABITS.map(h=>{
+    const fixed=(typeof HEALTH_REPLACED!=='undefined')&&HEALTH_REPLACED.indexOf(h.k)>=0;
+    const on=!isArchived(h.k);
+    return `<button class="hm-chip${on?' on':''}${fixed?' fixed':''}" data-hk="${h.k}" title="${fixed?'已由健康卡記錄':''}">${fi(h.c,16)} ${h.l}${fixed?' · 健康卡':''}</button>`;
+  }).join('');
+  box.querySelectorAll('.hm-chip:not(.fixed)').forEach(b=>b.addEventListener('click',()=>{
+    S.archivedHabits=S.archivedHabits||[];
+    const k=b.dataset.hk,i=S.archivedHabits.indexOf(k);
+    if(i>=0)S.archivedHabits.splice(i,1);else S.archivedHabits.push(k);
+    sv(S);syncStateDebounced();renderHabits();renderDirection();
+  }));
+}
 
 // ── RENDER ALL / INIT ─────────────────────────────────
 function renderAll(){
@@ -5931,14 +6085,17 @@ function renderAll(){
     b.innerHTML=`${fi('1f389',17)} 今天種下了！`;b.disabled=true;
   }
   if(typeof applyViewDate==='function')applyViewDate(false);
-  if(document.getElementById('page-garden').classList.contains('active'))renderGarden();
-  if(typeof renderPraiseWall==='function'&&document.getElementById('page-support').classList.contains('active'))renderPraiseWall();
+  const _meOn=document.getElementById('page-me').classList.contains('active');
+  if(_meOn&&document.getElementById('page-garden').classList.contains('active'))renderGarden();
+  if(_meOn&&typeof renderPraiseWall==='function'&&document.getElementById('page-support').classList.contains('active'))renderPraiseWall();
+  if(document.getElementById('page-direction').classList.contains('active')&&typeof renderDirection==='function')renderDirection();
 }
 migrateFlowers();
+ui2TidyHabits();
 renderAll();
 initStickyDrag();
 initStickyResize();
-initPuppy(document.getElementById('puppy'),document.getElementById('scene-stage'),90);
+initPuppy(document.getElementById('puppy'),document.getElementById('scene-stage'),64);
 wirePraise();renderPraiseWall();
 pullCloud(true);
 </script>
@@ -6899,6 +7056,9 @@ function applyViewDate(switchPage){
   }
   const dv=isT?S.diary:((S.entries.find(x=>x.date===viewDate)||{}).diary||{hl:'',rf:'',gr:'',quote:''});
   ['hl','rf','gr','quote'].forEach(k=>{const el=document.getElementById('d-'+k);const v=dv[k]||'';if(el!==document.activeElement&&el.value!==v)el.value=v;});
+  {const m1=document.getElementById('diary-more1'),m2=document.getElementById('diary-more2');
+   if(m1&&(dv.rf||dv.gr))m1.open=true;
+   if(m2&&(dv.quote||(S.calNotes&&S.calNotes[isT?curDay():viewDate])))m2.open=true;}
   const noteEl=document.getElementById('d-note');
   if(noteEl&&noteEl!==document.activeElement)noteEl.value=S.calNotes[isT?curDay():viewDate]||'';
   renderTopDate();renderHabits();renderHealth();renderExpBar();renderPlantBtn();
@@ -7739,6 +7899,6 @@ document.addEventListener('visibilitychange',()=>{
 
 
 
-<script src="focus.js"></script>
+<script src="focus.js?v=127"></script>
 </body>
 </html>
