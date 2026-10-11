@@ -152,23 +152,9 @@ function isEvening(){
 function heroOpen(){try{return localStorage.getItem('grandol_hero_ms')==='1';}catch(e){return false;}}
 function nowCard(){
   const d=ds();if(d!==curDay())return '';                 // 補記過去的日子不顯示
-  const now=new Date(),r=routine(d),pg=projectGoal();
-  // 晚上：收工前 90 分鐘起（自訂固定項目提前 15 分），到上床後 3 小時 → 顯示現在該做的收尾步驟
-  if(r&&r.next){
-    const bedAbs=r.steps.find(x=>x.k==='bed').abs;
-    const lead=(r.next.extra?15:90)*60000;
-    if(now>=new Date(r.next.abs-lead)&&now<new Date(+bedAbs+180*60000)){
-      const s=r.next,late=now>=s.abs,mins=Math.round((s.abs-now)/60000);
-      const when=late?'現在該做':'下一步 · 還有 '+(mins>=60?Math.floor(mins/60)+' 小時 '+(mins%60)+' 分':mins+' 分');
-      return `<div class="gcard hero night"><div class="hero-top"><span>🌙 今晚 ${esc(r.p.bed)} 上床 · ${when}</span>
-          <span class="hero-meta">${r.steps.filter(x=>x.done).length}/${r.steps.length} 步</span></div>
-        <div class="hero-main"><span class="hero-txt">${esc(s.at)} ${esc(s.label)}</span>
-          <button class="focus-btn" data-skip="${s.k}">跳過</button><button class="focus-btn primary" data-step="${s.k}">做完了</button></div>
-        <div class="hero-sub">${esc(s.hint)}</div></div>`;
-    }
-  }
+  const pg=projectGoal();
   if(!pg)return '';
-  // 白天：動畫今天這一步＋階段進度（點「階段」展開每段日期）
+  // 動畫今天這一步＋階段進度（點「階段」展開每段日期）
   const ms=pg.milestones||[],curI=ms.findIndex(m=>!m.done),cur=curI>=0?ms[curI]:null,done=ms.filter(m=>m.done).length;
   let meta='';
   if(cur){meta=esc(cur.title);if(cur.due){const left=daysBetween(d,cur.due);meta+=left<0?` · <b style="color:#B0402A">晚了 ${-left} 天</b>`:` · ${left===0?'今天':'還有 '+left+' 天'}`;}}
@@ -419,6 +405,9 @@ function tonightCard(){
     <button class="focus-btn" data-action="quick-plan" data-stage="A">02:00 上床</button>
     <button class="focus-btn" data-action="edit-plan">自己設定</button></div></div>`;
   const w=health(d).sleep?.windDown||{},res=C.result(w,r.p,d,new Date());
+  // 現在這一步快到了（收尾步驟前 90 分、固定項目前 15 分，到上床後 3 小時）→ 直接給「做完了／跳過」
+  const now=new Date(),bedAbs=r.steps.find(x=>x.k==='bed').abs;
+  const live=d===curDay()&&!!r.next&&now>=new Date(r.next.abs-(r.next.extra?15:90)*60000)&&now<new Date(+bedAbs+180*60000);
   const cells=r.steps.map(s=>{
     const isNext=r.next&&r.next.k===s.k;
     if(editing===s.k&&(s.k==='phone'||s.k==='bed'))
@@ -426,13 +415,16 @@ function tonightCard(){
         <button class="focus-btn" data-action="clear-time" data-k="${s.k}" style="margin-top:4px;padding:3px 9px;">清除</button></div>`;
     const doneAt=(s.k==='phone'||s.k==='bed')?clock(s.done):'';
     const off=!s.done&&(s.skipped||s.missed);
-    return `<button class="tl-step${s.done?' done':(isNext?' next':(off?' missed':''))}" data-step="${s.k}" title="${off?'沒做 · 補做了就點一下':esc(s.hint)}">
+    const step=`<button class="tl-step${s.done?' done':(isNext?' next':(off?' missed':''))}" data-step="${s.k}" title="${off?'沒做 · 補做了就點一下':esc(s.hint)}">
       <div class="t">${s.done&&doneAt?'✓ '+doneAt:(off?'沒做 · ':'')+esc(s.at)}</div><div class="n">${s.done&&!doneAt?'✓ ':''}${esc(s.label)}</div></button>`;
+    if(!isNext||!live)return step;
+    return `<div class="tl-now">${step}<button class="focus-btn" data-skip="${s.k}">跳過</button><button class="focus-btn primary" data-step="${s.k}">做完了</button></div>`;
   }).join('');
-  return `<div class="gcard" style="margin-bottom:12px;"><div class="goal-hd" style="margin-bottom:10px;"><span>${fi('1f319',19)}</span>
-      <span class="goal-title">今晚 ${esc(r.p.bed)} 上床</span>
-      <span class="goal-sub${res.kind==='late'?' warn':''}" style="margin-left:auto;">${res.kind==='missing'?'點一下＝做完了':esc(res.label)}</span>
-      ${sevenDots(d)}<button class="goal-edit" data-action="edit-plan" title="調整時間">✏️</button></div>
+  const done=r.steps.filter(x=>x.done).length;
+  return `<div class="gcard tonight-card${live?' live':''}"><div class="tn-hd"><span>${fi('1f319',18)}</span>
+      <span class="tn-title">今晚 ${esc(r.p.bed)} 上床</span><span class="tn-count">${done}/${r.steps.length}</span>
+      <button class="goal-edit" data-action="edit-plan" title="調整時間">✏️</button></div>
+    <div class="tn-sub"><span class="${res.kind==='late'?'warn':''}">${res.kind==='missing'?(live?'現在這一步做完就按「做完了」':'點一下＝做完了'):esc(res.label)}</span>${sevenDots(d)}</div>
     <div class="tl">${cells}</div></div>`;
 }
 function sevenDots(d){
@@ -457,8 +449,8 @@ function render(force){
   if(M.tonight)M.tonight.innerHTML=tonightCard();
   // 短期目標卡放在「今天」：每天打開就看得到；「方向」只放一行一個的清單，用來調整
   if(M.cards)M.cards.innerHTML=gs.filter(g=>g.kind==='body').map(bodyCard).join('');
-  {const pg=projectGoal(),tl=document.querySelector('.today-list');
-   if(tl)tl.classList.toggle('hero-on',!!(pg&&pg.next&&pg.next.text&&ds()===curDay()&&!isEvening()));}
+  {const pg=projectGoal(),tl=document.querySelector('.list-card');
+   if(tl)tl.classList.toggle('hero-on',!!(pg&&pg.next&&pg.next.text&&ds()===curDay()));}
   if(M.goalrow)M.goalrow.innerHTML=goalRow();
   if(M.moves)M.moves.innerHTML=moveChips();
   if(M.undone)M.undone.innerHTML=undoneList();

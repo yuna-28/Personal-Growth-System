@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════
-   格蘭朵 Design System（v129）
+   格蘭朵 Design System（v131）
    所有頁面共用。這個檔案最後載入，負責把過去各時期留下的零件
    （gcard / mini-btn / liq-btn / neo-chip / tdl-in …）統一成同一套樣子。
    新增零件請直接用 ds-* class，不要再寫一次性的 inline 樣式。
@@ -27,6 +27,7 @@
   --ds-1:4px;--ds-2:8px;--ds-3:12px;--ds-4:16px;--ds-5:20px;--ds-6:24px;--ds-8:32px;
   /* 字級 */
   --ds-fs-xs:12px;--ds-fs-sm:13px;--ds-fs:14px;--ds-fs-md:15px;--ds-fs-lg:18px;--ds-fs-xl:22px;
+  --ds-ctl:36px;            /* 所有按鈕、輸入、分頁的高度 */
   --ds-shadow:0 1px 2px rgba(20,24,40,.04),0 2px 8px -4px rgba(20,24,40,.06);
   --ds-font:'Quicksand','PingFang TC','Noto Sans TC','Microsoft JhengHei',sans-serif;
 }
@@ -38,7 +39,8 @@
   box-shadow:var(--ds-shadow)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
   padding:var(--ds-4)!important;margin-bottom:var(--ds-4);
 }
-/* 區塊標題 */
+/* 區塊標題：每張卡的標題都長一樣 */
+.goal-title,.tn-title{font-family:var(--ds-font)!important;font-size:var(--ds-fs-md)!important;font-weight:700!important;color:var(--ds-ink)!important;}
 .sec-hd{font-family:var(--ds-font)!important;font-size:var(--ds-fs-md)!important;font-weight:700!important;color:var(--ds-ink)!important;
   margin-bottom:var(--ds-3)!important;gap:var(--ds-2)!important;letter-spacing:0!important;}
 .sec-hd img{width:18px!important;height:18px!important;}
@@ -90,53 +92,87 @@
 .goal-sub,.focus-note,.hero-sub,.also-lbl,.also-k{font-size:var(--ds-fs-xs)!important;}
 .goal-sub.muted,.goal-sub{color:var(--ds-ink-3);}
 
-/* ── 3. 今天頁 ─────────────────────────────────────────────── */
-#page-home .pg-head,.pg-head{display:flex;align-items:center;gap:var(--ds-3);margin-bottom:var(--ds-4);flex-wrap:wrap;}
-#page-home .pg-head h1,.pg-head h1{font-family:var(--ds-font);font-size:var(--ds-fs-xl);font-weight:800;color:var(--ds-ink);margin:0;}
-#page-home .pg-head .pg-sub,.pg-head .pg-sub{font-size:var(--ds-fs-sm);color:var(--ds-ink-3);}
-#page-home .pg-head .pg-act{margin-left:auto;display:flex;gap:var(--ds-2);flex-wrap:wrap;}
+/* ── 3. 頁首（每一頁都一樣）────────────────────────────────── */
+.pg-head{display:flex;align-items:center;gap:var(--ds-3);min-height:40px;margin-bottom:var(--ds-4);flex-wrap:wrap;}
+.pg-head h1{font-family:var(--ds-font);font-size:var(--ds-fs-xl);font-weight:800;color:var(--ds-ink);margin:0;line-height:1;}
+.pg-head .pg-sub,.sec-hd .pg-sub{font-size:var(--ds-fs-sm);font-weight:500;color:var(--ds-ink-3);}
+.pg-head .pg-act{margin-left:auto;display:flex;align-items:center;gap:var(--ds-2);flex-wrap:wrap;}
+.pg-head .pg-act>button{height:var(--ds-ctl)!important;min-height:0!important;margin:0!important;padding:0 14px!important;line-height:1!important;
+  box-sizing:border-box!important;border-radius:var(--ds-r)!important;font-size:var(--ds-fs-sm)!important;vertical-align:middle;}
+.pg-head .pg-act>button img{width:16px!important;height:16px!important;}
+
+/* 今日行程：在「今天」標題旁邊，一個行程一顆膠囊，點了打開日曆 */
+.pg-head .pg-events{display:flex;align-items:center;gap:6px;flex:1 1 auto;min-width:0;margin:0!important;padding-left:var(--ds-3);border-left:1px solid var(--ds-line-2);}
+.pg-events .pe-lbl{font-size:var(--ds-fs-xs);font-weight:700;color:var(--ds-ink-3);white-space:nowrap;}
+.pg-events #today-events-list{display:flex;align-items:center;gap:6px;min-width:0;overflow-x:auto;scrollbar-width:none;cursor:pointer;}
+.pg-events #today-events-list>div:not(.cal-ev-row){padding:0!important;font-size:var(--ds-fs-xs)!important;white-space:nowrap;}
+.pg-events .cal-ev-row{flex-shrink:0;height:30px;box-sizing:border-box;padding:0 10px 0 4px!important;gap:6px!important;border:1px solid var(--ds-line-2)!important;
+  border-radius:999px;background:var(--ds-field);max-width:260px;}
+.pg-events .cal-ev-row:hover{border-color:var(--ds-ink-3)!important;}
+.pg-events .cal-ev-row>span:first-child{margin-left:6px;}
+.pg-events .cal-ev-row span[style*="padding:4px 12px"]{padding:2px 8px!important;}
+.pg-events .cal-tag-chip{display:none;}
+.pg-events .pe-add{flex-shrink:0;width:30px;height:30px;border-radius:999px;border:1px dashed var(--ds-line-2);background:transparent;color:var(--ds-ink-3);font-size:15px;cursor:pointer;line-height:1;}
+.pg-events .pe-add:hover{border-color:var(--ds-primary);color:var(--ds-primary);}
+
+/* ── 4. 今天頁 ─────────────────────────────────────────────── */
 .today-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--ds-4);}
 .today-grid>.tcol{display:flex;flex-direction:column;gap:var(--ds-4);min-width:0;}
-.today-grid>.tcol>*{margin:0!important;}
-/* 重點卡（今天這一步／現在該做） */
+.today-grid>.tcol>*{margin:0!important;flex-shrink:0;}
+#draft-btn{display:none!important;}                       /* 已自動存檔，不顯示 */
+/* 今天這一步（短目標） */
 .hero{border-color:#EBD9B1!important;}
 .hero.day{background:var(--ds-focus-soft)!important;}
-.hero.night{background:var(--ds-primary-soft)!important;border-color:#CCD5EC!important;}
-.hero-top{font-size:var(--ds-fs-xs)!important;color:var(--ds-ink-2)!important;}
-.hero.day .hero-top{color:var(--ds-focus-ink)!important;}
+.hero-top{font-size:var(--ds-fs-xs)!important;color:var(--ds-focus-ink)!important;}
 .hero-main .hero-txt{font-family:var(--ds-font)!important;font-size:var(--ds-fs-lg)!important;font-weight:800!important;}
 .hero-segs .goal-seg{height:6px!important;border-radius:3px!important;background:#EADFC8!important;}
 .hero-segs .goal-seg.done{background:var(--ds-good)!important;}
 .hero-segs .goal-seg.cur{background:var(--ds-focus)!important;}
-/* 清單卡：今天／明天 */
-.list-card .lc-hd{display:flex;align-items:center;gap:var(--ds-2);margin-bottom:var(--ds-2);}
-.list-card .lc-hd .lc-meta{margin-left:auto;font-size:var(--ds-fs-xs);color:var(--ds-ink-3);}
+/* 便利貼：今天／明天清單 */
+.list-card{position:relative;background:linear-gradient(160deg,#FFF7DC,#FCEEB8)!important;border:none!important;border-radius:4px 16px 16px 16px!important;
+  box-shadow:0 2px 4px rgba(35,35,30,.1),0 14px 26px -14px rgba(160,120,20,.45)!important;padding:var(--ds-4) var(--ds-5) var(--ds-8)!important;}
+.list-card::before{content:''!important;position:absolute;top:0!important;right:0!important;left:auto!important;width:0!important;height:0!important;background:none!important;
+  border-style:solid;border-width:0 22px 22px 0;border-color:transparent #F0DA8E transparent transparent;opacity:1!important;}
+.list-card::after{display:none!important;}
+.list-card .lc-hd{display:flex;align-items:center;gap:var(--ds-2);margin-bottom:var(--ds-3);}
+.list-card .lc-hd .lc-meta{margin-left:auto;margin-right:18px;font-size:var(--ds-fs-xs);color:#A08030;}
+.list-card .ds-tabs{background:rgba(160,128,48,.13)!important;}
+.list-card .ds-tabs button{color:#A08030!important;}
+.list-card .ds-tabs button.on{background:#FFFCEF!important;color:#5E4A12!important;}
 .list-card .lt-pane{display:none;}
 .list-card .lt-pane.on{display:block;}
-.list-card .sticky-note.inline{background:none!important;padding:0!important;margin:0!important;box-shadow:none!important;border:none!important;transform:none!important;}
+.list-card .sticky-note.inline{background:none!important;padding:0!important;margin:0!important;box-shadow:none!important;border:none!important;transform:none!important;animation:none!important;}
 .list-card .sticky-note.inline::before,.list-card .sticky-note.inline::after{display:none!important;}
 .list-card .sticky-empty{display:none;}
-.list-card .also-did{margin-top:var(--ds-4);padding-top:var(--ds-3);border-top:1px solid var(--ds-line);}
-.list-card .also-row{display:flex;align-items:flex-start;gap:var(--ds-2);margin-top:var(--ds-2);}
-.list-card .also-k{width:30px;flex-shrink:0;padding-top:7px;color:var(--ds-ink-3);font-weight:700;}
-.list-card .also-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.list-card .sticky-item,.list-card .exp-row,.list-card .undone-row{border-bottom:1px dashed rgba(160,128,48,.28)!important;font-size:var(--ds-fs-md)!important;color:#3B3423;}
+.list-card .sticky-check,.list-card .er-box{border-color:rgba(160,130,60,.55)!important;background:rgba(255,255,255,.7)!important;}
+.list-card .sticky-check.done,.list-card .er-box.on{background:var(--ds-good)!important;border-color:var(--ds-good)!important;}
+.list-card .sticky-add,.list-card #tdl-add{border:1px dashed rgba(160,128,48,.45)!important;color:#A08030!important;background:transparent!important;}
+.list-card #tdl-add{width:100%;margin-top:4px;border-radius:var(--ds-r-sm)!important;padding:8px 10px!important;text-align:left;font-size:var(--ds-fs-sm)!important;}
+.list-card .tdl-in{background:rgba(255,255,255,.6)!important;border-color:rgba(160,128,48,.3)!important;}
 .list-card .tdl-row-wrap{margin-bottom:6px;}
-.list-card #tdl-title{display:block;font-size:var(--ds-fs-xs);color:var(--ds-ink-3);margin-bottom:var(--ds-2);}
-.list-card #tdl-add{width:100%;margin-top:4px;border:1px dashed var(--ds-line-2)!important;background:transparent!important;border-radius:var(--ds-r-sm)!important;
-  padding:8px 10px!important;text-align:left;color:var(--ds-ink-3)!important;font-size:var(--ds-fs-sm)!important;}
-/* 寫作卡：像一頁筆記 */
+.list-card #tdl-title{display:block;font-size:var(--ds-fs-xs);font-weight:700;color:#A08030;margin-bottom:var(--ds-2);}
+.list-card #sticky-date{display:block!important;position:absolute;right:18px;bottom:6px;font-size:22px;}
+.list-card.hero-on .sticky-item.is-goal{display:none;}
+/* 今天也做了 */
+.also-card .sec-hd{margin-bottom:var(--ds-2)!important;}
+.also-card .also-did{border:none!important;padding:0!important;margin:0!important;}
+.also-card .also-row{display:flex;align-items:flex-start;gap:var(--ds-2);margin-top:var(--ds-2);}
+.also-card .also-k{width:30px;flex-shrink:0;padding-top:7px;color:var(--ds-ink-3);font-weight:700;}
+.also-card .also-chips,.also-card #focus-moves{display:flex;flex-wrap:wrap;gap:6px;}
+/* 小記：像一頁筆記 */
 .write-card .diary-section{margin-bottom:var(--ds-4)!important;}
 .write-card .diary-label{font-size:var(--ds-fs-xs)!important;font-weight:700!important;color:var(--ds-ink-3)!important;margin-bottom:6px!important;}
 .write-card .diary-label img{display:none;}
 .write-card textarea{width:100%;min-height:96px;line-height:1.7!important;resize:vertical;}
-.write-card details.ui2-more>summary{font-size:var(--ds-fs-xs);color:var(--ds-ink-3);}
-/* 身體卡：分頁在標題列，裡面不再套卡片 */
+.write-card details.ui2-more>summary{font-size:var(--ds-fs-xs);color:var(--ds-ink-3);margin-bottom:var(--ds-2);}
+/* 身體紀錄：分頁在標題列，裡面不再套卡片 */
 .health-card2 .hc-hd{display:flex;align-items:center;justify-content:space-between;}
 .health-card2 .hz-card{background:none!important;border:none!important;box-shadow:none!important;padding:0!important;}
 .health-card2 #health-grid{gap:0!important;}
 /* 森林小卡：場景就是卡片 */
 .home-banner .gcard-scene{padding:0!important;overflow:hidden;position:relative;}
-.home-banner .gcard-scene>div:first-child{position:absolute;top:10px;left:10px;z-index:8;margin:0!important;text-align:left!important;}
+.home-banner .gcard-scene>div:first-child{position:absolute;top:10px;left:10px;z-index:20!important;margin:0!important;text-align:left!important;}
 .home-banner .level-pill{font-size:12px!important;padding:4px 12px!important;}
 .home-banner #exprow,.home-banner #explbl{display:none!important;}
 .home-banner .scene-stage{height:168px!important;border-radius:0!important;}
@@ -144,12 +180,33 @@
 .home-banner #tree-wrap>img{width:120px!important;height:120px!important;}
 .home-banner #fruit-layer{transform:scale(.43)!important;}
 .home-banner .floor-flower-item img{width:20px!important;height:20px!important;}
-/* 晚上時間軸（窄欄裡：一列一步） */
-#focus-tonight .tl{grid-template-columns:minmax(0,1fr)!important;gap:4px!important;}
-#focus-tonight .tl-step{display:flex!important;align-items:center;gap:var(--ds-3);text-align:left!important;padding:7px 10px!important;border-radius:var(--ds-r-sm)!important;}
-#focus-tonight .tl-step .t{width:52px;flex-shrink:0;}
+/* 今晚：一列一步；現在這一步旁邊直接有「跳過／做完了」 */
+.tonight-card .tn-hd{display:flex;align-items:center;gap:var(--ds-2);}
+.tonight-card .tn-title{white-space:nowrap;}
+.tonight-card .tn-count{margin-left:auto;font-size:var(--ds-fs-xs);font-weight:700;color:var(--ds-ink-3);}
+.tonight-card .tn-sub{display:flex;align-items:center;justify-content:space-between;gap:var(--ds-2);margin:6px 0 var(--ds-3);font-size:var(--ds-fs-xs);color:var(--ds-ink-3);}
+.tonight-card .tn-sub .warn{color:var(--ds-warn);}
+.tonight-card .tl{display:flex!important;flex-direction:column;gap:4px!important;}
+.tonight-card .tl-step{display:flex!important;align-items:center;gap:var(--ds-3);text-align:left!important;padding:7px 10px!important;border-radius:var(--ds-r-sm)!important;
+  border:1px solid transparent!important;background:transparent;transform:none!important;font-family:var(--ds-font);}
+.tonight-card .tl-step:hover{background:var(--ds-sunken);}
+.tonight-card .tl-step .t{width:56px;flex-shrink:0;font-size:var(--ds-fs-xs);color:var(--ds-ink-3);}
+.tonight-card .tl-step .n{font-size:var(--ds-fs);font-weight:600;color:var(--ds-ink-2);}
+.tonight-card .tl-step.next{background:var(--ds-primary-soft)!important;border-color:#B9C5E4!important;}
+.tonight-card .tl-step.next .n{color:var(--ds-ink);font-weight:800;}
+.tonight-card .tl-step.done{background:var(--ds-good-soft)!important;}
+.tonight-card .tl-step.done .t,.tonight-card .tl-step.done .n{color:var(--ds-good);}
+.tonight-card .tl-step.missed{border:1px dashed var(--ds-line-2)!important;}
+.tonight-card .tl-step.missed .n{text-decoration:line-through;opacity:.7;}
+.tonight-card .tl-now{display:flex;align-items:center;gap:6px;}
+.tonight-card .tl-now .tl-step{flex:1;min-width:0;}
+.tonight-card.live{border-color:#B9C5E4!important;}
 
-/* ── 4. 電腦版外框（≥1100px）：左側欄＋填滿寬度＋窗格各自捲動 ── */
+/* ── 5. 電腦版（≥1100px）：左側欄＋同一套 12 欄格線 ──────────────
+   版面規則（每一頁都一樣）：
+   · 頁首：標題＋說明＋分頁在左，動作按鈕在右，全部 36px 高
+   · 內容：12 欄格線、間距 16；卡片寬度只有 1/3、1/2、2/3、全寬
+   · 同一列的卡片一樣高                                                  */
 .sb-brand,.sb-foot{display:none;}
 @media(min-width:1100px){
   :root{--web-zoom:1!important;}
@@ -157,55 +214,69 @@
   .bot-nav-wrap{zoom:1!important;}
   body{background:var(--ds-bg)!important;font-family:var(--ds-font);}
   .bg{padding:var(--ds-5) var(--ds-8) var(--ds-6)!important;}
-  .page{padding:0!important;}
+  .page{padding:0!important;max-width:none!important;}
   /* 側欄 */
   .bot-nav-wrap{left:0!important;top:0!important;bottom:0!important;right:auto!important;width:232px!important;transform:none!important;}
   .bot-nav{height:100%;max-width:none!important;flex-direction:column!important;align-items:stretch!important;gap:4px!important;padding:var(--ds-5) var(--ds-3)!important;
     border-radius:0!important;background:var(--ds-surface)!important;border:none!important;border-right:1px solid var(--ds-line)!important;box-shadow:none!important;
     backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
-  .sb-brand{display:block;font-family:var(--ds-font);font-size:16px;font-weight:800;color:var(--ds-ink);padding:0 10px 18px;}
-  .sb-brand small{display:block;font-size:12px;font-weight:600;color:var(--ds-ink-3);margin-top:4px;}
+  .sb-brand{display:block;font-family:var(--ds-font);font-size:16px;font-weight:800;color:var(--ds-ink);padding:2px 12px 20px;}
   .nav-btn{flex:none!important;flex-direction:row!important;justify-content:flex-start!important;gap:12px!important;padding:10px 12px!important;border-radius:10px!important;
     font-size:14px!important;color:var(--ds-ink-2)!important;width:100%!important;}
   .nav-btn img{width:20px!important;height:20px!important;opacity:.8!important;}
   .nav-btn.active{background:var(--ds-primary)!important;color:#fff!important;box-shadow:none!important;}
   .nav-btn.active::before{display:none!important;}
-  .support-quick-btn{left:22px!important;right:auto!important;bottom:18px!important;}
-  /* 頂列（日期、連續天數、同步）在電腦版固定在側欄品牌下面，點日期一樣能補記 */
-  .sb-brand{padding-bottom:132px!important;}
-  .top-bar{position:fixed!important;left:12px;top:52px;width:208px;z-index:101;margin:0!important;padding:0!important;
-    flex-direction:column!important;align-items:flex-start!important;gap:8px!important;background:none!important;}
-  .top-bar .date-btn{padding:6px 10px!important;border-radius:10px;width:100%;text-align:left;}
-  .top-bar .date-btn:hover{background:var(--ds-sunken);}
-  .top-bar .top-date{font-size:15px!important;}
-  .top-bar>div:last-child{flex-direction:row!important;align-items:center!important;gap:10px!important;padding-left:10px;}
+  .support-quick-btn{left:22px!important;right:auto!important;}
+  /* 側欄底部：連續天數＋同步狀態。日期只在頁首出現一次（補記用頁首的「補記其他天」） */
+  .top-bar{position:fixed!important;left:12px;bottom:16px;top:auto!important;width:208px;z-index:101;margin:0!important;padding:12px 0 0 0!important;
+    border-top:1px solid var(--ds-line);background:none!important;flex-direction:column!important;align-items:stretch!important;gap:0!important;}
+  .top-bar .date-btn{display:none!important;}
+  .top-bar>div:last-child{flex-direction:row!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;padding:0 6px;}
+  .top-bar .streak-pill{white-space:nowrap!important;padding:4px 10px!important;font-size:13px!important;background:var(--ds-focus-soft)!important;
+    border:none!important;box-shadow:none!important;}
+  .top-bar .streak-pill img{width:15px!important;height:15px!important;}
+  .top-bar .sync-badge{font-size:12px!important;max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .support-quick-btn{bottom:72px!important;}
   #backfill-banner{margin-bottom:var(--ds-4)!important;}
-  /* 今天：三個窗格、一個畫面 */
-  .today-grid{grid-template-columns:minmax(340px,1fr) minmax(380px,1.15fr) minmax(320px,.9fr);align-items:start;}
-  .today-grid>.tcol{max-height:calc(100vh - 118px);overflow-y:auto;padding-right:4px;scrollbar-width:thin;}
-  .write-card{min-height:calc(100vh - 118px);display:flex;flex-direction:column;}
+
+  /* 今天：三等分（清單｜場景＋身體｜小記），每欄自己捲動，不用整頁往下滑 */
+  .today-grid{grid-template-columns:repeat(3,minmax(0,1fr));align-items:start;}
+  .today-grid>.tcol{height:calc(100vh - 104px);overflow-y:auto;padding:0 4px 4px 0;scrollbar-width:thin;scrollbar-color:var(--ds-line-2) transparent;}
+  .today-grid>.tcol::-webkit-scrollbar{width:6px;}
+  .today-grid>.tcol::-webkit-scrollbar-thumb{background:var(--ds-line-2);border-radius:3px;}
+  .today-grid>.tcol>.list-card,.today-grid>.tcol>.write-card{flex:1 0 auto;}
+  .write-card{display:flex;flex-direction:column;}
   .write-card textarea{min-height:120px;}
-  /* 其他頁面也不再是窄窄一條：最寬 1280 */
-  #page-direction,#page-settings{max-width:1180px;}
-  #page-me{max-width:924px;}
+  .write-card #today-date{display:none;}                 /* 頁首已有日期 */
+
+  /* 其他頁：同一套 12 欄 */
+  #page-direction.active,.me-pane.active{display:grid!important;grid-template-columns:repeat(12,minmax(0,1fr));gap:var(--ds-4);align-items:stretch;align-content:start;}
+  #page-direction>*,.me-pane>*{grid-column:1/-1;margin:0!important;min-width:0;}
+  /* 方向：2×2 */
+  #page-direction>#focus-goals{display:contents;}
+  #page-direction>#focus-goals>.gcard{grid-column:span 6;margin:0!important;}
+  #page-direction>.gcard{grid-column:span 6;}
+  /* 我是誰：花園（固定 900 寬）＋右邊身份；下面三張一列 */
+  .me-hero{display:grid;grid-template-columns:902px minmax(0,1fr);gap:var(--ds-4);}
+  .me-hero>*{margin:0!important;min-width:0;}
+  .me-hero .identity-wall{max-height:260px;overflow-y:auto;}
+  #page-garden>.gcard{grid-column:span 4;}
+  #page-garden>.gcard:has(#proof-board),#page-garden>.gcard:has(#insights-timeline){grid-column:span 6;}
+  /* 支持我的：資源書＋誇誇牆，下面分類卡自動排 */
+  #page-support>.gcard-scene{grid-column:span 8;}
+  #page-support>.gcard:has(#praise-stats){grid-column:span 4;}
+  #page-support>.export-row,#page-support>#resource-add-cat{grid-column:span 6;}
+  #resource-categories,#support-categories{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:var(--ds-4);align-items:start;}
+  #resource-categories>*,#support-categories>*{margin:0!important;}
+  #resource-categories>div:first-child{grid-column:1/-1;}
+  /* 成就 */
+  #page-info>.gcard:first-child{grid-column:span 8;}
+  #page-info>.gcard:nth-child(2){grid-column:span 8;order:3;}
+  #page-info>.gcard:nth-child(3){grid-column:span 4;}
+  #page-settings{max-width:1180px!important;}
 }
 
-/* ── 修正（v129 驗收時發現）── */
-.today-grid>.tcol>*{flex-shrink:0;}                      /* 窗格可捲動時，卡片不能被壓扁 */
-#draft-btn{display:none!important;}                       /* 已自動存檔，不顯示 */
-.home-banner .gcard-scene>div:first-child{z-index:20!important;}  /* 等級徽章在場景上面 */
-@media(min-width:1100px){.write-card #today-date{display:none;}} /* 頁首已有日期 */
-@media(min-width:1100px){
-  .top-bar>div:last-child{flex-direction:column!important;align-items:flex-start!important;gap:6px!important;}
-  .top-bar .streak-pill{white-space:nowrap!important;padding:5px 12px!important;font-size:13px!important;}
-  .top-bar .sync-badge{font-size:11px!important;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .sb-brand{padding-bottom:150px!important;}
-  /* 三欄底部對齊：清單卡延伸到窗格底 */
-  .today-grid>.tcol{min-height:calc(100vh - 118px);}
-  .today-grid>.tcol>.list-card{flex:1 0 auto;}
-}
-
-/* ── 5. 回顧：儀表板 ─────────────────────────────────────────── */
+/* ── 6. 回顧：儀表板 ─────────────────────────────────────────── */
 .ds-table{width:100%;border-collapse:collapse;font-size:var(--ds-fs-sm);}
 .ds-table th{text-align:left;font-weight:700;color:var(--ds-ink-3);font-size:var(--ds-fs-xs);padding:8px 10px;border-bottom:1px solid var(--ds-line);white-space:nowrap;}
 .ds-table td{padding:9px 10px;border-bottom:1px solid var(--ds-line);vertical-align:top;color:var(--ds-ink-2);}
@@ -226,7 +297,7 @@
 .period-nav{background:var(--ds-surface)!important;border:1px solid var(--ds-line)!important;border-radius:var(--ds-r)!important;box-shadow:none!important;}
 @media(min-width:1100px){
 
-  .rv-pane.active{display:grid!important;grid-template-columns:repeat(12,minmax(0,1fr));gap:var(--ds-4);align-items:stretch;}
+  .rv-pane.active{display:grid!important;grid-template-columns:repeat(12,minmax(0,1fr));gap:var(--ds-4);align-items:stretch;grid-auto-flow:row dense;}
   .rv-pane>*{grid-column:1/-1;margin:0!important;min-width:0;}
   .rv-pane .rd-pair,.rv-pane .rd-stack,.rv-pane .rd-entries{display:contents!important;}
   .rv-pane .rd-zone{display:none!important;}
@@ -249,7 +320,7 @@
   #wk-theme-card,.rv-pane .gcard:has(#mo-weekday-dist){order:5;grid-column:span 4;}
   .rv-pane .gcard:has(#wk-habitgrid),.rv-pane .gcard:has(#mo-habitgrid){order:5;grid-column:span 4;}
   /* 健康 */
-  #wk-sleep-card,#mo-sleep-card{order:6;grid-column:span 8;}
+  #wk-sleep-card,#mo-sleep-card{order:6;grid-column:1/-1;}
   #wk-sleepx-card,#mo-sleepx-card{order:6;grid-column:span 4;}
   #wk-diet-card,#mo-diet-card,#wk-exercise-card,#mo-exercise-card,#wk-water-card,#mo-water-card{order:7;grid-column:span 4;}
   #wk-health-pair,#mo-health-pair{display:contents!important;}
@@ -262,15 +333,11 @@
   /* 卡片在格子裡高度一致、內容不會撐出去 */
   .rv-pane .gcard{height:100%;overflow:hidden;}
   .rv-pane .dt-card{height:auto;}
-}
-@media(min-width:1100px){
   /* 月回顧的週摘要：自己一列，放在每日明細上面（不能用 display:contents，不然會跑到最前面） */
   .rv-pane #month-week-summaries{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:var(--ds-3);order:8;grid-column:1/-1;}
   .rv-pane #month-week-summaries>*{margin:0!important;}
   .rv-pane #month-entries{display:block!important;order:9;grid-column:1/-1;}
   .rv-pane #week-entries{display:block!important;order:8;grid-column:1/-1;}
-}
-@media(min-width:1100px){
   #page-month .period-nav{grid-column:span 6;}
   #mo-copy-opts{order:1!important;grid-column:span 3!important;flex-direction:column!important;gap:4px!important;margin:0!important;align-self:center;font-size:12px!important;}
 }

@@ -1069,8 +1069,8 @@ button{-webkit-tap-highlight-color:transparent;}
 @keyframes pageIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
 .page.active{animation:pageIn .22s ease;}
 </style>
-<link rel="stylesheet" href="focus.css?v=130">
-<script src="focus-core.js?v=130"></script>
+<link rel="stylesheet" href="focus.css?v=131">
+<script src="focus-core.js?v=131"></script>
 <style>
 /* ═══ v127 改版：迴圈主軸（今天／回顧／方向／我）═══ */
 .ui2-zone{font-family:'Baloo 2',sans-serif;font-size:13px;font-weight:800;color:var(--tc2);margin:18px 4px 8px;letter-spacing:.5px;}
@@ -1205,7 +1205,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 .sleep-scene.night .ss-panel{background:rgba(28,36,64,.88)!important;}
 @media(min-width:1300px){.wrap{max-width:1256px;}}
 </style>
-<link rel="stylesheet" href="ds.css?v=130">
+<link rel="stylesheet" href="ds.css?v=131">
 </head>
 <body>
 <!-- 這四個彈窗特意放在 <body> 最前面、所有 <script> 之前：
@@ -1323,6 +1323,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 <div class="page active ds" id="page-home">
 <section id="focus-hub" hidden data-project="完成動畫" data-due="2026-10-10" data-body-due="2026-10-31" data-body-event="見粉肝" data-night-extra="20:00 戴牙套" aria-label="我的目標"></section>
 <div class="pg-head"><h1>今天</h1><span class="pg-sub" id="pg-sub-today"></span>
+  <div class="pg-events" id="today-events-card" style="display:none;"><span class="pe-lbl" id="today-events-title">今日行程</span><div id="today-events-list"></div><button id="today-event-add" class="pe-add" type="button" title="新增今天的行程">＋</button></div>
   <div class="pg-act"><button class="ds-btn" id="pg-cal-btn" type="button">📅 補記其他天</button><button class="ghost-btn ds-btn" id="copy-btn"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4cb_3d.png" width="15" height="15"/> 複製今日紀錄給 Claude</button><button class="liq-btn ds-btn primary" id="plant-btn"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/2728_3d.png" width="17" height="17"/> 種下今天</button></div></div>
 <div class="today-grid">
 <div class="tcol">
@@ -1344,7 +1345,6 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
           <div class="sticky-resize" id="sticky-resize" title="拖曳調整大小（雙擊還原）"></div>
         </div>
     <div id="focus-today-exps"></div>
-    <div class="also-did"><div class="also-lbl">今天也做了（點一下就記）</div><div class="also-row"><span class="also-k">習慣</span><div id="habits" class="also-chips"></div></div><div class="also-row"><span class="also-k">運動</span><div id="focus-moves"></div></div></div>
   </div>
   <div class="lt-pane" data-lt="tomorrow">
     <div id="focus-undone"></div>
@@ -1354,24 +1354,11 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
     <div id="focus-bring-next"></div>
   </div>
 </div>
-</div>
-<div class="tcol">
-<div class="gcard write-card">
-  <div class="sec-hd" style="justify-content:space-between;"><span>今天怎麼樣</span><span id="today-date" style=""></span></div>
-  <div class="diary-section"><div class="diary-label"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f31f_3d.png" width="15" height="15"/> Highlights <span style="font-size:11px;font-weight:500;color:var(--tc3);">亮點事件</span></div><textarea class="diary-ta" id="d-hl" placeholder="今天最讓你閃亮的事..."></textarea></div>
-      <details class="ui2-more" id="diary-more1"><summary>多寫一點（Reflection・Gratitude）</summary><div class="diary-section"><div class="diary-label"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4d6_3d.png" width="15" height="15"/> Reflection <span style="font-size:11px;font-weight:500;color:var(--tc3);">反思與學習</span></div><textarea class="diary-ta" id="d-rf" placeholder="今天學到什麼或想到什麼..."></textarea></div><div class="diary-section"><div class="diary-label"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f97a_3d.png" width="15" height="15" onerror="this.outerHTML='🥹'"/> Gratitude <span style="font-size:11px;font-weight:500;color:var(--tc3);">感恩的人事物</span></div><textarea class="diary-ta" id="d-gr" placeholder="今天想感謝誰或什麼..."></textarea></div></details>
-      <details class="ui2-more" id="diary-more2"><summary>更多（金句・照片・備註）</summary><div class="diary-section" style="margin-bottom:0;"><div class="diary-label">💬 今天讓我有感覺的一句話 <span style="font-size:11px;font-weight:500;color:var(--tc3);">選填·會存進金句收藏</span></div><input class="quote-input" id="d-quote" placeholder="可以是別人說的，也可以是自己想到的..."/></div><div class="diary-section" style="margin:12px 0 0;">
-        <div class="diary-label">📷 今日照片 <span style="font-size:11px;font-weight:500;color:var(--tc3);">選填·最多3張</span></div>
-        <div id="photo-thumbs" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;"></div>
-        <input type="file" id="photo-file" accept="image/*" style="display:none;"/>
-        <button type="button" id="photo-add-btn" style="background:none;border:1.5px dashed rgba(var(--secondary-rgb),.35);border-radius:11px;padding:7px 12px;font-family:'Quicksand',sans-serif;font-size:12px;color:var(--tc3);cursor:pointer;width:100%;">📷 新增照片</button>
-      </div><div class="diary-section" style="margin:12px 0 0;">
-        <div class="diary-label">📝 備註 <span style="font-size:11px;font-weight:500;color:var(--tc3);">選填·會在日曆上顯示黃點</span></div>
-        <input class="quote-input" id="d-note" placeholder="給這一天的小備註..." style="font-style:normal;"/>
-      </div></details>
+<div class="gcard also-card">
+  <div class="also-did"><div class="sec-hd">今天也做了 <span class="pg-sub">點一下就記</span></div><div class="also-row"><span class="also-k">習慣</span><div id="habits" class="also-chips"></div></div><div class="also-row"><span class="also-k">運動</span><div id="focus-moves"></div></div></div>
 </div>
 </div>
-<div class="tcol">
+<div class="tcol tcol-scene">
 <div class="home-banner"><div class="gcard-scene">
       <div style="position:relative;z-index:1;text-align:center;margin-bottom:6px;">
         <span class="level-pill"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f333_3d.png" width="15" height="15"/> 格蘭朵樹 <span id="lv">Lv.1</span></span>
@@ -1397,17 +1384,29 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
         <div id="puppy" style="position:absolute;left:56px;bottom:44px;cursor:pointer;touch-action:none;z-index:5;"></div>
       </div>
     </div></div>
+<div id="focus-tonight"></div>
 <div class="gcard health-card2">
   <div class="sec-hd hc-hd"><span>身體紀錄</span><div class="hz-tabs" id="hz-tabs"></div></div>
   
   <div id="health-grid"></div>
 </div>
 <div id="focus-cards"></div>
-<div id="focus-tonight"></div>
-<div class="gcard" id="today-events-card" style="display:none;">
-      <div class="sec-hd" style="justify-content:space-between;margin-bottom:8px;"><span id="today-events-title">今日行程</span><button id="today-event-add" title="新增今天的行程" style="width:26px;height:26px;border:none;border-radius:999px;background:rgba(var(--primary-rgb),.15);color:var(--primary);font-size:16px;cursor:pointer;line-height:1;">＋</button></div>
-      <div id="today-events-list"></div>
-    </div>
+</div>
+<div class="tcol tcol-write">
+<div class="gcard write-card">
+  <div class="sec-hd" style="justify-content:space-between;"><span>今天怎麼樣</span><span id="today-date" style=""></span></div>
+  <div class="diary-section"><div class="diary-label"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f31f_3d.png" width="15" height="15"/> Highlights <span style="font-size:11px;font-weight:500;color:var(--tc3);">亮點事件</span></div><textarea class="diary-ta" id="d-hl" placeholder="今天最讓你閃亮的事..."></textarea></div>
+      <details class="ui2-more" id="diary-more1"><summary>多寫一點（Reflection・Gratitude）</summary><div class="diary-section"><div class="diary-label"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4d6_3d.png" width="15" height="15"/> Reflection <span style="font-size:11px;font-weight:500;color:var(--tc3);">反思與學習</span></div><textarea class="diary-ta" id="d-rf" placeholder="今天學到什麼或想到什麼..."></textarea></div><div class="diary-section"><div class="diary-label"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f97a_3d.png" width="15" height="15" onerror="this.outerHTML='🥹'"/> Gratitude <span style="font-size:11px;font-weight:500;color:var(--tc3);">感恩的人事物</span></div><textarea class="diary-ta" id="d-gr" placeholder="今天想感謝誰或什麼..."></textarea></div></details>
+      <details class="ui2-more" id="diary-more2"><summary>更多（金句・照片・備註）</summary><div class="diary-section" style="margin-bottom:0;"><div class="diary-label">💬 今天讓我有感覺的一句話 <span style="font-size:11px;font-weight:500;color:var(--tc3);">選填·會存進金句收藏</span></div><input class="quote-input" id="d-quote" placeholder="可以是別人說的，也可以是自己想到的..."/></div><div class="diary-section" style="margin:12px 0 0;">
+        <div class="diary-label">📷 今日照片 <span style="font-size:11px;font-weight:500;color:var(--tc3);">選填·最多3張</span></div>
+        <div id="photo-thumbs" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;"></div>
+        <input type="file" id="photo-file" accept="image/*" style="display:none;"/>
+        <button type="button" id="photo-add-btn" style="background:none;border:1.5px dashed rgba(var(--secondary-rgb),.35);border-radius:11px;padding:7px 12px;font-family:'Quicksand',sans-serif;font-size:12px;color:var(--tc3);cursor:pointer;width:100%;">📷 新增照片</button>
+      </div><div class="diary-section" style="margin:12px 0 0;">
+        <div class="diary-label">📝 備註 <span style="font-size:11px;font-weight:500;color:var(--tc3);">選填·會在日曆上顯示黃點</span></div>
+        <input class="quote-input" id="d-note" placeholder="給這一天的小備註..." style="font-style:normal;"/>
+      </div></details>
+</div>
 </div>
 </div>
 <button class="ghost-btn" id="draft-btn" style="display:none;">💾 儲存草稿（先存不種）</button>
@@ -1623,6 +1622,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 
 <!-- ══════ INNER GARDEN ══════ -->
 <div class="me-pane" id="page-garden">
+<div class="me-hero">
 <div class="garden-wrap" style="margin-top:4px;">
   <div class="garden-scene-wrap">
     <button class="garden-arrow left" id="gd-arrow-l">‹</button>
@@ -1643,6 +1643,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
   <div class="sec-hd">✨ 我是誰</div>
   <p style="font-size:11px;color:var(--tc3);margin-bottom:10px;">習慣累積7次點亮身份 · 30次獲得金框</p>
   <div class="identity-wall" id="identity-wall"></div>
+</div>
 </div>
 
 <div class="gcard">
@@ -1908,7 +1909,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v130';
+const APP_VER='v131';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // ── 注音／中文輸入法保護 ──────────────────────────────
@@ -7906,6 +7907,7 @@ function _renderCalDayPanelInner(ds,editId){
 // 今日行程卡的＋：開月曆並直接展開今天面板
 (function(){
   const b=document.getElementById('today-event-add');
+  document.getElementById('today-events-list')?.addEventListener('click',()=>b&&b.click());
   if(b)b.addEventListener('click',()=>{
     const ds=(typeof ctxIsToday==='function'&&!ctxIsToday())?viewDate:curDay();
     const dd=new Date(ds+'T00:00:00');
@@ -7975,6 +7977,6 @@ document.addEventListener('visibilitychange',()=>{
 
 
 
-<script src="focus.js?v=130"></script>
+<script src="focus.js?v=131"></script>
 </body>
 </html>
