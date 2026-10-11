@@ -347,6 +347,26 @@ function bringNext(){
   if(i>=0)return '';                            // 還在今天的清單 → 上面「沒做完的」可以直接排到明天
   return `<button class="focus-btn" data-action="bring-next" data-g="${esc(pg.id)}" style="margin-top:8px;">＋ 把「${esc(pg.next.text)}」排到明天</button>`;
 }
+// 今天／明天 分頁：晚上收尾時段預設打開「明天」；自己點過就照自己的
+function listTab(){
+  let manual='';try{const m=JSON.parse(localStorage.getItem('grandol_lt')||'{}');if(m.d===curDay())manual=m.t;}catch(e){}
+  return manual||(isEvening()?'tomorrow':'today');
+}
+function applyListTab(){
+  const t=listTab();
+  document.querySelectorAll('#list-tabs [data-lt]').forEach(b=>b.classList.toggle('on',b.dataset.lt===t));
+  document.querySelectorAll('.list-card .lt-pane').forEach(p=>p.classList.toggle('on',p.dataset.lt===t));
+  const tc=document.getElementById('tmr-count');
+  if(tc&&typeof tdlRows!=='undefined'){const n=tdlRows.filter(r=>r.theme||r.task).length;tc.textContent=n?String(n):'';}
+  const sub=document.getElementById('pg-sub-today');
+  if(sub){const d=new Date(ds()+'T12:00:00'),h=new Date().getHours();
+    sub.textContent=`${d.getMonth()+1}月${d.getDate()}日 週${'日一二三四五六'[d.getDay()]}`+(ds()===curDay()?' · '+(h<5?'深夜了':h<11?'早安':h<18?'午安':'晚安'):' · 補記中');}
+}
+document.querySelectorAll('#list-tabs [data-lt]').forEach(b=>b.addEventListener('click',()=>{
+  try{localStorage.setItem('grandol_lt',JSON.stringify({d:curDay(),t:b.dataset.lt}));}catch(e){}
+  applyListTab();
+}));
+document.getElementById('pg-cal-btn')?.addEventListener('click',()=>{if(typeof toggleCalPopup==='function')toggleCalPopup();});
 function updateCount(){
   const el=document.getElementById('today-count');if(!el)return;
   const c=stickyCtx();if(!c.todayMode){el.textContent='';return;}
@@ -443,7 +463,7 @@ function render(force){
   if(M.moves)M.moves.innerHTML=moveChips();
   if(M.undone)M.undone.innerHTML=undoneList();
   if(M.bring)M.bring.innerHTML=bringNext();
-  updateCount();
+  updateCount();applyListTab();
   if(M.goals)M.goals.innerHTML=`${goalListCard(gs)}${planSummaryCard()}${expOverviewCard()}`;
   $qa('[data-next-in]').forEach(x=>{if(keep[x.dataset.nextIn])x.value=keep[x.dataset.nextIn];});
   if(editing==='phone'||editing==='bed')$q('[data-edit]')?.focus();

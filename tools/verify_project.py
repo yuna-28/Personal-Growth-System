@@ -115,7 +115,7 @@ _idx = (ROOT / 'index.html').read_text(encoding='utf-8')
 _m = re.search(r"const APP_VER='v(\d+)'", _idx)
 if _m:
     _v = _m.group(1)
-    for _asset in ('focus.css', 'focus-core.js', 'focus.js'):
+    for _asset in ('focus.css', 'focus-core.js', 'focus.js', 'ds.css'):
         if f'{_asset}?v={_v}' not in _idx:
             fail(f'index.html 的 {_asset} 版本號不是 ?v={_v}（APP_VER 改了要一起改）')
         if f'./{_asset}?v={_v}' not in (ROOT / 'sw.js').read_text(encoding='utf-8'):

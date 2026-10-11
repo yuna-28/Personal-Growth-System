@@ -1,0 +1,205 @@
+/* ════════════════════════════════════════════════════════════════
+   格蘭朵 Design System（v129）
+   所有頁面共用。這個檔案最後載入，負責把過去各時期留下的零件
+   （gcard / mini-btn / liq-btn / neo-chip / tdl-in …）統一成同一套樣子。
+   新增零件請直接用 ds-* class，不要再寫一次性的 inline 樣式。
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Tokens ─────────────────────────────────────────────── */
+:root{
+  /* 背景與表面 */
+  --ds-bg:#F1EFEA;          /* App 底色 */
+  --ds-surface:#FBFAF7;     /* 卡片、窗格 */
+  --ds-field:#FFFFFF;       /* 輸入框、晶片 */
+  --ds-sunken:#ECE9E2;      /* 分頁底、凹槽 */
+  --ds-line:#E4E1DA;        /* 卡片邊框、分隔線 */
+  --ds-line-2:#D6D2C9;      /* 輸入框、按鈕邊框 */
+  /* 文字 */
+  --ds-ink:#23252B;--ds-ink-2:#4A4D58;--ds-ink-3:#878A95;
+  /* 角色色：主色（導覽、主要按鈕）、焦點（今天這一步）、完成、提醒 */
+  --ds-primary:#283E7C;--ds-primary-soft:#E8ECF6;
+  --ds-focus:#F2C46D;--ds-focus-soft:#FFF5DF;--ds-focus-ink:#80520F;
+  --ds-good:#2F7A6E;--ds-good-soft:#E2F1EE;--ds-good-line:#A7D2C9;
+  --ds-warn:#B0502A;--ds-warn-soft:#FBEDE4;
+  /* 形狀 */
+  --ds-r-sm:8px;--ds-r:12px;--ds-r-lg:16px;
+  /* 間距（4 的倍數） */
+  --ds-1:4px;--ds-2:8px;--ds-3:12px;--ds-4:16px;--ds-5:20px;--ds-6:24px;--ds-8:32px;
+  /* 字級 */
+  --ds-fs-xs:12px;--ds-fs-sm:13px;--ds-fs:14px;--ds-fs-md:15px;--ds-fs-lg:18px;--ds-fs-xl:22px;
+  --ds-shadow:0 1px 2px rgba(20,24,40,.04),0 2px 8px -4px rgba(20,24,40,.06);
+  --ds-font:'Quicksand','PingFang TC','Noto Sans TC','Microsoft JhengHei',sans-serif;
+}
+
+/* ── 2. 元件 ───────────────────────────────────────────────── */
+/* 卡片：只有一種 */
+.gcard,.gcard-nb,.gcard-scene{
+  background:var(--ds-surface)!important;border:1px solid var(--ds-line)!important;border-radius:var(--ds-r-lg)!important;
+  box-shadow:var(--ds-shadow)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+  padding:var(--ds-4)!important;margin-bottom:var(--ds-4);
+}
+/* 區塊標題 */
+.sec-hd{font-family:var(--ds-font)!important;font-size:var(--ds-fs-md)!important;font-weight:700!important;color:var(--ds-ink)!important;
+  margin-bottom:var(--ds-3)!important;gap:var(--ds-2)!important;letter-spacing:0!important;}
+.sec-hd img{width:18px!important;height:18px!important;}
+/* 按鈕：一般／主要／文字 */
+.ds-btn,.focus-btn,.mini-btn,.ghost-btn,.goal-more{
+  display:inline-flex!important;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:0 14px!important;
+  border:1px solid var(--ds-line-2)!important;background:var(--ds-field)!important;color:var(--ds-ink-2)!important;border-radius:var(--ds-r)!important;
+  font-family:var(--ds-font)!important;font-size:var(--ds-fs-sm)!important;font-weight:700!important;box-shadow:none!important;cursor:pointer;
+  width:auto!important;transform:none!important;transition:background .15s,border-color .15s;white-space:nowrap;}
+.ds-btn:hover,.focus-btn:hover,.mini-btn:hover,.ghost-btn:hover{border-color:var(--ds-ink-3)!important;}
+.ds-btn.primary,.focus-btn.primary,.liq-btn{
+  display:inline-flex!important;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:0 16px!important;width:auto!important;
+  background:var(--ds-primary)!important;border:1px solid var(--ds-primary)!important;color:#fff!important;border-radius:var(--ds-r)!important;
+  font-family:var(--ds-font)!important;font-size:var(--ds-fs-sm)!important;font-weight:700!important;box-shadow:none!important;}
+.liq-btn img{width:16px!important;height:16px!important;}
+.focus-btn.done{background:var(--ds-good-soft)!important;border-color:var(--ds-good-line)!important;color:var(--ds-good)!important;}
+.focus-btn.rest{background:var(--ds-focus-soft)!important;border-color:var(--ds-focus)!important;color:var(--ds-focus-ink)!important;}
+.goal-more{border-color:transparent!important;background:transparent!important;color:var(--ds-ink-3)!important;padding:0 6px!important;}
+/* 晶片（習慣、運動、健康選項分頁）：跟按鈕同一家族，圓形 */
+.also-chips .neo-chip,.also-chips .focus-btn,.hm-chip{
+  min-height:30px!important;padding:0 12px!important;border-radius:999px!important;border:1px solid var(--ds-line-2)!important;
+  background:var(--ds-field)!important;box-shadow:none!important;font-size:var(--ds-fs-sm)!important;font-weight:600!important;color:var(--ds-ink-2)!important;
+  display:inline-flex!important;align-items:center;gap:6px!important;width:auto!important;}
+.also-chips .neo-chip.on,.also-chips .focus-btn.done,.hm-chip.on{background:var(--ds-good-soft)!important;border-color:var(--ds-good-line)!important;color:var(--ds-good)!important;}
+.also-chips .neo-chip img{width:16px!important;height:16px!important;}
+.also-chips .neo-chip .chip-ring{display:none;}
+/* 分頁切換（segmented）：週／月、今天／明天、健康四項 */
+.ui2-seg,.ds-tabs,.hz-tabs{display:inline-flex!important;gap:2px!important;background:var(--ds-sunken)!important;border-radius:var(--ds-r)!important;padding:3px!important;
+  margin:0!important;border:none!important;flex-wrap:nowrap;}
+.ui2-seg button,.ds-tabs button,.hz-tab{border:none!important;background:transparent!important;border-radius:9px!important;padding:5px 12px!important;
+  font-family:var(--ds-font)!important;font-size:var(--ds-fs-sm)!important;font-weight:700!important;color:var(--ds-ink-3)!important;cursor:pointer;box-shadow:none!important;white-space:nowrap;}
+.ui2-seg button.on,.ds-tabs button.on,.hz-tab.on{background:var(--ds-field)!important;color:var(--ds-ink)!important;box-shadow:0 1px 3px rgba(20,24,40,.1)!important;}
+.hz-tab.has:not(.on){color:var(--ds-good)!important;}
+/* 輸入框 */
+.tdl-in,.goal-in,.fm-in,.quote-input,.diary-in,#page-home textarea,.sticky-addin,.focus-time{
+  background:var(--ds-field)!important;border:1px solid var(--ds-line-2)!important;border-radius:var(--ds-r-sm)!important;box-shadow:none!important;
+  font-family:var(--ds-font)!important;font-size:var(--ds-fs)!important;color:var(--ds-ink)!important;padding:8px 10px!important;outline:none;}
+.tdl-in:focus,.goal-in:focus,.fm-in:focus,.quote-input:focus,#page-home textarea:focus,.sticky-addin:focus{border-color:var(--ds-primary)!important;box-shadow:0 0 0 3px var(--ds-primary-soft)!important;}
+/* 列表列：清單、實驗、沒做完 */
+.sticky-item,.exp-row,.undone-row{min-height:38px;margin:0!important;padding:4px 0!important;border-bottom:1px solid var(--ds-line);font-size:var(--ds-fs)!important;gap:var(--ds-2)!important;}
+.sticky-check,.er-box{width:18px!important;height:18px!important;border-radius:5px!important;border:1.5px solid var(--ds-line-2)!important;background:var(--ds-field)!important;}
+.sticky-check.done,.er-box.on{background:var(--ds-good)!important;border-color:var(--ds-good)!important;color:#fff!important;}
+.sticky-item .sticky-post,.sticky-item .sticky-del,.sticky-item .row-grip{opacity:0;transition:opacity .12s;}
+.sticky-item:hover .sticky-post,.sticky-item:hover .sticky-del,.sticky-item:hover .row-grip{opacity:.7;}
+@media(hover:none){.sticky-item .sticky-post,.sticky-item .sticky-del,.sticky-item .row-grip{opacity:.6;}}
+.sticky-add{display:block;text-align:left!important;margin-top:var(--ds-2);padding:8px 10px!important;border:1px dashed var(--ds-line-2)!important;border-radius:var(--ds-r-sm)!important;
+  background:transparent!important;color:var(--ds-ink-3)!important;font-size:var(--ds-fs-sm)!important;cursor:text;}
+/* 輔助文字 */
+.goal-sub,.focus-note,.hero-sub,.also-lbl,.also-k{font-size:var(--ds-fs-xs)!important;}
+.goal-sub.muted,.goal-sub{color:var(--ds-ink-3);}
+
+/* ── 3. 今天頁 ─────────────────────────────────────────────── */
+#page-home .pg-head{display:flex;align-items:center;gap:var(--ds-3);margin-bottom:var(--ds-4);flex-wrap:wrap;}
+#page-home .pg-head h1{font-family:var(--ds-font);font-size:var(--ds-fs-xl);font-weight:800;color:var(--ds-ink);margin:0;}
+#page-home .pg-head .pg-sub{font-size:var(--ds-fs-sm);color:var(--ds-ink-3);}
+#page-home .pg-head .pg-act{margin-left:auto;display:flex;gap:var(--ds-2);flex-wrap:wrap;}
+.today-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--ds-4);}
+.today-grid>.tcol{display:flex;flex-direction:column;gap:var(--ds-4);min-width:0;}
+.today-grid>.tcol>*{margin:0!important;}
+/* 重點卡（今天這一步／現在該做） */
+.hero{border-color:#EBD9B1!important;}
+.hero.day{background:var(--ds-focus-soft)!important;}
+.hero.night{background:var(--ds-primary-soft)!important;border-color:#CCD5EC!important;}
+.hero-top{font-size:var(--ds-fs-xs)!important;color:var(--ds-ink-2)!important;}
+.hero.day .hero-top{color:var(--ds-focus-ink)!important;}
+.hero-main .hero-txt{font-family:var(--ds-font)!important;font-size:var(--ds-fs-lg)!important;font-weight:800!important;}
+.hero-segs .goal-seg{height:6px!important;border-radius:3px!important;background:#EADFC8!important;}
+.hero-segs .goal-seg.done{background:var(--ds-good)!important;}
+.hero-segs .goal-seg.cur{background:var(--ds-focus)!important;}
+/* 清單卡：今天／明天 */
+.list-card .lc-hd{display:flex;align-items:center;gap:var(--ds-2);margin-bottom:var(--ds-2);}
+.list-card .lc-hd .lc-meta{margin-left:auto;font-size:var(--ds-fs-xs);color:var(--ds-ink-3);}
+.list-card .lt-pane{display:none;}
+.list-card .lt-pane.on{display:block;}
+.list-card .sticky-note.inline{background:none!important;padding:0!important;margin:0!important;box-shadow:none!important;border:none!important;transform:none!important;}
+.list-card .sticky-note.inline::before,.list-card .sticky-note.inline::after{display:none!important;}
+.list-card .sticky-empty{display:none;}
+.list-card .also-did{margin-top:var(--ds-4);padding-top:var(--ds-3);border-top:1px solid var(--ds-line);}
+.list-card .also-row{display:flex;align-items:flex-start;gap:var(--ds-2);margin-top:var(--ds-2);}
+.list-card .also-k{width:30px;flex-shrink:0;padding-top:7px;color:var(--ds-ink-3);font-weight:700;}
+.list-card .also-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.list-card .tdl-row-wrap{margin-bottom:6px;}
+.list-card #tdl-title{display:block;font-size:var(--ds-fs-xs);color:var(--ds-ink-3);margin-bottom:var(--ds-2);}
+.list-card #tdl-add{width:100%;margin-top:4px;border:1px dashed var(--ds-line-2)!important;background:transparent!important;border-radius:var(--ds-r-sm)!important;
+  padding:8px 10px!important;text-align:left;color:var(--ds-ink-3)!important;font-size:var(--ds-fs-sm)!important;}
+/* 寫作卡：像一頁筆記 */
+.write-card .diary-section{margin-bottom:var(--ds-4)!important;}
+.write-card .diary-label{font-size:var(--ds-fs-xs)!important;font-weight:700!important;color:var(--ds-ink-3)!important;margin-bottom:6px!important;}
+.write-card .diary-label img{display:none;}
+.write-card textarea{width:100%;min-height:96px;line-height:1.7!important;resize:vertical;}
+.write-card details.ui2-more>summary{font-size:var(--ds-fs-xs);color:var(--ds-ink-3);}
+/* 身體卡：分頁在標題列，裡面不再套卡片 */
+.health-card2 .hc-hd{display:flex;align-items:center;justify-content:space-between;}
+.health-card2 .hz-card{background:none!important;border:none!important;box-shadow:none!important;padding:0!important;}
+.health-card2 #health-grid{gap:0!important;}
+/* 森林小卡：場景就是卡片 */
+.home-banner .gcard-scene{padding:0!important;overflow:hidden;position:relative;}
+.home-banner .gcard-scene>div:first-child{position:absolute;top:10px;left:10px;z-index:8;margin:0!important;text-align:left!important;}
+.home-banner .level-pill{font-size:12px!important;padding:4px 12px!important;}
+.home-banner #exprow,.home-banner #explbl{display:none!important;}
+.home-banner .scene-stage{height:168px!important;border-radius:0!important;}
+.home-banner #tree-wrap{width:120px!important;height:120px!important;bottom:8px!important;}
+.home-banner #tree-wrap>img{width:120px!important;height:120px!important;}
+.home-banner #fruit-layer{transform:scale(.43)!important;}
+.home-banner .floor-flower-item img{width:20px!important;height:20px!important;}
+/* 晚上時間軸（窄欄裡：一列一步） */
+#focus-tonight .tl{grid-template-columns:minmax(0,1fr)!important;gap:4px!important;}
+#focus-tonight .tl-step{display:flex!important;align-items:center;gap:var(--ds-3);text-align:left!important;padding:7px 10px!important;border-radius:var(--ds-r-sm)!important;}
+#focus-tonight .tl-step .t{width:52px;flex-shrink:0;}
+
+/* ── 4. 電腦版外框（≥1100px）：左側欄＋填滿寬度＋窗格各自捲動 ── */
+.sb-brand,.sb-foot{display:none;}
+@media(min-width:1100px){
+  :root{--web-zoom:1!important;}
+  .wrap{zoom:1!important;max-width:none!important;margin:0!important;padding-left:232px;}
+  .bot-nav-wrap{zoom:1!important;}
+  body{background:var(--ds-bg)!important;font-family:var(--ds-font);}
+  .bg{padding:var(--ds-5) var(--ds-8) var(--ds-6)!important;}
+  .page{padding:0!important;}
+  /* 側欄 */
+  .bot-nav-wrap{left:0!important;top:0!important;bottom:0!important;right:auto!important;width:232px!important;transform:none!important;}
+  .bot-nav{height:100%;max-width:none!important;flex-direction:column!important;align-items:stretch!important;gap:4px!important;padding:var(--ds-5) var(--ds-3)!important;
+    border-radius:0!important;background:var(--ds-surface)!important;border:none!important;border-right:1px solid var(--ds-line)!important;box-shadow:none!important;
+    backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
+  .sb-brand{display:block;font-family:var(--ds-font);font-size:16px;font-weight:800;color:var(--ds-ink);padding:0 10px 18px;}
+  .sb-brand small{display:block;font-size:12px;font-weight:600;color:var(--ds-ink-3);margin-top:4px;}
+  .nav-btn{flex:none!important;flex-direction:row!important;justify-content:flex-start!important;gap:12px!important;padding:10px 12px!important;border-radius:10px!important;
+    font-size:14px!important;color:var(--ds-ink-2)!important;width:100%!important;}
+  .nav-btn img{width:20px!important;height:20px!important;opacity:.8!important;}
+  .nav-btn.active{background:var(--ds-primary)!important;color:#fff!important;box-shadow:none!important;}
+  .nav-btn.active::before{display:none!important;}
+  .support-quick-btn{left:22px!important;right:auto!important;bottom:18px!important;}
+  /* 頂列（日期、連續天數、同步）在電腦版固定在側欄品牌下面，點日期一樣能補記 */
+  .sb-brand{padding-bottom:132px!important;}
+  .top-bar{position:fixed!important;left:12px;top:52px;width:208px;z-index:101;margin:0!important;padding:0!important;
+    flex-direction:column!important;align-items:flex-start!important;gap:8px!important;background:none!important;}
+  .top-bar .date-btn{padding:6px 10px!important;border-radius:10px;width:100%;text-align:left;}
+  .top-bar .date-btn:hover{background:var(--ds-sunken);}
+  .top-bar .top-date{font-size:15px!important;}
+  .top-bar>div:last-child{flex-direction:row!important;align-items:center!important;gap:10px!important;padding-left:10px;}
+  #backfill-banner{margin-bottom:var(--ds-4)!important;}
+  /* 今天：三個窗格、一個畫面 */
+  .today-grid{grid-template-columns:minmax(340px,1fr) minmax(380px,1.15fr) minmax(320px,.9fr);align-items:start;}
+  .today-grid>.tcol{max-height:calc(100vh - 118px);overflow-y:auto;padding-right:4px;scrollbar-width:thin;}
+  .write-card{min-height:calc(100vh - 118px);display:flex;flex-direction:column;}
+  .write-card textarea{min-height:120px;}
+  /* 其他頁面也不再是窄窄一條：最寬 1280 */
+  #page-review,#page-direction,#page-me,#page-settings{max-width:1280px;}
+}
+
+/* ── 修正（v129 驗收時發現）── */
+.today-grid>.tcol>*{flex-shrink:0;}                      /* 窗格可捲動時，卡片不能被壓扁 */
+#draft-btn{display:none!important;}                       /* 已自動存檔，不顯示 */
+.home-banner .gcard-scene>div:first-child{z-index:20!important;}  /* 等級徽章在場景上面 */
+@media(min-width:1100px){.write-card #today-date{display:none;}} /* 頁首已有日期 */
+@media(min-width:1100px){
+  .top-bar>div:last-child{flex-direction:column!important;align-items:flex-start!important;gap:6px!important;}
+  .top-bar .streak-pill{white-space:nowrap!important;padding:5px 12px!important;font-size:13px!important;}
+  .top-bar .sync-badge{font-size:11px!important;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .sb-brand{padding-bottom:150px!important;}
+  /* 三欄底部對齊：清單卡延伸到窗格底 */
+  .today-grid>.tcol{min-height:calc(100vh - 118px);}
+  .today-grid>.tcol>.list-card{flex:1 0 auto;}
+}
