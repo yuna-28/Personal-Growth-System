@@ -169,6 +169,10 @@
 .hero .ms-add .ms-dot{color:var(--ds-ink-3);text-align:center;}
 .hero .ms-add .ms-title{font-weight:500;}
 .hero .ms-add .ms-title::placeholder{color:var(--ds-ink-3);}
+/* 體態卡：自己打勾的項目 */
+.goal-card .dots-row{display:flex;align-items:center;gap:var(--ds-2);}
+.goal-card .dots-row .mt-tick{min-height:26px!important;padding:0 10px!important;font-size:var(--ds-fs-xs)!important;}
+.also-card .sec-hd{display:flex;align-items:center;}
 /* 便利貼：今天／明天清單 */
 .list-card{position:relative;background:linear-gradient(160deg,#FFF7DC,#FCEEB8)!important;border:none!important;border-radius:4px 16px 16px 16px!important;
   box-shadow:0 2px 4px rgba(35,35,30,.1),0 14px 26px -14px rgba(160,120,20,.45)!important;padding:var(--ds-4) var(--ds-5) var(--ds-8)!important;}
@@ -279,6 +283,10 @@
   .top-bar .sync-badge{font-size:12px!important;max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .support-quick-btn{bottom:72px!important;}
   #backfill-banner{margin-bottom:var(--ds-4)!important;}
+  /* 「有新版本」提示：放在側欄底部，不蓋住內容 */
+  #update-toast{left:12px!important;right:auto!important;bottom:64px!important;transform:none!important;width:208px;box-sizing:border-box;text-align:center;
+    background:var(--ds-primary)!important;color:#fff!important;border:none!important;box-shadow:0 6px 16px -6px rgba(40,62,124,.5)!important;font-size:13px!important;}
+  #update-toast b{color:#fff!important;}
 
   /* 今天：三等分（清單｜場景＋身體｜小記），每欄自己捲動，不用整頁往下滑 */
   .today-grid{grid-template-columns:repeat(3,minmax(0,1fr));align-items:start;}
@@ -301,6 +309,8 @@
   .me-hero{display:grid;grid-template-columns:902px minmax(0,1fr);gap:var(--ds-4);}
   .me-hero>*{margin:0!important;min-width:0;}
   .me-hero .identity-wall{max-height:260px;overflow-y:auto;}
+  .garden-scroll{scrollbar-width:none;}
+  .garden-scroll::-webkit-scrollbar{display:none;}
   #page-garden>.gcard{grid-column:span 4;}
   #page-garden>.gcard:has(#proof-board),#page-garden>.gcard:has(#insights-timeline){grid-column:span 6;}
   /* 支持我的：資源書＋誇誇牆，下面分類卡自動排 */
@@ -381,4 +391,10 @@
   .rv-pane #week-entries{display:block!important;order:8;grid-column:1/-1;}
   #page-month .period-nav{grid-column:span 6;}
   #mo-copy-opts{order:1!important;grid-column:span 3!important;flex-direction:column!important;gap:4px!important;margin:0!important;align-self:center;font-size:12px!important;}
+}
+/* 月回顧的「複製內容」選項：收成一個小面板，不再是散落的勾選框 */
+input[type="checkbox"]{accent-color:var(--ds-primary);}
+@media(min-width:1100px){
+  #mo-copy-opts{background:var(--ds-surface)!important;border:1px solid var(--ds-line)!important;border-radius:var(--ds-r)!important;padding:8px 12px!important;align-self:stretch!important;justify-content:center;}
+  #mo-copy-opts label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;color:var(--ds-ink-2);}
 }

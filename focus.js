@@ -9,7 +9,7 @@
 const C=FocusCore, hub=document.getElementById('focus-hub');   // hub 只放預設值（data-*），不再直接畫東西
 if(!hub)return;
 const M={now:document.getElementById('focus-now'),cards:document.getElementById('focus-cards'),today:document.getElementById('focus-today-exps'),
-  goalrow:document.getElementById('focus-goalrow'),moves:document.getElementById('focus-moves'),
+  moves:document.getElementById('focus-moves'),
   undone:document.getElementById('focus-undone'),bring:document.getElementById('focus-bring-next'),
   tonight:document.getElementById('focus-tonight'),goals:document.getElementById('focus-goals')};
 const mounts=Object.values(M).filter(Boolean);
@@ -70,6 +70,24 @@ function seedExtras(){
   if(p&&p.extras===undefined){const ex=defaultExtras();if(ex.length){p.extras=ex;p.updatedAt=Date.now();sv(S);syncStateDebounced();}}
 }
 function goals(){return data().projects.filter(p=>p.status==='active');}
+// 身體目標的項目。舊資料只有 targets{move,shoulder,bed}，沒有 metrics 時照舊換算
+// src：move＝有運動紀錄的天、shoulder＝肩背打勾、bed＝準時上床、manual＝在卡片上自己打勾
+const SRC_LABEL={move:'自動：有記運動的那天',shoulder:'自動：睡前流程的肩背',bed:'自動：準時上床',manual:'在體態卡上自己打勾'};
+function metricsOf(g){
+  if(Array.isArray(g.metrics))return g.metrics.filter(m=>m&&m.k&&m.l);
+  const t=g.targets||{};
+  return BODY_METRICS.map(m=>({k:m.k,l:m.l,unit:m.unit,target:+t[m.k]||0,src:m.k}));
+}
+function activeMetrics(g){return metricsOf(g).filter(m=>(+m.target||0)>0);}
+function wantsShoulder(){const bg=bodyGoal();return !!(bg&&activeMetrics(bg).some(m=>m.src==='shoulder'));}
+// 某一天這個項目有沒有做到
+function metricHit(m,day){
+  const h=health(day)||{};
+  if(m.src==='move')return exTypesOf(h.exercise).length>0;
+  if(m.src==='shoulder')return !!(h.body&&h.body.shoulder);
+  if(m.src==='bed')return nightInfo(day).kind==='onTime';
+  return !!(h.body&&h.body['m_'+m.k]);
+}
 function projectGoal(){return goals().find(g=>g.kind!=='body');}
 function bodyGoal(){return goals().find(g=>g.kind==='body');}
 function saveHealth(d,h){
@@ -99,17 +117,10 @@ function updateWind(d,fn){
 }
 // ── 本週 ──────────────────────────────────────────
 function mondayOfDs(d){const x=new Date(d+'T12:00:00');const wd=(x.getDay()+6)%7;x.setDate(x.getDate()-wd);return C.dateKey(x);}
-function weekStats(d){
-  const f=data(),mon=mondayOfDs(d);let move=0,shoulder=0,bed=0;
-  for(let i=0;i<7;i++){
-    const day=shiftDay(mon,i);if(day>d)break;
-    const h=health(day)||{};
-    if(exTypesOf(h.exercise).length)move++;
-    if(h.body&&h.body.shoulder)shoulder++;
-    const wd=h.sleep&&h.sleep.windDown;
-    if(wd&&C.result(wd,C.planFor(f,day),day,new Date()).kind==='onTime')bed++;
-  }
-  return {move,shoulder,bed};
+function weekStats(d,g){
+  const mon=mondayOfDs(d),out={};
+  metricsOf(g).forEach(m=>{let n=0;for(let i=0;i<7;i++){const day=shiftDay(mon,i);if(day>d)break;if(metricHit(m,day))n++;}out[m.k]=n;});
+  return out;
 }
 // ── 今晚的流程：從「收手機／上床」往回推 ────────────
 // 收工＝收手機前 60 分；肩背 30 分＝收手機前 50～20 分；洗澡＝收手機前 20 分
@@ -124,7 +135,7 @@ function routine(d){
   const p=C.planFor(data(),d);
   if(!p||p.status==='paused')return null;
   const ph=toMin(p.phone),bd=toMin(p.bed);
-  const bg=bodyGoal(),wantSh=!!(bg&&(+((bg.targets||{}).shoulder)||0)>0);
+  const wantSh=wantsShoulder();
   const h=health(d),w=h.sleep?.windDown||{},n=h.night||{};
   // 收工／肩背／洗澡：自己改過（p.steps）就照自己的；沒改過才從收手機時間往前推
   const doneOf=k=>k==='shoulder'?(h.body&&h.body.shoulder):n[k];
@@ -227,110 +238,19 @@ function dueTxt(g){
   const left=daysBetween(ds(),g.dueDate);
   return `${md(g.dueDate)}${g.event?' '+esc(g.event):''} · ${left>0?left+' 天':(left===0?'今天':'已過 '+(-left)+' 天')}`;
 }
-function msRows(g){
-  const d=ds(),ms=g.milestones||[],cur=ms.findIndex(m=>!m.done);
-  return ms.map((m,i)=>{
-    let cls=m.done?' done':(i===cur?' cur':'');
-    let date='';
-    if(m.due){
-      const left=daysBetween(d,m.due);
-      if(!m.done&&left<0){cls=' over';date=`${md(m.due)} · 晚了 ${-left} 天`;}
-      else if(i===cur)date=`${md(m.due)} · ${left===0?'今天':'還有 '+left+' 天'}`;
-      else date=md(m.due);
-      if(m.hard)date='🚩 '+date;
-    }
-    return `<div class="ms-row${cls}"><button class="ms-dot" data-ms="${i}" data-g="${esc(g.id)}" title="${m.done?'點一下取消完成':'點一下標成完成'}">${m.done?'✅':(i===cur?'🟡':'⚪')}</button>
-      <span class="ms-name">${esc(m.title)}</span>${date?`<span class="ms-date${m.hard?' hard':''}">${date}</span>`:''}</div>`;
-  }).join('');
-}
-function projectCard(g){
-  const d=ds(),ms=g.milestones||[],cur=ms.findIndex(m=>!m.done);
-  const rows=ms.map((m,i)=>{
-    let cls=m.done?' done':(i===cur?' cur':'');
-    let date='';
-    if(m.due){
-      const left=daysBetween(d,m.due);
-      if(!m.done&&left<0){cls=' over';date=`${md(m.due)} · 晚了 ${-left} 天`;}
-      else if(i===cur)date=`${md(m.due)} · ${left===0?'今天':'還有 '+left+' 天'}`;
-      else date=md(m.due);
-      if(m.hard)date='🚩 '+date;
-    }
-    return `<div class="ms-row${cls}"><button class="ms-dot" data-ms="${i}" data-g="${esc(g.id)}" title="${m.done?'點一下取消完成':'點一下標成完成'}">${m.done?'✅':(i===cur?'🟡':'⚪')}</button>
-      <span class="ms-name">${esc(m.title)}</span>${date?`<span class="ms-date${m.hard?' hard':''}">${date}</span>`:''}</div>`;
-  }).join('');
-  const done=ms.filter(m=>m.done).length;
-  let pace='';
-  if(ms.length&&cur>=0&&!ms[cur].due&&g.dueDate){
-    const left=daysBetween(d,g.dueDate)+1,rem=ms.length-done;
-    if(left>0){const per=left/rem;pace=per>=1?`平均每 ${Math.floor(per*10)/10} 天要完成 1 段`:`平均每天要完成 ${Math.ceil(rem/left)} 段`;}
-  }
-  return `<div class="gcard goal-card"><div class="goal-hd"><span>${fi('1f3ac',20)}</span><span class="goal-title">${esc(g.title)}</span>
-      <span class="goal-sub" style="margin-left:auto;">${dueTxt(g)}</span><button class="card-edit" data-edit-goal="${esc(g.id)}" title="編輯">✏️ 編輯</button></div>
-    ${ms.length?`<div class="ms-list">${rows}</div><div class="goal-sub muted">${done}/${ms.length} 段${pace?' · '+pace:''}</div>`
-      :`<div class="goal-sub muted">還沒拆階段。<a href="#" data-edit-goal="${esc(g.id)}" style="color:var(--secondary);">點這裡拆成幾段</a>，每段可以寫日期。</div>`}
-  </div>`;
-}
 // ── 身體型目標卡：本週點點＋動一動 ──────────────
 function bodyCard(g){
-  const d=ds(),st=weekStats(d),t=g.targets||{};
-  const rows=BODY_METRICS.filter(m=>(+t[m.k]||0)>0).map(m=>{
-    const n=st[m.k],goal=+t[m.k];
-    return `<div class="dots-row${n>=goal?' hit':''}"><span class="dl">${m.l}</span><span class="dd">${Array.from({length:goal},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</span><span class="dn">${n}/${goal}</span></div>`;
+  const d=ds(),st=weekStats(d,g);
+  const rows=activeMetrics(g).map(m=>{
+    const n=st[m.k],goal=+m.target,today=metricHit(m,d);
+    const tick=m.src==='manual'?`<button class="focus-btn mt-tick${today?' done':''}" data-metric="${esc(m.k)}" data-g="${esc(g.id)}">${today?'今天 ✓':'今天'}</button>`:'';
+    return `<div class="dots-row${n>=goal?' hit':''}"><span class="dl">${esc(m.l)}</span><span class="dd">${Array.from({length:goal},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</span><span class="dn">${n}/${goal}</span>${tick}</div>`;
   }).join('');
   return `<div class="gcard goal-card"><div class="goal-hd"><span>${fi('1f3c3',20)}</span><span class="goal-title">${esc(g.title)}</span>
       <span class="goal-sub" style="margin-left:auto;">${dueTxt(g)}</span><button class="card-edit" data-edit-goal="${esc(g.id)}" title="編輯">✏️ 編輯</button></div>
     ${rows?`<div class="goal-sub muted">本週（週一重新開始）</div><div style="display:flex;flex-direction:column;gap:7px;">${rows}</div>`:'<div class="goal-sub muted">還沒設每週目標，點 ✏️ 設定</div>'}
   </div>`;
 }
-// 今天的清單下面：動一動（每天的行動放在「今天」，體態目標只看本週）
-function movesRow(){
-  if(!bodyGoal())return '';
-  const e=health(ds()).exercise||{},types=exTypesOf(e);
-  const chips=MOVES.map(x=>{const on=types.indexOf(x.t)>=0;return `<button class="focus-btn${on?' done':''}" data-move="${esc(x.t)}" data-min="${x.m}">${esc(x.t)} ${x.m}${on?' ✓':''}</button>`;}).join('');
-  return `<div class="moves-row"><span class="goal-sub" style="font-weight:700;">🌿 今天動一動</span>${chips}
-    <button class="focus-btn${e.restDay?' rest':''}" data-action="rest">${e.restDay?'休息 ✓':'休息'}</button>
-    ${types.length?`<span class="goal-sub muted">${esc(types.join('、'))} · ${+e.duration||0} 分</span>`:''}</div>`;
-}
-// ── 今天頁：目標一條（點開看詳細）────────────────
-function stripOpen(){try{return localStorage.getItem('grandol_strip')==='1';}catch(e){return false;}}
-function goalStrip(gs){
-  if(!gs.length)return '';
-  const d=ds();
-  const items=gs.map(g=>{
-    if(g.kind==='body'){
-      const st=weekStats(d),t=g.targets||{};
-      const parts=BODY_METRICS.filter(m=>+t[m.k]).map(m=>`${m.l} ${st[m.k]}/${t[m.k]}`).join(' · ');
-      return `<span class="gs-item">🏃 <b>${esc(g.title)}</b> · 本週 ${parts||'未設定'}</span>`;
-    }
-    const ms=g.milestones||[],cur=ms.find(m=>!m.done),done=ms.filter(m=>m.done).length;
-    let curTxt='';
-    if(cur){
-      curTxt=esc(cur.title);
-      if(cur.due){const left=daysBetween(d,cur.due);curTxt+=left<0?` <span class="gs-warn">晚了 ${-left} 天</span>`:(left<=2?` <span class="gs-warn">還有 ${left} 天</span>`:` 還有 ${left} 天`);}
-    }
-    const hard=ms.filter(m=>!m.done&&m.due&&m.hard).sort((a,b)=>a.due.localeCompare(b.due))[0];
-    const hardTxt=hard&&daysBetween(d,hard.due)<=3?` · <span class="gs-warn">🚩 ${esc(hard.title)} ${md(hard.due)}</span>`:'';
-    return `<span class="gs-item">🎬 <b>${esc(g.title)}</b> · ${ms.length?`階段 ${done}/${ms.length}${curTxt?' · '+curTxt:''}`:'還沒拆階段'}${hardTxt}</span>`;
-  }).join('');
-  const ev=gs.find(g=>g.kind==='body'&&g.dueDate);
-  const open=stripOpen();
-  return `<div class="gcard goal-strip" data-action="strip" title="點一下${open?'收起':'看詳細'}">${items}
-    <span class="gs-more">${ev?esc((ev.event||'')+' '+daysBetween(d,ev.dueDate)+' 天')+' · ':''}${open?'收起 ▴':'詳細 ▾'}</span></div>`;
-}
-// ── 今天要做：清單最上面的「動畫這一步」───────────────
-function goalRow(){
-  const d=ds(),pg=projectGoal();if(!pg||d!==curDay())return '';
-  const n=pg.next||{};
-  if(!n.text||justDone===pg.id)
-    return `<div class="goal-row"><span class="gr-tag">🎬 ${esc(pg.title)}</span>
-      <input class="goal-in" data-next-in="${esc(pg.id)}" placeholder="${justDone===pg.id?'做完了 ✓ 下一步是？':'今天要做哪一步？'}" maxlength="200" style="flex:1;min-width:160px;"/>
-      <button class="focus-btn primary" data-action="set-next" data-g="${esc(pg.id)}">好</button></div>`;
-  // 已經在清單裡 → 清單那一列會用金色標出來，這裡不重複
-  if(stickyCtx().items.some(x=>x.id===n.id))return '';
-  return `<div class="goal-row"><button class="ms-dot" data-action="step-done" data-g="${esc(pg.id)}" title="完成">⬜</button>
-    <span class="gr-txt">${esc(n.text)}</span><span class="gr-tag">🎬 動畫這一步${n.small?' · 沒電時：'+esc(n.small):''}</span></div>`;
-}
-// 實驗：跟 TDL 長得一樣的一列
 function expRows(){
   const d=ds(),list=exps().filter(e=>e.status!=='archived'&&e.place==='checkin');
   if(!list.length)return '';
@@ -346,7 +266,7 @@ function expRows(){
 function moveChips(){
   if(!bodyGoal())return '';
   const e=health(ds()).exercise||{},types=exTypesOf(e);
-  return `<div class="also-chips">${MOVES.map(x=>{const on=types.indexOf(x.t)>=0;return `<button class="focus-btn${on?' done':''}" data-move="${esc(x.t)}" data-min="${x.m}">${esc(x.t)} ${x.m}${on?' ✓':''}</button>`;}).join('')}
+  return `<div class="also-chips">${movesOf(bodyGoal()).map(x=>{const on=types.indexOf(x.t)>=0;return `<button class="focus-btn${on?' done':''}" data-move="${esc(x.t)}" data-min="${x.m}">${esc(x.t)} ${x.m}${on?' ✓':''}</button>`;}).join('')}
     <button class="focus-btn${e.restDay?' rest':''}" data-action="rest">${e.restDay?'休息 ✓':'休息'}</button></div>`;
 }
 // ── 收工面板：今天沒做完的（不順延＝如實記成沒完成）＋把動畫下一步排到明天 ──
@@ -404,7 +324,7 @@ function updateCount(){
 function goalListCard(gs){
   const rows=gs.map(g=>{
     let sub='';
-    if(g.kind==='body'){const t=g.targets||{};sub=BODY_METRICS.filter(m=>+t[m.k]).map(m=>m.l+' '+t[m.k]+m.unit).join('・')||'還沒設每週目標';}
+    if(g.kind==='body'){sub=activeMetrics(g).map(m=>m.l+' '+m.target+m.unit).join('・')||'還沒設每週目標';}
     else{const ms=g.milestones||[];sub=ms.length?`階段 ${ms.filter(m=>m.done).length}/${ms.length}`:'還沒拆階段';}
     return `<div class="dots-row" style="padding:7px 0;border-top:1px solid rgba(var(--secondary-rgb),.15);">
       <span>${g.kind==='body'?'🏃':'🎬'}</span><span style="flex:1;min-width:0;font-weight:700;color:var(--tc);">${esc(g.title)}</span>
@@ -484,7 +404,6 @@ function render(force){
   if(typing&&!force)return;
   const keep={};$qa('[data-next-in]').forEach(x=>{if(x.value)keep[x.dataset.nextIn]=x.value;});
   const gs=goals();
-  const cards=gs.map(g=>g.kind==='body'?bodyCard(g):projectCard(g)).join('');
   if(M.now)M.now.innerHTML=nowCard();
   if(M.today)M.today.innerHTML=expRows();
   if(M.tonight)M.tonight.innerHTML=tonightCard();
@@ -492,7 +411,6 @@ function render(force){
   if(M.cards)M.cards.innerHTML=gs.filter(g=>g.kind==='body').map(bodyCard).join('');
   {const pg=projectGoal(),tl=document.querySelector('.list-card');
    if(tl)tl.classList.toggle('hero-on',!!(pg&&pg.next&&pg.next.text&&ds()===curDay()));}
-  if(M.goalrow)M.goalrow.innerHTML=goalRow();
   if(M.moves)M.moves.innerHTML=moveChips();
   if(M.undone)M.undone.innerHTML=undoneList();
   if(M.bring)M.bring.innerHTML=bringNext();
@@ -607,33 +525,87 @@ function openProjectEditor(g){
     });
   });
 }
+function metricRowHTML(m){
+  const src=m.src||'manual';
+  return `<div class="fm-row mt-row" data-mrow style="grid-template-columns:minmax(0,1fr) 54px auto 26px;">
+    <input class="fm-in" data-f="l" value="${esc(m.l||'')}" placeholder="例如：喝水 2000" maxlength="16"/>
+    <input class="fm-in" data-f="unit" value="${esc(m.unit||'次')}" maxlength="3" title="單位"/>
+    <div class="fm-step" style="margin:0;"><button type="button" data-dec>−</button><span class="fs-n" data-f="target">${+m.target||0}</span><button type="button" data-inc>＋</button></div>
+    <button type="button" class="fm-del" data-del title="刪除這一項">✕</button>
+    <input type="hidden" data-f="k" value="${esc(m.k||'')}"/><input type="hidden" data-f="src" value="${esc(src)}"/>
+    <div class="fm-hint" style="grid-column:1/-1;margin:-2px 0 4px;">${SRC_LABEL[src]||''}</div></div>`;
+}
+function moveRowHTML(x){
+  return `<div class="fm-row" data-vrow style="grid-template-columns:minmax(0,1fr) 92px 26px;">
+    <input class="fm-in" data-f="t" value="${esc(x.t||'')}" placeholder="例如：瑜伽" maxlength="10"/>
+    <label class="fm-in" style="display:flex;align-items:center;gap:4px;"><input data-f="m" type="number" min="0" max="300" step="5" value="${+x.m||0}" style="width:44px;border:none;background:none;font:inherit;outline:none;"/>分</label>
+    <button type="button" class="fm-del" data-del title="刪除">✕</button></div>`;
+}
+function movesOf(g){return g&&Array.isArray(g.moves)?g.moves.filter(x=>x&&x.t):MOVES;}
+function bindRows(box,sel){
+  box.querySelectorAll(sel).forEach(r=>{
+    r.querySelector('[data-del]').onclick=()=>r.remove();
+    const n=r.querySelector('[data-f="target"]');
+    if(n){r.querySelector('[data-inc]').onclick=()=>{n.textContent=Math.min(7,(+n.textContent||0)+1);};
+          r.querySelector('[data-dec]').onclick=()=>{n.textContent=Math.max(0,(+n.textContent||0)-1);};}
+  });
+}
+function readMoves(m){
+  return [...m.querySelectorAll('[data-vrow]')].map(r=>({t:r.querySelector('[data-f="t"]').value.trim(),m:Math.max(0,Math.min(300,+r.querySelector('[data-f="m"]').value||0))})).filter(x=>x.t);
+}
 function openBodyEditor(g){
-  const t=g.targets||{};
   modal(`編輯：${esc(g.title)}`,`
     <div class="fm-lbl">名稱／日期／那一天是</div>
     <div style="display:grid;grid-template-columns:minmax(0,1fr) 80px minmax(0,1fr);gap:6px;">
       <input class="fm-in" id="gb-title" value="${esc(g.title)}" maxlength="60"/>
       <input class="fm-in" id="gb-due" value="${esc(g.dueDate?md(g.dueDate):'')}" placeholder="10/31" maxlength="10"/>
       <input class="fm-in" id="gb-event" value="${esc(g.event||'')}" placeholder="例如：見朋友" maxlength="20"/></div>
-    <div class="fm-lbl">每週目標（0＝不追這一項）</div>
-    ${BODY_METRICS.map(mt=>`<div class="fm-step"><span class="fs-l">${mt.l}</span><button type="button" data-dec="${mt.k}">−</button>
-      <span class="fs-n" id="gb-${mt.k}">${+t[mt.k]||0}</span><button type="button" data-inc="${mt.k}">＋</button><span style="width:18px;">${mt.unit}</span></div>`).join('')}
+    <div class="fm-lbl">每週要做到的項目（名字、單位、每週幾次都能改；0＝先不追）</div>
+    <div id="gb-metrics">${metricsOf(g).map(metricRowHTML).join('')}</div>
+    <button type="button" class="focus-btn" id="gb-add">＋ 新增一項（在體態卡上自己打勾）</button>
+    <div class="fm-lbl">「今天也做了」的運動選項（點一下就記，分鐘會加進運動紀錄）</div>
+    <div id="gb-moves">${movesOf(g).map(moveRowHTML).join('')}</div>
+    <button type="button" class="focus-btn" id="gb-add-move">＋ 新增運動</button>
     <div class="fm-actions">
       <select class="fm-in" id="gb-status" style="width:auto;">${['active','paused','complete','archived'].map((x,i)=>`<option value="${x}"${g.status===x?' selected':''}>${['進行中','暫停','已完成','封存'][i]}</option>`).join('')}</select>
       <button class="focus-btn primary" id="gb-save" style="margin-left:auto;">儲存</button></div>`,
   (m,close)=>{
-    m.querySelectorAll('[data-inc],[data-dec]').forEach(b=>b.addEventListener('click',()=>{
-      const k=b.dataset.inc||b.dataset.dec,el=m.querySelector('#gb-'+k);
-      el.textContent=Math.max(0,Math.min(7,(+el.textContent||0)+(b.dataset.inc?1:-1)));
-    }));
+    const mb=m.querySelector('#gb-metrics'),vb=m.querySelector('#gb-moves');
+    bindRows(mb,'[data-mrow]');bindRows(vb,'[data-vrow]');
+    m.querySelector('#gb-add').addEventListener('click',()=>{mb.insertAdjacentHTML('beforeend',metricRowHTML({k:'',l:'',unit:'次',target:3,src:'manual'}));bindRows(mb,'[data-mrow]');mb.lastElementChild.querySelector('input').focus();});
+    m.querySelector('#gb-add-move').addEventListener('click',()=>{vb.insertAdjacentHTML('beforeend',moveRowHTML({t:'',m:20}));bindRows(vb,'[data-vrow]');vb.lastElementChild.querySelector('input').focus();});
     m.querySelector('#gb-save').addEventListener('click',()=>{
       const title=m.querySelector('#gb-title').value.trim();if(!title){softToast('目標要有名字',2400);return;}
       const raw=m.querySelector('#gb-due').value,due=raw.trim()?parseMD(raw):'';
       if(due===null){m.querySelector('#gb-due').classList.add('bad');softToast('日期看不懂，打成 10/31 這樣就好',2800);return;}
+      const metrics=[...m.querySelectorAll('[data-mrow]')].map(r=>({k:r.querySelector('[data-f="k"]').value||('m'+uid().replace(/-/g,'').slice(0,8)),
+        l:r.querySelector('[data-f="l"]').value.trim(),unit:r.querySelector('[data-f="unit"]').value.trim()||'次',
+        target:+r.querySelector('[data-f="target"]').textContent||0,src:r.querySelector('[data-f="src"]').value||'manual'})).filter(x=>x.l);
       g.title=title;g.dueDate=due||'';g.event=m.querySelector('#gb-event').value.trim();g.status=m.querySelector('#gb-status').value;
-      g.targets={};BODY_METRICS.forEach(mt=>{g.targets[mt.k]=+m.querySelector('#gb-'+mt.k).textContent||0;});
+      g.metrics=metrics;g.moves=readMoves(m);
+      // 舊版 App 只認得 targets：內建的三項同步寫一份
+      g.targets={move:0,shoulder:0,bed:0};metrics.forEach(x=>{if(x.src in g.targets)g.targets[x.src]=x.target;});
       g.updatedAt=Date.now();sv(S);syncStateDebounced();close();softToast('存好了 ✓',2000);
     });
+  });
+}
+// 「今天也做了」卡的 ✏️：只編運動選項；習慣在「方向」開關
+function openMovesEditor(){
+  const g=bodyGoal();
+  if(!g){softToast('先在「方向」新增一個身體目標，才有運動選項',2800);return;}
+  modal('今天也做了',`
+    <div class="fm-lbl">運動選項（點一下就記，分鐘會加進運動紀錄）</div>
+    <div id="gb-moves">${movesOf(g).map(moveRowHTML).join('')}</div>
+    <button type="button" class="focus-btn" id="gb-add-move">＋ 新增運動</button>
+    <div class="fm-lbl">習慣</div>
+    <div class="fm-hint">習慣的開關在「方向」頁，關掉的不會出現在這裡，紀錄都保留。</div>
+    <div class="fm-actions"><button class="focus-btn" id="gm-habits">到「方向」管理習慣</button>
+      <button class="focus-btn primary" id="gm-save" style="margin-left:auto;">儲存</button></div>`,
+  (m,close)=>{
+    const vb=m.querySelector('#gb-moves');bindRows(vb,'[data-vrow]');
+    m.querySelector('#gb-add-move').addEventListener('click',()=>{vb.insertAdjacentHTML('beforeend',moveRowHTML({t:'',m:20}));bindRows(vb,'[data-vrow]');vb.lastElementChild.querySelector('input').focus();});
+    m.querySelector('#gm-habits').addEventListener('click',()=>{close();document.querySelector('.nav-btn[data-page="direction"]')?.click();});
+    m.querySelector('#gm-save').addEventListener('click',()=>{g.moves=readMoves(m);g.updatedAt=Date.now();sv(S);syncStateDebounced();close();softToast('存好了 ✓',2000);});
   });
 }
 function stepRowHTML(x){
@@ -645,7 +617,7 @@ function stepRowHTML(x){
 }
 function openPlanEditor(){
   const p=C.planFor(data(),ds());
-  const bg=bodyGoal(),wantSh=!!(bg&&(+((bg.targets||{}).shoulder)||0)>0);
+  const wantSh=wantsShoulder();
   const base=p?(Array.isArray(p.steps)?p.steps:baseSteps(p,wantSh)):baseSteps({phone:'00:30'},wantSh);
   const rows=[...base.map(x=>({...x})),...(p?.extras||[]).map(x=>({...x,k:''}))].sort((a,b)=>C.targetAt(today(),a.at)-C.targetAt(today(),b.at));
   modal('今晚的流程',`
@@ -725,7 +697,7 @@ function openMore(){
     m.querySelectorAll('[data-new]').forEach(b=>b.addEventListener('click',()=>{
       const isBody=b.dataset.new==='body';
       const g={id:uid(),kind:isBody?'body':'project',title:isBody?'新的身體目標':'新的作品',dueDate:'',event:'',status:'active',
-        milestones:[],next:isBody?null:{id:uid(),text:'',small:''},targets:isBody?{move:3,shoulder:0,bed:0}:undefined,startOn:curDay(),createdAt:Date.now(),updatedAt:Date.now()};
+        milestones:[],next:isBody?null:{id:uid(),text:'',small:''},targets:isBody?{move:3,shoulder:0,bed:0}:undefined,metrics:isBody?BODY_METRICS.map(x=>({k:x.k,l:x.l,unit:x.unit,target:x.k==='move'?3:0,src:x.k})):undefined,startOn:curDay(),createdAt:Date.now(),updatedAt:Date.now()};
       data().projects.push(g);sv(S);syncStateDebounced();m.remove();
       (isBody?openBodyEditor:openProjectEditor)(g);
     }));
@@ -813,13 +785,12 @@ function doStep(k){
   saveHealth(d,h);
 }
 onMounts('click',ev=>{
-  const el=ev.target.closest('[data-action],[data-move],[data-ms],[data-ms-flag],[data-ms-del],[data-edit-goal],[data-step],[data-skip],[data-postpone]');
+  const el=ev.target.closest('[data-action],[data-move],[data-ms],[data-ms-flag],[data-ms-del],[data-edit-goal],[data-step],[data-skip],[data-postpone],[data-metric]');
   if(!el)return;
   if(el.tagName==='A')ev.preventDefault();
   if(el.dataset.editGoal){const g=data().projects.find(x=>x.id===el.dataset.editGoal);if(g)(g.kind==='body'?openBodyEditor:openProjectEditor)(g);return;}
   const a=el.dataset.action;
   if(a==='hero-ms'){try{localStorage.setItem('grandol_hero_ms',heroOpen()?'0':'1');}catch(e){}render(true);return;}
-  if(a==='strip'){if(ev.target.closest('[data-edit-goal]'))return;try{localStorage.setItem('grandol_strip',stripOpen()?'0':'1');}catch(e){}render(true);return;}
   if(a==='edit-plan'){openPlanEditor();return;}
   if(el.dataset.postpone!==undefined){if(writable()){postponeTdlItem(+el.dataset.postpone);render(true);}return;}
   if(a==='bring-next'){const g=data().projects.find(x=>x.id===el.dataset.g);if(g&&writable()){addStepTomorrow(g);render(true);softToast('排到明天了 🌙',2000);}return;}
@@ -831,6 +802,11 @@ onMounts('click',ev=>{
     saveHealth(d,h);softToast('沒關係，下一步就好 🌙',2000);return;
   }
   if(el.dataset.step){doStep(el.dataset.step);return;}
+  if(el.dataset.metric){
+    const h=health(d),key='m_'+el.dataset.metric;h.body={...(h.body||{})};
+    if(h.body[key])delete h.body[key];else h.body[key]=Date.now();
+    saveHealth(d,h);if(h.body[key])softToast('記好了 ✓',1400);return;
+  }
   if(el.dataset.msFlag!==undefined||el.dataset.msDel!==undefined){
     const g=data().projects.find(x=>x.id===el.dataset.g);if(!g)return;
     const k=+(el.dataset.msFlag??el.dataset.msDel),m=g.milestones[k];if(!m)return;
@@ -875,6 +851,7 @@ onMounts('click',ev=>{
     sv(S);syncStateDebounced();render(true);softToast(`🌙 今晚：${s.phone} 收手機、${s.bed} 上床`,3000);return;
   }
 });
+document.getElementById('also-edit')?.addEventListener('click',()=>openMovesEditor());
 onMounts('keydown',ev=>{
   const t=ev.target;
   if(ev.key==='Enter'&&!isImeEnter(ev)&&t.dataset&&t.dataset.msAdd!==undefined){
@@ -956,22 +933,21 @@ function periodGoals(dates){
   const out=[];
   goals().forEach(g=>{
     if(g.kind==='body'){
-      const t=g.targets||{},c={move:0,shoulder:0,bed:0,rest:0,minutes:0};
+      const mets=metricsOf(g),c={rest:0,minutes:0};mets.forEach(m=>{c[m.k]=0;});
       const start=bodyStart(g),counted=upto.filter(day=>day>=start);
       counted.forEach(day=>{
         const h=health(day)||{};
-        if(exTypesOf(h.exercise).length){c.move++;c.minutes+=(+h.exercise.duration||0);}
+        if(exTypesOf(h.exercise).length)c.minutes+=(+h.exercise.duration||0);
         if(h.exercise&&h.exercise.restDay)c.rest++;
-        if(h.body&&h.body.shoulder)c.shoulder++;
-        if(nightInfo(day).kind==='onTime')c.bed++;
+        mets.forEach(m=>{if(metricHit(m,day))c[m.k]++;});
       });
       // 目標是「每週幾次」→ 依「目標開始後、到今天為止」的天數換算，
       // 不會出現目標才開始兩天、分母卻是整個月的情況
       const scale=counted.length/7;
-      const want={};BODY_METRICS.forEach(m=>{const tt=+t[m.k]||0;want[m.k]=tt&&counted.length?Math.max(1,Math.round(tt*scale)):0;});
+      const want={};mets.forEach(m=>{const tt=+m.target||0;want[m.k]=tt&&counted.length?Math.max(1,Math.round(tt*scale)):0;});
       // 上床看的是「已經過去的夜晚」：今晚還沒到，不算進分母
       const nightsPast=counted.filter(day=>nightInfo(day).kind!=='pending').length;
-      if(+t.bed)want.bed=nightsPast?Math.max(1,Math.round(+t.bed*nightsPast/7)):0;
+      mets.filter(m=>m.src==='bed'&&+m.target).forEach(m=>{want[m.k]=nightsPast?Math.max(1,Math.round(+m.target*nightsPast/7)):0;});
       out.push({g,kind:'body',c,want,days:counted.length,start});
     }else{
       const ms=g.milestones||[];
@@ -1006,9 +982,9 @@ function reviewHTML(dates,isWeek){
   const unit=isWeek?'這週':'這個月';
   const blocks=P.goals.map(x=>{
     if(x.kind==='body'){
-      const row=BODY_METRICS.filter(m=>x.want[m.k]>0).map(m=>{
+      const row=metricsOf(x.g).filter(m=>x.want[m.k]>0).map(m=>{
         const n=x.c[m.k],w=x.want[m.k];
-        return `<div class="goal-stat${n>=w?' hit':''}"><div class="goal-stat-l">${m.l}</div><div class="goal-stat-n">${n}<small> / ${w} ${m.unit}</small></div></div>`;
+        return `<div class="goal-stat${n>=w?' hit':''}"><div class="goal-stat-l">${esc(m.l)}</div><div class="goal-stat-n">${n}<small> / ${w} ${m.unit}</small></div></div>`;
       }).join('');
       return `<div style="margin-bottom:12px;"><div class="goal-sub" style="font-weight:800;color:var(--tc);margin-bottom:6px;">${fi('1f3c3',16)} ${esc(x.g.title)}${x.g.dueDate?' · '+md(x.g.dueDate)+(x.g.event?' '+esc(x.g.event):''):''}</div>
         ${row?`<div class="goal-stats">${row}</div>`:''}
@@ -1037,8 +1013,8 @@ function copyLines(dates,label){
   P.goals.forEach(x=>{
     if(x.kind==='body'){
       L.push(`  🏃 ${x.g.title}${x.g.dueDate?'：'+x.g.dueDate+(x.g.event?' '+x.g.event:''):''}`);
-      L.push('    每週目標：'+BODY_METRICS.filter(m=>(+((x.g.targets||{})[m.k])||0)>0).map(m=>m.l+' '+(+x.g.targets[m.k])+' '+m.unit).join('、'));
-      L.push(`    ${label}實際（${md(x.start)} 開始算，共 ${x.days} 天）：`+BODY_METRICS.filter(m=>x.want[m.k]>0).map(m=>`${m.l} ${x.c[m.k]}/${x.want[m.k]} ${m.unit}`).join('、')+`；活動共 ${x.c.minutes} 分鐘${x.c.rest?`、休息 ${x.c.rest} 天`:''}`);
+      L.push('    每週目標：'+activeMetrics(x.g).map(m=>m.l+' '+m.target+' '+m.unit).join('、'));
+      L.push(`    ${label}實際（${md(x.start)} 開始算，共 ${x.days} 天）：`+metricsOf(x.g).filter(m=>x.want[m.k]>0).map(m=>`${m.l} ${x.c[m.k]}/${x.want[m.k]} ${m.unit}`).join('、')+`；活動共 ${x.c.minutes} 分鐘${x.c.rest?`、休息 ${x.c.rest} 天`:''}`);
     }else{
       L.push(`  🎬 ${x.g.title}${x.g.dueDate?'：'+x.g.dueDate+' 截止':''}`);
       if(x.ms.length)L.push('    階段：'+x.ms.map(m=>(m.done?'✓':'○')+m.title+(m.due?'〔'+(m.hard?'🚩硬期限 ':'預計 ')+md(m.due)+'〕':'')+(m.doneOn?'(完成 '+md(m.doneOn)+')':'')).join(' → '));

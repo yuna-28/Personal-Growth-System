@@ -1069,8 +1069,8 @@ button{-webkit-tap-highlight-color:transparent;}
 @keyframes pageIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
 .page.active{animation:pageIn .22s ease;}
 </style>
-<link rel="stylesheet" href="focus.css?v=132">
-<script src="focus-core.js?v=132"></script>
+<link rel="stylesheet" href="focus.css?v=133">
+<script src="focus-core.js?v=133"></script>
 <style>
 /* ═══ v127 改版：迴圈主軸（今天／回顧／方向／我）═══ */
 .ui2-zone{font-family:'Baloo 2',sans-serif;font-size:13px;font-weight:800;color:var(--tc2);margin:18px 4px 8px;letter-spacing:.5px;}
@@ -1205,7 +1205,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 .sleep-scene.night .ss-panel{background:rgba(28,36,64,.88)!important;}
 @media(min-width:1300px){.wrap{max-width:1256px;}}
 </style>
-<link rel="stylesheet" href="ds.css?v=132">
+<link rel="stylesheet" href="ds.css?v=133">
 </head>
 <body>
 <!-- 這四個彈窗特意放在 <body> 最前面、所有 <script> 之前：
@@ -1355,7 +1355,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
   </div>
 </div>
 <div class="gcard also-card">
-  <div class="also-did"><div class="sec-hd">今天也做了 <span class="pg-sub">點一下就記</span></div><div class="also-row"><span class="also-k">習慣</span><div id="habits" class="also-chips"></div></div><div class="also-row"><span class="also-k">運動</span><div id="focus-moves"></div></div></div>
+  <div class="also-did"><div class="sec-hd">今天也做了 <span class="pg-sub">點一下就記</span><button class="card-edit" id="also-edit" type="button" title="改運動選項" style="margin-left:auto;">✏️ 編輯</button></div><div class="also-row"><span class="also-k">習慣</span><div id="habits" class="also-chips"></div></div><div class="also-row"><span class="also-k">運動</span><div id="focus-moves"></div></div></div>
 </div>
 </div>
 <div class="tcol tcol-scene">
@@ -1909,7 +1909,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v132';
+const APP_VER='v133';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // ── 注音／中文輸入法保護 ──────────────────────────────
@@ -2147,7 +2147,7 @@ function sleepMinutes(sl){
 function fmtSleepDur(min){if(min==null)return '';const h=Math.floor(min/60),m=min%60;return h+'小時'+(m?m+'分':'');}
 // 「複製給 Claude」用的健康摘要文字
 // 這天有沒有任何健康相關紀錄（含只做了肩背、只標了休息的日子）
-function healthAny(h){return !!(h&&(HEALTH.some(H=>healthHas(h,H.k))||h.exercise?.restDay||h.body?.shoulder||h.night?.off||h.night?.shower));}
+function healthAny(h){return !!(h&&(HEALTH.some(H=>healthHas(h,H.k))||h.exercise?.restDay||Object.keys(h.body||{}).length||Object.keys(h.night||{}).some(k=>k!=='skip')));}
 function hhmmOf(iso){if(!iso)return '';const d=new Date(iso);return isNaN(d)?'':String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
 function healthCopyText(h){
   if(!healthAny(h))return '🌿 健康：無記錄\n';
@@ -2159,6 +2159,9 @@ function healthCopyText(h){
     L.push('  🌙 收尾：'+(t?'目標 '+t.bed+' 上床｜':'')+(h.night?.off?'收工 '+hhmmOf(new Date(h.night.off).toISOString())+'｜':'')+'收手機 '+(hhmmOf(w.phoneAwayAt)||'未記錄')+'｜上床 '+(hhmmOf(w.inBedAt)||'未記錄')+(r&&r.kind!=='missing'?'｜'+r.label:''));
   }
   if(h.body?.shoulder)L.push('  💪 肩背彈力帶 ✓');
+  // 體態卡上自己加的項目（m_xxx）：名字從目標設定找
+  {const mets=((S.focus&&S.focus.projects)||[]).flatMap(p=>Array.isArray(p.metrics)?p.metrics:[]);
+   Object.keys(h.body||{}).filter(k=>k.startsWith('m_')&&h.body[k]).forEach(k=>{const m=mets.find(x=>'m_'+x.k===k);if(m)L.push('  ✅ '+m.l+' ✓');});}
   if(h.exercise?.restDay)L.push('  🌿 今天休息');
   if(healthHas(h,'sleep')&&(h.sleep.sleepTime||h.sleep.wakeTime||h.sleep.ease||(h.sleep.acts&&h.sleep.acts.length)||h.sleep.note)){const s=h.sleep,dm=sleepMinutes(s);L.push(`  🌙 睡眠：${s.sleepTime||'?'}→${s.wakeTime||'?'}${dm!=null?'（'+fmtSleepDur(dm)+'）':''}${s.ease?' · '+easeLabel(s.ease):''}${(s.acts&&s.acts.length)?' · 睡前:'+s.acts.join('/'):''}${s.note?' · '+s.note:''}`);}
   if(healthHas(h,'diet')){const d=h.diet;L.push(`  🍽️ 飲食：${(d.tags||[]).join('、')||'—'}${d.note?' · '+d.note:''}`);}
@@ -7979,6 +7982,6 @@ document.addEventListener('visibilitychange',()=>{
 
 
 
-<script src="focus.js?v=132"></script>
+<script src="focus.js?v=133"></script>
 </body>
 </html>
