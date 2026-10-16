@@ -128,6 +128,47 @@
 .hero-segs .goal-seg{height:6px!important;border-radius:3px!important;background:#EADFC8!important;}
 .hero-segs .goal-seg.done{background:var(--ds-good)!important;}
 .hero-segs .goal-seg.cur{background:var(--ds-focus)!important;}
+/* 卡片右上角的「✏️ 編輯」：每張卡都一樣 */
+.card-edit{flex-shrink:0;height:26px;padding:0 9px;border:1px solid transparent;border-radius:var(--ds-r-sm);background:transparent;cursor:pointer;
+  font-family:var(--ds-font);font-size:var(--ds-fs-xs);font-weight:700;color:var(--ds-ink-3);white-space:nowrap;}
+.card-edit:hover{background:var(--ds-field);border-color:var(--ds-line-2);color:var(--ds-ink);}
+/* 卡片上的欄位：看起來是文字，滑過有底線，點了就能改 */
+.hero-step,.hero-small,.ms-title,.ms-due{font-family:var(--ds-font);color:var(--ds-ink);background:transparent;border:1px solid transparent;border-radius:var(--ds-r-sm);
+  outline:none;min-width:0;transition:background .12s,border-color .12s;}
+.hero-step:hover,.hero-small:hover,.ms-title:hover,.ms-due:hover{background:rgba(255,255,255,.55);border-color:#EBD9B1;}
+.hero-step:focus,.hero-small:focus,.ms-title:focus,.ms-due:focus{background:#fff;border-color:var(--ds-primary);box-shadow:0 0 0 3px var(--ds-primary-soft);}
+.hero-step{flex:1;font-size:var(--ds-fs-lg);font-weight:800;padding:4px 8px;margin-left:-8px;}
+.hero-step.is-done{text-decoration:line-through;opacity:.6;}
+.hero-sub{display:flex;align-items:center;gap:2px;color:var(--ds-ink-3);}
+.hero-small{flex:1;font-size:var(--ds-fs-xs);padding:2px 6px;color:var(--ds-ink-2);}
+.hero-top .hero-meta{margin-left:auto;}
+.hero-top .warn,.hero .warn{color:var(--ds-warn);}
+.hero-segs{display:flex;align-items:center;gap:4px;margin-top:10px;}
+.hero-segs .goal-seg{display:block;flex:1;}
+.hero-toggle{margin-left:6px;border:none;background:none;cursor:pointer;font-family:var(--ds-font);font-size:var(--ds-fs-xs);font-weight:700;color:var(--ds-focus-ink);white-space:nowrap;}
+/* 階段清單：● 名稱 ……… 日期 🚩 ✕ */
+.hero .ms-list{margin-top:var(--ds-3);padding:6px;border-radius:var(--ds-r);background:rgba(255,255,255,.5);gap:2px;}
+.hero .ms-row{display:flex;align-items:center;gap:6px;margin:0;padding:2px 6px;border-radius:var(--ds-r-sm);font-size:var(--ds-fs);}
+.hero .ms-row.cur{background:#FBE7BE;}
+.hero .ms-row.over{background:var(--ds-warn-soft);}
+.hero .ms-title{flex:1;font-size:var(--ds-fs);font-weight:600;padding:4px 6px;}
+.hero .ms-row.cur .ms-title{font-weight:800;}
+.hero .ms-row.done .ms-title{text-decoration:line-through;opacity:.55;}
+.hero .ms-left{font-size:var(--ds-fs-xs);font-weight:700;color:var(--ds-focus-ink);white-space:nowrap;}
+.hero .ms-row.over .ms-left{color:var(--ds-warn);}
+.hero .ms-due{width:62px;flex-shrink:0;text-align:right;font-size:var(--ds-fs-sm);padding:4px 6px;color:var(--ds-ink-2);}
+.hero .ms-due::placeholder{color:transparent;}
+.hero .ms-row:hover .ms-due::placeholder,.hero .ms-due:focus::placeholder{color:var(--ds-ink-3);}
+.hero .ms-flag,.hero .ms-del{flex-shrink:0;width:24px;height:24px;border:none;background:none;border-radius:6px;cursor:pointer;font-size:13px;padding:0;opacity:0;transition:opacity .12s;}
+.hero .ms-flag.on{opacity:1;}
+.hero .ms-row:hover .ms-flag,.hero .ms-row:hover .ms-del,.hero .ms-row:focus-within .ms-flag,.hero .ms-row:focus-within .ms-del{opacity:.75;}
+.hero .ms-flag:not(.on){filter:grayscale(1);}
+.hero .ms-del{color:var(--ds-ink-3);}
+.hero .ms-del:hover{background:var(--ds-warn-soft);color:var(--ds-warn);opacity:1;}
+@media(hover:none){.hero .ms-flag,.hero .ms-del{opacity:.6;}}
+.hero .ms-add .ms-dot{color:var(--ds-ink-3);text-align:center;}
+.hero .ms-add .ms-title{font-weight:500;}
+.hero .ms-add .ms-title::placeholder{color:var(--ds-ink-3);}
 /* 便利貼：今天／明天清單 */
 .list-card{position:relative;background:linear-gradient(160deg,#FFF7DC,#FCEEB8)!important;border:none!important;border-radius:4px 16px 16px 16px!important;
   box-shadow:0 2px 4px rgba(35,35,30,.1),0 14px 26px -14px rgba(160,120,20,.45)!important;padding:var(--ds-4) var(--ds-5) var(--ds-8)!important;}
