@@ -513,3 +513,34 @@ body *{font-family:var(--ds-font)!important;}
 /* 夜裡藍色當「字」時要亮一點；當底色（按鈕、導覽）時仍是 --ds-primary */
 :root[data-night]{--primary:#A9BCF2;--primary-rgb:150,170,235;--secondary:#8FB8DD;}
 :root[data-night] .id-tag.lit,:root[data-night] .ds-table .dt-now,:root[data-night] .support-cat-title{color:#AFC0F2!important;}
+/* 夜晚模式：日曆（彈窗）。一眼分得出：今天（月光黃圓）、有紀錄的日子（綠字＋淡綠底）、
+   正在看的那天（淡黃底）、沒有日期的格子（更暗）；行程一律淺色字，顏色看左邊的色條 */
+:root[data-night] #cal-popup{background:rgba(5,8,16,.6)!important;}
+:root[data-night] .cal-grid{background:var(--ds-surface)!important;border-color:var(--ds-line-2)!important;}
+:root[data-night] .cal-dow{background:var(--ds-sunken)!important;color:var(--ds-ink-3)!important;border-bottom-color:var(--ds-line-2)!important;}
+:root[data-night] .cal-day{color:var(--ds-ink)!important;border-color:rgba(255,255,255,.07)!important;}
+:root[data-night] .cal-day .cd-n{color:var(--ds-ink-2);}
+:root[data-night] .cal-day:hover{background:rgba(150,170,235,.08)!important;}
+:root[data-night] .cal-day.has-record{background:rgba(115,197,172,.09)!important;}
+:root[data-night] .cal-day.has-record .cd-n{color:#8FD6BE!important;}
+:root[data-night] .cal-day.today .cd-n{background:#F2C46D!important;color:#2A2108!important;}
+:root[data-night] .cal-day.viewing{background:rgba(242,196,109,.16)!important;}
+:root[data-night] .cal-day.viewing .cd-n{color:#F4D894!important;}
+:root[data-night] .cal-day.empty{background:rgba(0,0,0,.22)!important;}
+:root[data-night] .cal-add{background:rgba(150,170,235,.16)!important;color:#AFC0F2!important;opacity:.85;}
+:root[data-night] .cal-ev-chip{color:#EEF0F6!important;border-left-width:3px!important;font-weight:600;}
+:root[data-night] .cal-ev-chip:not([style]){background:rgba(150,170,235,.14)!important;border-color:#7F95D8!important;}
+:root[data-night] .cal-more{color:#AFC0F2!important;}
+:root[data-night] .cal-bar-seg:not(.empty){filter:brightness(.92) saturate(.9);}
+:root[data-night] .cd-note-dot{background:#F2C46D!important;}
+:root[data-night] .cal-form-card,:root[data-night] .cal-chip{background:var(--ds-field)!important;border-color:var(--ds-line-2)!important;color:var(--ds-ink)!important;}
+:root[data-night] .cal-chip.on{background:var(--ds-good-soft)!important;border-color:var(--ds-good-line)!important;}
+:root[data-night] .cal-lbl{color:var(--ds-ink-2)!important;}
+:root[data-night] .cal-ev-row:hover{background:rgba(150,170,235,.1)!important;}
+:root[data-night] #cal-popup .mini-btn,:root[data-night] #cal-popup button[style*="background:rgba(255,255,255"]{background:var(--ds-field)!important;color:var(--ds-ink)!important;border-color:var(--ds-line-2)!important;}
+:root[data-night] #cal-popup [style*="color:var(--tc)"]{color:var(--ds-ink)!important;}
+:root[data-night] #cal-popup input,:root[data-night] #cal-popup select,:root[data-night] #cal-popup textarea{background:var(--ds-field)!important;color:var(--ds-ink)!important;border-color:var(--ds-line-2)!important;}
+:root[data-night] #quote-popup>div,:root[data-night] #res-popup>div{background:var(--ds-surface)!important;color:var(--ds-ink)!important;}
+:root[data-night] #quote-popup button,:root[data-night] .rp-icon-btn{background:var(--ds-field)!important;color:var(--ds-ink)!important;border-color:var(--ds-line-2)!important;}
+:root[data-night] #pop-cal-close{background:var(--ds-field)!important;color:var(--ds-ink)!important;}
+:root[data-night] #err-toast{background:var(--ds-field)!important;color:var(--ds-ink)!important;border-color:var(--ds-line-2)!important;}

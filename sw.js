@@ -4,15 +4,15 @@
 // 更新版本時把 CACHE_NAME 的數字 +1，舊快取會自動清掉
 // ═══════════════════════════════════════════════════════
 const CACHE_PREFIX = 'grandol-cache-';
-const CACHE_NAME = CACHE_PREFIX + 'v134';
+const CACHE_NAME = CACHE_PREFIX + 'v135';
 
 const PRECACHE = [
   './',
   './index.html',
-  './focus-core.js?v=134',
-  './focus.js?v=134',
-  './focus.css?v=134',
-  './ds.css?v=134',
+  './focus-core.js?v=135',
+  './focus.js?v=135',
+  './focus.css?v=135',
+  './ds.css?v=135',
   './manifest.json',
   './puppy.png',
   './puppy_icon.png',
