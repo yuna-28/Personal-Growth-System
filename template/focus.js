@@ -162,10 +162,11 @@ function routine(d){
 }
 // ── ① 現在要做 ────────────────────────────────────
 // 現在是不是晚上收尾時段（收工前 90 分鐘起，到上床後 3 小時）
-function isEvening(){
-  const d=ds();if(d!==curDay())return false;
+function isEvening(day){
+  const d=day||ds();if(d!==curDay())return false;
   const r=routine(d);if(!r)return false;
-  const core=r.steps.find(x=>x.k==='off'),bed=r.steps.find(x=>x.k==='bed'),now=new Date();
+  // 收工被刪掉了 → 用第一個收尾步驟；都沒有就用收手機
+  const core=r.steps.find(x=>x.k==='off')||r.steps.find(x=>!x.extra&&x.k!=='bed')||r.steps.find(x=>x.k==='phone'),bed=r.steps.find(x=>x.k==='bed'),now=new Date();
   return now>=new Date(core.abs-90*60000)&&now<new Date(+bed.abs+180*60000);
 }
 // 階段清單預設展開（按「階段 ▴」收起來，會記住）
@@ -196,7 +197,7 @@ function nowCard(){
   const segs=`<div class="hero-segs">${ms.map((m,k)=>`<span class="goal-seg${m.done?' done':(k===curI?' cur':'')}" title="${esc(m.title)}${m.due?' · '+md(m.due):''}"></span>`).join('')}
       <button class="hero-toggle" data-action="hero-ms">${ms.length?`階段 ${done}/${ms.length}`:'階段'} ${heroOpen()?'▴':'▾'}</button></div>`;
   const list=heroOpen()?`<div class="ms-list">${msEditRows(pg)}</div>`:'';
-  return `<div class="gcard hero day"><div class="hero-top"><span>🎬 ${esc(pg.title)} · 今天這一步</span>
+  return `<div class="gcard hero day"><div class="hero-top"><span>${esc(pg.title)} · 今天這一步</span>
       <span class="hero-meta">${meta}</span><button class="card-edit" data-edit-goal="${esc(pg.id)}" title="名稱、截止日、狀態">✏️ 編輯</button></div>
     ${main}${segs}${list}</div>`;
 }
@@ -246,7 +247,7 @@ function bodyCard(g){
     const tick=m.src==='manual'?`<button class="focus-btn mt-tick${today?' done':''}" data-metric="${esc(m.k)}" data-g="${esc(g.id)}">${today?'今天 ✓':'今天'}</button>`:'';
     return `<div class="dots-row${n>=goal?' hit':''}"><span class="dl">${esc(m.l)}</span><span class="dd">${Array.from({length:goal},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</span><span class="dn">${n}/${goal}</span>${tick}</div>`;
   }).join('');
-  return `<div class="gcard goal-card"><div class="goal-hd"><span>${fi('1f3c3',20)}</span><span class="goal-title">${esc(g.title)}</span>
+  return `<div class="gcard goal-card"><div class="goal-hd"><span class="goal-title">${esc(g.title)}</span>
       <span class="goal-sub" style="margin-left:auto;">${dueTxt(g)}</span><button class="card-edit" data-edit-goal="${esc(g.id)}" title="編輯">✏️ 編輯</button></div>
     ${rows?`<div class="goal-sub muted">本週（週一重新開始）</div><div style="display:flex;flex-direction:column;gap:7px;">${rows}</div>`:'<div class="goal-sub muted">還沒設每週目標，點 ✏️ 設定</div>'}
   </div>`;
@@ -331,7 +332,7 @@ function goalListCard(gs){
       <span class="goal-sub muted">${sub}${g.dueDate?' · '+dueTxt(g):''}</span>
       <button class="card-edit" data-edit-goal="${esc(g.id)}" title="編輯">✏️ 編輯</button></div>`;
   }).join('');
-  return `<div class="gcard" style="margin-bottom:12px;"><div class="goal-hd"><span>🎯</span><span class="goal-title">這陣子的目標</span>
+  return `<div class="gcard" style="margin-bottom:12px;"><div class="goal-hd"><span class="goal-title">這陣子的目標</span>
     <span class="goal-sub muted" style="margin-left:auto;">卡片在「今天」</span></div>
     ${rows||'<div class="goal-sub muted" style="margin-top:6px;">還沒有目標。</div>'}
     <div class="goal-chips" style="margin-top:10px;"><button class="focus-btn" data-action="more">＋ 新增目標・封存・備份</button></div></div>`;
@@ -341,7 +342,7 @@ function planSummaryCard(){
   const p=C.planFor(data(),ds());
   const r=p?routine(ds()):null;
   const ex=r?r.steps.filter(x=>x.k!=='phone'&&x.k!=='bed').map(x=>`${esc(x.at)} ${esc(x.label)}`).join('、'):'';
-  return `<div class="gcard" style="margin-bottom:12px;"><div class="goal-hd"><span>${fi('1f319',19)}</span><span class="goal-title">作息與睡前流程</span>
+  return `<div class="gcard" style="margin-bottom:12px;"><div class="goal-hd"><span class="goal-title">作息與睡前流程</span>
     <button class="card-edit" data-action="edit-plan" title="改時間、改每一步" style="margin-left:auto;">✏️ 編輯</button></div>
     ${p?`<div class="goal-sub" style="margin-top:6px;">${p.status==='paused'?'（暫停中）':''}${esc(p.phone)} 收手機 · <b>${esc(p.bed)} 上床</b> · ${esc(p.wake)} 起床</div>
       <div class="goal-sub muted" style="margin-top:3px;">${ex||'收手機前沒有其他步驟'}</div>`
@@ -349,7 +350,7 @@ function planSummaryCard(){
 }
 function expOverviewCard(){
   const list=data().experiments.filter(e=>e.status!=='archived');
-  return `<div class="gcard" style="margin-bottom:12px;"><div class="goal-hd"><span>🧪</span><span class="goal-title">進行中的實驗</span>
+  return `<div class="gcard" style="margin-bottom:12px;"><div class="goal-hd"><span class="goal-title">進行中的實驗</span>
     <span class="goal-sub muted" style="margin-left:auto;">回顧時決定，最多 3 個</span></div>
     ${list.length?list.map(e=>`<div class="dots-row" style="padding:6px 0;border-top:1px solid rgba(var(--secondary-rgb),.15);">
         <span style="flex:1;min-width:0;">${esc(e.text)}</span><span class="goal-sub muted">${expLabelFreq(e)} · ${PLACES[e.place]||''}</span>
@@ -382,7 +383,7 @@ function tonightCard(){
     return `<div class="tl-now">${step}<button class="focus-btn" data-skip="${s.k}">跳過</button><button class="focus-btn primary" data-step="${s.k}">做完了</button></div>`;
   }).join('');
   const done=r.steps.filter(x=>x.done).length;
-  return `<div class="gcard tonight-card${live?' live':''}"><div class="tn-hd"><span>${fi('1f319',18)}</span>
+  return `<div class="gcard tonight-card${live?' live':''}"><div class="tn-hd">
       <span class="tn-title">今晚 ${esc(r.p.bed)} 上床</span><span class="tn-count">${done}/${r.steps.length}</span>
       <button class="card-edit" data-action="edit-plan" title="改時間、改每一步">✏️ 編輯</button></div>
     <div class="tn-sub"><span class="${res.kind==='late'?'warn':''}">${res.kind==='missing'?(live?'現在這一步做完就按「做完了」':'點一下＝做完了'):esc(res.label)}</span>${sevenDots(d)}</div>
@@ -422,7 +423,26 @@ function render(force){
   if(VIEWER_MODE)$qa('button,input').forEach(el=>{el.disabled=true;});
 }
 // 「現在要做」跟著時間走：每分鐘更新一次（打字中不動）
-setInterval(()=>{if(!document.hidden)render(false);},60000);
+setInterval(()=>{if(!document.hidden)render(false);applyNight();},60000);
+// ── 夜晚模式：晚上收尾時段自動換成深色（收工前 90 分鐘起，到上床後 3 小時；沒設作息就 21:00～凌晨 4 點）
+// 今晚可以手動關掉／打開，只記到這一晚，明天又回到自動
+function nightAuto(){
+  if(routine(curDay()))return isEvening(curDay());     // 作息暫停中也照時間：21:00 之後
+  const h=new Date().getHours();return h>=21||h<4;
+}
+function nightPref(){try{const v=localStorage.getItem('grandol_night')||'';const [mode,day]=v.split('@');return day===curDay()?mode:'';}catch(e){return '';}}
+function applyNight(){
+  const auto=nightAuto(),pref=nightPref(),on=pref==='on'?true:(pref==='off'?false:auto);
+  document.documentElement.toggleAttribute('data-night',on);
+  const b=document.getElementById('night-toggle');
+  if(b){b.hidden=!auto&&pref!=='on';b.textContent=on?'🌙 夜晚模式':'☀️ 白天模式';b.title=on?'今晚先用白天模式':'換回夜晚模式';}
+}
+document.getElementById('night-toggle')?.addEventListener('click',()=>{
+  const on=document.documentElement.hasAttribute('data-night');
+  try{localStorage.setItem('grandol_night',(on?'off':'on')+'@'+curDay());}catch(e){}
+  applyNight();
+});
+applyNight();
 // ══ 編輯彈窗 ═════════════════════════════════════
 function modal(title,body,onMount){
   document.getElementById('goal-modal')?.remove();
@@ -1002,7 +1022,7 @@ function reviewHTML(dates,isWeek){
       <div class="focus-dot${n.kind==='onTime'?' ontime':(n.kind==='late'?' late':'')}" style="margin:0 auto 3px;width:11px;height:11px;"></div>
       ${md(n.day)}<br/>${n.bed||'—'}</div>`).join('')}</div>
     <div class="goal-sub muted" style="margin-top:6px;">準時 ${P.nights.filter(n=>n.kind==='onTime').length} 晚 · 晚了 ${P.nights.filter(n=>n.kind==='late').length} 晚 · 沒記錄 ${P.nights.filter(n=>n.kind==='missing').length} 晚</div>`:'';
-  return `<div class="gcard"><div class="sec-hd">🎯 目標進度</div>${blocks}${nights}</div>`;
+  return `<div class="gcard"><div class="sec-hd">目標進度</div>${blocks}${nights}</div>`;
 }
 // 給 Claude 的文字：先講目標是什麼，再講這段期間做到多少，分析才有對照
 function copyLines(dates,label){
@@ -1074,7 +1094,7 @@ function homeExperiments(){
   const d=ds(),list=exps().filter(e=>e.status!=='archived'&&e.place==='checkin');
   if(!list.length)return '';
   const mon=mondayOfDs(d),week=[...Array(7)].map((_,i)=>shiftDay(mon,i));
-  return `<div class="gcard" style="margin-bottom:12px;"><div class="goal-hd" style="margin-bottom:8px;"><span>🧪</span><span class="goal-title">進行中的實驗</span>
+  return `<div class="gcard" style="margin-bottom:12px;"><div class="goal-hd" style="margin-bottom:8px;"><span class="goal-title">進行中的實驗</span>
     <span class="goal-sub muted" style="margin-left:auto;">點一下＝今天做了</span></div>
     <div style="display:flex;flex-direction:column;gap:7px;">${list.map(e=>{
       const on=!!(e.log||{})[d],wk=week.filter(x=>x<=d&&(e.log||{})[x]).length;
@@ -1100,7 +1120,7 @@ function loopReviewHTML(dates,kind){
       ${e.status!=='archived'?`<button class="goal-more" data-exp-end="${esc(e.id)}" style="margin:4px 0 0;">結束這個實驗</button>`:''}
     </div>`;
   }).join('');
-  return `<div class="gcard"><div class="sec-hd">🧪 ${title}</div>
+  return `<div class="gcard"><div class="sec-hd">${title}</div>
     ${rows||`<div class="goal-sub muted">還沒有實驗。回顧完把 Claude 的建議貼回來，或自己加一個。</div>`}
     <div class="goal-chips" style="margin-top:12px;">
       <button class="focus-btn primary" data-loop-paste="${esc(dates[0])}" data-kind="${kind}">貼上 Claude 的回覆</button>

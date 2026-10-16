@@ -15,7 +15,7 @@
   --ds-line:#E4E1DA;        /* 卡片邊框、分隔線 */
   --ds-line-2:#D6D2C9;      /* 輸入框、按鈕邊框 */
   /* 文字 */
-  --ds-ink:#23252B;--ds-ink-2:#4A4D58;--ds-ink-3:#878A95;
+  --ds-ink:#23252B;--ds-ink-2:#4A4D58;--ds-ink-3:#6B6E79;   /* ink-3 對比 4.9:1（原本 #878A95 只有 3.3:1） */
   /* 角色色：主色（導覽、主要按鈕）、焦點（今天這一步）、完成、提醒 */
   --ds-primary:#283E7C;--ds-primary-soft:#E8ECF6;
   --ds-focus:#F2C46D;--ds-focus-soft:#FFF5DF;--ds-focus-ink:#80520F;
@@ -29,7 +29,10 @@
   --ds-fs-xs:12px;--ds-fs-sm:13px;--ds-fs:14px;--ds-fs-md:15px;--ds-fs-lg:18px;--ds-fs-xl:22px;
   --ds-ctl:36px;            /* 所有按鈕、輸入、分頁的高度 */
   --ds-shadow:0 1px 2px rgba(20,24,40,.04),0 2px 8px -4px rgba(20,24,40,.06);
-  --ds-font:'Quicksand','PingFang TC','Noto Sans TC','Microsoft JhengHei',sans-serif;
+  /* 字：標題用襯線（思源宋體），其他全部黑體 */
+  --ds-font:-apple-system,BlinkMacSystemFont,'PingFang TC','Noto Sans TC','Microsoft JhengHei',sans-serif;
+  --ds-serif:'Noto Serif TC','Songti TC','PMingLiU',serif;
+  --tc3:#6B6E79;
 }
 
 /* ── 2. 元件 ───────────────────────────────────────────────── */
@@ -398,3 +401,115 @@ input[type="checkbox"]{accent-color:var(--ds-primary);}
   #mo-copy-opts{background:var(--ds-surface)!important;border:1px solid var(--ds-line)!important;border-radius:var(--ds-r)!important;padding:8px 12px!important;align-self:stretch!important;justify-content:center;}
   #mo-copy-opts label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;color:var(--ds-ink-2);}
 }
+
+/* ── 7. 美感第一步（v134）──────────────────────────────────────
+   字：全部黑體；頁面標題、卡片標題、大數字、今天這一步用襯線
+   顏色：一個顏色一個意思（藍＝主要、黃＝現在要做、綠＝完成、橘紅＝晚了）
+   卡片：主角有底色；一般卡片不畫框，只留很淡的陰影                       */
+body *{font-family:var(--ds-font)!important;}
+.pg-head h1,.sec-hd,.goal-title,.tn-title,.hero-step,.hero-main .hero-txt,.stat-num,.sb-brand,.n-serif{font-family:var(--ds-serif)!important;letter-spacing:.01em;}
+.pg-head h1{font-weight:700!important;font-size:26px!important;}
+.sec-hd,.goal-title,.tn-title{font-weight:700!important;}
+.hero-step{font-weight:700!important;}
+.list-card #sticky-date,.sticky-hw-date{font-family:'Caveat',cursive!important;}
+.sec-hd>img:first-child{display:none!important;}
+/* 一般卡片：不畫框 */
+.gcard,.gcard-nb{border-color:transparent!important;box-shadow:0 1px 2px rgba(20,24,40,.05),0 10px 28px -18px rgba(20,24,40,.22)!important;}
+.hero{border:1px solid #EBD9B1!important;}
+/* 回顧數字：一律深色，只有「比上次」的小標籤上色 */
+.rv-pane .stat-num{color:var(--ds-ink)!important;font-size:24px!important;font-weight:700!important;}
+.rv-pane .stat-card{box-shadow:none!important;border:none!important;background:var(--ds-surface)!important;}
+.rv-pane .stat-lbl{font-size:12px!important;color:var(--ds-ink-3)!important;}
+.cmp{display:inline-block;font-size:11px!important;padding:0 6px;border-radius:999px;margin-left:5px!important;}
+.cmp.up{background:var(--ds-good-soft);color:var(--ds-good)!important;}
+.cmp.down{background:var(--ds-warn-soft);color:var(--ds-warn)!important;}
+.cmp.same{background:var(--ds-sunken);}
+.cmp:empty{display:none;}
+/* 我是誰的身份、匯出按鈕：換成跟其他晶片一樣的平面樣式 */
+.id-tag{background:var(--ds-field)!important;box-shadow:none!important;border:1px solid var(--ds-line)!important;color:var(--ds-ink-3)!important;font-size:13px!important;padding:6px 12px!important;}
+.id-tag.lit{background:var(--ds-primary-soft)!important;border-color:#C9D3EC!important;color:var(--ds-primary)!important;}
+.id-tag.gold{background:var(--ds-focus-soft)!important;border-color:#EBD9B1!important;color:var(--ds-focus-ink)!important;}
+.export-new-btn,.export-all-btn{box-shadow:none!important;border:1px solid var(--ds-line-2)!important;background:var(--ds-field)!important;color:var(--ds-ink-2)!important;
+  border-radius:var(--ds-r)!important;font-size:var(--ds-fs-sm)!important;font-weight:700!important;min-height:34px;}
+.support-cat-card{border-left-width:0!important;}
+
+/* ── 8. 夜晚模式（html[data-night]，晚上收尾時段自動開）─────────────
+   一樣是藍色系，只是入夜：深藍底、月光黃標「現在這一步」。場景插畫調暗一點，不反白。 */
+.night-toggle{border:1px solid var(--ds-line-2);background:var(--ds-field);color:var(--ds-ink-2);border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.night-toggle:hover{border-color:var(--ds-ink-3);}
+@media(min-width:1100px){
+  .top-bar>div:last-child{flex-wrap:wrap!important;}
+  .top-bar .night-toggle{flex-basis:100%;order:-1;margin-bottom:6px;text-align:center;padding:6px 10px;}
+}
+:root[data-night]{
+  color-scheme:dark;
+  --ds-bg:#141925;--ds-surface:#1D2331;--ds-field:#252D3E;--ds-sunken:#283042;--ds-line:#2E3648;--ds-line-2:#3B4559;
+  --ds-ink:#E9EBF3;--ds-ink-2:#C3C8D6;--ds-ink-3:#9AA1B4;
+  --ds-primary:#4F6CC2;--ds-primary-soft:#26304A;
+  --ds-focus:#F2C46D;--ds-focus-soft:#342D1F;--ds-focus-ink:#F4D894;
+  --ds-good:#73C5AC;--ds-good-soft:#1C3330;--ds-good-line:#2F5C51;
+  --ds-warn:#F09372;--ds-warn-soft:#3A2620;
+  --ds-shadow:0 1px 2px rgba(0,0,0,.3);
+  --tc:#E9EBF3;--tc2:#C3C8D6;--tc3:#9AA1B4;
+  --g1:rgba(37,45,62,.75);--gb:rgba(37,45,62,.9);
+  --gs:0 1px 2px rgba(0,0,0,.3);--gs2:0 1px 2px rgba(0,0,0,.3);--nm:none;--nm-in:none;
+}
+:root[data-night] body{background:var(--ds-bg)!important;color:var(--ds-ink);}
+:root[data-night] .bg{background:var(--ds-bg)!important;}
+:root[data-night] .gcard,:root[data-night] .gcard-nb{box-shadow:0 1px 0 rgba(255,255,255,.03),0 12px 28px -18px rgba(0,0,0,.6)!important;}
+:root[data-night] .gcard-scene,:root[data-night] .garden-scene-wrap,:root[data-night] #book-stage{filter:brightness(.78) saturate(.9);}
+/* 主角卡：目標＝暗金、今晚＝月光 */
+:root[data-night] .hero{border-color:#4A3F27!important;}
+:root[data-night] .hero-step:hover,:root[data-night] .ms-title:hover,:root[data-night] .ms-due:hover,:root[data-night] .hero-small:hover{background:rgba(255,255,255,.06);border-color:#4A3F27;}
+:root[data-night] .hero-step:focus,:root[data-night] .ms-title:focus,:root[data-night] .ms-due:focus,:root[data-night] .hero-small:focus{background:var(--ds-field);}
+:root[data-night] .hero .ms-list{background:rgba(0,0,0,.18);}
+:root[data-night] .hero .ms-row.cur{background:#3E3420;}
+:root[data-night] .tonight-card{box-shadow:inset 0 0 0 1px #34405E,0 14px 30px -18px rgba(0,0,0,.7)!important;}
+:root[data-night] .tonight-card .tl-step.next{background:rgba(242,196,109,.13)!important;border-color:rgba(242,196,109,.5)!important;}
+:root[data-night] .tonight-card .tl-step.next .n{color:#FFF3D6;}
+:root[data-night] .tonight-card .tl-now .focus-btn.primary{background:#F2C46D!important;border-color:#F2C46D!important;color:#2A2108!important;}
+/* 便利貼：夜裡是暗暗的琥珀紙 */
+:root[data-night] .list-card{background:linear-gradient(160deg,#3A3424,#30291B)!important;box-shadow:0 14px 26px -16px rgba(0,0,0,.7)!important;}
+:root[data-night] .list-card::before{border-color:transparent #574B2C transparent transparent!important;}
+:root[data-night] .list-card .sticky-item,:root[data-night] .list-card .exp-row,:root[data-night] .list-card .undone-row{color:#F1E6C8;border-bottom-color:rgba(241,230,200,.14)!important;}
+:root[data-night] .list-card .ds-tabs{background:rgba(0,0,0,.25)!important;}
+:root[data-night] .list-card .ds-tabs button{color:#CDBB8A!important;}
+:root[data-night] .list-card .ds-tabs button.on{background:#4A4230!important;color:#FFF3D6!important;}
+:root[data-night] .list-card .sticky-check,:root[data-night] .list-card .er-box{background:rgba(255,255,255,.08)!important;border-color:rgba(241,230,200,.4)!important;}
+:root[data-night] .list-card .sticky-add,:root[data-night] .list-card #tdl-add,:root[data-night] .list-card #tdl-title,:root[data-night] .list-card .lc-meta{color:#CDBB8A!important;border-color:rgba(205,187,138,.35)!important;}
+:root[data-night] .list-card .tdl-in{background:rgba(0,0,0,.2)!important;border-color:rgba(205,187,138,.3)!important;color:#F1E6C8!important;}
+:root[data-night] .sticky-hw-date,:root[data-night] .list-card #sticky-date{color:#CDBB8A!important;}
+/* 常見的淺色零件 */
+:root[data-night] .stat-card,:root[data-night] .period-nav,:root[data-night] .witness-card{background:var(--ds-surface)!important;color:var(--ds-ink)!important;}
+:root[data-night] .witness-card{background:var(--ds-primary-soft)!important;}
+:root[data-night] .pd-box,:root[data-night] .modal-box,:root[data-night] #cal-popup>div{background:var(--ds-surface)!important;color:var(--ds-ink)!important;}
+:root[data-night] .fm-in,:root[data-night] select,:root[data-night] input,:root[data-night] textarea{color-scheme:dark;}
+:root[data-night] .fm-step button{background:var(--ds-field)!important;color:var(--ds-ink)!important;}
+:root[data-night] .card-edit:hover{background:var(--ds-field);}
+:root[data-night] .goal-stat,:root[data-night] .dots-row i{background-color:var(--ds-sunken);}
+:root[data-night] .pg-events .cal-ev-row{background:var(--ds-field)!important;}
+:root[data-night] .cal-ev-row span[style*="color:var(--tc)"]{color:var(--ds-ink)!important;}
+:root[data-night] .bot-nav{background:var(--ds-surface)!important;}
+:root[data-night] .nav-btn.active{background:var(--ds-primary)!important;}
+:root[data-night] #update-toast{background:var(--ds-primary)!important;}
+:root[data-night] .streak-pill{background:var(--ds-focus-soft)!important;color:var(--ds-focus-ink)!important;}
+:root[data-night] .ds-table tr.dt-detail td{background:var(--ds-field);}
+@media(max-width:1099px){:root[data-night] .bot-nav{border:1px solid var(--ds-line)!important;}}
+/* 夜晚模式：舊零件逐一換成深色（v134 逐頁掃描找出來的） */
+:root[data-night] .tdl-confirm-btn,:root[data-night] .tdl-del-btn,:root[data-night] .ebtn,:root[data-night] .hz-wbtn,:root[data-night] .period-arrow,
+:root[data-night] .view-toggle,:root[data-night] .ssp-clear,:root[data-night] .support-item-row,:root[data-night] .achievement-item.locked,
+:root[data-night] .highlight-quote-box,:root[data-night] .diet-plate,:root[data-night] .ss-star,:root[data-night] .ss-cap{
+  background:var(--ds-field)!important;color:var(--ds-ink-2)!important;border-color:var(--ds-line-2)!important;box-shadow:none!important;}
+:root[data-night] .ebtn.on,:root[data-night] .ebtn.sel,:root[data-night] .ebtn.active{background:var(--ds-primary-soft)!important;color:var(--ds-ink)!important;border-color:#45558A!important;}
+:root[data-night] .achievement-item.locked{opacity:.6;}
+:root[data-night] .sleep-scene{background:linear-gradient(180deg,#22305A 0%,#2A2C52 60%,#30294A 100%)!important;}
+:root[data-night] .ss-panel{background:rgba(29,35,49,.92)!important;color:var(--ds-ink)!important;}
+:root[data-night] .ss-panel *{color:inherit;}
+:root[data-night] .time-in{background:var(--ds-field)!important;color:var(--ds-ink)!important;border-color:var(--ds-line-2)!important;}
+:root[data-night] .wg-bubble{background:var(--ds-field)!important;color:var(--ds-ink)!important;}
+:root[data-night] .rv-pane [style*="background:rgba(255,255,255"],:root[data-night] .rv-pane [style*="background:#fff"]{background:var(--ds-field)!important;color:var(--ds-ink-2)!important;}
+:root[data-night] .hero-segs .goal-seg:not(.done):not(.cur){background:#3A3528!important;}
+:root[data-night] .pg-events .cal-ev-row span[style*="border-radius:999px"]{background:rgba(115,197,172,.16)!important;color:#9BD8C4!important;}
+/* 夜裡藍色當「字」時要亮一點；當底色（按鈕、導覽）時仍是 --ds-primary */
+:root[data-night]{--primary:#A9BCF2;--primary-rgb:150,170,235;--secondary:#8FB8DD;}
+:root[data-night] .id-tag.lit,:root[data-night] .ds-table .dt-now,:root[data-night] .support-cat-title{color:#AFC0F2!important;}

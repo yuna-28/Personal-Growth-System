@@ -36,7 +36,7 @@ window.addEventListener('error',function(e){
 <link rel="apple-touch-icon" href="puppy_icon.png"/>
 <link rel="icon" type="image/png" href="puppy_icon.png"/>
 <meta name="theme-color" content="#283E7C"/>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Quicksand:wght@400;500;600;700&family=Caveat:wght@600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Quicksand:wght@400;500;600;700&family=Caveat:wght@600;700&family=Noto+Serif+TC:wght@600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -1069,8 +1069,8 @@ button{-webkit-tap-highlight-color:transparent;}
 @keyframes pageIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
 .page.active{animation:pageIn .22s ease;}
 </style>
-<link rel="stylesheet" href="focus.css?v=133">
-<script src="focus-core.js?v=133"></script>
+<link rel="stylesheet" href="focus.css?v=134">
+<script src="focus-core.js?v=134"></script>
 <style>
 /* ═══ v127 改版：迴圈主軸（今天／回顧／方向／我）═══ */
 .ui2-zone{font-family:'Baloo 2',sans-serif;font-size:13px;font-weight:800;color:var(--tc2);margin:18px 4px 8px;letter-spacing:.5px;}
@@ -1205,7 +1205,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 .sleep-scene.night .ss-panel{background:rgba(28,36,64,.88)!important;}
 @media(min-width:1300px){.wrap{max-width:1256px;}}
 </style>
-<link rel="stylesheet" href="ds.css?v=133">
+<link rel="stylesheet" href="ds.css?v=134">
 </head>
 <body>
 <!-- 這四個彈窗特意放在 <body> 最前面、所有 <script> 之前：
@@ -1312,6 +1312,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
   <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
     <div class="streak-pill"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f525_3d.png" width="18" height="18" onerror="this.outerHTML='🔥'"/><span class="streak-num" id="streak-num">0</span><span style="font-size:11px;color:var(--tc2);font-weight:600;">天連續</span></div>
     <div class="sync-badge"><div class="sync-dot" id="sync-dot"></div><span id="sync-label">連線中...</span></div>
+    <button class="night-toggle" id="night-toggle" type="button" hidden>🌙 夜晚模式</button>
   </div>
 </div>
 <div id="backfill-banner" style="display:none;align-items:center;justify-content:space-between;gap:8px;background:rgba(255,220,120,.4);border:1.5px solid rgba(255,200,80,.65);border-radius:14px;padding:8px 12px;margin:0 1rem 8px;font-size:12px;font-weight:700;color:#8A6A00;box-shadow:0 2px 10px rgba(200,150,60,.15);">
@@ -1439,34 +1440,34 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 
 <div class="rd-zone">📊 表現分析</div>
 <div class="rd-pair">
-  <div class="gcard"><div class="sec-hd">🍩 TDL 表現</div><div id="wk-donut"></div><div id="wk-trend" style="margin-top:10px;"></div></div>
-  <div class="gcard" id="wk-theme-card" style="display:none;"><div class="sec-hd">📋 各主題達成率</div><div id="wk-themes"></div></div>
+  <div class="gcard"><div class="sec-hd">TDL 表現</div><div id="wk-donut"></div><div id="wk-trend" style="margin-top:10px;"></div></div>
+  <div class="gcard" id="wk-theme-card" style="display:none;"><div class="sec-hd">各主題達成率</div><div id="wk-themes"></div></div>
 </div>
 <div class="rd-pair">
-  <div class="gcard"><div class="sec-hd">🌿 習慣總表</div><div id="wk-habitgrid"></div></div>
+  <div class="gcard"><div class="sec-hd">習慣總表</div><div id="wk-habitgrid"></div></div>
   <div class="rd-stack">
-    <div class="gcard"><div class="sec-hd">✨ 身份進度</div><div id="wk-identity"></div></div>
-    <div class="gcard"><div class="sec-hd">🍯 成長之路</div><div id="wk-fruit-progress"></div></div>
+    <div class="gcard"><div class="sec-hd">身份進度</div><div id="wk-identity"></div></div>
+    <div class="gcard"><div class="sec-hd">成長之路</div><div id="wk-fruit-progress"></div></div>
   </div>
 </div>
-<div class="gcard insight-card" id="wk-insight-card" style="display:none;"><div class="sec-hd">💡 本週洞察</div><div id="wk-insight"></div></div>
+<div class="gcard insight-card" id="wk-insight-card" style="display:none;"><div class="sec-hd">本週洞察</div><div id="wk-insight"></div></div>
 
 <div class="rd-zone" id="wk-health-zone" style="display:none;">🌿 健康觀察</div>
-<div class="gcard" id="wk-sleep-card" style="display:none;"><div class="sec-hd">🌙 睡眠觀察</div><div id="wk-sleep"></div></div>
-<div class="gcard" id="wk-sleepx-card" style="display:none;"><div class="sec-hd">🔍 睡前活動 × 入睡狀況</div><div id="wk-sleepx"></div></div>
-<div class="gcard" id="wk-diet-card" style="display:none;"><div class="sec-hd">🍽️ 飲食</div><div id="wk-diet"></div></div>
+<div class="gcard" id="wk-sleep-card" style="display:none;"><div class="sec-hd">睡眠觀察</div><div id="wk-sleep"></div></div>
+<div class="gcard" id="wk-sleepx-card" style="display:none;"><div class="sec-hd">睡前活動 × 入睡狀況</div><div id="wk-sleepx"></div></div>
+<div class="gcard" id="wk-diet-card" style="display:none;"><div class="sec-hd">飲食</div><div id="wk-diet"></div></div>
 <div class="rd-pair" id="wk-health-pair" style="display:none;">
-  <div class="gcard" id="wk-exercise-card" style="display:none;"><div class="sec-hd">🏃 運動</div><div id="wk-exercise"></div></div>
-  <div class="gcard" id="wk-water-card" style="display:none;"><div class="sec-hd">💧 喝水</div><div id="wk-water"></div></div>
+  <div class="gcard" id="wk-exercise-card" style="display:none;"><div class="sec-hd">運動</div><div id="wk-exercise"></div></div>
+  <div class="gcard" id="wk-water-card" style="display:none;"><div class="sec-hd">喝水</div><div id="wk-water"></div></div>
 </div>
 
 <div class="rd-zone">🗒 這週明細</div>
-<div class="gcard" id="wk-tdldetail-card" style="display:none;"><div class="sec-hd">🗒 這週 TDL 明細</div><div id="wk-tdldetail"></div></div>
-<div class="gcard" id="wk-carry-card" style="display:none;"><div class="sec-hd">⏩ 順延觀察</div><div id="wk-carry"></div></div>
+<div class="gcard" id="wk-tdldetail-card" style="display:none;"><div class="sec-hd">這週 TDL 明細</div><div id="wk-tdldetail"></div></div>
+<div class="gcard" id="wk-carry-card" style="display:none;"><div class="sec-hd">順延觀察</div><div id="wk-carry"></div></div>
 <div id="week-entries" class="rd-entries"></div>
 <div class="rd-pair">
-  <div class="gcard" id="wk-keyword-card" style="display:none;"><div class="sec-hd">💭 這週常出現的詞</div><div id="wk-keywords"></div></div>
-  <div class="gcard" id="wk-highlight-card" style="display:none;"><div class="sec-hd">🌟 這週的一句話</div><div id="wk-highlight"></div></div>
+  <div class="gcard" id="wk-keyword-card" style="display:none;"><div class="sec-hd">這週常出現的詞</div><div id="wk-keywords"></div></div>
+  <div class="gcard" id="wk-highlight-card" style="display:none;"><div class="sec-hd">這週的一句話</div><div id="wk-highlight"></div></div>
 </div>
 <button class="ghost-btn" id="copy-week-btn" style="margin-top:4px;"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4cb_3d.png" width="15" height="15"/> 複製這週紀錄給 Claude</button>
 </div>
@@ -1494,34 +1495,34 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 
 <div class="rd-zone">📊 表現分析</div>
 <div class="rd-pair">
-  <div class="gcard"><div class="sec-hd">🍩 TDL 完成率</div><div id="mo-donut"></div></div>
-  <div class="gcard"><div class="sec-hd">📅 星期幾比較容易完成？</div><div id="mo-weekday-dist"></div></div>
+  <div class="gcard"><div class="sec-hd">TDL 完成率</div><div id="mo-donut"></div></div>
+  <div class="gcard"><div class="sec-hd">星期幾比較容易完成？</div><div id="mo-weekday-dist"></div></div>
 </div>
 <div class="rd-pair">
-  <div class="gcard"><div class="sec-hd">🌿 習慣總表</div><div id="mo-habitgrid"></div></div>
+  <div class="gcard"><div class="sec-hd">習慣總表</div><div id="mo-habitgrid"></div></div>
   <div class="rd-stack">
-    <div class="gcard"><div class="sec-hd">✨ 身份進度</div><div id="mo-identity"></div></div>
-    <div class="gcard"><div class="sec-hd">🍯 成長之路</div><div id="mo-fruit-progress"></div></div>
+    <div class="gcard"><div class="sec-hd">身份進度</div><div id="mo-identity"></div></div>
+    <div class="gcard"><div class="sec-hd">成長之路</div><div id="mo-fruit-progress"></div></div>
   </div>
 </div>
-<div class="gcard insight-card" id="mo-insight-card" style="display:none;"><div class="sec-hd">💡 本月洞察</div><div id="mo-insight"></div></div>
+<div class="gcard insight-card" id="mo-insight-card" style="display:none;"><div class="sec-hd">本月洞察</div><div id="mo-insight"></div></div>
 
 <div class="rd-zone" id="mo-health-zone" style="display:none;">🌿 健康觀察</div>
-<div class="gcard" id="mo-sleep-card" style="display:none;"><div class="sec-hd">🌙 睡眠觀察</div><div id="mo-sleep"></div></div>
-<div class="gcard" id="mo-sleepx-card" style="display:none;"><div class="sec-hd">🔍 睡前活動 × 入睡狀況</div><div id="mo-sleepx"></div></div>
-<div class="gcard" id="mo-diet-card" style="display:none;"><div class="sec-hd">🍽️ 飲食</div><div id="mo-diet"></div></div>
+<div class="gcard" id="mo-sleep-card" style="display:none;"><div class="sec-hd">睡眠觀察</div><div id="mo-sleep"></div></div>
+<div class="gcard" id="mo-sleepx-card" style="display:none;"><div class="sec-hd">睡前活動 × 入睡狀況</div><div id="mo-sleepx"></div></div>
+<div class="gcard" id="mo-diet-card" style="display:none;"><div class="sec-hd">飲食</div><div id="mo-diet"></div></div>
 <div class="rd-pair" id="mo-health-pair" style="display:none;">
-  <div class="gcard" id="mo-exercise-card" style="display:none;"><div class="sec-hd">🏃 運動</div><div id="mo-exercise"></div></div>
-  <div class="gcard" id="mo-water-card" style="display:none;"><div class="sec-hd">💧 喝水</div><div id="mo-water"></div></div>
+  <div class="gcard" id="mo-exercise-card" style="display:none;"><div class="sec-hd">運動</div><div id="mo-exercise"></div></div>
+  <div class="gcard" id="mo-water-card" style="display:none;"><div class="sec-hd">喝水</div><div id="mo-water"></div></div>
 </div>
 
 <div class="rd-zone">🗒 這個月明細</div>
-<div class="gcard" id="mo-carry-card" style="display:none;"><div class="sec-hd">⏩ 順延觀察</div><div id="mo-carry"></div></div>
+<div class="gcard" id="mo-carry-card" style="display:none;"><div class="sec-hd">順延觀察</div><div id="mo-carry"></div></div>
 <div id="month-week-summaries" class="rd-entries"></div>
 <div id="month-entries" class="rd-entries"></div>
 <div class="rd-pair">
-  <div class="gcard" id="mo-keyword-card" style="display:none;"><div class="sec-hd">💭 這個月常出現的詞</div><div id="mo-keywords"></div></div>
-  <div class="gcard" id="mo-highlight-card" style="display:none;"><div class="sec-hd">🌟 這個月的一句話</div><div id="mo-highlight"></div></div>
+  <div class="gcard" id="mo-keyword-card" style="display:none;"><div class="sec-hd">這個月常出現的詞</div><div id="mo-keywords"></div></div>
+  <div class="gcard" id="mo-highlight-card" style="display:none;"><div class="sec-hd">這個月的一句話</div><div id="mo-highlight"></div></div>
 </div>
 <div id="mo-copy-opts" style="display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--tc2);margin:4px 0 8px;">
   <label><input type="checkbox" data-copt="num" checked/> 數字分析（習慣、TDL、睡眠、目標）</label>
@@ -1538,7 +1539,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 <div class="pg-head"><h1>方向</h1><span class="pg-sub">這陣子要去哪裡：目標、作息、實驗、習慣</span></div>
 <div id="focus-goals"></div>
 <div class="gcard">
-  <div class="sec-hd">🌿 習慣清單</div>
+  <div class="sec-hd">習慣清單</div>
   <p style="font-size:11px;color:var(--tc3);margin-bottom:10px;">點一下開關。關掉的不會出現在「記錄今天」，紀錄都保留，隨時可以打開。</p>
   <div id="habit-manage" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
 </div>
@@ -1550,7 +1551,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 <!-- ══════ SUPPORT SYSTEM ══════ -->
 <div class="me-pane" id="page-support">
 <div class="gcard-scene" style="margin-top:4px;">
-  <div class="sec-hd" id="book-scene-title" style="position:relative;z-index:1;">📖 我的資源書</div>
+  <div class="sec-hd" id="book-scene-title" style="position:relative;z-index:1;">我的資源書</div>
   <div id="res-cat-tabs" style="position:relative;z-index:1;display:flex;gap:6px;flex-wrap:wrap;margin-bottom:0;"></div>
   <div id="book-stage" style="position:relative;height:380px;border-radius:0 12px 12px 12px;overflow:hidden;background-image:url('pic/cloud%20bkg.jpg');background-size:cover;background-position:center;">
     <div style="position:absolute;inset:0;background:rgba(255,255,255,.16);pointer-events:none;"></div>
@@ -1563,7 +1564,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
   <p id="book-scene-foot" style="text-align:center;font-size:11px;color:var(--tc3);margin-top:6px;position:relative;z-index:1;">你收藏的書、音樂、影片、人...都會住進這本書裡</p>
 </div>
 <div class="gcard" style="margin-top:4px;">
-  <div class="sec-hd">💛 誇誇牆</div>
+  <div class="sec-hd">誇誇牆</div>
   <p style="font-size:11px;color:var(--tc3);margin-bottom:10px;">貼上來的誇誇會掛在上面的黑板上，點一下可以打開來寫</p>
   <div class="praise-stats" id="praise-stats"></div>
   <p class="praise-arc" id="praise-arc" style="display:none;"></p>
@@ -1640,25 +1641,25 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 </div>
 
 <div class="gcard">
-  <div class="sec-hd">✨ 我是誰</div>
+  <div class="sec-hd">我是誰</div>
   <p style="font-size:11px;color:var(--tc3);margin-bottom:10px;">習慣累積7次點亮身份 · 30次獲得金框</p>
   <div class="identity-wall" id="identity-wall"></div>
 </div>
 </div>
 
 <div class="gcard">
-  <div class="sec-hd">🌿 踏實感證據牆</div>
+  <div class="sec-hd">踏實感證據牆</div>
   <p style="font-size:11px;color:var(--tc3);margin-bottom:10px;">每一個圖示代表你投入的一天</p>
   <div id="proof-board"></div>
 </div>
 
 <div class="gcard">
-  <div class="sec-hd">🌱 每個月的我</div>
+  <div class="sec-hd">每個月的我</div>
   <p style="font-size:11px;color:var(--tc3);margin-bottom:8px;">Claude 從日記看見的我 · 標「像我」「不太像」，看自己怎麼一個月一個月改變</p>
   <div id="insights-timeline"></div>
 </div>
 <div class="gcard">
-  <div class="sec-hd">🐾 我的人</div>
+  <div class="sec-hd">我的人</div>
   <p style="font-size:11px;color:var(--tc3);margin-bottom:12px;">他們會在花園裡陪你</p>
   <div id="people-list"></div>
   <div class="export-row">
@@ -1683,7 +1684,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 </div>
 
 <div class="gcard">
-  <div class="sec-hd">💎 豐盛收藏庫</div>
+  <div class="sec-hd">豐盛收藏庫</div>
   <p style="font-size:11px;color:var(--tc3);margin-bottom:12px;">我擁有的一切 · 值得被記住的人事物</p>
   <div id="treasure-list"></div>
   <div class="export-row">
@@ -1711,7 +1712,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 </div>
 
 <div class="gcard">
-  <div class="sec-hd">💬 金句收藏</div>
+  <div class="sec-hd">金句收藏</div>
   <div style="margin-bottom:12px;">
     <input id="quote-new-input" class="tdl-in" placeholder="輸入一句讓你有感覺的話..." style="width:100%;margin-bottom:6px;"/>
     <input id="quote-new-desc" class="tdl-in" placeholder="敘述（選填·補充說明或出處）" style="width:100%;margin-bottom:6px;"/>
@@ -1731,7 +1732,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 <!-- ══════ INFO ══════ -->
 <div class="me-pane" id="page-info">
 <div class="gcard" style="margin-top:4px;">
-  <div class="sec-hd">🏆 成就牆</div>
+  <div class="sec-hd">成就牆</div>
   <div class="achievement-grid" id="achievement-grid"></div>
 </div>
 <div class="gcard">
@@ -1742,7 +1743,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
   <div id="explog-body" style="display:none;"></div>
 </div>
 <div class="gcard">
-  <div class="sec-hd">🌳 小森林機制說明</div>
+  <div class="sec-hd">小森林機制說明</div>
   <div style="font-size:13px;color:var(--tc);line-height:1.8;">
     <p style="margin-bottom:10px;"><b>小森林不是目標管理工具，是你正在成為自己的見證者 🌱</b><br/>活在當下、不設截止日期，數字只記錄你已經做了多少。</p>
     <p style="margin-bottom:10px;"><b>系統A：地上的花 🌸</b><br/>每打勾一個習慣 → +10 EXP → 草地立刻長一朵花（顏色對應習慣、可拖移、每天累計不會消失）。取消打勾花會收回。</p>
@@ -1764,7 +1765,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 <!-- ══════ SETTINGS ══════ -->
 <div class="page" id="page-settings">
 <div class="gcard" style="margin-top:4px;">
-  <div class="sec-hd">🔔 每日提醒通知</div>
+  <div class="sec-hd">每日提醒通知</div>
   <div class="set-row" style="border-bottom:1.5px solid rgba(var(--secondary-rgb),.4);">
     <span style="flex:1;font-weight:700;">啟用通知</span>
     <label class="tgl"><input type="checkbox" id="notif-master"/><span class="knob"></span></label>
@@ -1793,7 +1794,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 </div>
 
 <div class="gcard">
-  <div class="sec-hd">📅 Google 日曆</div>
+  <div class="sec-hd">Google 日曆</div>
   <div class="set-row"><span style="flex:1;">預設提醒</span>
     <select id="cal-remind-sel" class="time-in">
       <option value="0">準時</option><option value="5">提前5分</option><option value="10">提前10分</option><option value="30">提前30分</option><option value="60">提前1小時</option><option value="1440">提前1天</option>
@@ -1816,7 +1817,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 </div>
 
 <div class="gcard" id="set-account-card" style="display:none;">
-  <div class="sec-hd">📊 帳號與資料</div>
+  <div class="sec-hd">帳號與資料</div>
   <div style="font-size:12px;font-weight:700;color:var(--tc2);margin-bottom:4px;">Google Sheet ID（唯讀）</div>
   <input class="tdl-in" id="set-sheet-id" readonly style="width:100%;margin-bottom:10px;opacity:.7;font-size:11px;"/>
   <div style="font-size:12px;font-weight:700;color:var(--tc2);margin-bottom:4px;">GAS 網址（換部署時可在這裡修改）</div>
@@ -1830,20 +1831,20 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 </div>
 
 <div class="gcard">
-  <div class="sec-hd">📄 匯出備份</div>
+  <div class="sec-hd">匯出備份</div>
   <p style="font-size:12px;color:var(--tc3);line-height:1.7;margin-bottom:10px;">把所有日記、習慣、TDL、金句整理成一份文字檔下載到裝置，離線也能自己保存一份。</p>
   <button class="ghost-btn" id="export-txt-btn" style="margin-bottom:0;">📄 匯出全部紀錄成文字檔</button>
 </div>
 
 <div class="gcard">
-  <div class="sec-hd">🗂 習慣管理</div>
+  <div class="sec-hd">習慣管理</div>
   <p style="font-size:12px;color:var(--tc3);line-height:1.7;margin-bottom:8px;">封存＝暫時收起來：不再出現在打卡清單和分析裡，歷史紀錄全部保留，隨時可以解封。專注在當季真正想養的習慣就好 🌱</p>
   <div id="habit-archive-list"></div>
 </div>
 
 <div class="gcard" style="border-color:rgba(240,150,150,.4);">
   <button type="button" id="danger-zone-toggle" style="width:100%;display:flex;align-items:center;justify-content:space-between;background:none;border:none;padding:0;cursor:pointer;font-family:inherit;">
-    <span class="sec-hd" style="margin:0;">🧹 清除測試資料</span>
+    <span class="sec-hd" style="margin:0;">清除測試資料</span>
     <span id="danger-zone-arrow" style="font-size:12px;color:var(--tc3);">▸ 點開</span>
   </button>
   <div id="danger-zone-body" style="display:none;margin-top:10px;">
@@ -1854,7 +1855,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 </div>
 
 <div class="gcard">
-  <div class="sec-hd">🌱 關於</div>
+  <div class="sec-hd">關於</div>
   <div style="font-size:13px;color:var(--tc);line-height:1.9;">
     <div>版本：<span id="about-ver">v7.9</span>（PWA）</div>
     <div style="color:var(--tc2);">小森林不是目標管理工具，是你正在成為自己的見證者 🌱</div>
@@ -1909,7 +1910,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v133';
+const APP_VER='v134';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // ── 注音／中文輸入法保護 ──────────────────────────────
@@ -7982,6 +7983,6 @@ document.addEventListener('visibilitychange',()=>{
 
 
 
-<script src="focus.js?v=133"></script>
+<script src="focus.js?v=134"></script>
 </body>
 </html>
