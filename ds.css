@@ -561,3 +561,5 @@ body *{font-family:var(--ds-font)!important;}
 button.cal-sync{border:none;background:none;cursor:pointer;font-family:var(--ds-font);padding:2px 4px;border-radius:6px;}
 button.cal-sync:hover{background:var(--ds-warn-soft);}
 :root[data-night] .soft-toast{background:#2A3245!important;color:var(--ds-ink)!important;border-color:var(--ds-line-2)!important;box-shadow:0 10px 30px -10px rgba(0,0,0,.6)!important;}
+.hero-done{font-size:var(--ds-fs-sm);font-weight:700;color:var(--ds-good);margin-top:6px;}
+.hero-main .goal-in{flex:1;min-width:0;}

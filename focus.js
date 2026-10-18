@@ -187,10 +187,15 @@ function nowCard(){
   const isDone=i>=0&&!!stickyCtx().done['t'+i];
   const cur=curI>=0?ms[curI]:null;
   let main;
-  if(!n.text||justDone===pg.id){
-    main=`<div class="hero-main"><input class="goal-in" data-next-in="${esc(pg.id)}" maxlength="200"
-        placeholder="${justDone===pg.id?'做完了 ✓ 下一步是？':(cur?'今天要做「'+esc(cur.title)+'」的哪一步？':'今天要做哪一步？')}"/>
-      <button class="focus-btn primary" data-action="set-next" data-g="${esc(pg.id)}">好</button></div>`;
+  // 這一步做完了，或寫的就是一個已經打勾的階段（例如「草稿」）→ 不再停在劃掉的那一步，直接問下一步
+  const stale=!!n.text&&ms.some(m=>m.done&&m.title.trim()===n.text.trim());
+  if(!n.text||justDone===pg.id||isDone||stale){
+    const finished=n.text&&(isDone||stale||justDone===pg.id);
+    const quick=cur&&cur.title.trim()!==(n.text||'').trim()?`<button class="focus-btn" data-action="set-next-stage" data-g="${esc(pg.id)}">就做「${esc(cur.title)}」</button>`:'';
+    main=`${finished?`<div class="hero-done">✓ 完成了：${esc(n.text)}</div>`:''}
+      <div class="hero-main"><input class="goal-in" data-next-in="${esc(pg.id)}" maxlength="200"
+        placeholder="${cur?'下一步：「'+esc(cur.title)+'」要做哪一小步？':'下一步是什麼？'}"/>
+      ${quick}<button class="focus-btn primary" data-action="set-next" data-g="${esc(pg.id)}">好</button></div>`;
   }else{
     main=`<div class="hero-main"><input class="hero-step${isDone?' is-done':''}" data-step-text="${esc(pg.id)}" value="${esc(n.text)}" maxlength="200" title="點一下就可以改"/>
       <button class="focus-btn${isDone?' done':' primary'}" data-action="step-done" data-g="${esc(pg.id)}">${isDone?'✓ 完成了':'完成'}</button></div>
@@ -950,6 +955,10 @@ onMounts('click',ev=>{
     document.querySelector(`#sticky-items .sticky-check[data-k="t${i}"]`)?.click();
     if(!wasDone){justDone=g.id;autoHabit('create');}
     render(true);return;
+  }
+  if(a==='set-next-stage'){
+    const g=data().projects.find(x=>x.id===el.dataset.g);const cur=g&&(g.milestones||[]).find(m=>!m.done);
+    if(g&&cur)setNext(g,cur.title);return;
   }
   if(a==='set-next'){
     const g=data().projects.find(x=>x.id===el.dataset.g),inp=$q(`[data-next-in="${el.dataset.g}"]`);
