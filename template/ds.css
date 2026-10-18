@@ -544,3 +544,9 @@ body *{font-family:var(--ds-font)!important;}
 :root[data-night] #quote-popup button,:root[data-night] .rp-icon-btn{background:var(--ds-field)!important;color:var(--ds-ink)!important;border-color:var(--ds-line-2)!important;}
 :root[data-night] #pop-cal-close{background:var(--ds-field)!important;color:var(--ds-ink)!important;}
 :root[data-night] #err-toast{background:var(--ds-field)!important;color:var(--ds-ink)!important;border-color:var(--ds-line-2)!important;}
+/* 目標卡：日曆同步狀態（看得到，不用另外按） */
+.cal-sync{margin-left:8px;flex:none;font-size:var(--ds-fs-xs);color:var(--ds-ink-3);white-space:nowrap;}
+.cal-sync.ok{color:var(--ds-good);}
+.cal-sync.err{color:var(--ds-warn);}
+.cal-sync.off{opacity:.8;}
+.hero-segs [data-cal-state]{display:contents;}

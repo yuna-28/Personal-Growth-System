@@ -24,7 +24,7 @@ const BODY_METRICS=[
   {k:'shoulder',l:'肩背',unit:'次',def:7},
   {k:'bed',l:'準時上床',unit:'晚',def:7}
 ];
-let editing='',cloudSupported=null,justDone='';
+let editing='',cloudSupported=null,justDone='',cloudReady=false;
 
 function data(){S.focus=C.clean(S.focus);return S.focus;}
 function ds(){return viewDate||curDay();}
@@ -195,7 +195,7 @@ function nowCard(){
       ${isDone?'':`<div class="hero-sub"><span>沒電時：</span><input class="hero-small" data-small-text="${esc(pg.id)}" value="${esc(n.small||'')}" placeholder="寫一個最小版本（選填）" maxlength="200"/></div>`}`;
   }
   const segs=`<div class="hero-segs">${ms.map((m,k)=>`<span class="goal-seg${m.done?' done':(k===curI?' cur':'')}" title="${esc(m.title)}${m.due?' · '+md(m.due):''}"></span>`).join('')}
-      <button class="hero-toggle" data-action="hero-ms">${ms.length?`階段 ${done}/${ms.length}`:'階段'} ${heroOpen()?'▴':'▾'}</button></div>`;
+      <span data-cal-state="${esc(pg.id)}">${calStateHTML(pg)}</span><button class="hero-toggle" data-action="hero-ms">${ms.length?`階段 ${done}/${ms.length}`:'階段'} ${heroOpen()?'▴':'▾'}</button></div>`;
   const list=heroOpen()?`<div class="ms-list">${msEditRows(pg)}</div>`:'';
   return `<div class="gcard hero day"><div class="hero-top"><span>${esc(pg.title)} · 今天這一步</span>
       <span class="hero-meta">${meta}</span><button class="card-edit" data-edit-goal="${esc(pg.id)}" title="名稱、截止日、狀態">✏️ 編輯</button></div>
@@ -398,6 +398,75 @@ function sevenDots(d){
   }
   return `<span class="focus-dots" title="最近七晚：綠＝準時、金＝晚了、灰＝沒記錄">${out}</span>`;
 }
+// ══ 目標的日期 → Google 日曆 ═════════════════════════
+// 作品型目標：每個有日期的階段＝一個全天行程；🚩 硬期限前一天早上 9 點提醒；目標截止日也放一個。
+// 已經建好的行程 id 記在 g.cal（跟著目標一起同步到雲端），改名、改日期、刪掉都會跟著更新日曆。
+const CAL_STAGE_COLOR='9',CAL_HARD_COLOR='11';
+const calSync={busy:{},again:{},timer:null,state:{}};
+function goalCalItems(g){
+  const out={};
+  if(g.kind==='body'||g.status==='archived')return out;   // 封存才從日曆拿掉；暫停、完成都留著
+  (g.milestones||[]).forEach(m=>{
+    if(!m.due||!m.id)return;
+    out['m:'+m.id]={title:`${m.done?'✅':(m.hard?'🚩':'🎬')} ${g.title}：${m.title}`,date:m.due,color:m.hard?CAL_HARD_COLOR:CAL_STAGE_COLOR,reminderMin:m.hard&&!m.done?900:''};
+  });
+  if(g.dueDate)out.due={title:`🏁 ${g.title} 截止`,date:g.dueDate,color:CAL_HARD_COLOR,reminderMin:900};
+  return out;
+}
+const calSig=w=>[w.title,w.date,w.color,w.reminderMin].join('|');
+function goalCalDirty(g){
+  const want=goalCalItems(g),have=g.cal||{};
+  return Object.keys(want).some(k=>!have[k]||have[k].sig!==calSig(want[k]))||Object.keys(have).some(k=>!want[k]);
+}
+function scheduleGoalCal(){
+  // 只在這台裝置已經拿到雲端資料、日曆也連得上時才同步（避免還沒拿到別台的 g.cal 就重複建行程）
+  if(!cloudReady||typeof calConnected==='undefined'||!calConnected||!GAS_URL||VIEWER_MODE)return;
+  if(!data().projects.some(goalCalDirty))return;
+  clearTimeout(calSync.timer);
+  calSync.timer=setTimeout(()=>{if(isTyping()){scheduleGoalCal();return;}data().projects.filter(goalCalDirty).forEach(syncGoalCal);},2500);
+}
+async function syncGoalCal(g){
+  if(calSync.busy[g.id]){calSync.again[g.id]=true;return;}
+  calSync.busy[g.id]=true;calSync.state[g.id]='syncing';paintCalState(g);
+  const have={...(g.cal||{})};let changed=false;
+  try{
+    const want=goalCalItems(g);
+    for(const [k,w] of Object.entries(want)){
+      const sig=calSig(w),h=have[k];
+      if(h&&h.sig===sig)continue;
+      const payload={title:w.title,date:w.date,allDay:true,color:w.color,reminderMin:w.reminderMin,repeat:'none'};
+      if(h&&h.id)payload.id=h.id;
+      const j=await gasJson(await gasPost(h&&h.id?'editCalEvent':'addCalEvent',payload));
+      if(!j||!j.ok||!j.id)throw new Error((j&&j.error)||'日曆沒有回應');
+      have[k]={id:j.id,sig};changed=true;
+    }
+    for(const k of Object.keys(have)){
+      if(want[k])continue;
+      const j=await gasJson(await gasPost('delCalEvent',{id:have[k].id}));
+      if(!j||!j.ok)throw new Error((j&&j.error)||'刪除失敗');
+      delete have[k];changed=true;
+    }
+    calSync.state[g.id]='ok';
+  }catch(e){calSync.state[g.id]='error';console.warn('goal calendar sync',e);}
+  finally{
+    if(changed){
+      // data() 每次都會重建目標物件：一定要寫回「現在的」那一個，不然 id 會存到舊物件上弄丟
+      const cur=data().projects.find(x=>x.id===g.id)||g;
+      cur.cal=have;cur.updatedAt=Date.now();sv(S);syncStateDebounced();
+      if(typeof fetchCalMonth==='function'){calFetchedMonths={};const t=new Date();fetchCalMonth(t.getFullYear(),t.getMonth(),true).then(()=>{if(typeof renderTodayEvents==='function')renderTodayEvents();}).catch(()=>{});}
+    }
+    calSync.busy[g.id]=false;paintCalState(g);
+    if(calSync.again[g.id]){calSync.again[g.id]=false;const cur=data().projects.find(x=>x.id===g.id);if(cur)syncGoalCal(cur);}
+  }
+}
+function calStateHTML(g){
+  if(!Object.keys(goalCalItems(g)).length&&!Object.keys(g.cal||{}).length)return '';
+  const st=calSync.state[g.id]||(goalCalDirty(g)?'pending':'ok');
+  if(typeof calConnected==='undefined'||!calConnected)return '<span class="cal-sync off" title="連上 Google 日曆後，有日期的階段會自動放進日曆">📅 日曆未連線</span>';
+  return {syncing:'<span class="cal-sync">📅 同步中…</span>',pending:'<span class="cal-sync">📅 等一下就同步</span>',
+    error:'<span class="cal-sync err" title="會在下次修改時再試">📅 日曆同步失敗</span>',ok:'<span class="cal-sync ok" title="有日期的階段都在 Google 日曆上">📅 已在日曆上</span>'}[st];
+}
+function paintCalState(g){const el=$q(`[data-cal-state="${g.id}"]`);if(el)el.innerHTML=calStateHTML(g);}
 function render(force){
   if(!mounts.length)return;
   const a=document.activeElement;
@@ -421,6 +490,7 @@ function render(force){
   if(editing==='phone'||editing==='bed')$q('[data-edit]')?.focus();
   if(justDone)$q(`[data-next-in="${justDone}"]`)?.focus();
   if(VIEWER_MODE)$qa('button,input').forEach(el=>{el.disabled=true;});
+  scheduleGoalCal();
 }
 // 「現在要做」跟著時間走：每分鐘更新一次（打字中不動）
 setInterval(()=>{if(!document.hidden)render(false);applyNight();},60000);
@@ -1345,7 +1415,7 @@ window.FocusUI={
   updateCount,
   periodGoals,reviewHTML,copyLines,loopReviewHTML,loopCopyLines,loopRequestLines,renderInsights,
   render(){render(false);},
-  setCloudSupport(v){cloudSupported=v;render(false);},
+  setCloudSupport(v){cloudSupported=v;if(v)cloudReady=true;render(false);},
   exportLines(){
     const f=data();
     return ['','━━━ 目標與作息 ━━━',
