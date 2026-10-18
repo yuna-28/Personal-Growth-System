@@ -437,15 +437,16 @@ async function syncGoalCal(g){
       const sig=calSig(w),h=have[k];
       if(h&&h.sig===sig)continue;
       const payload={title:w.title,date:w.date,allDay:true,color:w.color,reminderMin:w.reminderMin,repeat:'none'};
-      if(h&&h.id)payload.id=h.id;
-      const j=await gasJson(await gasPost(h&&h.id?'editCalEvent':'addCalEvent',payload));
+      // 不用 editCalEvent：Apps Script 的「編輯」會先刪舊的，舊的已經被手動刪掉時會整個失敗。
+      // 改成自己先刪（已經不在就算了），再建一個新的
+      if(h&&h.id){await delCalQuiet(h.id);delete have[k];changed=true;}
+      const j=await gasJson(await gasPost('addCalEvent',payload));
       if(!j||!j.ok||!j.id)throw new Error((j&&j.error)||'日曆沒有回應');
       have[k]={id:j.id,sig};changed=true;
     }
     for(const k of Object.keys(have)){
       if(want[k])continue;
-      const j=await gasJson(await gasPost('delCalEvent',{id:have[k].id}));
-      if(!j||!j.ok)throw new Error((j&&j.error)||'刪除失敗');
+      await delCalQuiet(have[k].id);
       delete have[k];changed=true;
     }
     calSync.state[g.id]='ok';
@@ -463,6 +464,14 @@ async function syncGoalCal(g){
     calSync.busy[g.id]=false;paintCalState(g);
     if(calSync.again[g.id]){calSync.again[g.id]=false;const cur=data().projects.find(x=>x.id===g.id);if(cur)syncGoalCal(cur);}
   }
+}
+// 刪日曆行程：行程本來就不在了（手動刪掉、或之前刪過）也當作成功
+const CAL_GONE=/不存在|已遭刪除|not found|does not exist|deleted|找不到/i;
+async function delCalQuiet(id){
+  let j;
+  try{j=await gasJson(await gasPost('delCalEvent',{id}));}
+  catch(e){if(CAL_GONE.test(String(e&&e.message)))return;throw e;}
+  if(j&&j.ok===false&&!CAL_GONE.test(String(j.error||'')))throw new Error(j.error||'刪除失敗');
 }
 function calErrText(e){
   const m=String(e&&e.message||e||'');
