@@ -177,7 +177,9 @@ function nowCard(){
   const pg=projectGoal();if(!pg)return '';
   const ms=pg.milestones||[],done=ms.filter(m=>m.done).length,curI=ms.findIndex(m=>!m.done);
   let meta='';
-  if(pg.dueDate){const left=daysBetween(d,pg.dueDate);meta=`截止 ${md(pg.dueDate)} · ${left<0?'<b class="warn">已過 '+(-left)+' 天</b>':(left===0?'今天':'還有 '+left+' 天')}`;}
+  {const left=pg.dueDate?daysBetween(d,pg.dueDate):null;
+   meta=`<span class="due-wrap">截止 <input class="hero-due" data-goal-due="${esc(pg.id)}" value="${pg.dueDate?md(pg.dueDate):''}" placeholder="設定日期" maxlength="10" title="打 10/31 這樣；清空＝沒有截止日"/></span>`
+     +(left==null?'':` · ${left<0?'<b class="warn">已過 '+(-left)+' 天</b>':(left===0?'今天':'還有 '+left+' 天')}`);}
   const hard=ms.filter(m=>!m.done&&m.due&&m.hard).sort((x,y)=>x.due.localeCompare(y.due))[0];
   if(hard&&daysBetween(d,hard.due)<=5)meta+=`${meta?' · ':''}<b class="warn">🚩 ${esc(hard.title)} ${md(hard.due)}</b>`;
   const n=pg.next||{};
@@ -402,7 +404,7 @@ function sevenDots(d){
 // 作品型目標：每個有日期的階段＝一個全天行程；🚩 硬期限前一天早上 9 點提醒；目標截止日也放一個。
 // 已經建好的行程 id 記在 g.cal（跟著目標一起同步到雲端），改名、改日期、刪掉都會跟著更新日曆。
 const CAL_STAGE_COLOR='9',CAL_HARD_COLOR='11';
-const calSync={busy:{},again:{},timer:null,state:{}};
+const calSync={busy:{},again:{},timer:null,state:{},err:{},retryT:{}};
 function goalCalItems(g){
   const out={};
   if(g.kind==='body'||g.status==='archived')return out;   // 封存才從日曆拿掉；暫停、完成都留著
@@ -447,7 +449,10 @@ async function syncGoalCal(g){
       delete have[k];changed=true;
     }
     calSync.state[g.id]='ok';
-  }catch(e){calSync.state[g.id]='error';console.warn('goal calendar sync',e);}
+  }catch(e){
+    calSync.state[g.id]='error';calSync.err[g.id]=calErrText(e);console.warn('goal calendar sync',e);
+    clearTimeout(calSync.retryT[g.id]);calSync.retryT[g.id]=setTimeout(()=>{const cur=data().projects.find(x=>x.id===g.id);if(cur&&goalCalDirty(cur))syncGoalCal(cur);},30000);
+  }
   finally{
     if(changed){
       // data() 每次都會重建目標物件：一定要寫回「現在的」那一個，不然 id 會存到舊物件上弄丟
@@ -459,12 +464,20 @@ async function syncGoalCal(g){
     if(calSync.again[g.id]){calSync.again[g.id]=false;const cur=data().projects.find(x=>x.id===g.id);if(cur)syncGoalCal(cur);}
   }
 }
+function calErrText(e){
+  const m=String(e&&e.message||e||'');
+  if(/unauthorized/.test(m))return '需要通行碼：到「設定」輸入通行碼';
+  if(/http 0|Failed to fetch|NetworkError|http undefined/i.test(m))return '連不上雲端（網路或 Apps Script 沒回應）';
+  if(/bad-response/.test(m))return 'Apps Script 回傳的不是資料（可能要重新授權日曆）';
+  if(/unknown action/.test(m))return 'Apps Script 版本太舊，沒有日曆功能';
+  return m.slice(0,120)||'不明原因';
+}
 function calStateHTML(g){
   if(!Object.keys(goalCalItems(g)).length&&!Object.keys(g.cal||{}).length)return '';
   const st=calSync.state[g.id]||(goalCalDirty(g)?'pending':'ok');
   if(typeof calConnected==='undefined'||!calConnected)return '<span class="cal-sync off" title="連上 Google 日曆後，有日期的階段會自動放進日曆">📅 日曆未連線</span>';
   return {syncing:'<span class="cal-sync">📅 同步中…</span>',pending:'<span class="cal-sync">📅 等一下就同步</span>',
-    error:'<span class="cal-sync err" title="會在下次修改時再試">📅 日曆同步失敗</span>',ok:'<span class="cal-sync ok" title="有日期的階段都在 Google 日曆上">📅 已在日曆上</span>'}[st];
+    error:`<button type="button" class="cal-sync err" data-action="cal-retry" data-g="${esc(g.id)}" title="${esc(calSync.err[g.id]||'')}（點一下重試）">📅 日曆同步失敗 · 重試</button>`,ok:'<span class="cal-sync ok" title="有日期的階段都在 Google 日曆上">📅 已在日曆上</span>'}[st];
 }
 function paintCalState(g){const el=$q(`[data-cal-state="${g.id}"]`);if(el)el.innerHTML=calStateHTML(g);}
 function render(force){
@@ -882,6 +895,11 @@ onMounts('click',ev=>{
   const a=el.dataset.action;
   if(a==='hero-ms'){try{localStorage.setItem('grandol_hero_ms',heroOpen()?'0':'1');}catch(e){}render(true);return;}
   if(a==='edit-plan'){openPlanEditor();return;}
+  if(a==='cal-retry'){
+    const g=data().projects.find(x=>x.id===el.dataset.g);if(!g)return;
+    if(calSync.err[g.id])softToast('上次失敗的原因：'+calSync.err[g.id],3800);
+    syncGoalCal(g);return;
+  }
   if(el.dataset.postpone!==undefined){if(writable()){postponeTdlItem(+el.dataset.postpone);render(true);}return;}
   if(a==='bring-next'){const g=data().projects.find(x=>x.id===el.dataset.g);if(g&&writable()){addStepTomorrow(g);render(true);softToast('排到明天了 🌙',2000);}return;}
   if(a==='more'){openMore();return;}
@@ -954,10 +972,10 @@ onMounts('keydown',ev=>{
     g.milestones=list;
     t.value='';saveGoal(g);setTimeout(()=>$q(`[data-ms-add="${g.id}"]`)?.focus(),0);return;
   }
-  if(ev.key==='Enter'&&!isImeEnter(ev)&&t.dataset&&(t.dataset.msTitle!==undefined||t.dataset.msDue!==undefined||t.dataset.stepText!==undefined||t.dataset.smallText!==undefined)){
+  if(ev.key==='Enter'&&!isImeEnter(ev)&&t.dataset&&(t.dataset.msTitle!==undefined||t.dataset.msDue!==undefined||t.dataset.stepText!==undefined||t.dataset.smallText!==undefined||t.dataset.goalDue!==undefined)){
     ev.preventDefault();t.blur();return;
   }
-  if(ev.key==='Escape'&&t.dataset&&(t.dataset.msTitle!==undefined||t.dataset.msDue!==undefined||t.dataset.stepText!==undefined||t.dataset.smallText!==undefined)){
+  if(ev.key==='Escape'&&t.dataset&&(t.dataset.msTitle!==undefined||t.dataset.msDue!==undefined||t.dataset.stepText!==undefined||t.dataset.smallText!==undefined||t.dataset.goalDue!==undefined)){
     t.value=t.defaultValue;t.blur();return;
   }
   const inp=ev.target.closest('[data-next-in]');
@@ -972,6 +990,14 @@ onMounts('focusout',ev=>{
 });
 onMounts('change',ev=>{
   const el=ev.target,dd=el.dataset||{};
+  if(dd.goalDue!==undefined){
+    if(!writable()){el.value=el.defaultValue;return;}
+    const g=data().projects.find(x=>x.id===dd.goalDue);if(!g)return;
+    const v=el.value.trim(),due=v?parseMD(v):'';
+    if(due===null){el.value=el.defaultValue;softToast('日期看不懂，打成 10/31 這樣就好',2600);return;}
+    g.dueDate=due;el.value=due?md(due):'';el.defaultValue=el.value;
+    saveQuiet(g);softToast(due?'截止日改成 '+md(due)+' ✓':'拿掉截止日了',1600);return;
+  }
   if(dd.msTitle!==undefined||dd.msDue!==undefined||dd.stepText!==undefined||dd.smallText!==undefined){
     if(!writable()){el.value=el.defaultValue;return;}
     const g=data().projects.find(x=>x.id===(dd.g||dd.stepText||dd.smallText));if(!g)return;

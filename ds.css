@@ -550,3 +550,13 @@ body *{font-family:var(--ds-font)!important;}
 .cal-sync.err{color:var(--ds-warn);}
 .cal-sync.off{opacity:.8;}
 .hero-segs [data-cal-state]{display:contents;}
+/* 截止日：卡片右上角直接改 */
+.hero-top .due-wrap{white-space:nowrap;}
+.hero-due{width:58px;font-family:var(--ds-font);font-size:inherit;font-weight:700;color:inherit;background:transparent;border:1px solid transparent;border-radius:6px;padding:1px 4px;outline:none;text-align:center;}
+.hero-due::placeholder{color:var(--ds-ink-3);font-weight:500;}
+.hero-due:hover{background:rgba(255,255,255,.55);border-color:#EBD9B1;}
+.hero-due:focus{background:#fff;border-color:var(--ds-primary);box-shadow:0 0 0 3px var(--ds-primary-soft);color:var(--ds-ink);}
+:root[data-night] .hero-due:hover{background:rgba(255,255,255,.06);border-color:#4A3F27;}
+:root[data-night] .hero-due:focus{background:var(--ds-field);color:var(--ds-ink);}
+button.cal-sync{border:none;background:none;cursor:pointer;font-family:var(--ds-font);padding:2px 4px;border-radius:6px;}
+button.cal-sync:hover{background:var(--ds-warn-soft);}
