@@ -217,8 +217,9 @@ function metricSuggest(g,m,d){
   const next=Math.max(1,Math.ceil(perWeek)+1);
   return target>=next+2?{perWeek:Math.round(perWeek*10)/10,next}:null;
 }
-// 階段清單預設展開（按「階段 ▴」收起來，會記住）
-function heroOpen(){try{return localStorage.getItem('grandol_hero_ms')!=='0';}catch(e){return true;}}
+function tonightOpen(){try{return localStorage.getItem('grandol_tonight')==='1';}catch(e){return false;}}
+// 階段清單平常收起來，按「階段 ▾」展開編輯（會記住）
+function heroOpen(){try{return localStorage.getItem('grandol_hero_ms')==='1';}catch(e){return false;}}
 // 今天頁的目標卡：每一個欄位都可以直接點了改（名稱、日期、🚩、這一步、沒電版本），✏️ 打開完整編輯
 function nowCard(){
   const d=ds();if(d!==curDay())return '';                 // 補記過去的日子不顯示
@@ -249,10 +250,10 @@ function nowCard(){
   }else{
     main=`<div class="hero-main"><input class="hero-step${isDone?' is-done':''}" data-step-text="${esc(pg.id)}" value="${esc(n.text)}" maxlength="200" title="點一下就可以改"/>
       <button class="focus-btn${isDone?' done':' primary'}" data-action="step-done" data-g="${esc(pg.id)}">${isDone?'✓ 完成了':'完成'}</button></div>
-      ${isDone?'':`<div class="hero-sub"><span>沒電時：</span><input class="hero-small" data-small-text="${esc(pg.id)}" value="${esc(n.small||'')}" placeholder="寫一個最小版本（選填）" maxlength="200"/></div>`}`;
+      ${!isDone&&(n.small||heroOpen())?`<div class="hero-sub"><span>沒電時：</span><input class="hero-small" data-small-text="${esc(pg.id)}" value="${esc(n.small||'')}" placeholder="寫一個最小版本（選填）" maxlength="200"/></div>`:''}`;
   }
   const segs=`<div class="hero-segs">${ms.map((m,k)=>`<span class="goal-seg${m.done?' done':(k===curI?' cur':'')}" title="${esc(m.title)}${m.due?' · '+md(m.due):''}"></span>`).join('')}
-      <span data-cal-state="${esc(pg.id)}">${calStateHTML(pg)}</span><button class="hero-toggle" data-action="hero-ms">${ms.length?`階段 ${done}/${ms.length}`:'階段'} ${heroOpen()?'▴':'▾'}</button></div>`;
+      <span data-cal-state="${esc(pg.id)}">${calStateHTML(pg)}</span><button class="hero-toggle" data-action="hero-ms" title="展開可以改階段、日期">${ms.length?`階段 ${done}/${ms.length}${cur?' · '+esc(cur.title):''}`:'拆階段'} ${heroOpen()?'▴':'▾'}</button></div>`;
   const list=heroOpen()?`<div class="ms-list">${msEditRows(pg)}</div>`:'';
   return `<div class="gcard hero day"><div class="hero-top"><span>${esc(pg.title)} · 今天這一步</span>
       <span class="hero-meta">${meta}</span><button class="card-edit" data-edit-goal="${esc(pg.id)}" title="名稱、截止日、狀態">✏️ 編輯</button></div>
@@ -298,7 +299,7 @@ function dueTxt(g){
 }
 // ── 身體型目標卡：本週點點＋動一動 ──────────────
 function bodyCard(g){
-  const d=ds(),st=weekStats(d,g);let suggested=false;
+  const d=ds(),st=weekStats(d,g);let suggested=!!closeBanner(g);
   const rows=activeMetrics(g).map(m=>{
     const n=st[m.k],goal=+m.target,today=metricHit(m,d);
     const tick=m.src==='manual'?`<button class="focus-btn mt-tick${today?' done':''}" data-metric="${esc(m.k)}" data-g="${esc(g.id)}">${today?'今天 ✓':'今天'}</button>`:'';
@@ -308,9 +309,10 @@ function bodyCard(g){
       <button class="goal-more" data-metric-keep="${esc(m.k)}" data-g="${esc(g.id)}">不用</button></div>`:'';
     return `<div class="dots-row${n>=goal?' hit':''}"><span class="dl">${esc(m.l)}</span><span class="dd">${Array.from({length:goal},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</span><span class="dn">${n}/${goal}</span>${tick}</div>${hint}`;
   }).join('');
-  return `<div class="gcard goal-card">${closeBanner(g)}<div class="goal-hd"><span class="goal-title">${esc(g.title)}</span>
+  const pgNow=projectGoal();
+  return `<div class="gcard goal-card">${pgNow&&closeBanner(pgNow)?'':closeBanner(g)}<div class="goal-hd"><span class="goal-title">${esc(g.title)}</span>
       <span class="goal-sub" style="margin-left:auto;">${dueTxt(g)}</span><button class="card-edit" data-edit-goal="${esc(g.id)}" title="編輯">✏️ 編輯</button></div>
-    ${rows?`<div class="goal-sub muted">本週（週一重新開始）</div><div style="display:flex;flex-direction:column;gap:7px;">${rows}</div>`:'<div class="goal-sub muted">還沒設每週目標，點 ✏️ 設定</div>'}
+    ${rows?`<div style="display:flex;flex-direction:column;gap:7px;margin-top:8px;" title="本週，週一重新開始">${rows}</div>`:'<div class="goal-sub muted">還沒設每週目標，點 ✏️ 設定</div>'}
   </div>`;
 }
 function expRows(){
@@ -430,6 +432,14 @@ function tonightCard(){
   // 現在這一步快到了（收尾步驟前 90 分、固定項目前 15 分，到上床後 3 小時）→ 直接給「做完了／跳過」
   const now=new Date(),bedAbs=r.steps.find(x=>x.k==='bed').abs;
   const live=d===curDay()&&!!r.next&&now>=new Date(r.next.abs-(r.next.extra?15:90)*60000)&&now<new Date(+bedAbs+180*60000);
+  const open=d!==curDay()||live||!!editing||tonightOpen();
+  if(!open){
+    const doneN=r.steps.filter(x=>x.done).length;
+    return `<button class="gcard tonight-card tonight-mini" data-action="tonight-toggle" title="展開看今晚每一步">
+      <span class="tn-title">今晚 ${esc(r.p.bed)} 上床</span>
+      <span class="tn-next">${r.next?`下一步 ${esc(r.next.at)} ${esc(r.next.label)}`:'今晚都做完了'}</span>
+      <span class="tn-count">${doneN}/${r.steps.length} ▾</span></button>`;
+  }
   const cells=r.steps.map(s=>{
     const isNext=r.next&&r.next.k===s.k;
     if(editing===s.k&&(s.k==='phone'||s.k==='bed'))
@@ -445,7 +455,8 @@ function tonightCard(){
   const done=r.steps.filter(x=>x.done).length;
   return `<div class="gcard tonight-card${live?' live':''}"><div class="tn-hd">
       <span class="tn-title">今晚 ${esc(r.p.bed)} 上床</span><span class="tn-count">${done}/${r.steps.length}</span>
-      <button class="card-edit" data-action="edit-plan" title="改時間、改每一步">✏️ 編輯</button></div>
+      <button class="card-edit" data-action="edit-plan" title="改時間、改每一步">✏️ 編輯</button>
+      ${live||d!==curDay()?'':'<button class="card-edit" data-action="tonight-toggle" title="收起來">▴</button>'}</div>
     <div class="tn-sub"><span class="${res.kind==='late'?'warn':''}">${res.kind==='missing'?(live?'現在這一步做完就按「做完了」':'點一下＝做完了'):esc(res.label)}</span>${sevenDots(d)}</div>
     <div class="tl">${cells}</div></div>`;
 }
@@ -542,6 +553,7 @@ function calErrText(e){
 function calStateHTML(g){
   if(!Object.keys(goalCalItems(g)).length&&!Object.keys(g.cal||{}).length)return '';
   const st=calSync.state[g.id]||(goalCalDirty(g)?'pending':'ok');
+  if(!heroOpen()&&st!=='error')return '';
   if(typeof calConnected==='undefined'||!calConnected)return '<span class="cal-sync off" title="連上 Google 日曆後，有日期的階段會自動放進日曆">📅 日曆未連線</span>';
   return {syncing:'<span class="cal-sync">📅 同步中…</span>',pending:'<span class="cal-sync">📅 等一下就同步</span>',
     error:`<button type="button" class="cal-sync err" data-action="cal-retry" data-g="${esc(g.id)}" title="${esc(calSync.err[g.id]||'')}（點一下重試）">📅 日曆同步失敗 · 重試</button>`,ok:'<span class="cal-sync ok" title="有日期的階段都在 Google 日曆上">📅 已在日曆上</span>'}[st];
@@ -964,6 +976,7 @@ onMounts('click',ev=>{
   const a=el.dataset.action;
   if(a==='hero-ms'){try{localStorage.setItem('grandol_hero_ms',heroOpen()?'0':'1');}catch(e){}render(true);return;}
   if(a==='edit-plan'){openPlanEditor();return;}
+  if(a==='tonight-toggle'){try{localStorage.setItem('grandol_tonight',tonightOpen()?'0':'1');}catch(e){}render(true);return;}
   if(a==='cal-retry'){
     const g=data().projects.find(x=>x.id===el.dataset.g);if(!g)return;
     if(calSync.err[g.id])softToast('上次失敗的原因：'+calSync.err[g.id],3800);

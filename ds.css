@@ -591,3 +591,23 @@ button.cal-sync:hover{background:var(--ds-warn-soft);}
 @media(min-width:1100px){.rv-pane #mo-trend{order:6;grid-column:1/-1;}}
 #mo-trend tr.today td{font-weight:700;color:var(--ds-ink);}
 @media(max-width:600px){.sr-row{grid-template-columns:48px minmax(0,1fr);}.sr-l{display:none;}.ds-search{width:100%;}}
+
+/* ── 10. v141：整理（平常只顯示要做的事，細節按一下才展開）──────── */
+.hero-segs .hero-toggle{max-width:58%;overflow:hidden;text-overflow:ellipsis;}
+/* 今晚收成一行 */
+button.tonight-mini{display:flex!important;align-items:center;gap:var(--ds-3);width:100%;text-align:left;cursor:pointer;font-family:var(--ds-font);color:var(--ds-ink);}
+.tonight-mini .tn-title{white-space:nowrap;}
+.tonight-mini .tn-next{flex:1;min-width:0;font-size:var(--ds-fs-sm);color:var(--ds-ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tonight-mini .tn-count{margin-left:0!important;white-space:nowrap;}
+button.tonight-mini:hover{box-shadow:inset 0 0 0 1px var(--ds-line-2)!important;}
+/* 結案問題：一行就好 */
+.close-banner span{flex:1 1 auto;}
+.close-banner .focus-btn{min-height:28px!important;padding:0 10px!important;font-size:var(--ds-fs-xs)!important;}
+/* 回顧分三區：總覽／身體／紀錄 */
+#page-review .rd-zone{display:none!important;}
+#page-review[data-sec="overview"] :is(#wk-sleep-card,#mo-sleep-card,#wk-sleepx-card,#mo-sleepx-card,#wk-diet-card,#mo-diet-card,#wk-health-pair,#mo-health-pair,#wk-tdldetail-card,#wk-carry-card,#mo-carry-card,#week-entries,#month-entries,#month-week-summaries,#wk-keyword-card,#mo-keyword-card,#wk-highlight-card,#mo-highlight-card,.gcard:has(#wk-identity),.gcard:has(#mo-identity),.gcard:has(#wk-fruit-progress),.gcard:has(#mo-fruit-progress)){display:none!important;}
+#page-review[data-sec="body"] :is(#wk-loop,#mo-loop,#wk-goals,#mo-goals,#mo-trend,.witness-card,.stat-strip,#wk-insight-card,#mo-insight-card,.gcard:has(#wk-donut),.gcard:has(#mo-donut),#wk-theme-card,.gcard:has(#mo-weekday-dist),.gcard:has(#wk-habitgrid),.gcard:has(#mo-habitgrid),#wk-tdldetail-card,#wk-carry-card,#mo-carry-card,#week-entries,#month-entries,#month-week-summaries,#wk-keyword-card,#mo-keyword-card,#wk-highlight-card,#mo-highlight-card,.gcard:has(#wk-identity),.gcard:has(#mo-identity),.gcard:has(#wk-fruit-progress),.gcard:has(#mo-fruit-progress)){display:none!important;}
+#page-review[data-sec="records"] :is(#wk-loop,#mo-loop,#wk-goals,#mo-goals,#mo-trend,.witness-card,.stat-strip,#wk-insight-card,#mo-insight-card,.gcard:has(#wk-donut),.gcard:has(#mo-donut),#wk-theme-card,.gcard:has(#mo-weekday-dist),.gcard:has(#wk-habitgrid),.gcard:has(#mo-habitgrid),#wk-sleep-card,#mo-sleep-card,#wk-sleepx-card,#mo-sleepx-card,#wk-diet-card,#mo-diet-card,#wk-health-pair,#mo-health-pair){display:none!important;}
+.rv-sec-empty{order:99;grid-column:1/-1;color:var(--ds-ink-3);font-size:var(--ds-fs-sm);}
+/* 看以前的月份時多一顆「回到本月」：第一列要留位子，複製按鈕才不會被擠下去 */
+@media(min-width:1100px){#page-month:has(#mo-jump-today:not([style*="none"])) .period-nav{grid-column:span 5;}}

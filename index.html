@@ -1069,8 +1069,8 @@ button{-webkit-tap-highlight-color:transparent;}
 @keyframes pageIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
 .page.active{animation:pageIn .22s ease;}
 </style>
-<link rel="stylesheet" href="focus.css?v=140">
-<script src="focus-core.js?v=140"></script>
+<link rel="stylesheet" href="focus.css?v=141">
+<script src="focus-core.js?v=141"></script>
 <style>
 /* ═══ v127 改版：迴圈主軸（今天／回顧／方向／我）═══ */
 .ui2-zone{font-family:'Baloo 2',sans-serif;font-size:13px;font-weight:800;color:var(--tc2);margin:18px 4px 8px;letter-spacing:.5px;}
@@ -1205,7 +1205,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 .sleep-scene.night .ss-panel{background:rgba(28,36,64,.88)!important;}
 @media(min-width:1300px){.wrap{max-width:1256px;}}
 </style>
-<link rel="stylesheet" href="ds.css?v=140">
+<link rel="stylesheet" href="ds.css?v=141">
 </head>
 <body>
 <!-- 這四個彈窗特意放在 <body> 最前面、所有 <script> 之前：
@@ -1386,12 +1386,12 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
       </div>
     </div></div>
 <div id="focus-tonight"></div>
+<div id="focus-cards"></div>
 <div class="gcard health-card2">
   <div class="sec-hd hc-hd"><span>身體紀錄</span><div class="hz-tabs" id="hz-tabs"></div></div>
   
   <div id="health-grid"></div>
 </div>
-<div id="focus-cards"></div>
 </div>
 <div class="tcol tcol-write">
 <div class="gcard write-card">
@@ -1416,6 +1416,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 <!-- ══════ 回顧（週／月）══════ -->
 <div class="page" id="page-review">
 <div class="pg-head"><h1>回顧</h1><div class="ui2-seg" id="rv-seg"><button data-rv="week">這週</button><button data-rv="month">這個月</button></div>
+  <div class="ui2-seg" id="rv-sec"><button data-sec="overview">總覽</button><button data-sec="body">身體</button><button data-sec="records">紀錄</button></div>
   <div class="pg-act"><input class="ds-search" id="rv-search" type="search" placeholder="搜尋全部紀錄：人名、影片、想法…" aria-label="搜尋全部紀錄" autocomplete="off"/></div></div>
 <div id="rv-search-results" hidden></div>
 <!-- ══════ WEEK ══════ -->
@@ -1913,7 +1914,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v140';
+const APP_VER='v141';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // ── 注音／中文輸入法保護 ──────────────────────────────
@@ -6141,7 +6142,28 @@ function showReviewPane(which){
   document.querySelectorAll('#rv-seg [data-rv]').forEach(b=>b.classList.toggle('on',b.dataset.rv===rv));
   document.querySelectorAll('.rv-pane').forEach(x=>x.classList.toggle('active',x.id==='page-'+rv));
   if(rv==='week')renderWeekly();else renderMonthly();
+  if(typeof rvSecEmpty==='function')setTimeout(rvSecEmpty,80);
 }
+function showReviewSec(which){
+  const sec=which||_pref('grandol_rv_sec','overview');_setPref('grandol_rv_sec',sec);
+  document.getElementById('page-review').dataset.sec=sec;
+  document.querySelectorAll('#rv-sec [data-sec]').forEach(b=>b.classList.toggle('on',b.dataset.sec===sec));
+  if(typeof rvSecEmpty==='function')rvSecEmpty();
+}
+document.querySelectorAll('#rv-sec [data-sec]').forEach(b=>b.addEventListener('click',()=>{showReviewSec(b.dataset.sec);window.scrollTo(0,0);}));
+// 這一區這段期間沒有資料：講一聲，不要留一片空白
+function rvSecEmpty(){
+  const pane=document.querySelector('.rv-pane.active');if(!pane)return;
+  document.querySelectorAll('.rv-sec-empty').forEach(x=>x.remove());
+  if(document.getElementById('page-review').dataset.sec==='overview')return;
+  const any=[...pane.querySelectorAll('.gcard')].some(x=>x.getBoundingClientRect().height>0);
+  if(any)return;
+  const d=document.createElement('div');d.className='gcard rv-sec-empty';
+  d.textContent=document.getElementById('page-review').dataset.sec==='body'?'這段期間還沒有身體紀錄。':'這段期間還沒有紀錄。';
+  pane.appendChild(d);
+}
+document.getElementById('page-review').addEventListener('click',e=>{if(e.target.closest('.period-arrow,.jump-today-btn,#rv-sec,#rv-seg'))setTimeout(rvSecEmpty,80);});
+showReviewSec();
 function showMePane(which){
   const me=which||_pref('grandol_me','garden');_setPref('grandol_me',me);
   document.querySelectorAll('#me-seg [data-me]').forEach(b=>b.classList.toggle('on',b.dataset.me===me));
@@ -7998,6 +8020,6 @@ document.addEventListener('visibilitychange',()=>{
 
 
 
-<script src="focus.js?v=140"></script>
+<script src="focus.js?v=141"></script>
 </body>
 </html>
