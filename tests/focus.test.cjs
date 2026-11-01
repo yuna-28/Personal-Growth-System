@@ -10,6 +10,7 @@ test('invalid dates/time are rejected',()=>{assert.equal(C.targetAt('2026-02-30'
 test('late ten minutes computed correctly',()=>assert.equal(C.result({inBedAt:'2026-09-29T02:10:00+08:00'},plan,'2026-09-28',new Date()).delta,10));
 test('23:50 before midnight is on time',()=>assert.equal(C.result({inBedAt:'2026-09-28T23:50:00+08:00'},{...plan,bed:'00:00'},'2026-09-28',new Date()).kind,'onTime'));
 test('missing is not failure',()=>assert.equal(C.result(null,plan,'2026-09-28',new Date('2026-09-29T04:00:00+08:00')).kind,'missing'));
+test('sleep record decides on-time when bed was not pressed',()=>{const t=C.snapshot({...plan,bed:'01:00'},'2026-09-28').bedAt;assert.equal(C.sleepResult('00:30',t,'2026-09-28').kind,'onTime');const r=C.sleepResult('03:10',t,'2026-09-28');assert.equal(r.kind,'late');assert.equal(r.delta,130);assert.equal(C.sleepResult('',t,'2026-09-28'),null);});
 test('future night remains pending',()=>assert.equal(C.result(null,plan,'2026-09-28',new Date('2026-09-28T22:00:00+08:00')).label,'尚未到時間'));
 test('snapshot survives plan change',()=>{const w={inBedAt:'2026-09-29T01:00:00+08:00',targetSnapshot:C.snapshot(plan,'2026-09-28')};assert.equal(C.result(w,{...plan,bed:'00:00'},'2026-09-28',new Date()).kind,'onTime');});
 test('effective history and pause',()=>{const f={revisions:[plan,{...plan,id:'r2',effectiveFrom:'2026-10-01',status:'paused'}]};assert.equal(C.planFor(f,'2026-09-27'),null);assert.equal(C.planFor(f,'2026-09-28').id,'r1');assert.equal(C.snapshot(C.planFor(f,'2026-10-01'),'2026-10-01'),null);});

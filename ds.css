@@ -287,7 +287,7 @@
   .support-quick-btn{bottom:72px!important;}
   #backfill-banner{margin-bottom:var(--ds-4)!important;}
   /* 「有新版本」提示：放在側欄底部，不蓋住內容 */
-  #update-toast{left:12px!important;right:auto!important;bottom:64px!important;transform:none!important;width:208px;box-sizing:border-box;text-align:center;
+  #update-toast{left:12px!important;right:auto!important;bottom:118px!important;transform:none!important;width:208px;box-sizing:border-box;text-align:center;
     background:var(--ds-primary)!important;color:#fff!important;border:none!important;box-shadow:0 6px 16px -6px rgba(40,62,124,.5)!important;font-size:13px!important;}
   #update-toast b{color:#fff!important;}
 
@@ -563,3 +563,31 @@ button.cal-sync:hover{background:var(--ds-warn-soft);}
 :root[data-night] .soft-toast{background:#2A3245!important;color:var(--ds-ink)!important;border-color:var(--ds-line-2)!important;box-shadow:0 10px 30px -10px rgba(0,0,0,.6)!important;}
 .hero-done{font-size:var(--ds-fs-sm);font-weight:700;color:var(--ds-good);margin-top:6px;}
 .hero-main .goal-in{flex:1;min-width:0;}
+
+/* ── 9. v140：依回顧對話補的零件 ──────────────────────────── */
+/* 目標到期：問一次怎麼收尾 */
+.close-banner{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0;padding:8px 10px;border-radius:var(--ds-r-sm);background:var(--ds-warn-soft);font-size:var(--ds-fs-sm);color:var(--ds-ink);}
+.close-banner span{flex:1 1 100%;font-weight:700;}
+/* 目標值建議 */
+.mt-suggest{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:var(--ds-fs-xs);color:var(--ds-ink-3);margin:-2px 0 4px;}
+.mt-suggest .focus-btn{min-height:26px!important;padding:0 10px!important;font-size:var(--ds-fs-xs)!important;}
+.mt-suggest .goal-more{min-height:26px!important;font-size:var(--ds-fs-xs)!important;}
+/* 搜尋全部紀錄 */
+.ds-search{width:280px;max-width:100%;height:var(--ds-ctl);box-sizing:border-box;padding:0 12px;border:1px solid var(--ds-line-2);border-radius:var(--ds-r);background:var(--ds-field);color:var(--ds-ink);font-size:var(--ds-fs-sm);outline:none;}
+.ds-search:focus{border-color:var(--ds-primary);box-shadow:0 0 0 3px var(--ds-primary-soft);}
+.ds-search::placeholder{color:var(--ds-ink-3);}
+#rv-search-results{margin-bottom:var(--ds-4);}
+#rv-search-results .gcard{margin:0;}
+.sr-list{max-height:360px;overflow-y:auto;}
+.sr-row{display:grid;grid-template-columns:52px 84px minmax(0,1fr);gap:var(--ds-2);padding:8px 6px;border-top:1px solid var(--ds-line);font-size:var(--ds-fs-sm);cursor:pointer;border-radius:6px;}
+.sr-row:hover{background:var(--ds-sunken);}
+.sr-d{font-weight:700;color:var(--ds-ink);}
+.sr-l{color:var(--ds-ink-3);font-size:var(--ds-fs-xs);padding-top:2px;}
+.sr-t{color:var(--ds-ink-2);word-break:break-word;line-height:1.6;}
+.sr-t mark{background:var(--ds-focus-soft);color:var(--ds-focus-ink);padding:0 2px;border-radius:3px;font-weight:700;}
+.sr-link{margin-left:8px;color:var(--ds-primary);font-weight:700;white-space:nowrap;}
+:root[data-night] .sr-link{color:#AFC0F2;}
+/* 跨月對照 */
+@media(min-width:1100px){.rv-pane #mo-trend{order:6;grid-column:1/-1;}}
+#mo-trend tr.today td{font-weight:700;color:var(--ds-ink);}
+@media(max-width:600px){.sr-row{grid-template-columns:48px minmax(0,1fr);}.sr-l{display:none;}.ds-search{width:100%;}}

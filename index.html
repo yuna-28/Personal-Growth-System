@@ -1069,8 +1069,8 @@ button{-webkit-tap-highlight-color:transparent;}
 @keyframes pageIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
 .page.active{animation:pageIn .22s ease;}
 </style>
-<link rel="stylesheet" href="focus.css?v=139">
-<script src="focus-core.js?v=139"></script>
+<link rel="stylesheet" href="focus.css?v=140">
+<script src="focus-core.js?v=140"></script>
 <style>
 /* ═══ v127 改版：迴圈主軸（今天／回顧／方向／我）═══ */
 .ui2-zone{font-family:'Baloo 2',sans-serif;font-size:13px;font-weight:800;color:var(--tc2);margin:18px 4px 8px;letter-spacing:.5px;}
@@ -1205,7 +1205,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 .sleep-scene.night .ss-panel{background:rgba(28,36,64,.88)!important;}
 @media(min-width:1300px){.wrap{max-width:1256px;}}
 </style>
-<link rel="stylesheet" href="ds.css?v=139">
+<link rel="stylesheet" href="ds.css?v=140">
 </head>
 <body>
 <!-- 這四個彈窗特意放在 <body> 最前面、所有 <script> 之前：
@@ -1415,7 +1415,9 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 
 <!-- ══════ 回顧（週／月）══════ -->
 <div class="page" id="page-review">
-<div class="pg-head"><h1>回顧</h1><div class="ui2-seg" id="rv-seg"><button data-rv="week">這週</button><button data-rv="month">這個月</button></div></div>
+<div class="pg-head"><h1>回顧</h1><div class="ui2-seg" id="rv-seg"><button data-rv="week">這週</button><button data-rv="month">這個月</button></div>
+  <div class="pg-act"><input class="ds-search" id="rv-search" type="search" placeholder="搜尋全部紀錄：人名、影片、想法…" aria-label="搜尋全部紀錄" autocomplete="off"/></div></div>
+<div id="rv-search-results" hidden></div>
 <!-- ══════ WEEK ══════ -->
 <div class="rv-pane" id="page-week">
 <div class="period-nav">
@@ -1485,6 +1487,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 <div class="rd-zone">🌱 這個月總覽</div>
 <div class="witness-card" id="mo-witness"></div>
 <div id="mo-goals"></div>
+<div id="mo-trend" hidden></div>
 <div class="stat-strip stat-strip-5">
   <div class="stat-card"><div class="stat-num" style="color:var(--primary);" id="mo-days">0</div><div class="stat-lbl">記錄天數<span class="cmp" id="mo-days-cmp"></span></div></div>
   <div class="stat-card"><div class="stat-num" style="color:var(--primary);" id="mo-tdlrate">-</div><div class="stat-lbl">TDL 達成</div></div>
@@ -1527,7 +1530,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 <div id="mo-copy-opts" style="display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--tc2);margin:4px 0 8px;">
   <label><input type="checkbox" data-copt="num" checked/> 數字分析（習慣、TDL、睡眠、目標）</label>
   <label><input type="checkbox" data-copt="deep" checked/> 日記深讀（人際、內在、感受、進步、我是怎樣的人）</label>
-  <label><input type="checkbox" data-copt="prev" checked/> 附上上個月的觀察</label>
+  <label><input type="checkbox" data-copt="prev" checked/> 附上之前的觀察（不重講）</label>
 </div>
 <button class="ghost-btn" id="copy-month-btn"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4cb_3d.png" width="15" height="15"/> 複製這月紀錄給 Claude</button>
 </div>
@@ -1910,7 +1913,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v139';
+const APP_VER='v140';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // ── 注音／中文輸入法保護 ──────────────────────────────
@@ -3257,6 +3260,7 @@ function renderStickyNote(){
         const tag=c2.todayMode?'':'('+c2.ds.slice(5).replace('-','/')+')';
         if(c2.done[key]){delete c2.done[key];S.exp=Math.max(0,S.exp-10);showExpPop(el,'-10 EXP');logExp(-10,'↩️ 取消 TDL'+tag+'：'+_tn);}
         else{c2.done[key]=true;S.exp+=10;showExpPop(el,'+10 EXP');triggerBurst(el);logExp(10,'📋 完成 TDL'+tag+'：'+_tn);}
+        const _nowDone=!!c2.done[key];
         if(!c2.todayMode){
           const en=getOrCreateEntry(c2.ds);
           en.tdlTotal=c2.items.length;en.tdlDone=Object.keys(c2.done).length;
@@ -3264,6 +3268,7 @@ function renderStickyNote(){
           syncEntryDebounced();
         }else autoDraftDebounced(); // 勾選也即時落地，跨日不會白勾
         sv(S);checkLevelUp(oldExp,S.exp);renderExpBar();renderStickyNote();syncStateDebounced();
+        if(window.FocusUI)FocusUI.onStepToggle(_tt,_nowDone,c2.ds);
       });
     });
     // 上下拖曳排序。完成狀態的 key 是位置（t0/t1…），順序換了要一起搬，不然會勾錯人
@@ -5105,6 +5110,7 @@ document.getElementById('copy-week-btn').addEventListener('click',async()=>{
   if(window.FocusUI)lines.push(...FocusUI.loopCopyLines(dates,'week'));
   if(window.FocusUI)lines.push(...FocusUI.copyLines(dates,'這週'));
   dates.forEach(ds=>{
+    if(ds>curDay())return; // 還沒到的日子不是「無紀錄」
     const e=S.entries.find(x=>x.date===ds);
     const isT=ds===curDay();
     // 今天可能還沒「種下」而沒有 entry，但即時資料要照樣帶進分析
@@ -5188,6 +5194,7 @@ function renderMonthly(){
   renderInsights('mo-insight-card','mo-insight',cur,prev,dates,'個月',{weekday:{counts:weekdayCounts,totals:weekdayTotals}});
   renderHealthReview(cur,'mo',dates);
   {const gEl=document.getElementById('mo-goals');if(gEl)gEl.innerHTML=window.FocusUI?FocusUI.reviewHTML(dates,false):'';}
+  if(window.FocusUI)FocusUI.renderTrend(dates);
   {const lEl=document.getElementById('mo-loop');if(lEl&&!(isTyping()&&lEl.contains(document.activeElement)))lEl.innerHTML=window.FocusUI?FocusUI.loopReviewHTML(dates,'month'):'';}
   renderCarry('mo-carry-card','mo-carry',cur,'個月');
   fixRdPairs('page-month');
@@ -5221,6 +5228,15 @@ document.getElementById('copy-month-btn').addEventListener('click',async()=>{
   const lines=[`📊 ${monthLabel(monthOffset)}的格蘭朵紀錄（請幫我分析${optNum&&optDeep?'數字和日記':(optDeep?'日記':'')}）`,''];
   if(window.FocusUI)lines.push(...FocusUI.loopCopyLines(dates,'month'));
   if(window.FocusUI&&optNum)lines.push(...FocusUI.copyLines(dates,'這個月'));
+  if(window.FocusUI){const _t=FocusUI.trendLines(dates);if(_t.length)lines.push(..._t,'');}
+  const _seenText={};
+  const _diaryLine=(icon,txt,ds)=>{
+    if(!txt)return;
+    const k=String(txt).trim();
+    if(k.length>=30&&_seenText[k]){lines.push(`  ${icon} （內容同 ${_seenText[k]}，略）`);return;}
+    _seenText[k]=ds.slice(5).replace('-','/');
+    lines.push(`  ${icon} ${txt}`);
+  };
   dates.forEach(ds=>{
     const e=S.entries.find(x=>x.date===ds);
     const isT=ds===curDay();
@@ -5231,15 +5247,16 @@ document.getElementById('copy-month-btn').addEventListener('click',async()=>{
     const hasHealth=healthAny(dayH);
     if(!e&&!checkedArr.length&&!(items&&items.length)&&!hasHealth&&!(diary.hl||diary.rf||diary.gr||diary.quote))return;
     const names=HABITS.filter(h=>checkedArr.includes(h.k)).map(h=>h.l);
-    // 一個月逐項列會太長，這裡每天只給 TDL 完成比例＋健康摘要，逐項明細留給週複製
-    const tdlPart=(items&&items.length)?`｜TDL ${items.filter(x=>x.done).length}/${items.length}`
+    const tdlPart=(items&&items.length)?`｜TDL ${items.filter(x=>x.done).length}/${items.length}（${items.map(x=>(x.done?'✅':'⬜')+(x.theme?x.theme+'：':'')+x.task).join('、')}）`
                  :((e&&e.tdlTotal)?`｜TDL ${e.tdlDone||0}/${e.tdlTotal}`:'');
     let hPart='';
-    if(hasHealth){const p=[],s=dayH.sleep;if(healthHas(dayH,'sleep'))p.push('🌙'+(s.sleepTime||'?')+'→'+(s.wakeTime||'?'));if(healthHas(dayH,'diet'))p.push('🍽️'+(dayH.diet.tags||[]).length+'項');if(healthHas(dayH,'exercise'))p.push('🏃'+exTypesOf(dayH.exercise).join('、'));if(healthHas(dayH,'water'))p.push('💧'+dayH.water.amount+'ml');hPart='｜'+p.join(' ');}
+    if(hasHealth){const p=[],s=dayH.sleep;if(healthHas(dayH,'sleep'))p.push('🌙'+(s.sleepTime||'?')+'→'+(s.wakeTime||'?')+(s.ease?' '+easeLabel(s.ease):'')+((s.acts&&s.acts.length)?' 睡前：'+s.acts.join('、'):'')+(s.note?' 備註：'+s.note:''));if(healthHas(dayH,'diet'))p.push('🍽️'+[...(dayH.diet.tags||[]),dayH.diet.note].filter(Boolean).join('、'));if(healthHas(dayH,'exercise'))p.push('🏃'+exTypesOf(dayH.exercise).join('、')+(dayH.exercise.duration?' '+dayH.exercise.duration+'分':'')+(dayH.exercise.note?' '+dayH.exercise.note:''));if(healthHas(dayH,'water'))p.push('💧'+dayH.water.amount+'ml');hPart='｜'+p.join(' ');}
     lines.push(`📅 ${ds}：${names.join('、')||'無'}${tdlPart}${hPart}`);
-    if(diary.hl)lines.push(`  🌟 ${diary.hl}`);
-    if(diary.rf)lines.push(`  📖 ${diary.rf}`);
-    if(diary.gr)lines.push(`  🥹 ${diary.gr}`);
+    _diaryLine('🌟',diary.hl,ds);
+    _diaryLine('📖',diary.rf,ds);
+    _diaryLine('🥹',diary.gr,ds);
+    if(diary.quote)lines.push(`  💬 ${diary.quote}`);
+    if(diary.note)lines.push(`  📝 ${diary.note}`);
   });
   lines.push('');
   if(optNum){
@@ -7981,6 +7998,6 @@ document.addEventListener('visibilitychange',()=>{
 
 
 
-<script src="focus.js?v=139"></script>
+<script src="focus.js?v=140"></script>
 </body>
 </html>

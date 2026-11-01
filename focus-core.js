@@ -40,6 +40,14 @@
     if(!Number.isFinite(delta))return {label:'時間待修正',kind:'missing'};
     return {label:delta<=0?'準時上床':'晚 '+delta+' 分鐘',kind:delta<=0?'onTime':'late',delta};
   }
+  // 沒按「上床」但有填睡眠紀錄：拿入睡時間跟目標比（凌晨的時間算隔天）。沒資料回 null，不當成沒達標
+  function sleepResult(sleepTime,bedAtIso,ds){
+    const at=targetAt(ds,sleepTime);
+    if(!at||!bedAtIso)return null;
+    const delta=Math.round((at-new Date(bedAtIso))/60000);
+    if(!Number.isFinite(delta))return null;
+    return {label:'入睡 '+sleepTime+(delta<=0?'（準時）':'（晚 '+delta+' 分）'),kind:delta<=0?'onTime':'late',delta};
+  }
   // Per-field timestamps preserve independent phone/bed edits and explicit clears.
   function mergeWind(a,b){
     if(!a)return b;if(!b)return a;
@@ -53,6 +61,6 @@
     }
     return out;
   }
-  const api={stages,dateKey,validDate,validTime,targetAt,clean,merge,planFor,snapshot,result,mergeWind};
+  const api={stages,dateKey,validDate,validTime,targetAt,clean,merge,planFor,snapshot,result,sleepResult,mergeWind};
   root.FocusCore=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);
