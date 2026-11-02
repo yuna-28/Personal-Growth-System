@@ -1069,8 +1069,8 @@ button{-webkit-tap-highlight-color:transparent;}
 @keyframes pageIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
 .page.active{animation:pageIn .22s ease;}
 </style>
-<link rel="stylesheet" href="focus.css?v=141">
-<script src="focus-core.js?v=141"></script>
+<link rel="stylesheet" href="focus.css?v=142">
+<script src="focus-core.js?v=142"></script>
 <style>
 /* ═══ v127 改版：迴圈主軸（今天／回顧／方向／我）═══ */
 .ui2-zone{font-family:'Baloo 2',sans-serif;font-size:13px;font-weight:800;color:var(--tc2);margin:18px 4px 8px;letter-spacing:.5px;}
@@ -1205,7 +1205,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 .sleep-scene.night .ss-panel{background:rgba(28,36,64,.88)!important;}
 @media(min-width:1300px){.wrap{max-width:1256px;}}
 </style>
-<link rel="stylesheet" href="ds.css?v=141">
+<link rel="stylesheet" href="ds.css?v=142">
 </head>
 <body>
 <!-- 這四個彈窗特意放在 <body> 最前面、所有 <script> 之前：
@@ -1356,7 +1356,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
   </div>
 </div>
 <div class="gcard also-card">
-  <div class="also-did"><div class="sec-hd">今天也做了 <span class="pg-sub">點一下就記</span><button class="card-edit" id="also-edit" type="button" title="改運動選項" style="margin-left:auto;">✏️ 編輯</button></div><div class="also-row"><span class="also-k">習慣</span><div id="habits" class="also-chips"></div></div><div class="also-row"><span class="also-k">運動</span><div id="focus-moves"></div></div></div>
+  <div class="also-did"><div class="sec-hd">今天也做了 <span class="pg-sub">點一下就記</span><button class="card-edit" id="also-edit" type="button" title="改運動選項" style="margin-left:auto;">✏️ 編輯</button></div><div class="also-row"><span class="also-k">習慣</span><div id="habits" class="also-chips"></div></div><div class="also-row"><span class="also-k">運動</span><div id="focus-moves"></div></div><div class="also-row"><span class="also-k">狀況</span><div id="focus-tags"></div></div></div>
 </div>
 </div>
 <div class="tcol tcol-scene">
@@ -1914,7 +1914,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v141';
+const APP_VER='v142';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // ── 注音／中文輸入法保護 ──────────────────────────────
@@ -1969,7 +1969,7 @@ const HABITS=[
   {k:'create',l:'創作',c:'1f3a8',fc:'1f33b',phrase:'妳是一個每天創作的人'},
   {k:'read',l:'閱讀',c:'1f4da',fc:'1f33c',phrase:'妳是一個愛書的人'},
   {k:'dance',l:'跳舞',c:'1f483',fc:'1fabb',phrase:'妳是一個讓身體快樂的人'},
-  {k:'code',l:'學程式',c:'1f4bb',fc:'1f339',phrase:'妳是一個探索科技的人'},
+  {k:'code',l:'開發／工具',c:'1f4bb',fc:'1f339',phrase:'妳是一個探索科技的人'},
   {k:'guitar',l:'學音樂',c:'1fa95',fc:'1fabb',phrase:'妳是一個培養音樂的人'},
 ];
 
@@ -2152,7 +2152,7 @@ function sleepMinutes(sl){
 function fmtSleepDur(min){if(min==null)return '';const h=Math.floor(min/60),m=min%60;return h+'小時'+(m?m+'分':'');}
 // 「複製給 Claude」用的健康摘要文字
 // 這天有沒有任何健康相關紀錄（含只做了肩背、只標了休息的日子）
-function healthAny(h){return !!(h&&(HEALTH.some(H=>healthHas(h,H.k))||h.exercise?.restDay||Object.keys(h.body||{}).length||Object.keys(h.night||{}).some(k=>k!=='skip')));}
+function healthAny(h){return !!(h&&((h.dayTags&&h.dayTags.length)||HEALTH.some(H=>healthHas(h,H.k))||h.exercise?.restDay||Object.keys(h.body||{}).length||Object.keys(h.night||{}).some(k=>k!=='skip')));}
 function hhmmOf(iso){if(!iso)return '';const d=new Date(iso);return isNaN(d)?'':String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
 function healthCopyText(h){
   if(!healthAny(h))return '🌿 健康：無記錄\n';
@@ -2171,8 +2171,51 @@ function healthCopyText(h){
   if(healthHas(h,'sleep')&&(h.sleep.sleepTime||h.sleep.wakeTime||h.sleep.ease||(h.sleep.acts&&h.sleep.acts.length)||h.sleep.note)){const s=h.sleep,dm=sleepMinutes(s);L.push(`  🌙 睡眠：${s.sleepTime||'?'}→${s.wakeTime||'?'}${dm!=null?'（'+fmtSleepDur(dm)+'）':''}${s.ease?' · '+easeLabel(s.ease):''}${(s.acts&&s.acts.length)?' · 睡前:'+s.acts.join('/'):''}${s.note?' · '+s.note:''}`);}
   if(healthHas(h,'diet')){const d=h.diet;L.push(`  🍽️ 飲食：${(d.tags||[]).join('、')||'—'}${d.note?' · '+d.note:''}`);}
   if(healthHas(h,'exercise')){const e=h.exercise;L.push(`  🏃 運動：${exTypesOf(e).join('、')}${e.duration?' '+e.duration+'分':''}${e.note?' · '+e.note:''}`);}
-  if(healthHas(h,'water')){L.push(`  💧 喝水：${h.water.amount}ml`);}
+  if(healthHas(h,'water')){L.push(`  💧 喝水：${h.water.amount}ml${h.water.note?' · '+h.water.note:''}`);}
   return L.join('\n')+'\n';
+}
+// 一天的完整紀錄（給 Claude）。今天、週、月都用這一份，才不會有哪種匯出漏欄位。
+// 回傳 null＝這天完全沒有紀錄。
+function dayDetailLines(ds){
+  const e=S.entries.find(x=>x.date===ds),isT=ds===curDay();
+  const checkedArr=isT?Object.keys(S.checked||{}):(e&&e.checked)||[];
+  const diary=(isT?S.diary:e&&e.diary)||{};
+  const items=tdlItemsOf(ds);
+  const h=(isT?S.health:(e&&e.health))||null;
+  const note=(S.calNotes&&S.calNotes[ds])||'';
+  const photos=(isT?S.todayPhotos:e&&e.photos)||[];
+  const plan=isT?(S.tomorrowTDL||[]):((e&&e.tdl)||[]);
+  const hasHealth=healthAny(h);
+  if(!checkedArr.length&&!(items&&items.length)&&!(e&&e.tdlTotal)&&!hasHealth&&!note&&!photos.length&&!plan.length&&!(diary.hl||diary.rf||diary.gr||diary.quote))return null;
+  const d=new Date(ds+'T00:00:00'),L=[`📅 ${d.getMonth()+1}/${d.getDate()} 週${wdArr[d.getDay()]}`];
+  L.push(`  ✅ 習慣：${HABITS.filter(x=>checkedArr.includes(x.k)).map(x=>x.l).join('、')||'無'}`);
+  if(h&&h.dayTags&&h.dayTags.length)L.push(`  🏷 狀況：${h.dayTags.join('、')}`);
+  if(hasHealth)healthCopyText(h).trimEnd().split('\n').slice(1).forEach(l=>L.push(l));
+  if(window.FocusUI){const nl=FocusUI.nightLine(ds);if(nl)L.push('  '+nl);}
+  if(diary.hl)L.push(`  🌟 Highlights：${diary.hl}`);
+  if(diary.rf)L.push(`  📖 Reflection：${diary.rf}`);
+  if(diary.gr)L.push(`  🥹 Gratitude：${diary.gr}`);
+  if(diary.quote)L.push(`  💬 金句：${diary.quote}`);
+  if(note)L.push(`  📌 備註：${note}`);
+  if(photos.length)L.push(`  📷 照片：${photos.length} 張`);
+  if(items&&items.length){
+    L.push(`  📝 TDL（${items.filter(x=>x.done).length}/${items.length}）：`);
+    items.forEach(x=>L.push(`    ${x.done?'✅':'⬜'} ${x.theme?x.theme+'：':''}${x.task}${(+x.c||0)?`（順延 ${x.c} 次${x.why?'，原因：'+x.why:''}）`:''}`));
+  }else if(e&&e.tdlTotal)L.push(`  📝 TDL：完成 ${e.tdlDone||0}/${e.tdlTotal}（舊資料，無逐項明細）`);
+  const pl=plan.filter(r=>r&&(r.theme||r.task));
+  if(pl.length)L.push(`  ➡️ 排給隔天：${pl.map(r=>(r.theme?r.theme+'：':'')+r.task).join('、')}`);
+  if(e&&(e.streak||e.exp))L.push(`  🌳 當天累積 ${e.exp||0} EXP、連續 ${e.streak||0} 天`);
+  return L;
+}
+// 這段期間的數字（回顧頁上看得到的那些），加上有紀錄／沒紀錄的日子
+function periodNumberLines(dates,label){
+  const st=periodStats(dates),past=dates.filter(x=>x<=curDay());
+  const L=[`🔢 ${label}數字：種下 ${st.days} 天（蘋果 ${st.days}）｜習慣打勾 ${st.habits} 次（花 ${st.habits}）｜獲得 ${st.exp} EXP｜寫日記 ${st.diaryDays} 天｜TDL ${st.tdlDoneSum}/${st.tdlTotalSum}`];
+  L.push('  各習慣天數：'+HABITS.map(x=>`${x.l} ${st.habitCounts[x.k]||0}`).join('、'));
+  const blank=past.filter(x=>!dayDetailLines(x));
+  if(blank.length)L.push(`  完全沒有紀錄的日子（${blank.length} 天）：${blank.map(x=>x.slice(5).replace('-','/')).join('、')}`);
+  L.push('');
+  return L;
 }
 // 週／月「複製給 Claude」用的健康總結（如實聚合，不評價）
 function healthCopySummary(cur,label){
@@ -2281,7 +2324,7 @@ function buildTdlSnapshot(items,doneMap){
 // 順序一變就會勾錯人，順延次數也常被抹成 0 → 已完成的事又被當成沒做、天天順延回來。
 // 以下三個函式是唯一的寫入管道：一律用「主題＋任務」當身分，c 一律保留。
 function tdlKey(r){if(r&&r.id)return 'id:'+r.id;return (((r&&r.theme)||'')+'').trim()+'␟'+(((r&&r.task)||'')+'').trim();}
-function tdlMeta(r){const o={};for(const k of ['id','goalId','milestoneId','actionId'])if(r&&typeof r[k]==='string')o[k]=r[k];return o;}
+function tdlMeta(r){const o={};for(const k of ['id','goalId','milestoneId','actionId','why'])if(r&&typeof r[k]==='string')o[k]=r[k];return o;}
 function tdlNorm(r){return {...tdlMeta(r),theme:((r&&r.theme)||'')+'',task:((r&&r.task)||'')+'',c:Math.max(0,+((r&&r.c)||0)||0)};}
 // 設定今天的清單。doneOf 省略＝沿用目前的完成狀態（依身分對應，不看位置）；
 // 傳函式＝用指定來源決定（例如從雲端 entry 還原）。
@@ -3027,6 +3070,27 @@ function remapDoneAfterDelete(doneMap,idx,len){
   }
   return nd;
 }
+// 一直順延的事，問一次原因（點一下就好，不答 12 秒後自己消失）
+function askCarryWhy(key,label,fromDay){
+  document.getElementById('why-toast')?.remove();
+  const t=document.createElement('div');t.id='why-toast';t.className='why-toast';
+  t.innerHTML=`<div class="wt-q"></div><div class="wt-a"></div>`;
+  t.querySelector('.wt-q').textContent=`「${label}」一直往後，是因為？`;
+  const save=why=>{
+    const set=r=>{if(r&&tdlKey(r)===key)r.why=why;};
+    (S.todayTDL||[]).forEach(set);(S.tomorrowTDL||[]).forEach(set);tdlRows.forEach(set);
+    if(typeof backfillRows!=='undefined'&&backfillRows)backfillRows.forEach(set);
+    if(fromDay){const en=S.entries.find(x=>x.date===fromDay);if(en&&Array.isArray(en.tdl)){en.tdl.forEach(set);markDirty('e:'+fromDay);syncEntryFor(fromDay).catch(()=>{});}}
+    sv(S);syncStateDebounced();t.remove();softToast('記下了',1400);
+  };
+  ['太大了','沒心情','在等別人','沒時間'].forEach(w=>{
+    const b=document.createElement('button');b.type='button';b.textContent=w;b.onclick=()=>save(w);t.querySelector('.wt-a').appendChild(b);
+  });
+  const other=document.createElement('button');other.type='button';other.textContent='其他…';
+  other.onclick=()=>{const v=prompt('原因：','');if(v&&v.trim())save(v.trim());};t.querySelector('.wt-a').appendChild(other);
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),12000);
+}
 // ⏩ 順延到明天：從今天的清單移走，加進明天的 TDL，順延次數 +1。
 // 由使用者自己決定哪幾項要延，沒按的就留在今天。
 function nextDayOf(ds){const d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+1);return fmtLocal(d);}
@@ -3049,6 +3113,7 @@ function postponeTdlItem(i){
   sv(S);autoDraftDebounced();
   renderStickyNote();renderTDL();syncStateDebounced();
   softToast('⏩ 已順延到明天'+(nc>1?'（第 '+nc+' 次了）':''),2800);
+  if(nc>=2)askCarryWhy(idk(item),item.task||item.theme||'這件事');
 }
 // 過去某天（例如昨天）的便利貼按 ⏩：移到「那天的隔天」。
 // 隔天就是今天 → 進今天的便利貼；隔天也是過去 → 進那一天的清單。
@@ -3107,6 +3172,7 @@ function postponePastTdlItem(c,i){
   renderStickyNote();if(tdlEditCtx===D)renderTDL();
   const td=new Date(T+'T00:00:00');
   softToast(`⏩ 已順延到 ${T===curDay()?'今天':(td.getMonth()+1)+'/'+td.getDate()}`+(nc>1?'（第 '+nc+' 次了）':''),2800);
+  if(nc>=2)askCarryWhy(k,moved.task||moved.theme||'這件事',D);
 }
 function deleteTdlItem(i){
   const c=stickyCtx();
@@ -4242,12 +4308,11 @@ function tdlText(tdl,tdlDone){
 document.getElementById('copy-btn').addEventListener('click',async()=>{
   const b=document.getElementById('copy-btn');
   await ensureCalMonthsLoaded([curDay()]);
-  const d=S.diary,c=HABITS.filter(h=>S.checked[h.k]).map(h=>h.l);
-  const todayT=(S.todayTDL||[]).map((r,i)=>`${S.tdlDone['t'+i]?'✅':'⬜'} ${r.theme?r.theme+'：':''}${r.task}`).join('\n');
-  const tomorrowT=tdlText(S.tomorrowTDL);
   const calT=calLinesForDates([curDay()]).join('\n');
   const goalT=window.FocusUI?FocusUI.copyLines([curDay()],'今天').join('\n'):'';
-  navigator.clipboard.writeText(`${curDay()} 紀錄\n${goalT?goalT+'\n':''}做了：${c.join('、')||'無'}\n\n${healthCopyText(S.health)}\n今日TDL：\n${todayT||'無'}\n\n📅 今日行程：\n${calT||'無'}\n\n🌟 Highlights：${d.hl||'無'}\n📖 Reflection：${d.rf||'無'}\n🥹 Gratitude：${d.gr||'無'}\n💬 金句：${d.quote||'無'}\n\n明天TDL：\n${tomorrowT||'無'}`).then(()=>{
+  const dayL=dayDetailLines(curDay())||[`📅 ${curDay()}：今天還沒有紀錄`];
+  const extra=window.FocusUI?FocusUI.periodExtraLines([curDay()]).join('\n'):'';
+  navigator.clipboard.writeText(`${curDay()} 紀錄\n${goalT?goalT+'\n':''}\n${dayL.join('\n')}\n\n📅 今日行程：\n${calT||'無'}${extra?'\n\n'+extra:''}`).then(()=>{
     b.innerHTML=`${fi('2705',15)} 已複製！`;setTimeout(()=>{b.innerHTML=`${fi('1f4cb',15)} 複製今日紀錄給 Claude`;},2000);
   });
 });
@@ -4547,7 +4612,7 @@ function periodStats(dates){
         const u=unitMap[key]||(unitMap[key]={starts:0,dones:0,theme:th});
         if(!(+x.c||0))u.starts++;
         if(x.done)u.dones++;
-        tdlDetail.push({date:ds,theme:th,task:(x.task||''),done:!!x.done,c:Math.max(0,+x.c||0)});
+        tdlDetail.push({date:ds,theme:th,task:(x.task||''),done:!!x.done,c:Math.max(0,+x.c||0),why:x.why||''});
       });
     }else if(tdlT){tdlNoDetailDays++;legacyTotal+=tdlT;legacyDone+=tdlD;} // 舊資料只有數量、沒有明細
     if(dia&&(dia.hl||dia.rf||dia.gr))diaryDays++;
@@ -4580,7 +4645,7 @@ function periodStats(dates){
     const key=(x.theme||'')+'␟'+(x.task||'');
     if(!carryMap[key])carryMap[key]={theme:x.theme,task:x.task,max:0,seen:0,done:false};
     const o=carryMap[key];
-    o.max=Math.max(o.max,+x.c||0);o.seen++;if(x.done)o.done=true;
+    o.max=Math.max(o.max,+x.c||0);o.seen++;if(x.done)o.done=true;if(x.why)o.why=x.why;
   });
   const carryList=Object.values(carryMap).filter(o=>o.max>0).sort((a,b)=>b.max-a.max);
   return{days,habits,exp:habits*10+days*20,tdlDoneSum,tdlTotalSum,habitCounts,diaryHighlights,diaryDays,themeAgg,tdlDetail,tdlNoDetailDays,healthDays,
@@ -4603,7 +4668,7 @@ function tdlSummaryLines(st,label){
   const cl=st.carryList||[],cp=st.carryPending||[];
   if(cl.length){
     lines.push(`  ⏩ 順延：有 ${cl.length} 件事被往後移過（完成 ${(st.carryDone||[]).length} 件、still 等待 ${cp.length} 件）`);
-    cp.slice(0,6).forEach(o=>lines.push(`    ⏩${o.max} ${o.theme&&o.theme!=='未分類'?o.theme+'：':''}${o.task||'（未填目標）'}`));
+    cl.forEach(o=>lines.push(`    ⏩${o.max} ${o.theme&&o.theme!=='未分類'?o.theme+'：':''}${o.task||'（未填目標）'}（${o.done?'後來完成':'還沒做'}${o.why?'，原因：'+o.why:''}）`));
   }
   lines.push('');
   return lines;
@@ -5110,36 +5175,12 @@ document.getElementById('copy-week-btn').addEventListener('click',async()=>{
   const lines=[`📊 ${weekLabel(weekOffset)}的格蘭朵紀錄（請幫我分析）`,''];
   if(window.FocusUI)lines.push(...FocusUI.loopCopyLines(dates,'week'));
   if(window.FocusUI)lines.push(...FocusUI.copyLines(dates,'這週'));
+  lines.push(...periodNumberLines(dates,'這週'));
   dates.forEach(ds=>{
     if(ds>curDay())return; // 還沒到的日子不是「無紀錄」
-    const e=S.entries.find(x=>x.date===ds);
-    const isT=ds===curDay();
-    // 今天可能還沒「種下」而沒有 entry，但即時資料要照樣帶進分析
-    const checkedArr=isT?Object.keys(S.checked||{}):(e?.checked||[]);
-    const diary=(isT?S.diary:e?.diary)||{};
-    const items=tdlItemsOf(ds);
-    const dayH=(isT?S.health:(e&&e.health))||null;
-    const hasHealth=healthAny(dayH);
-    const d=new Date(ds+'T00:00:00');
-    const dl=`${d.getMonth()+1}/${d.getDate()} 週${wdArr[d.getDay()]}`;
-    if(!e&&!checkedArr.length&&!(items&&items.length)&&!hasHealth&&!(diary.hl||diary.rf||diary.gr||diary.quote)){lines.push(`${dl}：無紀錄`);return;}
-    const names=HABITS.filter(h=>checkedArr.includes(h.k)).map(h=>h.l);
-    lines.push(`📅 ${dl}`);
-    lines.push(`  ✅ 完成習慣：${names.join('、')||'無'}`);
-    if(hasHealth)healthCopyText(dayH).trimEnd().split('\n').forEach(l=>lines.push('  '+l));
-    if(diary.hl)lines.push(`  🌟 Highlights：${diary.hl}`);
-    if(diary.rf)lines.push(`  📖 Reflection：${diary.rf}`);
-    if(diary.gr)lines.push(`  🥹 Gratitude：${diary.gr}`);
-    if(diary.quote)lines.push(`  💬 金句：${diary.quote}`);
-    // 當天真正的 TDL 與完成狀態（entry.tdl 存的是「規劃給隔天」的，不能當成這天的 TDL）
-    if(items&&items.length){
-      lines.push(`  📝 TDL（${items.filter(x=>x.done).length}/${items.length}）：`);
-      items.forEach(x=>lines.push(`    ${x.done?'✅':'⬜'} ${x.theme?x.theme+'：':''}${x.task}`));
-    }else if(e&&e.tdlTotal){
-      lines.push(`  📝 TDL：完成 ${e.tdlDone||0}/${e.tdlTotal}（舊資料，無逐項明細）`);
-    }
-    lines.push('');
+    const dl=dayDetailLines(ds);if(dl)lines.push(...dl,'');
   });
+  if(window.FocusUI)lines.push(...FocusUI.periodExtraLines(dates));
   lines.push(...tdlSummaryLines(periodStats(dates),weekLabel(weekOffset)));
   const wkHsum=healthCopySummary(periodStats(dates),weekLabel(weekOffset));
   if(wkHsum.length){lines.push('');lines.push(...wkHsum);lines.push('');}
@@ -5230,35 +5271,24 @@ document.getElementById('copy-month-btn').addEventListener('click',async()=>{
   if(window.FocusUI)lines.push(...FocusUI.loopCopyLines(dates,'month'));
   if(window.FocusUI&&optNum)lines.push(...FocusUI.copyLines(dates,'這個月'));
   if(window.FocusUI){const _t=FocusUI.trendLines(dates);if(_t.length)lines.push(..._t,'');}
+  if(optNum)lines.push(...periodNumberLines(dates,'這個月'));
   const _seenText={};
-  const _diaryLine=(icon,txt,ds)=>{
-    if(!txt)return;
-    const k=String(txt).trim();
-    if(k.length>=30&&_seenText[k]){lines.push(`  ${icon} （內容同 ${_seenText[k]}，略）`);return;}
-    _seenText[k]=ds.slice(5).replace('-','/');
-    lines.push(`  ${icon} ${txt}`);
-  };
   dates.forEach(ds=>{
-    const e=S.entries.find(x=>x.date===ds);
-    const isT=ds===curDay();
-    const checkedArr=isT?Object.keys(S.checked||{}):(e?.checked||[]);
-    const diary=(isT?S.diary:e?.diary)||{};
-    const items=tdlItemsOf(ds);
-    const dayH=(isT?S.health:(e&&e.health))||null;
-    const hasHealth=healthAny(dayH);
-    if(!e&&!checkedArr.length&&!(items&&items.length)&&!hasHealth&&!(diary.hl||diary.rf||diary.gr||diary.quote))return;
-    const names=HABITS.filter(h=>checkedArr.includes(h.k)).map(h=>h.l);
-    const tdlPart=(items&&items.length)?`｜TDL ${items.filter(x=>x.done).length}/${items.length}（${items.map(x=>(x.done?'✅':'⬜')+(x.theme?x.theme+'：':'')+x.task).join('、')}）`
-                 :((e&&e.tdlTotal)?`｜TDL ${e.tdlDone||0}/${e.tdlTotal}`:'');
-    let hPart='';
-    if(hasHealth){const p=[],s=dayH.sleep;if(healthHas(dayH,'sleep'))p.push('🌙'+(s.sleepTime||'?')+'→'+(s.wakeTime||'?')+(s.ease?' '+easeLabel(s.ease):'')+((s.acts&&s.acts.length)?' 睡前：'+s.acts.join('、'):'')+(s.note?' 備註：'+s.note:''));if(healthHas(dayH,'diet'))p.push('🍽️'+[...(dayH.diet.tags||[]),dayH.diet.note].filter(Boolean).join('、'));if(healthHas(dayH,'exercise'))p.push('🏃'+exTypesOf(dayH.exercise).join('、')+(dayH.exercise.duration?' '+dayH.exercise.duration+'分':'')+(dayH.exercise.note?' '+dayH.exercise.note:''));if(healthHas(dayH,'water'))p.push('💧'+dayH.water.amount+'ml');hPart='｜'+p.join(' ');}
-    lines.push(`📅 ${ds}：${names.join('、')||'無'}${tdlPart}${hPart}`);
-    _diaryLine('🌟',diary.hl,ds);
-    _diaryLine('📖',diary.rf,ds);
-    _diaryLine('🥹',diary.gr,ds);
-    if(diary.quote)lines.push(`  💬 ${diary.quote}`);
-    if(diary.note)lines.push(`  📝 ${diary.note}`);
+    if(ds>curDay())return;
+    const dl=dayDetailLines(ds);if(!dl)return;
+    dl.forEach(l=>{
+      // 同一段長文字貼了兩次（例如影片摘要）只留一份，分析才不會重複計算
+      const m=l.match(/^  (?:🌟 Highlights|📖 Reflection|🥹 Gratitude)：(.+)$/);
+      if(m&&m[1].trim().length>=30){
+        const k=m[1].trim();
+        if(_seenText[k]){lines.push(l.slice(0,l.indexOf('：')+1)+`（內容同 ${_seenText[k]}，略）`);return;}
+        _seenText[k]=ds.slice(5).replace('-','/');
+      }
+      lines.push(l);
+    });
+    lines.push('');
   });
+  if(window.FocusUI)lines.push(...FocusUI.periodExtraLines(dates));
   lines.push('');
   if(optNum){
     lines.push(...tdlSummaryLines(periodStats(dates),monthLabel(monthOffset)));
@@ -8020,6 +8050,6 @@ document.addEventListener('visibilitychange',()=>{
 
 
 
-<script src="focus.js?v=141"></script>
+<script src="focus.js?v=142"></script>
 </body>
 </html>

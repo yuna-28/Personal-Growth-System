@@ -9,7 +9,7 @@
 const C=FocusCore, hub=document.getElementById('focus-hub');   // hub 只放預設值（data-*），不再直接畫東西
 if(!hub)return;
 const M={now:document.getElementById('focus-now'),cards:document.getElementById('focus-cards'),today:document.getElementById('focus-today-exps'),
-  moves:document.getElementById('focus-moves'),
+  moves:document.getElementById('focus-moves'),tags:document.getElementById('focus-tags'),
   undone:document.getElementById('focus-undone'),bring:document.getElementById('focus-bring-next'),
   tonight:document.getElementById('focus-tonight'),goals:document.getElementById('focus-goals')};
 const mounts=Object.values(M).filter(Boolean);
@@ -211,7 +211,7 @@ function openCloseGoal(g,kind){
 function metricSuggest(g,m,d){
   const target=+m.target||0;if(target<=1||m.noSuggest)return null;
   const start=bodyStart(g),days=[];
-  for(let i=1;i<=28;i++){const day=shiftDay(d,-i);if(day<start)break;days.push(day);}
+  for(let i=1;i<=28;i++){const day=shiftDay(d,-i);if(day<start)break;if(!isRestDay(day))days.push(day);}
   if(days.length<14)return null;
   const perWeek=days.filter(day=>metricHit(m,day)).length/(days.length/7);
   const next=Math.max(1,Math.ceil(perWeek)+1);
@@ -300,8 +300,10 @@ function dueTxt(g){
 // ── 身體型目標卡：本週點點＋動一動 ──────────────
 function bodyCard(g){
   const d=ds(),st=weekStats(d,g);let suggested=!!closeBanner(g);
+  const mon=mondayOfDs(d);let restN=0;for(let i=0;i<7;i++){const day=shiftDay(mon,i);if(day>d)break;if(isRestDay(day))restN++;}
+  const effGoal=t=>t?Math.max(1,Math.round(t*(7-restN)/7)):0;   // 本週有不舒服的日子，目標跟著等比例少
   const rows=activeMetrics(g).map(m=>{
-    const n=st[m.k],goal=+m.target,today=metricHit(m,d);
+    const n=st[m.k],goal=effGoal(+m.target),today=metricHit(m,d);
     const tick=m.src==='manual'?`<button class="focus-btn mt-tick${today?' done':''}" data-metric="${esc(m.k)}" data-g="${esc(g.id)}">${today?'今天 ✓':'今天'}</button>`:'';
     const sg=suggested?null:metricSuggest(g,m,d);if(sg)suggested=true;   // 一次只提一項，不要整張卡都在催
     const hint=sg?`<div class="mt-suggest">最近平均每週 ${sg.perWeek} ${esc(m.unit)}，要先把目標改成 ${sg.next} 嗎？
@@ -310,7 +312,7 @@ function bodyCard(g){
     return `<div class="dots-row${n>=goal?' hit':''}"><span class="dl">${esc(m.l)}</span><span class="dd">${Array.from({length:goal},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</span><span class="dn">${n}/${goal}</span>${tick}</div>${hint}`;
   }).join('');
   const pgNow=projectGoal();
-  return `<div class="gcard goal-card">${pgNow&&closeBanner(pgNow)?'':closeBanner(g)}<div class="goal-hd"><span class="goal-title">${esc(g.title)}</span>
+  return `<div class="gcard goal-card">${pgNow&&closeBanner(pgNow)?'':closeBanner(g)}<div class="goal-hd"><span class="goal-title">${esc(g.title)}</span><span class="goal-sub muted">本週${restN?` · 不舒服 ${restN} 天不算`:''}</span>
       <span class="goal-sub" style="margin-left:auto;">${dueTxt(g)}</span><button class="card-edit" data-edit-goal="${esc(g.id)}" title="編輯">✏️ 編輯</button></div>
     ${rows?`<div style="display:flex;flex-direction:column;gap:7px;margin-top:8px;" title="本週，週一重新開始">${rows}</div>`:'<div class="goal-sub muted">還沒設每週目標，點 ✏️ 設定</div>'}
   </div>`;
@@ -326,6 +328,19 @@ function expRows(){
       <span style="${on?'text-decoration:line-through;opacity:.55;':''}">${esc(e.text)}</span>
       <span class="er-tag">🧪 實驗${e.freq==='once'?'':' · 本週 '+wk+'/'+goal}</span></div>`;
   }).join('');
+}
+// 今天狀況：一鍵標記。rest＝這天身體不舒服，不算進每週目標
+const DEF_TAGS=[{l:'經期',rest:true},{l:'不舒服',rest:true},{l:'趕工'},{l:'上課'}];
+function tagsOf(g){return g&&Array.isArray(g.dayTags)?g.dayTags.filter(x=>x&&x.l):DEF_TAGS;}
+function isRestDay(day){
+  const on=(health(day)||{}).dayTags||[];if(!on.length)return false;
+  const rest=tagsOf(movesGoal()).filter(x=>x.rest).map(x=>x.l);
+  return on.some(x=>rest.indexOf(x)>=0);
+}
+function tagChips(){
+  const on=(health(ds())||{}).dayTags||[],list=tagsOf(movesGoal());
+  const extra=on.filter(x=>!list.some(t=>t.l===x)).map(l=>({l}));   // 標過但已從清單刪掉的也要看得到
+  return `<div class="also-chips">${[...list,...extra].map(t=>`<button class="focus-btn${on.indexOf(t.l)>=0?' done':''}" data-day-tag="${esc(t.l)}" title="${t.rest?'這天不算進每週目標':''}">${esc(t.l)}${on.indexOf(t.l)>=0?' ✓':''}</button>`).join('')}</div>`;
 }
 function moveChips(){
   const e=health(ds()).exercise||{},types=exTypesOf(e);
@@ -433,6 +448,7 @@ function tonightCard(){
   const now=new Date(),bedAbs=r.steps.find(x=>x.k==='bed').abs;
   const live=d===curDay()&&!!r.next&&now>=new Date(r.next.abs-(r.next.extra?15:90)*60000)&&now<new Date(+bedAbs+180*60000);
   const open=d!==curDay()||live||!!editing||tonightOpen();
+  const bgm=bodyGoal(),feeds=bgm?{shoulder:activeMetrics(bgm).some(m=>m.src==='shoulder'),bed:activeMetrics(bgm).some(m=>m.src==='bed')}:{};
   if(!open){
     const doneN=r.steps.filter(x=>x.done).length;
     return `<button class="gcard tonight-card tonight-mini" data-action="tonight-toggle" title="展開看今晚每一步">
@@ -448,7 +464,7 @@ function tonightCard(){
     const doneAt=(s.k==='phone'||s.k==='bed')?clock(s.done):'';
     const off=!s.done&&(s.skipped||s.missed);
     const step=`<button class="tl-step${s.done?' done':(isNext?' next':(off?' missed':''))}" data-step="${s.k}" title="${off?'沒做 · 補做了就點一下':(s.done?'點一下取消':'點一下＝做完了')}">
-      <div class="t">${s.done&&doneAt?'✓ '+doneAt:(off?'沒做 · ':'')+esc(s.at)}</div><div class="n">${s.done&&!doneAt?'✓ ':''}${esc(s.label)}</div></button>`;
+      <div class="t">${s.done&&doneAt?'✓ '+doneAt:(off?'沒做 · ':'')+esc(s.at)}</div><div class="n">${s.done&&!doneAt?'✓ ':''}${esc(s.label)}</div>${feeds[s.k]?'<span class="tl-feed">算進體態</span>':''}</button>`;
     if(!isNext||!live)return step;
     return `<div class="tl-now">${step}<button class="focus-btn" data-skip="${s.k}">跳過</button><button class="focus-btn primary" data-step="${s.k}">做完了</button></div>`;
   }).join('');
@@ -457,16 +473,8 @@ function tonightCard(){
       <span class="tn-title">今晚 ${esc(r.p.bed)} 上床</span><span class="tn-count">${done}/${r.steps.length}</span>
       <button class="card-edit" data-action="edit-plan" title="改時間、改每一步">✏️ 編輯</button>
       ${live||d!==curDay()?'':'<button class="card-edit" data-action="tonight-toggle" title="收起來">▴</button>'}</div>
-    <div class="tn-sub"><span class="${res.kind==='late'?'warn':''}">${res.kind==='missing'?(live?'現在這一步做完就按「做完了」':'點一下＝做完了'):esc(res.label)}</span>${sevenDots(d)}</div>
+    <div class="tn-sub"><span class="${res.kind==='late'?'warn':''}">${res.kind==='missing'?(live?'現在這一步做完就按「做完了」':'點一下＝做完了'):esc(res.label)}</span></div>
     <div class="tl">${cells}</div></div>`;
-}
-function sevenDots(d){
-  let out='';
-  for(let n=6;n>=0;n--){
-    const day=shiftDay(d,-n),rr=nightInfo(day);
-    out+=`<span class="focus-dot${rr.kind==='onTime'?' ontime':(rr.kind==='late'?' late':'')}" title="${esc(md(day)+' '+rr.label)}"></span>`;
-  }
-  return `<span class="focus-dots" title="最近七晚：綠＝準時、金＝晚了、灰＝沒記錄">${out}</span>`;
 }
 // ══ 目標的日期 → Google 日曆 ═════════════════════════
 // 作品型目標：每個有日期的階段＝一個全天行程；🚩 硬期限前一天早上 9 點提醒；目標截止日也放一個。
@@ -574,6 +582,7 @@ function render(force){
   {const pg=projectGoal(),tl=document.querySelector('.list-card');
    if(tl)tl.classList.toggle('hero-on',!!(pg&&pg.next&&pg.next.text&&ds()===curDay()));}
   if(M.moves)M.moves.innerHTML=moveChips();
+  if(M.tags)M.tags.innerHTML=tagChips();
   if(M.undone)M.undone.innerHTML=undoneList();
   if(M.bring)M.bring.innerHTML=bringNext();
   updateCount();applyListTab();
@@ -725,6 +734,12 @@ function moveRowHTML(x){
 }
 // 運動選項存在身體目標上；目標結束了選項還是要在
 function movesGoal(){return bodyGoal()||data().projects.filter(p=>p.kind==='body').sort((a,b)=>(+a.updatedAt||0)-(+b.updatedAt||0)).at(-1)||null;}
+function tagRowHTML(t){
+  return `<div class="fm-row" data-trow style="grid-template-columns:minmax(0,1fr) 96px 26px;">
+    <input class="fm-in" data-f="l" value="${esc(t.l||'')}" placeholder="例如：吉他課" maxlength="10"/>
+    <label class="fm-hint" style="display:flex;align-items:center;gap:4px;margin:0;"><input type="checkbox" data-f="rest"${t.rest?' checked':''}/>不計目標</label>
+    <button type="button" class="fm-del" data-del title="刪除">✕</button></div>`;
+}
 function movesOf(g){return g&&Array.isArray(g.moves)?g.moves.filter(x=>x&&x.t):MOVES;}
 function bindRows(box,sel){
   box.querySelectorAll(sel).forEach(r=>{
@@ -777,10 +792,13 @@ function openBodyEditor(g){
 function openMovesEditor(){
   const g=movesGoal();
   if(!g){softToast('先在「方向」新增一個身體目標，才有運動選項',2800);return;}
-  modal('今天也做了',`
+  modal('今天也做了 · 狀況',`
     <div class="fm-lbl">運動選項（點一下就記，分鐘會加進運動紀錄）</div>
     <div id="gb-moves">${movesOf(g).map(moveRowHTML).join('')}</div>
     <button type="button" class="focus-btn" id="gb-add-move">＋ 新增運動</button>
+    <div class="fm-lbl">今天狀況（勾「不計目標」＝那天不算進每週目標）</div>
+    <div id="gm-tags">${tagsOf(g).map(tagRowHTML).join('')}</div>
+    <button type="button" class="focus-btn" id="gm-add-tag">＋ 新增狀況</button>
     <div class="fm-lbl">習慣</div>
     <div class="fm-hint">習慣的開關在「方向」頁，關掉的不會出現在這裡，紀錄都保留。</div>
     <div class="fm-actions"><button class="focus-btn" id="gm-habits">到「方向」管理習慣</button>
@@ -788,8 +806,10 @@ function openMovesEditor(){
   (m,close)=>{
     const vb=m.querySelector('#gb-moves');bindRows(vb,'[data-vrow]');
     m.querySelector('#gb-add-move').addEventListener('click',()=>{vb.insertAdjacentHTML('beforeend',moveRowHTML({t:'',m:20}));bindRows(vb,'[data-vrow]');vb.lastElementChild.querySelector('input').focus();});
+    const tb=m.querySelector('#gm-tags');bindRows(tb,'[data-trow]');
+    m.querySelector('#gm-add-tag').addEventListener('click',()=>{tb.insertAdjacentHTML('beforeend',tagRowHTML({l:''}));bindRows(tb,'[data-trow]');tb.lastElementChild.querySelector('input').focus();});
     m.querySelector('#gm-habits').addEventListener('click',()=>{close();document.querySelector('.nav-btn[data-page="direction"]')?.click();});
-    m.querySelector('#gm-save').addEventListener('click',()=>{g.moves=readMoves(m);g.updatedAt=Date.now();sv(S);syncStateDebounced();close();softToast('存好了 ✓',2000);});
+    m.querySelector('#gm-save').addEventListener('click',()=>{g.moves=readMoves(m);g.dayTags=[...m.querySelectorAll('[data-trow]')].map(r=>({l:r.querySelector('[data-f="l"]').value.trim(),rest:r.querySelector('[data-f="rest"]').checked})).filter(x=>x.l);g.updatedAt=Date.now();sv(S);syncStateDebounced();close();softToast('存好了 ✓',2000);});
   });
 }
 function stepRowHTML(x){
@@ -969,7 +989,7 @@ function doStep(k){
   saveHealth(d,h);
 }
 onMounts('click',ev=>{
-  const el=ev.target.closest('[data-action],[data-move],[data-ms],[data-ms-flag],[data-ms-del],[data-edit-goal],[data-step],[data-skip],[data-postpone],[data-metric],[data-metric-set],[data-metric-keep]');
+  const el=ev.target.closest('[data-action],[data-move],[data-ms],[data-ms-flag],[data-ms-del],[data-edit-goal],[data-step],[data-skip],[data-postpone],[data-metric],[data-metric-set],[data-metric-keep],[data-day-tag]');
   if(!el)return;
   if(el.tagName==='A')ev.preventDefault();
   if(el.dataset.editGoal){const g=data().projects.find(x=>x.id===el.dataset.editGoal);if(g)(g.kind==='body'?openBodyEditor:openProjectEditor)(g);return;}
@@ -992,6 +1012,11 @@ onMounts('click',ev=>{
     saveHealth(d,h);softToast('沒關係，下一步就好 🌙',2000);return;
   }
   if(el.dataset.step){doStep(el.dataset.step);return;}
+  if(el.dataset.dayTag){
+    const h=health(d),t=el.dataset.dayTag,cur=h.dayTags||[];
+    h.dayTags=cur.indexOf(t)>=0?cur.filter(x=>x!==t):[...cur,t];
+    saveHealth(d,h);return;
+  }
   if(el.dataset.metricSet||el.dataset.metricKeep){
     const g=data().projects.find(x=>x.id===el.dataset.g);if(!g)return;
     const list=metricsOf(g).map(x=>({...x})),m=list.find(x=>x.k===(el.dataset.metricSet||el.dataset.metricKeep));if(!m)return;
@@ -1170,12 +1195,13 @@ function periodGoals(dates){
       });
       // 目標是「每週幾次」→ 依「目標開始後、到今天為止」的天數換算，
       // 不會出現目標才開始兩天、分母卻是整個月的情況
-      const scale=counted.length/7;
-      const want={};mets.forEach(m=>{const tt=+m.target||0;want[m.k]=tt&&counted.length?Math.max(1,Math.round(tt*scale)):0;});
+      const restDays=counted.filter(isRestDay),active=counted.filter(day=>!isRestDay(day));
+      const scale=active.length/7;
+      const want={};mets.forEach(m=>{const tt=+m.target||0;want[m.k]=tt&&active.length?Math.max(1,Math.round(tt*scale)):0;});
       // 上床只算有紀錄的夜晚：沒記錄不等於沒做到，今晚還沒到也不算
-      const nightsPast=counted.filter(day=>['onTime','late'].includes(nightInfo(day).kind)).length;
+      const nightsPast=active.filter(day=>['onTime','late'].includes(nightInfo(day).kind)).length;
       mets.filter(m=>m.src==='bed'&&+m.target).forEach(m=>{want[m.k]=nightsPast?Math.max(1,Math.round(+m.target*nightsPast/7)):0;});
-      out.push({g,kind:'body',c,want,days:counted.length,start});
+      out.push({g,kind:'body',c,want,days:counted.length,start,restDays});
     }else{
       const ms=g.milestones||[];
       const doneIn=ms.filter(m=>m.done&&m.doneOn&&dates.indexOf(m.doneOn)>=0);
@@ -1215,7 +1241,7 @@ function reviewHTML(dates,isWeek){
       }).join('');
       return `<div style="margin-bottom:12px;"><div class="goal-sub" style="font-weight:800;color:var(--tc);margin-bottom:6px;">${fi('1f3c3',16)} ${esc(x.g.title)}${x.g.dueDate?' · '+md(x.g.dueDate)+(x.g.event?' '+esc(x.g.event):''):''}</div>
         ${row?`<div class="goal-stats">${row}</div>`:''}
-        <div class="goal-sub muted" style="margin-top:5px;">從 ${md(x.start)} 開始算 ${x.days} 天 · 活動共 ${x.c.minutes} 分鐘${x.c.rest?`，休息 ${x.c.rest} 天`:''}</div></div>`;
+        <div class="goal-sub muted" style="margin-top:5px;">從 ${md(x.start)} 開始算 ${x.days} 天 · 活動共 ${x.c.minutes} 分鐘${x.c.rest?`，休息 ${x.c.rest} 天`:''}${x.restDays.length?`，不舒服 ${x.restDays.length} 天不算進目標`:''}</div></div>`;
     }
     const segs=x.ms.length?`<div class="goal-segs" style="margin:6px 0;">${x.ms.map(m=>`<span class="goal-seg${m.done?' done':''}" style="cursor:default;" title="${esc(m.title)}"></span>`).join('')}</div>`:'';
     return `<div style="margin-bottom:12px;"><div class="goal-sub" style="font-weight:800;color:var(--tc);">${fi('1f3ac',16)} ${esc(x.g.title)}${x.g.dueDate?' · '+md(x.g.dueDate)+' 截止':''}</div>
@@ -1241,7 +1267,7 @@ function copyLines(dates,label){
     if(x.kind==='body'){
       L.push(`  🏃 ${x.g.title}${x.g.dueDate?'：'+x.g.dueDate+(x.g.event?' '+x.g.event:''):''}`);
       L.push('    每週目標：'+activeMetrics(x.g).map(m=>m.l+' '+m.target+' '+m.unit).join('、'));
-      L.push(`    ${label}實際（${md(x.start)} 開始算，共 ${x.days} 天）：`+metricsOf(x.g).filter(m=>x.want[m.k]>0).map(m=>`${m.l} ${x.c[m.k]}/${x.want[m.k]} ${m.unit}`).join('、')+`；活動共 ${x.c.minutes} 分鐘${x.c.rest?`、休息 ${x.c.rest} 天`:''}`);
+      L.push(`    ${label}實際（${md(x.start)} 開始算，共 ${x.days} 天）：`+activeMetrics(x.g).map(m=>`${m.l} ${x.c[m.k]}${x.want[m.k]?'/'+x.want[m.k]:''} ${m.unit}`).join('、')+(x.restDays.length?`（不舒服 ${x.restDays.length} 天不算進目標）`:'')+`；活動共 ${x.c.minutes} 分鐘${x.c.rest?`、休息 ${x.c.rest} 天`:''}`);
     }else{
       L.push(`  🎬 ${x.g.title}${x.g.dueDate?'：'+x.g.dueDate+' 截止':''}`);
       if(x.ms.length)L.push('    階段：'+x.ms.map(m=>(m.done?'✓':'○')+m.title+(m.due?'〔'+(m.hard?'🚩硬期限 ':'預計 ')+md(m.due)+'〕':'')+(m.doneOn?'(完成 '+md(m.doneOn)+(m.due&&m.doneOn>m.due?'，晚 '+daysBetween(m.due,m.doneOn)+' 天':'')+')':'')).join(' → '));
@@ -1562,7 +1588,7 @@ function monthDays(key){
 }
 const realText=t=>String(t||'').trim().length>=3;
 function monthStat(key){
-  const r={key,diary:0,tdl:0,sleep:0,move:0,diet:0,water:0,bedSum:0,durSum:0,recovery:[],habits:{}};
+  const r={key,diary:0,tdl:0,sleep:0,move:0,diet:0,water:0,sick:0,bedSum:0,durSum:0,recovery:[],habits:{}};
   monthDays(key).forEach(day=>{
     const x=dayRec(day),h=x.health||{},sl=h.sleep||{};
     if(['hl','rf','gr'].some(k=>realText(x.diary[k])))r.diary++;
@@ -1570,6 +1596,7 @@ function monthStat(key){
     if(exTypesOf(h.exercise).length)r.move++;
     if(healthHas(h,'diet'))r.diet++;
     if(healthHas(h,'water'))r.water++;
+    if(isRestDay(day))r.sick++;
     x.checked.forEach(k=>{r.habits[k]=(r.habits[k]||0)+1;});
     if(C.validTime(sl.sleepTime)){
       const m=toMin(sl.sleepTime);r.sleep++;r.bedSum+=m<720?m+1440:m;
@@ -1608,8 +1635,8 @@ function habitRuns(keys){
 }
 function trendLines(dates){
   const mk=monthKeyOf(dates[0]),keys=trendMonths(mk);if(!keys.length)return [];
-  const L=['━━━ 跨月對照 ━━━','月份｜日記｜TDL｜睡眠紀錄｜平均入睡｜平均睡眠｜運動｜飲食｜喝水（天數）'];
-  keys.map(monthStat).forEach(r=>L.push(`${r.key}｜${r.diary}｜${r.tdl}｜${r.sleep}｜${r.bed||'—'}｜${durTxt(r.dur)}｜${r.move}｜${r.diet}｜${r.water}`));
+  const L=['━━━ 跨月對照 ━━━','月份｜日記｜TDL｜睡眠紀錄｜平均入睡｜平均睡眠｜運動｜飲食｜喝水｜不舒服（天數）'];
+  keys.map(monthStat).forEach(r=>L.push(`${r.key}｜${r.diary}｜${r.tdl}｜${r.sleep}｜${r.bed||'—'}｜${durTxt(r.dur)}｜${r.move}｜${r.diet}｜${r.water}｜${r.sick}`));
   const cur=monthStat(mk);
   if(cur.recovery.length)L.push(`這個月作息特別亂的日子（凌晨 4 點後才睡或中午後才起）：${rangeTxt(cur.recovery)}。看數字時請分開看，原因不一定是沒做到。`);
   const runs=habitRuns(keys);
@@ -1623,18 +1650,19 @@ function renderTrend(dates){
   if(keys.length<2){el.innerHTML='';el.hidden=true;return;}
   el.hidden=false;
   const stats=keys.map(monthStat),cur=stats.find(x=>x.key===mk);
-  el.innerHTML=`<div class="gcard dt-card"><div class="sec-hd">跨月對照</div><div class="dt-wrap"><table class="ds-table"><thead><tr><th>月份</th><th>日記</th><th>TDL</th><th>睡眠紀錄</th><th>平均入睡</th><th>平均睡眠</th><th>運動</th><th>飲食</th><th>喝水</th></tr></thead><tbody>
-    ${stats.map(r=>`<tr${r.key===mk?' class="today"':''}><td>${+r.key.slice(5)} 月</td><td>${r.diary}</td><td>${r.tdl}</td><td>${r.sleep}</td><td>${r.bed||'—'}</td><td>${durTxt(r.dur)}</td><td>${r.move}</td><td>${r.diet}</td><td>${r.water}</td></tr>`).join('')}
+  el.innerHTML=`<div class="gcard dt-card"><div class="sec-hd">跨月對照</div><div class="dt-wrap"><table class="ds-table"><thead><tr><th>月份</th><th>日記</th><th>TDL</th><th>睡眠紀錄</th><th>平均入睡</th><th>平均睡眠</th><th>運動</th><th>飲食</th><th>喝水</th><th>不舒服</th></tr></thead><tbody>
+    ${stats.map(r=>`<tr${r.key===mk?' class="today"':''}><td>${+r.key.slice(5)} 月</td><td>${r.diary}</td><td>${r.tdl}</td><td>${r.sleep}</td><td>${r.bed||'—'}</td><td>${durTxt(r.dur)}</td><td>${r.move}</td><td>${r.diet}</td><td>${r.water}</td><td>${r.sick}</td></tr>`).join('')}
     </tbody></table></div><div class="goal-sub muted" style="margin-top:8px;">單位是天。天數少可能只是沒記錄，不等於沒做。${cur&&cur.recovery.length?` · 作息特別亂的日子：${esc(rangeTxt(cur.recovery))}`:''}</div></div>`;
 }
 // ══ 搜尋全部紀錄 ══════════════════════════════════
-const SEARCH_FIELDS=[['hl','Highlights'],['rf','Reflection'],['gr','Gratitude'],['quote','金句'],['note','備註']];
+const SEARCH_FIELDS=[['hl','Highlights'],['rf','Reflection'],['gr','Gratitude'],['quote','金句']];
 function searchRecords(q){
   q=String(q||'').trim().toLowerCase();if(!q)return [];
-  const days=[...new Set([...(S.entries||[]).map(e=>e.date),curDay()])].sort().reverse(),out=[];
+  const days=[...new Set([...(S.entries||[]).map(e=>e.date),...Object.keys(S.calNotes||{}),curDay()])].sort().reverse(),out=[];
   days.forEach(day=>{
     const x=dayRec(day),h=x.health||{},push=(label,text)=>{if(text&&String(text).toLowerCase().indexOf(q)>=0)out.push({day,label,text:String(text)});};
     SEARCH_FIELDS.forEach(([k,l])=>push(l,x.diary[k]));
+    push('備註',S.calNotes&&S.calNotes[day]);push('狀況',(h.dayTags||[]).join('、'));
     x.items.forEach(it=>push('TDL',(it.theme?it.theme+'：':'')+(it.task||'')));
     push('睡眠備註',h.sleep&&h.sleep.note);push('飲食',h.diet&&[...(h.diet.tags||[]),h.diet.note].filter(Boolean).join('、'));push('運動備註',h.exercise&&h.exercise.note);
   });
@@ -1669,6 +1697,37 @@ function renderSearch(q){
     viewDate=r.dataset.day===curDay()?null:r.dataset.day;applyViewDate(true);
   });
 })();
+// 這晚的每一步：做了／跳過／沒做（只有其中有動作才列）
+function nightLine(day){
+  const r=routine(day);if(!r)return '';
+  if(!r.steps.some(x=>x.done||x.skipped))return '';
+  return '🌙 睡前流程（目標 '+r.p.bed+' 上床）：'+r.steps.map(x=>{
+    const t=(x.k==='phone'||x.k==='bed')&&x.done?clock(x.done):x.at;
+    return `${t} ${x.label} ${x.done?'✓':(x.skipped?'跳過':'沒做')}`;
+  }).join('｜');
+}
+// 匯出的期間補充：回顧頁或狀態裡有，但每日明細放不進去的
+function periodExtraLines(dates){
+  const L=[],f=data(),first=dates[0],last=dates[dates.length-1];
+  const inP=ts=>{if(!ts)return false;const x=C.dateKey(new Date(ts));return x>=first&&x<=last;};
+  // 不適日、狀況
+  const tagged={};dates.filter(d=>d<=curDay()).forEach(d=>((health(d)||{}).dayTags||[]).forEach(t=>{(tagged[t]=tagged[t]||[]).push(d);}));
+  if(Object.keys(tagged).length)L.push('🏷 狀況標記：'+Object.keys(tagged).map(t=>`${t} ${tagged[t].length} 天（${rangeTxt(tagged[t])}）`).join('；'));
+  // 作息計畫改動
+  const rev=f.revisions.filter(p=>p.effectiveFrom>=first&&p.effectiveFrom<=last);
+  if(rev.length)L.push('🌙 作息改動：'+rev.map(p=>`${md(p.effectiveFrom)} 起 ${p.phone} 收手機／${p.bed} 上床／${p.wake} 起床${p.status==='paused'?'（暫停）':''}`).join('；'));
+  // 誇誇牆
+  const praise=(S.treasures||[]).filter(t=>t&&t.type==='praise'&&inP(t.ts));
+  if(praise.length){L.push('💛 誇誇牆新增：');praise.forEach(t=>L.push(`  ${md(C.dateKey(new Date(t.ts)))} ${t.title||''}：${t.desc||'（圖片）'}${t.mine?'｜我也覺得：'+t.mine:''}${t.thanks?'｜回贈：'+t.thanks:''}`));}
+  // EXP 明細（App 只留最近 100 筆）
+  const log=(S.expLog||[]).filter(x=>inP(x.t));
+  if(log.length){L.push(`⭐ EXP 明細（App 只保留最近 100 筆，共 ${log.length} 筆在這段期間）：`);log.forEach(x=>L.push(`  ${md(C.dateKey(new Date(x.t)))} ${x.d>0?'+':''}${x.d} ${x.r||''}`));}
+  // 目前狀態
+  const achieved=(S.achievements||[]).length;
+  L.push(`🌳 目前狀態：累積 ${S.exp||0} EXP（Lv.${Math.floor((S.exp||0)/100)+1}）｜連續 ${S.streak||0} 天｜樹上小蘋果 ${(S.apples||[]).length||0}、大蘋果 ${S.bigApples||0}、金果 ${S.goldFruits||0}、樹苗 ${S.seedlings||0}、新樹 ${S.trees||0}｜草地的花 ${(S.flowers||[]).length||0}｜成就 ${achieved} 個`);
+  L.push('');
+  return L;
+}
 // 便利貼上勾了目標的那一步（index.html 呼叫）：不用再去目標卡和習慣各勾一次
 function onStepToggle(item,done,day){
   if(!item||!item.goalId)return;
@@ -1680,7 +1739,7 @@ function onStepToggle(item,done,day){
   else if(!done&&m.done&&m.doneOn===day){m.done=false;delete m.doneOn;saveGoal(g);}
 }
 window.FocusUI={
-  onStepToggle,trendLines,renderTrend,
+  onStepToggle,trendLines,renderTrend,nightLine,periodExtraLines,
   updateCount,
   periodGoals,reviewHTML,copyLines,loopReviewHTML,loopCopyLines,loopRequestLines,renderInsights,
   render(){render(false);},
