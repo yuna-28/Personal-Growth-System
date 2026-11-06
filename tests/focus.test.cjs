@@ -24,6 +24,60 @@ test('goal lines without bullets or dates still work',()=>{
   assert.equal(C.parseDateText('年前','2027-02-06').due,'2028-01-25');
   assert.equal(C.parseDateText('13/45','2026-11-06'),null);
 });
+const planSrc={format:'grandol-plan',version:1,title:'T',
+  projects:[{key:'a',match:['甲'],title:'甲專案',group:'創作',start:'2026-11-09',due:'2026-12-21',note:'n',
+    stages:[{key:'s1',title:'開工',due:'2026-11-13'},{key:'s2',title:'交付',due:'2026-12-21',hard:true}],
+    checkpoints:[{key:'c1',title:'實測',due:'2026-12-07',check:'看速度',bar:'本體完成',fallback:'縮範圍'}],
+    phases:[{label:'前製',from:'2026-11-09',to:'2026-11-30'},{label:'製作',from:'2026-12-01',to:'2026-12-21'}]},
+   {key:'b',title:'乙專案',due:'2027-02-05',stages:[{key:'t1',title:'製作',due:'2027-01-24'}]}],
+  events:[{key:'e1',title:'出遊',from:'2026-11-15',to:'2026-11-16'},{key:'e2',title:'活動',from:'2027-06-01',tentative:true}],
+  periods:[{key:'p1',label:'交付週',from:'2026-11-09',to:'2026-11-13'},{key:'p2',label:'出國',from:'2027-04-01',to:'2027-04-07',mode:'pause'}],
+  items:[{key:'i1',label:'睡眠',floor:'起床 ≤ 09:00',target:'入睡 ≤ 02:00',weekly:2,floorRule:{type:'wake',max:'09:00',grace:{bedAfter:'04:00',max:'10:30'}},targetRule:{type:'bed',max:'02:00'}}],
+  todos:[{key:'q1',text:'問交期',due:'2026-11-30'},{key:'q2',text:'已處理',done:true}]};
+test('plan import: adopts an existing goal, never duplicates, keeps progress',()=>{
+  const f0={projects:[{id:'old',kind:'project',title:'甲',status:'active',dueDate:'2026-11-30',milestones:[],next:null}]};
+  const r1=C.applyPlan(f0,planSrc,{now:1000,today:'2026-11-06'});
+  assert.equal(r1.report.added,1);assert.equal(r1.report.updated,1);assert.deepEqual(r1.report.matched,['甲 → 甲專案']);
+  const g=r1.focus.projects.find(x=>x.id==='old');
+  assert.equal(g.dueDate,'2026-12-21');assert.deepEqual(g.dueHistory,[{from:'2026-11-30',to:'2026-12-21',on:'2026-11-06'}]);
+  assert.equal(g.milestones.length,2);assert.equal(g.checkpoints[0].bar,'本體完成');assert.equal(g.phases.length,2);
+  // 使用者做了一些事，再匯入同一份
+  g.milestones[0].done=true;g.checkpoints[0].result={ok:true,on:'2026-12-07'};
+  r1.focus.plan.todos.find(t=>t.planKey==='q1').done=true;
+  const r2=C.applyPlan(r1.focus,planSrc,{now:2000,today:'2026-11-07'});
+  assert.equal(r2.report.added,0);assert.equal(r2.focus.projects.length,2);
+  const g2=r2.focus.projects.find(x=>x.id==='old');
+  assert.equal(g2.milestones.length,2);assert.equal(g2.milestones[0].done,true);assert.equal(g2.checkpoints[0].result.ok,true);
+  assert.equal(r2.focus.plan.todos.length,2);assert.equal(r2.focus.plan.todos.find(t=>t.planKey==='q1').done,true);
+  assert.equal(r2.focus.plan.events.length,2);assert.equal(r2.focus.plan.periods.length,2);assert.equal(g2.dueHistory.length,1);
+  assert.ok(r2.size>0);
+});
+test('plan survives clean and merges across devices without resurrecting deletions',()=>{
+  const a=C.applyPlan({},planSrc,{now:1000,today:'2026-11-06'}).focus;
+  assert.equal(C.clean(a).plan.items.length,1);assert.equal(C.clean(a).plan.events.length,2);
+  const b=JSON.parse(JSON.stringify(a));
+  b.plan.events[0].deleted=true;b.plan.events[0].updatedAt=5000;b.plan.updatedAt=5000;
+  a.plan.todos[0].done=true;a.plan.todos[0].updatedAt=6000;a.plan.updatedAt=6000;
+  const m=C.merge(a,b);
+  assert.equal(m.plan.events.find(x=>x.planKey==='e1').deleted,true);
+  assert.equal(m.plan.todos.find(x=>x.planKey==='q1').done,true);
+  assert.equal(m.projects.length,2);
+  assert.equal(C.applyPlan({},{format:'x'},{}).error,'這不是格蘭朵的計畫檔');
+});
+test('daily floor and target rules: wake grace, bed, exercise, habit, periods',()=>{
+  const it=C.applyPlan({},planSrc,{now:1}).focus.plan.items[0];
+  assert.deepEqual(C.itemDay(it,{wake:'08:30',bed:'01:30'}),{floor:true,target:true});
+  assert.deepEqual(C.itemDay(it,{wake:'09:40',bed:'03:00'}),{floor:false,target:false});
+  assert.deepEqual(C.itemDay(it,{wake:'10:00',bed:'05:30'}),{floor:true,target:false});   // 前晚 04:00 後才睡，起床放寬到 10:30
+  assert.deepEqual(C.itemDay(it,{wake:'10:40',bed:'05:30'}),{floor:false,target:false});
+  assert.equal(C.itemDay(it,{wake:'',bed:''}).floor,false);                                // 沒紀錄不算做到
+  const ex={floorRule:{type:'exercise',minutes:10,orShoulder:true},targetRule:{type:'exercise',minutes:30}};
+  assert.deepEqual(C.itemDay(ex,{minutes:0,shoulder:true}),{floor:true,target:false});
+  assert.deepEqual(C.itemDay(ex,{minutes:35}),{floor:true,target:true});
+  assert.deepEqual(C.itemDay({floorRule:{type:'habit'},targetRule:null},{habit:true},'target'),{floor:true,target:true});
+  const plan=C.applyPlan({},planSrc,{now:1}).focus.plan;
+  assert.equal(C.periodOf(plan,'2026-11-10').label,'交付週');assert.equal(C.periodOf(plan,'2026-11-14'),null);assert.equal(C.periodOf(plan,'2027-04-03').mode,'pause');
+});
 test('future night remains pending',()=>assert.equal(C.result(null,plan,'2026-09-28',new Date('2026-09-28T22:00:00+08:00')).label,'尚未到時間'));
 test('snapshot survives plan change',()=>{const w={inBedAt:'2026-09-29T01:00:00+08:00',targetSnapshot:C.snapshot(plan,'2026-09-28')};assert.equal(C.result(w,{...plan,bed:'00:00'},'2026-09-28',new Date()).kind,'onTime');});
 test('effective history and pause',()=>{const f={revisions:[plan,{...plan,id:'r2',effectiveFrom:'2026-10-01',status:'paused'}]};assert.equal(C.planFor(f,'2026-09-27'),null);assert.equal(C.planFor(f,'2026-09-28').id,'r1');assert.equal(C.snapshot(C.planFor(f,'2026-10-01'),'2026-10-01'),null);});

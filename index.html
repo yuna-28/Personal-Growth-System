@@ -1069,8 +1069,8 @@ button{-webkit-tap-highlight-color:transparent;}
 @keyframes pageIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
 .page.active{animation:pageIn .22s ease;}
 </style>
-<link rel="stylesheet" href="focus.css?v=143">
-<script src="focus-core.js?v=143"></script>
+<link rel="stylesheet" href="focus.css?v=144">
+<script src="focus-core.js?v=144"></script>
 <style>
 /* ═══ v127 改版：迴圈主軸（今天／回顧／方向／我）═══ */
 .ui2-zone{font-family:'Baloo 2',sans-serif;font-size:13px;font-weight:800;color:var(--tc2);margin:18px 4px 8px;letter-spacing:.5px;}
@@ -1204,7 +1204,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 .sleep-scene.night .ss-panel{background:rgba(28,36,64,.88)!important;}
 @media(min-width:1300px){.wrap{max-width:1256px;}}
 </style>
-<link rel="stylesheet" href="ds.css?v=143">
+<link rel="stylesheet" href="ds.css?v=144">
 </head>
 <body>
 <!-- 這四個彈窗特意放在 <body> 最前面、所有 <script> 之前：
@@ -1322,7 +1322,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 <!-- ══════ HOME ══════ -->
 <div class="page active ds" id="page-home">
 <section id="focus-hub" hidden data-project="完成動畫" data-due="2026-10-10" data-body-due="2026-10-31" data-body-event="見粉肝" data-night-extra="20:00 戴牙套" aria-label="我的目標"></section>
-<div class="pg-head"><h1>今天</h1><span class="pg-sub" id="pg-sub-today"></span>
+<div class="pg-head"><h1>今天</h1><span class="pg-sub" id="pg-sub-today"></span><span class="mode-chip" id="mode-chip" hidden></span>
   <div class="pg-events" id="today-events-card" style="display:none;"><span class="pe-lbl" id="today-events-title">今日行程</span><div id="today-events-list"></div><button id="today-event-add" class="pe-add" type="button" title="新增今天的行程">＋</button></div>
   <div class="pg-act"><button class="ds-btn" id="pg-cal-btn" type="button">📅 補記其他天</button><button class="ghost-btn ds-btn" id="copy-btn"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4cb_3d.png" width="15" height="15"/> 複製今日紀錄給 Claude</button><button class="liq-btn ds-btn primary" id="plant-btn"><img src="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/2728_3d.png" width="17" height="17"/> 種下今天</button></div></div>
 <div class="today-grid">
@@ -1385,6 +1385,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
       </div>
     </div></div>
 <div id="focus-tonight"></div>
+<div id="focus-rhythm"></div>
 <div id="focus-cards"></div>
 <div class="gcard health-card2">
   <div class="sec-hd hc-hd"><span>身體紀錄</span><div class="hz-tabs" id="hz-tabs"></div></div>
@@ -1540,6 +1541,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 <!-- ══════ 方向 ══════ -->
 <div class="page" id="page-direction">
 <div class="pg-head"><h1>方向</h1><span class="pg-sub">這陣子要去哪裡：目標、作息、實驗、習慣</span></div>
+<div id="focus-plan"></div>
 <div id="focus-goals"></div>
 <div class="gcard">
   <div class="sec-hd">習慣清單</div>
@@ -1913,7 +1915,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v143';
+const APP_VER='v144';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // ── 注音／中文輸入法保護 ──────────────────────────────
@@ -2191,6 +2193,7 @@ function dayDetailLines(ds){
   if(h&&h.dayTags&&h.dayTags.length)L.push(`  🏷 狀況：${h.dayTags.join('、')}`);
   if(hasHealth)healthCopyText(h).trimEnd().split('\n').slice(1).forEach(l=>L.push(l));
   if(window.FocusUI){const nl=FocusUI.nightLine(ds);if(nl)L.push('  '+nl);}
+  if(window.FocusUI){const rl=FocusUI.rhythmLine(ds);if(rl)L.push('  '+rl);}
   if(diary.hl)L.push(`  🌟 Highlights：${diary.hl}`);
   if(diary.rf)L.push(`  📖 Reflection：${diary.rf}`);
   if(diary.gr)L.push(`  🥹 Gratitude：${diary.gr}`);
@@ -8049,6 +8052,6 @@ document.addEventListener('visibilitychange',()=>{
 
 
 
-<script src="focus.js?v=143"></script>
+<script src="focus.js?v=144"></script>
 </body>
 </html>
