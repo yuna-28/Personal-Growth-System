@@ -93,7 +93,20 @@ function metricHit(m,day){
   if(m.src==='bed')return nightInfo(day).kind==='onTime';
   return !!(h.body&&h.body['m_'+m.k]);
 }
-function projectGoal(){return goals().find(g=>g.kind!=='body');}
+// 作品型目標可以同時有好幾個：最近的截止日排前面，沒日期的放最後
+function projectGoals(){
+  return goals().filter(g=>g.kind!=='body').map((g,i)=>({g,i}))
+    .sort((a,b)=>((a.g.dueDate||'9999')<(b.g.dueDate||'9999')?-1:((a.g.dueDate||'9999')>(b.g.dueDate||'9999')?1:a.i-b.i))).map(x=>x.g);
+}
+// 今天卡片上展開的那一個：預設是最近要交的；點別的目標就換過去，只記到今天
+function projectGoal(){
+  const all=projectGoals();if(!all.length)return null;
+  try{const [id,day]=(localStorage.getItem('grandol_focus_goal')||'').split('@');
+    if(day===curDay()){const g=all.find(x=>x.id===id);if(g)return g;}}catch(e){}
+  return all[0];
+}
+function focusGoalOn(id){try{localStorage.setItem('grandol_focus_goal',id+'@'+curDay());}catch(e){}}
+const daysLeftTxt=(d,due)=>{if(!due)return '';const n=daysBetween(d,due);return n<0?`<b class="warn">已過 ${-n} 天</b>`:(n===0?'今天':`還有 ${n} 天`);};
 function bodyGoal(){return goals().find(g=>g.kind==='body');}
 function saveHealth(d,h){
   if(!writable())return;
@@ -255,9 +268,16 @@ function nowCard(){
   const segs=`<div class="hero-segs">${ms.map((m,k)=>`<span class="goal-seg${m.done?' done':(k===curI?' cur':'')}" title="${esc(m.title)}${m.due?' · '+md(m.due):''}"></span>`).join('')}
       <span data-cal-state="${esc(pg.id)}">${calStateHTML(pg)}</span><button class="hero-toggle" data-action="hero-ms" title="展開可以改階段、日期">${ms.length?`階段 ${done}/${ms.length}${cur?' · '+esc(cur.title):''}`:'拆階段'} ${heroOpen()?'▴':'▾'}</button></div>`;
   const list=heroOpen()?`<div class="ms-list">${msEditRows(pg)}</div>`:'';
-  return `<div class="gcard hero day"><div class="hero-top"><span>${esc(pg.title)} · 今天這一步</span>
+  const others=projectGoals().filter(x=>x.id!==pg.id);
+  const noteRow=heroOpen()?`<div class="hero-sub"><span>備註：</span><input class="hero-small" data-goal-note="${esc(pg.id)}" value="${esc(pg.note||'')}" placeholder="例如：這個很花時間、要先問對方（選填）" maxlength="200"/></div>`:'';
+  const otherRows=others.length?`<div class="hero-others"><div class="ho-hd">還有 ${others.length} 個進行中</div>${others.map(o=>{
+      const ms=o.milestones||[],nx=o.next&&o.next.text?`<span class="ho-step">${esc(o.next.text)}</span>`:'';
+      return `<button type="button" class="ho-row" data-action="focus-goal" data-g="${esc(o.id)}" title="換成這個目標">
+        <span class="ho-t">${o.group?`<i class="ho-g">${esc(o.group)}</i>`:''}${esc(o.title)}</span>${nx}
+        <span class="ho-d">${o.dueDate?md(o.dueDate)+' · ':''}${daysLeftTxt(d,o.dueDate)||'沒有日期'}</span></button>`;}).join('')}</div>`:'';
+  return `<div class="gcard hero day"><div class="hero-top"><span>${pg.group?`<i class="ho-g">${esc(pg.group)}</i>`:''}${esc(pg.title)} · 今天這一步</span>
       <span class="hero-meta">${meta}</span><button class="card-edit" data-edit-goal="${esc(pg.id)}" title="名稱、截止日、狀態">✏️ 編輯</button></div>
-    ${closeBanner(pg)}${main}${segs}${list}</div>`;
+    ${closeBanner(pg)}${main}${segs}${noteRow}${list}${otherRows}</div>`;
 }
 // 階段清單：每一列都是可以直接改的欄位
 function msEditRows(g){
@@ -271,7 +291,7 @@ function msEditRows(g){
       <input class="ms-due" data-ms-due="${i}" data-g="${gid}" value="${m.due?md(m.due):''}" placeholder="日期" maxlength="10" title="打 10/8 這樣；清空＝沒有日期"/>
       <button class="ms-flag${m.hard?' on':''}" data-ms-flag="${i}" data-g="${gid}" title="${m.hard?'硬期限（點一下取消）':'設成硬期限（例如送印）'}">🚩</button>
       <button class="ms-del" data-ms-del="${i}" data-g="${gid}" title="刪除這段">✕</button></div>`;
-  }).join('')+`<div class="ms-row ms-add"><span class="ms-dot">＋</span><input class="ms-title" data-ms-add="${gid}" placeholder="新增階段，可以順便打日期：送印 10/8" maxlength="70"/></div>`;
+  }).join('')+(ms.length||!g.dueDate?'':`<button type="button" class="focus-btn ms-tpl" data-action="stage-template" data-g="${gid}">套用常見四階段（準備素材→初稿→修改→完成輸出）</button>`)+`<div class="ms-row ms-add"><span class="ms-dot">＋</span><input class="ms-title" data-ms-add="${gid}" placeholder="新增階段，可以順便打日期：送印 10/8" maxlength="70"/></div>`;
 }
 // 改「今天這一步」的文字：沿用同一個 id，便利貼上的那一條跟著改，不會變成兩筆
 function renameStep(g,text,small){
@@ -352,9 +372,8 @@ function undoneList(){
   const c=stickyCtx();if(!c.todayMode)return '';
   const rows=c.items.map((x,i)=>({x,i})).filter(o=>!c.done['t'+o.i]);
   if(!rows.length){
-    const pg=projectGoal(),n=pg&&pg.next,j=n?c.items.findIndex(x=>x.id===n.id):-1;
-    const stepLeft=n&&n.text&&!(j>=0&&c.done['t'+j]);
-    return stepLeft?`<div class="goal-sub" style="margin-bottom:10px;">清單做完了，還差動畫這一步：${esc(n.text)}</div>`
+    const left=projectGoals().filter(g=>{const n=g.next,j=n&&n.id?c.items.findIndex(x=>x.id===n.id):-1;return n&&n.text&&!(j>=0&&c.done['t'+j]);});
+    return left.length?`<div class="goal-sub" style="margin-bottom:10px;">清單做完了，還差作品的這一步：${left.map(g=>esc(g.title+'：'+g.next.text)).join('、')}</div>`
       :`<div class="goal-sub ok" style="margin-bottom:10px;">今天的清單都做完了 🎉</div>`;
   }
   return `<div class="goal-sub" style="font-weight:700;margin-bottom:4px;">今天還沒做完的 <span class="goal-sub muted" style="font-weight:500;">（不順延就照實記成沒完成）</span></div>
@@ -363,13 +382,15 @@ function undoneList(){
     <div style="height:10px;"></div>`;
 }
 function bringNext(){
-  const pg=projectGoal();if(!pg||!pg.next||!pg.next.text)return '';
-  const id=pg.next.id;
-  if((typeof tdlRows!=='undefined'&&tdlRows.some(r=>r.id===id))||(S.tomorrowTDL||[]).some(r=>r.id===id))return '';
-  const c=stickyCtx(),i=c.items.findIndex(x=>x.id===id);
-  if(i>=0&&c.done['t'+i])return '';            // 今天已經做完的就不用帶
-  if(i>=0)return '';                            // 還在今天的清單 → 上面「沒做完的」可以直接排到明天
-  return `<button class="focus-btn" data-action="bring-next" data-g="${esc(pg.id)}" style="margin-top:8px;">＋ 把「${esc(pg.next.text)}」排到明天</button>`;
+  const c=stickyCtx();
+  return projectGoals().map(pg=>{
+    if(!pg.next||!pg.next.text)return '';
+    const id=pg.next.id;
+    if((typeof tdlRows!=='undefined'&&tdlRows.some(r=>r.id===id))||(S.tomorrowTDL||[]).some(r=>r.id===id))return '';
+    const i=c.items.findIndex(x=>x.id===id);
+    if(i>=0)return '';                            // 還在今天的清單（或已做完）→ 用上面「沒做完的」處理
+    return `<button class="focus-btn" data-action="bring-next" data-g="${esc(pg.id)}" style="margin:8px 8px 0 0;">＋ 把「${esc(pg.next.text)}」排到明天</button>`;
+  }).join('');
 }
 // 今天／明天 分頁：晚上收尾時段預設打開「明天」；自己點過就照自己的
 function listTab(){
@@ -400,19 +421,21 @@ function updateCount(){
 }
 // 方向頁：這陣子的目標（一行一個，點 ✏️ 調整）
 function goalListCard(gs){
-  const rows=gs.map(g=>{
+  const proj=gs.filter(g=>g.kind!=='body').sort((a,b)=>projectGoals().indexOf(a)-projectGoals().indexOf(b));
+  const body=gs.filter(g=>g.kind==='body');
+  const rows=[...proj,...body].map(g=>{
     let sub='';
     if(g.kind==='body'){sub=activeMetrics(g).map(m=>m.l+' '+m.target+m.unit).join('・')||'還沒設每週目標';}
     else{const ms=g.milestones||[];sub=ms.length?`階段 ${ms.filter(m=>m.done).length}/${ms.length}`:'還沒拆階段';}
-    return `<div class="dots-row" style="padding:7px 0;border-top:1px solid rgba(var(--secondary-rgb),.15);">
-      <span>${g.kind==='body'?'🏃':'🎬'}</span><span style="flex:1;min-width:0;font-weight:700;color:var(--tc);">${esc(g.title)}</span>
+    return `<div class="dots-row goal-li">
+      <span>${g.kind==='body'?'🏃':'🎬'}</span><span class="gl-t">${g.group?`<i class="ho-g">${esc(g.group)}</i>`:''}${esc(g.title)}${g.note?`<small class="gl-note">${esc(g.note)}</small>`:''}</span>
       <span class="goal-sub muted">${sub}${g.dueDate?' · '+dueTxt(g):''}</span>
       <button class="card-edit" data-edit-goal="${esc(g.id)}" title="編輯">✏️ 編輯</button></div>`;
   }).join('');
   return `<div class="gcard" style="margin-bottom:12px;"><div class="goal-hd"><span class="goal-title">這陣子的目標</span>
-    <span class="goal-sub muted" style="margin-left:auto;">卡片在「今天」</span></div>
+    <span class="goal-sub muted" style="margin-left:auto;">最近要交的排前面</span></div>
     ${rows||'<div class="goal-sub muted" style="margin-top:6px;">還沒有目標。</div>'}
-    <div class="goal-chips" style="margin-top:10px;"><button class="focus-btn" data-action="more">＋ 新增目標・封存・備份</button></div></div>`;
+    <div class="goal-chips" style="margin-top:10px;"><button class="focus-btn primary" data-action="quick-goals">＋ 一次貼上多個目標</button><button class="focus-btn" data-action="more">新增單一目標・封存・備份</button></div></div>`;
 }
 // 方向頁：作息一覽＋所有進行中的實驗
 function planSummaryCard(){
@@ -579,8 +602,9 @@ function render(force){
   if(M.tonight)M.tonight.innerHTML=tonightCard();
   // 短期目標卡放在「今天」：每天打開就看得到；「方向」只放一行一個的清單，用來調整
   if(M.cards)M.cards.innerHTML=gs.filter(g=>g.kind==='body').map(bodyCard).join('');
-  {const pg=projectGoal(),tl=document.querySelector('.list-card');
-   if(tl)tl.classList.toggle('hero-on',!!(pg&&pg.next&&pg.next.text&&ds()===curDay()));}
+  {const pg=projectGoal();
+   let st=document.getElementById('hero-hide');if(!st){st=document.createElement('style');st.id='hero-hide';document.head.appendChild(st);}
+   st.textContent=(pg&&pg.next&&pg.next.text&&ds()===curDay())?`.list-card .sticky-item.is-goal[data-goal="${CSS.escape(pg.id)}"]{display:none;}`:'';}
   if(M.moves)M.moves.innerHTML=moveChips();
   if(M.tags)M.tags.innerHTML=tagChips();
   if(M.undone)M.undone.innerHTML=undoneList();
@@ -642,6 +666,10 @@ function openProjectEditor(g){
     <div style="display:grid;grid-template-columns:minmax(0,1fr) 96px;gap:6px;">
       <input class="fm-in" id="ge-title" value="${esc(g.title)}" maxlength="60"/>
       <input class="fm-in" id="ge-due" value="${esc(g.dueDate?md(g.dueDate):'')}" placeholder="10/10" maxlength="10"/></div>
+    <div class="fm-lbl">分類／備註（選填）</div>
+    <div style="display:grid;grid-template-columns:110px minmax(0,1fr);gap:6px;">
+      <input class="fm-in" id="ge-group" value="${esc(g.group||'')}" placeholder="例如：生活影片" maxlength="12"/>
+      <input class="fm-in" id="ge-note" value="${esc(g.note||'')}" placeholder="例如：這個很花時間" maxlength="200"/></div>
     <div class="fm-lbl">階段（日期可以不填 · 🚩＝硬期限，例如送印）</div>
     <div id="ge-rows">${ms.map(stageRowHTML).join('')}</div>
     <button type="button" class="focus-btn" id="ge-add" style="margin-top:2px;">＋ 新增一段</button>
@@ -701,6 +729,7 @@ function openProjectEditor(g){
       });
       if(bad){softToast('有日期看不懂（紅框），打成 10/8 這樣就好',2800);return;}
       g.title=title;setDue(g,due);g.milestones=list;g.status=m.querySelector('#ge-status').value;
+      g.group=m.querySelector('#ge-group').value.trim();g.note=m.querySelector('#ge-note').value.trim();
       const text=m.querySelector('#ge-next').value.trim(),small=m.querySelector('#ge-small').value.trim();
       if(!g.next||g.next.text!==text){
         const oldId=g.next&&g.next.id,keepId=!!(oldId&&g.next.text&&text);
@@ -886,18 +915,72 @@ function openPlanEditor(){
     m.querySelector('#gp-pause').addEventListener('click',()=>{if(push(p?.status==='paused'?'active':'paused'))close();});
   });
 }
+// 一次貼上多個目標：貼文字 → 預覽（每一格都能改）→ 加入
+function openQuickGoals(){
+  const ph='例如：\n1.作品A(11月底做完)\n2.作品B(12/31)\n3.作品C(明年五月，工程很大)\n---\n生活影片\n1.送朋友的禮物(11/14)\n2.送媽媽的禮物(明年過年前)';
+  modal('一次貼上多個目標',`
+    <div class="fm-hint">一行一個目標。括號裡寫日期：「11/14」「11月底」「明年五月」「過年前」都看得懂；沒有編號的一行會當成分類。</div>
+    <textarea class="fm-in" id="qg-text" rows="9" style="width:100%;resize:vertical;line-height:1.6;" placeholder="${esc(ph)}"></textarea>
+    <div class="fm-actions"><button class="focus-btn primary" id="qg-parse" style="margin-left:auto;">整理看看</button></div>
+    <div id="qg-preview"></div>`,
+  (m,close)=>{
+    const box=m.querySelector('#qg-preview'),ta=m.querySelector('#qg-text');
+    const rowHTML=r=>`<div class="qg-row" data-qrow>
+      <div class="qg-1"><input class="fm-in" data-f="title" value="${esc(r.title)}" maxlength="60" placeholder="目標名稱"/>
+        <input class="fm-in" data-f="due" value="${r.due?(r.due.slice(0,4)!==curDay().slice(0,4)?r.due.slice(0,4)+'/':'')+md(r.due):''}" placeholder="日期" maxlength="12" title="打 11/14 這樣；明年的寫 2027/5/31"/>
+        <button type="button" class="fm-del" data-del title="不要這個">✕</button></div>
+      <div class="qg-2"><input class="fm-in" data-f="group" value="${esc(r.group)}" maxlength="12" placeholder="分類"/>
+        <input class="fm-in" data-f="note" value="${esc(r.note)}" maxlength="200" placeholder="備註（選填）"/></div>
+      <input type="hidden" data-f="fulldue" value="${esc(r.due)}"/></div>`;
+    m.querySelector('#qg-parse').addEventListener('click',()=>{
+      const rows=C.parseGoalLines(ta.value,curDay());
+      if(!rows.length){softToast('沒有看到目標，一行寫一個',2400);return;}
+      box.innerHTML=`<div class="fm-lbl">看看對不對（日期、名稱都能直接改）</div>${rows.map(rowHTML).join('')}
+        <div class="fm-hint">加入後，有日期的目標會在 Google 日曆放一個「🏁 截止」；階段之後再拆也可以。</div>
+        <div class="fm-actions"><button class="focus-btn primary" id="qg-add" style="margin-left:auto;">加入這些目標</button></div>`;
+      box.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',()=>b.closest('[data-qrow]').remove()));
+      box.querySelectorAll('[data-f="due"]').forEach(inp=>inp.addEventListener('input',()=>{inp.closest('[data-qrow]').querySelector('[data-f="fulldue"]').value='';}));
+      box.querySelector('#qg-add').addEventListener('click',()=>{
+        const made=[];let bad=false;
+        box.querySelectorAll('[data-qrow]').forEach(r=>{
+          const f=k=>r.querySelector(`[data-f="${k}"]`).value.trim();
+          if(!f('title'))return;
+          let due=f('fulldue');                       // 沒改過日期就用整理好的完整日期（含年份）
+          if(!due){const raw=f('due');due=raw?parseMD(raw):'';}
+          if(due===null){r.querySelector('[data-f="due"]').classList.add('bad');bad=true;return;}
+          made.push({id:uid(),kind:'project',title:f('title'),dueDate:due||'',event:'',status:'active',group:f('group'),note:f('note'),
+            milestones:[],next:{id:uid(),text:'',small:''},startOn:curDay(),createdAt:Date.now(),updatedAt:Date.now()});
+        });
+        if(bad){softToast('有日期看不懂（紅框），打成 11/14 這樣就好',2800);return;}
+        if(!made.length){softToast('沒有可以加入的',2000);return;}
+        data().projects.push(...made);sv(S);syncStateDebounced();
+        focusGoalOn(projectGoals()[0].id);close();softToast(`加入 ${made.length} 個目標 ✓`,2600);
+      });
+    });
+    ta.focus();
+  });
+}
+// 常用四階段：從今天到截止日平均排開（沒有階段時，展開的清單底下會出現這個按鈕）
+function applyStageTemplate(g){
+  const d=curDay();if(!g.dueDate){softToast('先設截止日，才能把階段排開',2600);return;}
+  const names=['準備素材','初稿','修改','完成輸出'],total=Math.max(0,daysBetween(d,g.dueDate));
+  g.milestones=names.map((t,i)=>({id:uid(),title:t,done:false,due:shiftDay(d,Math.round(total*(i+1)/names.length)),hard:i===names.length-1}));
+  saveGoal(g);softToast('排好了，日期可以直接改。日曆也會放上去',3200);
+}
 function openMore(){
   const f=data(),archived=f.projects.filter(x=>x.status==='archived'||x.status==='complete');
   const cloud=!GAS_URL?'目前只存在這台裝置。':(cloudSupported===false?'⚠️ 後端還是舊版，目標還沒同步到雲端。':'');
   modal('新增目標・封存・備份',`
     ${cloud?`<div class="fm-hint" style="color:#B0602A;">${esc(cloud)}</div>`:''}
     <div class="fm-lbl">新增目標</div>
-    <div class="goal-chips"><button class="focus-btn" data-new="project">🎬 作品型（有階段）</button><button class="focus-btn" data-new="body">🏃 身體型（每週次數）</button></div>
+    <div class="goal-chips"><button class="focus-btn primary" id="gm-quick">＋ 一次貼上多個目標</button></div>
+    <div class="goal-chips" style="margin-top:6px;"><button class="focus-btn" data-new="project">🎬 作品型（有階段）</button><button class="focus-btn" data-new="body">🏃 身體型（每週次數）</button></div>
     ${archived.length?`<div class="fm-lbl">已完成／封存（點一下恢復）</div><div class="goal-chips">${archived.map(x=>`<button class="focus-btn" data-restore="${esc(x.id)}">${esc(x.title)}</button>`).join('')}</div>`:''}
     <div class="fm-lbl">備份</div>
     <div class="goal-chips" style="align-items:center;"><button class="focus-btn" id="gm-export">下載完整備份</button>
       <label class="fm-hint">還原目標與睡前紀錄 <input id="focus-import" type="file" accept="application/json,.json"/></label></div>`,
   (m,close)=>{
+    m.querySelector('#gm-quick').addEventListener('click',()=>{m.remove();openQuickGoals();});
     m.querySelectorAll('[data-new]').forEach(b=>b.addEventListener('click',()=>{
       const isBody=b.dataset.new==='body';
       const g={id:uid(),kind:isBody?'body':'project',title:isBody?'新的身體目標':'新的作品',dueDate:'',event:'',status:'active',
@@ -996,6 +1079,9 @@ onMounts('click',ev=>{
   const a=el.dataset.action;
   if(a==='hero-ms'){try{localStorage.setItem('grandol_hero_ms',heroOpen()?'0':'1');}catch(e){}render(true);return;}
   if(a==='edit-plan'){openPlanEditor();return;}
+  if(a==='focus-goal'){focusGoalOn(el.dataset.g);render(true);return;}
+  if(a==='quick-goals'){openQuickGoals();return;}
+  if(a==='stage-template'){const g=data().projects.find(x=>x.id===el.dataset.g);if(g)applyStageTemplate(g);return;}
   if(a==='tonight-toggle'){try{localStorage.setItem('grandol_tonight',tonightOpen()?'0':'1');}catch(e){}render(true);return;}
   if(a==='cal-retry'){
     const g=data().projects.find(x=>x.id===el.dataset.g);if(!g)return;
@@ -1100,10 +1186,10 @@ onMounts('keydown',ev=>{
     g.milestones=list;
     t.value='';saveGoal(g);setTimeout(()=>$q(`[data-ms-add="${g.id}"]`)?.focus(),0);return;
   }
-  if(ev.key==='Enter'&&!isImeEnter(ev)&&t.dataset&&(t.dataset.msTitle!==undefined||t.dataset.msDue!==undefined||t.dataset.stepText!==undefined||t.dataset.smallText!==undefined||t.dataset.goalDue!==undefined)){
+  if(ev.key==='Enter'&&!isImeEnter(ev)&&t.dataset&&(t.dataset.msTitle!==undefined||t.dataset.msDue!==undefined||t.dataset.stepText!==undefined||t.dataset.smallText!==undefined||t.dataset.goalDue!==undefined||t.dataset.goalNote!==undefined)){
     ev.preventDefault();t.blur();return;
   }
-  if(ev.key==='Escape'&&t.dataset&&(t.dataset.msTitle!==undefined||t.dataset.msDue!==undefined||t.dataset.stepText!==undefined||t.dataset.smallText!==undefined||t.dataset.goalDue!==undefined)){
+  if(ev.key==='Escape'&&t.dataset&&(t.dataset.msTitle!==undefined||t.dataset.msDue!==undefined||t.dataset.stepText!==undefined||t.dataset.smallText!==undefined||t.dataset.goalDue!==undefined||t.dataset.goalNote!==undefined)){
     t.value=t.defaultValue;t.blur();return;
   }
   const inp=ev.target.closest('[data-next-in]');
@@ -1118,6 +1204,11 @@ onMounts('focusout',ev=>{
 });
 onMounts('change',ev=>{
   const el=ev.target,dd=el.dataset||{};
+  if(dd.goalNote!==undefined){
+    if(!writable()){el.value=el.defaultValue;return;}
+    const g=data().projects.find(x=>x.id===dd.goalNote);if(!g)return;
+    g.note=el.value.trim();el.defaultValue=el.value;saveQuiet(g);softToast('存好了 ✓',1200);return;
+  }
   if(dd.goalDue!==undefined){
     if(!writable()){el.value=el.defaultValue;return;}
     const g=data().projects.find(x=>x.id===dd.goalDue);if(!g)return;
@@ -1269,7 +1360,8 @@ function copyLines(dates,label){
       L.push('    每週目標：'+activeMetrics(x.g).map(m=>m.l+' '+m.target+' '+m.unit).join('、'));
       L.push(`    ${label}實際（${md(x.start)} 開始算，共 ${x.days} 天）：`+activeMetrics(x.g).map(m=>`${m.l} ${x.c[m.k]}${x.want[m.k]?'/'+x.want[m.k]:''} ${m.unit}`).join('、')+(x.restDays.length?`（不舒服 ${x.restDays.length} 天不算進目標）`:'')+`；活動共 ${x.c.minutes} 分鐘${x.c.rest?`、休息 ${x.c.rest} 天`:''}`);
     }else{
-      L.push(`  🎬 ${x.g.title}${x.g.dueDate?'：'+x.g.dueDate+' 截止':''}`);
+      L.push(`  🎬 ${x.g.group?'['+x.g.group+'] ':''}${x.g.title}${x.g.dueDate?'：'+x.g.dueDate+' 截止':''}`);
+      if(x.g.note)L.push(`    備註：${x.g.note}`);
       if(x.ms.length)L.push('    階段：'+x.ms.map(m=>(m.done?'✓':'○')+m.title+(m.due?'〔'+(m.hard?'🚩硬期限 ':'預計 ')+md(m.due)+'〕':'')+(m.doneOn?'(完成 '+md(m.doneOn)+(m.due&&m.doneOn>m.due?'，晚 '+daysBetween(m.due,m.doneOn)+' 天':'')+')':'')).join(' → '));
       if((x.g.dueHistory||[]).length)L.push('    改期：'+x.g.dueHistory.map(h=>`${md(h.on)} 從 ${md(h.from)||'沒有日期'} 改成 ${md(h.to)||'沒有日期'}`).join('；'));
       L.push(`    ${label}完成的階段：${x.doneIn.map(m=>m.title).join('、')||'無'}；每日一步完成 ${x.stepsDone}/${x.steps}`);

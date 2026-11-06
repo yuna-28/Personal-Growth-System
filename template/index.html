@@ -1069,8 +1069,8 @@ button{-webkit-tap-highlight-color:transparent;}
 @keyframes pageIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
 .page.active{animation:pageIn .22s ease;}
 </style>
-<link rel="stylesheet" href="focus.css?v=142">
-<script src="focus-core.js?v=142"></script>
+<link rel="stylesheet" href="focus.css?v=143">
+<script src="focus-core.js?v=143"></script>
 <style>
 /* ═══ v127 改版：迴圈主軸（今天／回顧／方向／我）═══ */
 .ui2-zone{font-family:'Baloo 2',sans-serif;font-size:13px;font-weight:800;color:var(--tc2);margin:18px 4px 8px;letter-spacing:.5px;}
@@ -1165,7 +1165,6 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 .today-list .sticky-empty{display:none;}
 .today-list .sticky-add{text-align:left!important;border-style:solid!important;border-color:rgba(var(--secondary-rgb),.25)!important;
   background:rgba(255,255,255,.55)!important;color:var(--tc3)!important;padding:9px 12px!important;border-radius:12px!important;}
-.today-list.hero-on .sticky-item.is-goal{display:none;}
 /* 重點大卡 */
 .hero{margin-bottom:12px!important;padding:16px 18px!important;}
 .hero.day{background:linear-gradient(135deg,rgba(var(--gold-rgb),.42),rgba(var(--gold-rgb),.18))!important;}
@@ -1205,7 +1204,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 .sleep-scene.night .ss-panel{background:rgba(28,36,64,.88)!important;}
 @media(min-width:1300px){.wrap{max-width:1256px;}}
 </style>
-<link rel="stylesheet" href="ds.css?v=142">
+<link rel="stylesheet" href="ds.css?v=143">
 </head>
 <body>
 <!-- 這四個彈窗特意放在 <body> 最前面、所有 <script> 之前：
@@ -1914,7 +1913,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v142';
+const APP_VER='v143';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // ── 注音／中文輸入法保護 ──────────────────────────────
@@ -3299,7 +3298,7 @@ function renderStickyNote(){
       const key='t'+i;
       const done=!!ctx.done[key];
       const cn=Math.max(0,+r.c||0);
-      return`<div class="sticky-item${r.goalId?' is-goal':''}" data-idx="${i}" ${r.goalId?'title="🎬 目標的這一步"':''}>
+      return`<div class="sticky-item${r.goalId?' is-goal':''}" data-idx="${i}"${r.goalId?` data-goal="${String(r.goalId).replace(/"/g,'')}" title="🎬 目標的這一步"`:''}>
         <span class="row-grip" title="拖曳調整順序">⠿</span>
         <div class="sticky-check${done?' done':''}" data-k="${key}">${done?'✓':''}</div>
         <span class="sticky-txt" style="${done?'text-decoration:line-through;opacity:.55;':''}">${r.theme?`<b>${esc(r.theme)}：</b>`:''}${esc(r.task||'')}${cn?`<span class="sticky-carry" title="被順延過 ${cn} 次">⏩${cn}</span>`:''}</span>
@@ -8052,6 +8051,6 @@ document.addEventListener('visibilitychange',()=>{
 
 
 
-<script src="focus.js?v=142"></script>
+<script src="focus.js?v=143"></script>
 </body>
 </html>

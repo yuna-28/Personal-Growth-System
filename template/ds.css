@@ -201,7 +201,6 @@
 .list-card .tdl-row-wrap{margin-bottom:6px;}
 .list-card #tdl-title{display:block;font-size:var(--ds-fs-xs);font-weight:700;color:#A08030;margin-bottom:var(--ds-2);}
 .list-card #sticky-date{display:block!important;position:absolute;right:18px;bottom:6px;font-size:22px;}
-.list-card.hero-on .sticky-item.is-goal{display:none;}
 /* 今天也做了 */
 .also-card .sec-hd{margin-bottom:var(--ds-2)!important;}
 .also-card .also-did{border:none!important;padding:0!important;margin:0!important;}
@@ -619,3 +618,31 @@ button.tonight-mini:hover{box-shadow:inset 0 0 0 1px var(--ds-line-2)!important;
 .why-toast .wt-a{display:flex;flex-wrap:wrap;gap:6px;}
 .why-toast button{height:30px;padding:0 12px;border:1px solid var(--ds-line-2);border-radius:999px;background:var(--ds-field);color:var(--ds-ink-2);font-size:var(--ds-fs-sm);font-weight:600;cursor:pointer;}
 .why-toast button:hover{border-color:var(--ds-primary);color:var(--ds-primary);}
+
+/* ── 12. v143：同時有好幾個作品目標 ───────────────────────── */
+.ho-g{font-style:normal;font-size:11px;font-weight:700;color:var(--ds-ink-3);background:var(--ds-sunken);border-radius:999px;padding:1px 8px;margin-right:6px;white-space:nowrap;}
+.hero-others{margin-top:var(--ds-3);padding-top:var(--ds-2);border-top:1px dashed rgba(160,128,48,.35);}
+.hero-others .ho-hd{font-size:var(--ds-fs-xs);font-weight:700;color:var(--ds-focus-ink);margin-bottom:4px;}
+.hero-others .ho-row{display:flex;align-items:center;gap:var(--ds-2);width:100%;padding:7px 8px;margin:0;border:none;border-radius:var(--ds-r-sm);background:transparent;text-align:left;cursor:pointer;font-family:var(--ds-font);font-size:var(--ds-fs-sm);color:var(--ds-ink);}
+.hero-others .ho-row:hover{background:rgba(255,255,255,.55);}
+.ho-row .ho-t{flex:1;min-width:0;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ho-row .ho-step{flex:1.2;min-width:0;color:var(--ds-ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ho-row .ho-d{white-space:nowrap;font-size:var(--ds-fs-xs);color:var(--ds-focus-ink);font-weight:700;}
+.ho-row .warn,.hero-top .warn{color:var(--ds-warn);}
+:root[data-night] .hero-others{border-top-color:rgba(205,187,138,.3);}
+:root[data-night] .hero-others .ho-row:hover{background:rgba(255,255,255,.07);}
+.goal-li{padding:7px 0;border-top:1px solid var(--ds-line);}
+.goal-li .gl-t{flex:1;min-width:0;font-weight:700;color:var(--ds-ink);}
+.goal-li .gl-note{display:block;font-weight:500;font-size:var(--ds-fs-xs);color:var(--ds-ink-3);margin-top:2px;}
+.ms-tpl{margin:6px 0 2px;min-height:30px!important;font-size:var(--ds-fs-xs)!important;}
+/* 一次貼上：預覽列 */
+.qg-row{padding:8px 0;border-top:1px solid var(--ds-line);}
+.qg-1{display:grid;grid-template-columns:minmax(0,1fr) 92px 26px;gap:6px;margin-bottom:6px;}
+.qg-2{display:grid;grid-template-columns:110px minmax(0,1fr);gap:6px;}
+/* 目標卡：編輯鈕固定在右上角，標題再長也不會把它擠到下一行 */
+.hero.day{position:relative;}
+.hero.day>.hero-top{padding-right:72px;}
+.hero.day>.hero-top .card-edit{position:absolute;top:10px;right:12px;margin:0;}
+.hero-others .ho-row .ho-t{flex:0 1 auto;max-width:58%;}
+.hero-others .ho-row .ho-step{flex:1 1 0;}
+.hero-others .ho-row .ho-d{margin-left:auto;}

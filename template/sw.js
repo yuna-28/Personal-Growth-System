@@ -4,15 +4,15 @@
 // 更新版本時把 CACHE_NAME 的數字 +1，舊快取會自動清掉
 // ═══════════════════════════════════════════════════════
 const CACHE_PREFIX = 'forest-cache-';
-const CACHE_NAME = CACHE_PREFIX + 'v142';
+const CACHE_NAME = CACHE_PREFIX + 'v143';
 
 const PRECACHE = [
   './',
   './index.html',
-  './focus-core.js?v=142',
-  './focus.js?v=142',
-  './focus.css?v=142',
-  './ds.css?v=142',
+  './focus-core.js?v=143',
+  './focus.js?v=143',
+  './focus.css?v=143',
+  './ds.css?v=143',
   './manifest.json',
   './puppy.png',
   './puppy_icon.png',

@@ -11,6 +11,19 @@ test('late ten minutes computed correctly',()=>assert.equal(C.result({inBedAt:'2
 test('23:50 before midnight is on time',()=>assert.equal(C.result({inBedAt:'2026-09-28T23:50:00+08:00'},{...plan,bed:'00:00'},'2026-09-28',new Date()).kind,'onTime'));
 test('missing is not failure',()=>assert.equal(C.result(null,plan,'2026-09-28',new Date('2026-09-29T04:00:00+08:00')).kind,'missing'));
 test('sleep record decides on-time when bed was not pressed',()=>{const t=C.snapshot({...plan,bed:'01:00'},'2026-09-28').bedAt;assert.equal(C.sleepResult('00:30',t,'2026-09-28').kind,'onTime');const r=C.sleepResult('03:10',t,'2026-09-28');assert.equal(r.kind,'late');assert.equal(r.delta,130);assert.equal(C.sleepResult('',t,'2026-09-28'),null);});
+test('pasted goal list: groups, month-end, next-year, new-year dates',()=>{
+  const txt='我現在有一些創作目標：\n1.A生日(希望在11月底做完)\n2.B知識會(希望12月底做完)\n3.C影片(希望明年五月完成，這個工程量浩大！！！要花非常多時間)\n---\n生活影片剪輯\n1.要送給D的禮物(11/14要做好)\n2.送給E整年的禮物(可能明年過年前要做好)';
+  const r=C.parseGoalLines(txt,'2026-11-06');
+  assert.deepEqual(r.map(x=>[x.group,x.title,x.due]),[['創作目標','A生日','2026-11-30'],['創作目標','B知識會','2026-12-31'],['創作目標','C影片','2027-05-31'],['生活影片剪輯','要送給D的禮物','2026-11-14'],['生活影片剪輯','送給E整年的禮物','2027-02-05']]);
+  assert.equal(r[0].note,'');assert.equal(r[3].note,'');assert.equal(r[4].note,'');
+  assert.match(r[2].note,/工程量浩大/);
+});
+test('goal lines without bullets or dates still work',()=>{
+  const r=C.parseGoalLines('F 12/3\nG\nH 1月底','2026-12-20');
+  assert.deepEqual(r.map(x=>[x.title,x.due]),[['F','2026-12-03'],['G',''],['H','2027-01-31']]);
+  assert.equal(C.parseDateText('年前','2027-02-06').due,'2028-01-25');
+  assert.equal(C.parseDateText('13/45','2026-11-06'),null);
+});
 test('future night remains pending',()=>assert.equal(C.result(null,plan,'2026-09-28',new Date('2026-09-28T22:00:00+08:00')).label,'尚未到時間'));
 test('snapshot survives plan change',()=>{const w={inBedAt:'2026-09-29T01:00:00+08:00',targetSnapshot:C.snapshot(plan,'2026-09-28')};assert.equal(C.result(w,{...plan,bed:'00:00'},'2026-09-28',new Date()).kind,'onTime');});
 test('effective history and pause',()=>{const f={revisions:[plan,{...plan,id:'r2',effectiveFrom:'2026-10-01',status:'paused'}]};assert.equal(C.planFor(f,'2026-09-27'),null);assert.equal(C.planFor(f,'2026-09-28').id,'r1');assert.equal(C.snapshot(C.planFor(f,'2026-10-01'),'2026-10-01'),null);});

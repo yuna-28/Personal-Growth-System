@@ -61,6 +61,70 @@
     }
     return out;
   }
-  const api={stages,dateKey,validDate,validTime,targetAt,clean,merge,planFor,snapshot,result,sleepResult,mergeWind};
+  // ── 一次貼上多個目標：「作品A(希望在11月底做完)」→ 標題、日期、備註、分類 ──────────
+  // 農曆新年（除夕前一天是 eve）；超過表格的年份就不猜
+  const CNY={2027:'2027-02-06',2028:'2028-01-26',2029:'2029-02-13',2030:'2030-02-03'};
+  const ZH={一:1,二:2,三:3,四:4,五:5,六:6,七:7,八:8,九:9,十:10,十一:11,十二:12};
+  const monthNum=t=>/^\d+$/.test(t)?+t:(ZH[t]||0);
+  const addDays=(ds,n)=>{const d=new Date(ds+'T12:00:00');d.setDate(d.getDate()+n);return dateKey(d);};
+  const daysFrom=(a,b)=>Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/86400000);
+  // 沒說年份：過去超過 60 天就當作明年（跟卡片上打 10/8 的規則一樣）
+  function guessYear(today,m,d){
+    const y=+today.slice(0,4),t=new Date(y,m-1,d,12);
+    return (daysFrom(dateKey(t),today)>60)?y+1:y;
+  }
+  const MON='(\\d{1,2}|十[一二]?|[一二三四五六七八九])';
+  function parseDateText(txt,today){
+    txt=String(txt||'');let m;
+    const ty=+today.slice(0,4);
+    // 年前＝除夕那天（要在團圓之前做好）
+    if((m=txt.match(/(?:明年)?(?:過年前|年前)/))){
+      const eve=Object.values(CNY).map(x=>addDays(x,-1)).find(x=>x>=today);
+      return eve?{due:eve,text:m[0]}:null;
+    }
+    // 11/14、11月14日
+    if((m=txt.match(/(明年)?\s*(\d{1,2})\s*(?:[\/.]|月)\s*(\d{1,2})\s*[日號号]?/))){
+      const mo=+m[2],d=+m[3];if(mo<1||mo>12||d<1||d>31)return null;
+      const y=m[1]?ty+1:guessYear(today,mo,d),due=dateKey(new Date(y,mo-1,d,12));
+      return validDate(due)&&+due.slice(5,7)===mo?{due,text:m[0]}:null;
+    }
+    // 11月底、明年五月（只說月份＝那個月底）
+    if((m=txt.match(new RegExp('(今年|明年)?\\s*'+MON+'\\s*月\\s*(?:底|末|前)?')))){
+      const mo=monthNum(m[2]);if(mo<1||mo>12)return null;
+      const y=m[1]==='明年'?ty+1:(m[1]==='今年'?ty:guessYear(today,mo,new Date(ty,mo,0).getDate()));
+      return {due:dateKey(new Date(y,mo,0,12)),text:m[0]};
+    }
+    return null;
+  }
+  const BULLET=/^\s*(?:\d+\s*[.、)．）]|[-*•・])\s*(.+?)\s*$/;
+  const FILLER=/[希望可能大概預計要在做完完成做好前之的，,。!！?？\s（）()]/g;
+  function parseGoalLines(text,today){
+    const lines=String(text||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+    const hasBullets=lines.some(l=>BULLET.test(l)),out=[];let group='';
+    lines.forEach(line=>{
+      if(/^[-—–_=*]{3,}$/.test(line)){group='';return;}
+      const bm=line.match(BULLET);
+      if(hasBullets&&!bm){   // 沒有編號的一行＝分類標題（「生活影片剪輯」「我現在有一些創作目標：」）
+        group=line.replace(/[：:]\s*$/,'').replace(/^我(現在|目前)?(有|還有)?(一些|幾個)?/,'').trim();return;
+      }
+      const body=bm?bm[1]:line;
+      const pm=body.match(/^(.*?)\s*[（(](.*)[）)]\s*$/);
+      let title,inner='';
+      if(pm){title=pm[1].trim();inner=pm[2].trim();}else title=body;
+      // 日期先看括號裡，沒有再看整行
+      let dt=inner?parseDateText(inner,today):null,from=inner;
+      if(!dt){dt=parseDateText(pm?title:body,today);from=pm?title:body;}
+      let note='';
+      if(pm){
+        const rest=dt?inner.replace(dt.text,''):inner;
+        if(rest.replace(FILLER,'').length>=2)note=inner;   // 括號裡除了日期還有別的話，留成備註
+      }
+      if(dt&&!pm)title=body.replace(dt.text,'').replace(/[\s,，、]+$/,'').replace(/(希望|要|在|前|做完|完成|做好)+$/,'').replace(/^(希望|在)/,'').trim();
+      if(!title)return;
+      out.push({group,title,due:dt?dt.due:'',note});
+    });
+    return out;
+  }
+  const api={stages,dateKey,validDate,validTime,targetAt,clean,merge,planFor,snapshot,result,sleepResult,mergeWind,parseDateText,parseGoalLines};
   root.FocusCore=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);
