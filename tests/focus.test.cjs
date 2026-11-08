@@ -189,4 +189,18 @@ test('GAS combines independent bed event with existing phone event',()=>{
  gas.saveEntry_({date:'2026-09-28',health:JSON.stringify({sleep:{windDown:{inBedAt:'2026-09-28T18:00:00Z',updatedAt:2}}})});
  const w=JSON.parse(table[1][1]).sleep.windDown;assert.ok(w.phoneAwayAt);assert.ok(w.inBedAt);
 });
+test('weight: averages, not single days; compares only after two weeks',()=>{
+  const off=[-0.4,0.4,-0.2,0.2,0,-0.3,0.3];   // 一天一天會跳，但一週平均不動
+  const L=[];for(let i=0;i<28;i++){const d=new Date('2026-11-19T12:00:00');d.setDate(d.getDate()+i);const day=C.dateKey(d);L.push({day,kg:i<7?63.0+off[i]:(i>=21?62.3+off[i%7]:62.8)});}
+  const r=C.weightTrend(L,'2026-12-16',1);
+  assert.equal(r.start,63);assert.equal(r.recent,62.3);assert.equal(r.delta,-0.7);assert.equal(r.expect,-0.7);assert.equal(r.ready,true);assert.equal(r.n,28);
+  const early=C.weightTrend(L.slice(0,9),'2026-11-27',1);assert.equal(early.ready,false);assert.equal(early.delta,null);assert.equal(early.expect,null);
+});
+test('weight: bad values ignored, no data is null, perMonth 0 means no expectation',()=>{
+  assert.equal(C.weightTrend([],'2026-12-01',1),null);
+  assert.equal(C.weightTrend([{day:'2026-11-19',kg:0},{day:'2026-11-20',kg:'abc'},{day:'2026-11-21',kg:400},{day:'bad',kg:60}],'2026-12-01',1),null);
+  const L=[];for(let i=0;i<20;i++){const d=new Date('2026-11-19T12:00:00');d.setDate(d.getDate()+i);L.push({day:C.dateKey(d),kg:'62.5'});}
+  const r=C.weightTrend(L,'2026-12-08',0);assert.equal(r.start,62.5);assert.equal(r.expect,null);assert.equal(r.delta,0);
+  const gap=C.weightTrend([{day:'2026-11-19',kg:63},{day:'2026-11-20',kg:63}],'2026-12-20',1);assert.equal(gap.recent,null);assert.equal(gap.delta,null);
+});
 console.log(`${n} tests passed`);

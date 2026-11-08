@@ -319,6 +319,34 @@ function dueTxt(g){
   return `${md(g.dueDate)}${g.event?' '+esc(g.event):''} · ${left>0?left+' 天':(left===0?'今天':'已過 '+(-left)+' 天')}`;
 }
 // ── 身體型目標卡：本週點點＋動一動 ──────────────
+// ── 體重：每天一個數字，只看平均 ──────────────────────────
+// 存在每天的 health.body.weight（公斤）。畫面主角是「近 7 天平均」，不是今天的數字；
+// 沒量不算失敗、沒有連續天數、上升也不會變紅。
+const weightOf=day=>{const b=(health(day)||{}).body;const w=b&&+b.weight;return w>0?w:0;};
+function weightList(){
+  const t=curDay(),out=[];
+  (S.entries||[]).forEach(e=>{const w=e.health&&e.health.body&&+e.health.body.weight;if(w>0&&e.date!==t)out.push({day:e.date,kg:w});});
+  const tw=weightOf(t);if(tw)out.push({day:t,kg:tw});   // 今天的還在草稿裡，不一定已進 entries
+  return out;
+}
+const wSign=x=>(x>0?'＋':x<0?'−':'±')+Math.abs(x).toFixed(1);
+function weightRow(g){
+  const d=ds(),cur=weightOf(d),pm=g.weightPerMonth===undefined?1:(+g.weightPerMonth||0);
+  const t=C.weightTrend(weightList(),curDay(),pm);
+  let sum;
+  if(!t)sum='每天起床後、吃東西前量一次，打進來就好。看的是平均，不看一天的起伏。';
+  else if(t.recent==null)sum='最近 7 天沒有記錄，量了再打進來就會接上。';
+  else if(!t.ready)sum=`已記 ${t.n} 天。滿兩週後開始跟起點比；現在先看平均就好。`;
+  else{
+    const ok=t.expect!=null&&t.delta<=t.expect+0.3;
+    sum=`比起點 <b>${wSign(t.delta)}</b> kg（起點 ${t.start}，${md(t.first)} 起）`
+      +(t.expect!=null?`・每月 −${pm} 的速度，現在約 ${wSign(t.expect)}　<span class="wt-st${ok?' ok':''}">${ok?'✓ 跟得上':'比預期慢一點，不急；一個月的平均才準'}</span>`:'');
+  }
+  return `<div class="wt-box"><div class="dots-row"><span class="dl">體重</span>
+      <input class="wt-in" data-weight="${esc(g.id)}" inputmode="decimal" maxlength="5" placeholder="今天" value="${cur?cur.toFixed(1):''}" title="起床後、吃東西前量一次；清空＝刪掉這天的" aria-label="${esc(md(d))} 體重"/><span class="wt-u">kg</span>
+      <span class="dn" title="最近 7 天的平均">${t&&t.recent!=null?`7 天平均 ${t.recent}`:''}</span></div>
+    <div class="goal-sub muted wt-sum">${sum}</div></div>`;
+}
 function bodyCard(g){
   const d=ds(),st=weekStats(d,g);let suggested=!!closeBanner(g);
   const mon=mondayOfDs(d);let restN=0;for(let i=0;i<7;i++){const day=shiftDay(mon,i);if(day>d)break;if(isRestDay(day))restN++;}
@@ -336,6 +364,7 @@ function bodyCard(g){
   return `<div class="gcard goal-card">${pgNow&&closeBanner(pgNow)?'':closeBanner(g)}<div class="goal-hd"><span class="goal-title">${esc(g.title)}</span><span class="goal-sub muted">本週${restN?` · 不舒服 ${restN} 天不算`:''}</span>
       <span class="goal-sub" style="margin-left:auto;">${dueTxt(g)}</span><button class="card-edit" data-edit-goal="${esc(g.id)}" title="編輯">✏️ 編輯</button></div>
     ${rows?`<div style="display:flex;flex-direction:column;gap:7px;margin-top:8px;" title="本週，週一重新開始">${rows}</div>`:'<div class="goal-sub muted">還沒設每週目標，點 ✏️ 設定</div>'}
+    ${weightRow(g)}
   </div>`;
 }
 function expRows(){
@@ -1124,6 +1153,8 @@ function openBodyEditor(g){
     <div class="fm-lbl">每週要做到的項目（名字、單位、每週幾次都能改；0＝先不追）</div>
     <div id="gb-metrics">${metricsOf(g).map(metricRowHTML).join('')}</div>
     <button type="button" class="focus-btn" id="gb-add">＋ 新增一項（在體態卡上自己打勾）</button>
+    <div class="fm-lbl">體重：每月想減幾公斤（0＝先不追；看的是平均，不是一天的數字）</div>
+    <input class="fm-in" id="gb-wpm" value="${g.weightPerMonth===undefined?1:esc(String(g.weightPerMonth))}" maxlength="4" style="width:90px;"/>
     <div class="fm-lbl">「今天也做了」的運動選項（點一下就記，分鐘會加進運動紀錄）</div>
     <div id="gb-moves">${movesOf(g).map(moveRowHTML).join('')}</div>
     <button type="button" class="focus-btn" id="gb-add-move">＋ 新增運動</button>
@@ -1144,6 +1175,7 @@ function openBodyEditor(g){
         target:+r.querySelector('[data-f="target"]').textContent||0,src:r.querySelector('[data-f="src"]').value||'manual'})).filter(x=>x.l);
       g.title=title;setDue(g,due);g.event=m.querySelector('#gb-event').value.trim();g.status=m.querySelector('#gb-status').value;
       g.metrics=metrics;g.moves=readMoves(m);
+      {const w=parseFloat(m.querySelector('#gb-wpm').value);g.weightPerMonth=Number.isFinite(w)&&w>=0&&w<=10?Math.round(w*10)/10:1;}
       // 舊版 App 只認得 targets：內建的三項同步寫一份
       g.targets={move:0,shoulder:0,bed:0};metrics.forEach(x=>{if(x.src in g.targets)g.targets[x.src]=x.target;});
       g.updatedAt=Date.now();sv(S);syncStateDebounced();close();softToast('存好了 ✓',2000);
@@ -1587,6 +1619,16 @@ onMounts('focusout',ev=>{
   setTimeout(()=>{if(justDone&&!inMounts(document.activeElement)){justDone='';render(true);}},150);
 });
 // ── 計畫、檢查日、待確認：欄位改完就存 ──
+onMounts('change',ev=>{
+  const el=ev.target;if(!el.dataset||el.dataset.weight===undefined)return;
+  if(!writable()){el.value=el.defaultValue;return;}
+  const d=ds(),raw=(el.value||'').trim();
+  const h=health(d);h.body={...(h.body||{})};
+  if(!raw){if(h.body.weight===undefined)return;delete h.body.weight;saveHealth(d,h);render(true);softToast('這天的體重刪掉了',1600);return;}
+  const v=parseFloat(raw.replace('，','.'));
+  if(!Number.isFinite(v)||v<20||v>300){el.value=el.defaultValue;softToast('體重看不懂，打成 62.4 這樣就好',2600);return;}
+  h.body.weight=Math.round(v*10)/10;saveHealth(d,h);render(true);softToast('記好了 ✓',1200);
+});
 onMounts('change',ev=>{
   const el=ev.target,dd=el.dataset||{};
   if(!isField(el)&&dd.todoDone===undefined&&dd.planC===undefined)return;
@@ -2235,7 +2277,12 @@ function rhythmLine(day){
 }
 // 計畫的期間摘要：趕工週、檢查日、最低標準統計、待確認
 function planLines(dates){
-  const pl=planOf(),L=[];if(!pl)return L;
+  const pl=planOf(),L=[];
+  {const bg=bodyGoal(),pm=bg&&bg.weightPerMonth!==undefined?(+bg.weightPerMonth||0):1,t=C.weightTrend(weightList(),curDay(),pm);
+   if(t&&t.recent!=null){
+     const inRange=weightList().filter(x=>x.day>=dates[0]&&x.day<=dates[dates.length-1]);
+     L.push(`⚖️ 體重（看平均，一天的數字會跳）：這段期間記了 ${inRange.length} 天；近 7 天平均 ${t.recent} kg`+(t.ready?`，起點 ${t.start}（${md(t.first)} 起），比起點 ${wSign(t.delta)}`+(t.expect!=null?`；每月 −${pm} 的速度現在約 ${wSign(t.expect)}`:''):'（記滿兩週才開始跟起點比）'));}}
+  if(!pl)return L;
   const first=dates[0],last=dates[dates.length-1],past=dates.filter(x=>x<=curDay());
   const per=live(pl.periods).filter(x=>x.from<=last&&x.to>=first);
   if(per.length)L.push('🛡 這段期間的趕工週與暫停：'+per.map(x=>`${md(x.from)}–${md(x.to)} ${x.label}${x.mode==='pause'?'（習慣暫停，不計失敗）':''}`).join('；'));

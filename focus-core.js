@@ -316,7 +316,26 @@
     if(key==='doneAmt'){if(s.doneAmt!==undefined)s.asOf=validDate(opts.today)?opts.today:dateKey(new Date());else delete s.asOf;}
     return {speed:speedHas(s)?s:null};
   }
+  // ── 體重：看平均，不看一天的起伏 ────────────────────────────────────
+  // list：[{day,kg}]。起點＝第一筆起 7 天的平均；現在＝最近 7 天的平均。
+  // 每月想減 perMonth 公斤：照天數推算「現在大約該到哪」，只呈現、不評分。
+  // 兩個平均的中心差 (days-6) 天，所以預期變化＝-perMonth×(days-6)/30.4；滿 14 天才開始比，避免兩段重疊。
+  function weightTrend(list,today,perMonth){
+    const pm=Number.isFinite(+perMonth)&&+perMonth>=0?+perMonth:1;
+    const pts=(list||[]).map(x=>({day:x&&x.day,kg:numOf(x&&x.kg)})).filter(x=>validDate(x.day)&&x.day<=today&&x.kg>=20&&x.kg<=300)
+      .sort((a,b)=>a.day<b.day?-1:a.day>b.day?1:0);
+    if(!pts.length)return null;
+    const shift=(d,n)=>{const x=new Date(d+'T12:00:00');x.setDate(x.getDate()+n);return dateKey(x);};
+    const avg=a=>a.length?a.reduce((t,x)=>t+x.kg,0)/a.length:null;
+    const r1=x=>x==null?null:Math.round(x*10)/10;
+    const first=pts[0].day,days=Math.round((new Date(today+'T12:00:00')-new Date(first+'T12:00:00'))/86400000);
+    const start=avg(pts.filter(x=>x.day<=shift(first,6))),recent=avg(pts.filter(x=>x.day>=shift(today,-6)));
+    const ready=days>=13;
+    return {n:pts.length,first,days,ready,perMonth:pm,start:r1(start),recent:r1(recent),
+      delta:ready&&recent!=null?r1(recent-start):null,
+      expect:ready&&pm>0?r1(-pm*(days-6)/30.4):null};
+  }
   const api={stages,dateKey,validDate,validTime,targetAt,clean,merge,planFor,snapshot,result,sleepResult,mergeWind,parseDateText,parseGoalLines,applyPlan,ruleMet,itemDay,periodOf,mergePlan,cleanPlan,toMin,
-    speedHas,speedDays,speedMissing,speedCalc,speedText,speedSet,fmtNum,mdText};
+    speedHas,speedDays,speedMissing,speedCalc,speedText,speedSet,fmtNum,mdText,weightTrend};
   root.FocusCore=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);

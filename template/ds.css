@@ -175,6 +175,15 @@
 /* 體態卡：自己打勾的項目 */
 .goal-card .dots-row{display:flex;align-items:center;gap:var(--ds-2);}
 .goal-card .dots-row .mt-tick{min-height:26px!important;padding:0 10px!important;font-size:var(--ds-fs-xs)!important;}
+/* 體重：一個數字，主角是近 7 天平均 */
+.wt-box{margin-top:var(--ds-3);padding-top:var(--ds-3);border-top:1px solid var(--ds-line);}
+.wt-in{width:64px;font-family:var(--ds-font);font-size:var(--ds-fs-sm);font-weight:700;color:var(--ds-ink);text-align:center;background:var(--ds-field);border:1px solid var(--ds-line-2);border-radius:6px;padding:4px 6px;outline:none;}
+.wt-in:focus{border-color:var(--ds-primary);box-shadow:0 0 0 3px var(--ds-primary-soft);}
+.wt-u{font-size:var(--ds-fs-xs);color:var(--ds-ink-3);}
+.wt-sum{margin-top:4px;line-height:1.7;}
+.wt-sum b{color:var(--ds-ink);}
+.wt-st{font-weight:700;color:var(--ds-ink-3);}
+.wt-st.ok{color:var(--ds-good);}
 .also-card .sec-hd{display:flex;align-items:center;}
 /* 便利貼：今天／明天清單 */
 .list-card{position:relative;background:linear-gradient(160deg,#FFF7DC,#FCEEB8)!important;border:none!important;border-radius:4px 16px 16px 16px!important;
