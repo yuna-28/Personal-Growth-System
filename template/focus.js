@@ -456,44 +456,6 @@ function updateCount(){
   el.textContent=total?`${done}/${total}`:'';
 }
 // 方向頁：這陣子的目標（一行一個，點 ✏️ 調整）
-function goalListCard(gs){
-  const proj=gs.filter(g=>g.kind!=='body').sort((a,b)=>projectGoals().indexOf(a)-projectGoals().indexOf(b));
-  const body=gs.filter(g=>g.kind==='body');
-  const rows=[...proj,...body].map(g=>{
-    let sub='';
-    if(g.kind==='body'){sub=activeMetrics(g).map(m=>m.l+' '+m.target+m.unit).join('・')||'還沒設每週目標';}
-    else{const ms=g.milestones||[];sub=ms.length?`階段 ${ms.filter(m=>m.done).length}/${ms.length}`:'還沒拆階段';}
-    return `<div class="dots-row goal-li">
-      <span>${g.kind==='body'?'🏃':'🎬'}</span><span class="gl-t">${g.group?`<i class="ho-g">${esc(g.group)}</i>`:''}${esc(g.title)}${g.note?`<small class="gl-note">${esc(g.note)}</small>`:''}</span>
-      <span class="goal-sub muted">${sub}${g.dueDate?' · '+dueTxt(g):''}</span>
-      <button class="card-edit" data-edit-goal="${esc(g.id)}" title="編輯">✏️ 編輯</button></div>`;
-  }).join('');
-  return `<div class="gcard" style="margin-bottom:12px;"><div class="goal-hd"><span class="goal-title">這陣子的目標</span>
-    <span class="goal-sub muted" style="margin-left:auto;">最近要交的排前面</span></div>
-    ${rows||'<div class="goal-sub muted" style="margin-top:6px;">還沒有目標。</div>'}
-    <div class="goal-chips" style="margin-top:10px;"><button class="focus-btn primary" data-action="quick-goals">＋ 一次貼上多個目標</button><button class="focus-btn" data-action="more">新增單一目標・封存・備份</button></div></div>`;
-}
-// 方向頁：作息一覽＋所有進行中的實驗
-function planSummaryCard(){
-  const p=C.planFor(data(),ds());
-  const r=p?routine(ds()):null;
-  const ex=r?r.steps.filter(x=>x.k!=='phone'&&x.k!=='bed').map(x=>`${esc(x.at)} ${esc(x.label)}`).join('、'):'';
-  return `<div class="gcard" style="margin-bottom:12px;"><div class="goal-hd"><span class="goal-title">作息與睡前流程</span>
-    <button class="card-edit" data-action="edit-plan" title="改時間、改每一步" style="margin-left:auto;">✏️ 編輯</button></div>
-    ${p?`<div class="goal-sub" style="margin-top:6px;">${p.status==='paused'?'（暫停中）':''}${esc(p.phone)} 收手機 · <b>${esc(p.bed)} 上床</b> · ${esc(p.wake)} 起床</div>
-      <div class="goal-sub muted" style="margin-top:3px;">${ex||'收手機前沒有其他步驟'}</div>`
-      :`<div class="goal-sub muted" style="margin-top:6px;">還沒設定。<a href="#" data-action="edit-plan" style="color:var(--secondary);">設定想幾點上床</a></div>`}</div>`;
-}
-function expOverviewCard(){
-  const list=data().experiments.filter(e=>e.status!=='archived');
-  return `<div class="gcard" style="margin-bottom:12px;"><div class="goal-hd"><span class="goal-title">進行中的實驗</span>
-    <span class="goal-sub muted" style="margin-left:auto;">回顧時決定，最多 3 個</span></div>
-    ${list.length?list.map(e=>`<div class="dots-row" style="padding:6px 0;border-top:1px solid rgba(var(--secondary-rgb),.15);">
-        <span style="flex:1;min-width:0;">${esc(e.text)}</span><span class="goal-sub muted">${expLabelFreq(e)} · ${PLACES[e.place]||''}</span>
-        <button class="goal-more" data-exp-end="${esc(e.id)}" style="margin:0;">結束</button></div>`).join('')
-      :'<div class="goal-sub muted" style="margin-top:6px;">還沒有。在「回顧」把 Claude 的建議貼回來，或自己加一個。</div>'}
-    <div class="goal-chips" style="margin-top:10px;"><button class="focus-btn" data-loop-add="1">＋ 自己加一個實驗</button></div></div>`;
-}
 // ── ③ 今晚時間軸 ─────────────────────────────────
 function tonightCard(){
   const d=ds(),r=routine(d);
@@ -842,52 +804,6 @@ function savePlan(){const p=planOf();if(!p)return;p.updatedAt=Date.now();sv(S);s
 // 在輸入框裡按 Enter 新增時要馬上看到新的一列（游標還在輸入框，等「打完字」會一直等不到）
 function savePlanNow(){const p=planOf();if(!p)return;p.updatedAt=Date.now();sv(S);syncStateDebounced();render(true);}
 function ensurePlan(){const f=data();if(!f.plan){f.plan={id:'__plan',version:1,title:'',updatedAt:0,importedAt:0,calDetail:true,cal:{},periods:[],events:[],todos:[],items:[]};}return f.plan;}
-function tlRange(){try{return localStorage.getItem('grandol_tl')||'all';}catch(e){return 'all';}}
-function timelineHTML(){
-  const d=curDay(),pl=planOf(),range=tlRange();
-  const rows=projectGoals().map(g=>{
-    const ph=(g.phases||[]).filter(x=>x.from&&x.to),ds=(g.milestones||[]).filter(m=>m.due).map(m=>m.due).sort();
-    const start=ph.length?ph.map(x=>x.from).sort()[0]:(g.startOn&&g.startOn<=(g.dueDate||'9999')?g.startOn:(ds[0]||g.dueDate||d));
-    const end=[g.dueDate||'',...ph.map(x=>x.to),ds[ds.length-1]||''].sort().pop();
-    return {g,start,end,ph};
-  }).filter(r=>r.end).sort((a,b)=>a.start.localeCompare(b.start)||a.end.localeCompare(b.end));
-  const evs=live(pl&&pl.events).filter(e=>e.from),per=live(pl&&pl.periods).filter(x=>x.from&&x.to);
-  if(!rows.length&&!evs.length)return '<div class="goal-sub muted">還沒有帶日期的目標。</div>';
-  let lo,hi;
-  if(range==='8w'){lo=shiftDay(d,-3);hi=shiftDay(d,53);}
-  else{lo=[shiftDay(d,-7),...rows.map(r=>r.start),...evs.map(e=>e.from),...per.map(x=>x.from)].sort()[0];
-       hi=shiftDay([...rows.map(r=>r.end),...evs.map(e=>e.to||e.from),...per.map(x=>x.to),d].sort().pop(),5);}
-  const total=daysBetween(lo,hi)+1,pct=x=>Math.max(0,Math.min(100,daysBetween(lo,x)/total*100));
-  const span=(a,b)=>{const l=pct(a),r=Math.max(l+.8,pct(shiftDay(b,1)));return `left:${l}%;width:${Math.min(100,r)-l}%;`;};
-  const vis=(a,b)=>b>=lo&&a<=hi;
-  // 月份刻度
-  const ticks=[];for(let x=lo.slice(0,8)+'01';x<=hi;){const dt=new Date(x+'T12:00:00');if(x>=lo)ticks.push(x);dt.setMonth(dt.getMonth()+1);x=C.dateKey(dt);}
-  const axis=ticks.map(x=>`<span class="tl-tick" style="left:${pct(x)}%">${+x.slice(5,7)===1||x===ticks[0]?x.slice(2,4)+'/':''}${+x.slice(5,7)}月</span>`).join('');
-  const grid=ticks.map(x=>`<i class="tl-grid" style="left:${pct(x)}%"></i>`).join('');
-  const bands=per.filter(x=>vis(x.from,x.to)).map(x=>`<i class="tl-band ${x.mode}" style="${span(x.from,x.to)}" title="${esc((x.mode==='pause'?'習慣暫停：':'趕工週：')+x.label+' '+md(x.from)+'–'+md(x.to))}"></i>`).join('');
-  const today=d>=lo&&d<=hi?`<i class="tl-today" style="left:${pct(d)}%" title="今天"></i>`:'';
-  // 同時進行幾個：每週算一次，顏色越深越擠
-  let busy='',maxN=1;const weeks=[];for(let w=lo;w<=hi;w=shiftDay(w,7)){const we=shiftDay(w,6),n=rows.filter(r=>r.start<=we&&r.end>=w).length;weeks.push([w,n]);maxN=Math.max(maxN,n);}
-  busy=weeks.map(([w,n])=>`<i class="tl-busy-c" style="${span(w,shiftDay(w,6))}opacity:${n?.18+.62*n/maxN:0}" title="${md(w)} 這週有 ${n} 個目標同時進行"></i>`).join('');
-  const rowHTML=rows.map((r,i)=>{
-    const g=r.g,col=`tl-c${i%5}`,left=g.dueDate?daysBetween(d,g.dueDate):null;
-    const bars=r.ph.length?r.ph.filter(x=>vis(x.from,x.to)).map((x,k)=>`<i class="tl-seg ${col} s${k%3}" style="${span(x.from,x.to)}" title="${esc(x.label+' '+md(x.from)+'–'+md(x.to))}"></i>`).join('')
-      :`<i class="tl-seg ${col}" style="${span(r.start,r.end)}" title="${esc(g.title+' '+md(r.start)+'–'+md(r.end))}"></i>`;
-    const flag=g.dueDate&&vis(g.dueDate,g.dueDate)?`<i class="tl-flag" style="left:${pct(g.dueDate)}%" title="截止 ${md(g.dueDate)}">🏁</i>`:'';
-    const cps=(g.checkpoints||[]).filter(c=>!c.deleted&&c.due&&vis(c.due,c.due)).map(c=>`<i class="tl-cp ${c.result?(c.result.ok?'ok':'no'):''}" style="left:${pct(c.due)}%" title="${esc('檢查日 '+md(c.due)+'：'+c.title)}"></i>`).join('');
-    return {lab:`<button type="button" class="tl-lab" data-action="tl-open" data-g="${esc(g.id)}" title="點一下編輯：${esc(g.title)}">${g.group?`<i class="ho-g">${esc(g.group)}</i>`:''}<span>${esc(g.title)}</span><small>${left==null?'':(left<0?'已過':left+'天')}</small></button>`,
-      track:`<div class="tl-row">${bars}${flag}${cps}</div>`};
-  });
-  const evHTML=evs.filter(e=>vis(e.from,e.to||e.from)).map(e=>{const one=!e.to||e.to===e.from;
-    return {lab:`<button type="button" class="tl-lab ev" data-action="tl-ev" title="點一下看行程清單"><span>${esc(e.title)}${e.tentative?'（暫定）':''}</span><small>${md(e.from)}${one?'':'–'+md(e.to)}</small></button>`,
-      track:`<div class="tl-row">${one?`<i class="tl-dia" style="left:${pct(e.from)}%" title="${esc(e.title+' '+md(e.from))}"></i>`:`<i class="tl-ev" style="${span(e.from,e.to)}" title="${esc(e.title)}"></i>`}</div>`};});
-  const all=[...rowHTML,...evHTML];
-  return `<div class="tl-wrap"><div class="tl-chart">
-    <div class="tl-axisrow"><div></div><div class="tl-axis">${axis}</div></div>
-    <div class="tl-bodyrow"><div class="tl-labels"><div class="tl-lab busy"><span>同時進行</span></div>${all.map(x=>x.lab).join('')}</div>
-      <div class="tl-tracks"><div class="tl-overlay">${grid}${bands}${today}</div><div class="tl-row busy">${busy}</div>${all.map(x=>x.track).join('')}</div></div></div></div>
-    <div class="tl-legend"><span><i class="tl-cp"></i>檢查日</span><span>🏁 截止</span><span><i class="tl-band floor"></i>趕工週</span><span><i class="tl-band pause"></i>習慣暫停</span><span><i class="tl-today"></i>今天</span></div>`;
-}
 function todoRows(){
   const pl=planOf(),list=live(pl&&pl.todos).slice().sort((a,b)=>(a.done?1:0)-(b.done?1:0)||(a.due||'9999').localeCompare(b.due||'9999'));
   const d=curDay();
@@ -930,28 +846,86 @@ function planFolds(pl){
     +plFold('events','行程（出遊、年假、活動日）',`${evs.length} 個${next?'・下一個 '+esc(next.title)+' '+md(next.from):''}`,r.ev)
     +plFold('periods','趕工週（只做最低版的時期）',`${per.length} 段`,r.pe);
 }
-function planHTML(){
-  const pl=planOf(),f=data(),goalsN=projectGoals().length;
-  const size=JSON.stringify(f).length,warn=size>40000;
+// ── 方向頁（v151）：睡覺一列、目標一張（時間軸就是清單）、其餘全收進「更多」──
+function dirSleep(){
+  const pl=planOf(),p=C.planFor(data(),ds());
+  const names=live(pl&&pl.items).filter(x=>!x.later).map(x=>x.label).filter(Boolean);
+  return `<div class="gcard dir-sleep"><span class="dir-ic">🌙</span><div class="dir-main"><div class="dir-t">每天只要顧：${esc(names.join('、')||'睡覺')}</div>
+    <div class="goal-sub">${p?`${p.status==='paused'?'（暫停中）':''}${esc(p.bed)} 上床 · ${esc(p.wake)} 起床`:'還沒設定想幾點上床'}</div></div>
+    <button type="button" class="card-edit" data-action="edit-plan" title="改時間、改每一步">✏️ 編輯</button></div>`;
+}
+function dirGoals(){
+  const d=curDay(),pg=projectGoal(),projs=projectGoals(),bodies=goals().filter(g=>g.kind==='body');
+  const rows=projs.map(g=>{
+    const ph=(g.phases||[]).filter(x=>x.from&&x.to),ms=(g.milestones||[]).filter(m=>m.due).map(m=>m.due).sort();
+    const start=ph.length?ph.map(x=>x.from).sort()[0]:(g.startOn&&g.startOn<=(g.dueDate||'9999')?g.startOn:(ms[0]||g.dueDate||d));
+    const end=[g.dueDate||'',...ph.map(x=>x.to),ms[ms.length-1]||''].sort().pop();
+    return {g,start,end};
+  });
+  const lo=shiftDay(d,-2),hi=shiftDay([shiftDay(d,28),...rows.map(r=>r.end).filter(Boolean)].sort().pop(),4);
+  const total=daysBetween(lo,hi)+1,pct=x=>Math.max(0,Math.min(100,daysBetween(lo,x)/total*100));
+  const ticks=[];for(let x=lo.slice(0,8)+'01';x<=hi;){const dt=new Date(x+'T12:00:00');if(x>lo&&pct(x)>9)ticks.push(x);dt.setMonth(dt.getMonth()+1);x=C.dateKey(dt);}
+  const grid=ticks.map(x=>`<i class="dir-grid" style="left:${pct(x)}%"></i>`).join('');
+  const axis=`<span style="left:0">今天</span>`+ticks.map(x=>`<span style="left:${pct(x)}%">${+x.slice(5,7)===1?x.slice(2,4)+'/':''}${+x.slice(5,7)}月</span>`).join('');
+  const rowHTML=rows.map(({g,start,end})=>{
+    const left=g.dueDate?daysBetween(d,g.dueDate):null;
+    let bar='';
+    if(end){const l=pct(start),r=Math.max(l+1.4,pct(shiftDay(end,1)));bar=`<i class="dir-seg" style="left:${l}%;width:${Math.min(100,r)-l}%"></i>`;}
+    const when=g.dueDate?`${md(g.dueDate)} · ${left>0?left+' 天':(left===0?'今天':`<b>已過 ${-left} 天</b>`)}`:'沒有日期';
+    return `<button type="button" class="dir-g${pg&&pg.id===g.id?' now':''}" data-edit-goal="${esc(g.id)}" title="點一下編輯：${esc(g.title)}"><span class="dir-gn">${esc(g.title)}</span><span class="dir-bar">${grid}${bar}</span><span class="dir-gd">${when}</span></button>`;
+  }).join('');
+  const bodyHTML=bodies.map(g=>`<button type="button" class="dir-g body" data-edit-goal="${esc(g.id)}" title="點一下編輯"><span class="dir-gn">${esc(g.title)}</span><span class="dir-bs">${esc(activeMetrics(g).map(m=>m.l+' '+m.target+m.unit).join('・')||'還沒設每週目標')}</span><span class="dir-gd"></span></button>`).join('');
+  return `<div class="gcard dir-goals"><div class="goal-hd"><span class="goal-title">${projs.length} 個目標，照要交的日期排</span><span class="goal-sub muted" style="margin-left:auto;">點一列就能改</span></div>
+    ${projs.length?`<div class="dir-axis">${axis}</div>`:''}
+    ${rowHTML||'<div class="goal-sub muted" style="margin:6px 0;">還沒有目標。</div>'}${bodyHTML}
+    <button type="button" class="focus-btn primary dir-add" data-action="goal-add">＋ 新增目標</button></div>`;
+}
+function expInner(){
+  const list=data().experiments.filter(e=>e.status!=='archived');
+  return `<div class="pl-hd">進行中的實驗<small>回顧時決定，最多 3 個</small></div>
+    ${list.length?list.map(e=>`<div class="dots-row" style="padding:6px 0;border-top:1px solid var(--ds-line);">
+        <span style="flex:1;min-width:0;">${esc(e.text)}</span><span class="goal-sub muted">${expLabelFreq(e)} · ${PLACES[e.place]||''}</span>
+        <button class="goal-more" data-exp-end="${esc(e.id)}" style="margin:0;">結束</button></div>`).join('')
+      :'<div class="goal-sub muted">還沒有。</div>'}
+    <div class="goal-chips" style="margin-top:8px;"><button class="focus-btn" data-loop-add="1">＋ 自己加一個實驗</button></div>`;
+}
+function dirMore(){
+  const pl=planOf(),f=data(),size=JSON.stringify(f).length,warn=size>40000;
   const cps=allCheckpoints(),open=cps.filter(x=>!x.c.result).sort(byDue),done=cps.filter(x=>x.c.result).sort(byDue);
-  const range=tlRange();
-  const cpList=open.slice(0,5).map(x=>{
-    const left=x.c.due?daysBetween(curDay(),x.c.due):null,k=x.g.id+'|'+x.c.id,isOpen=cpOpenSet.has(k);
+  const cpRow=(x,res)=>{const left=x.c.due?daysBetween(curDay(),x.c.due):null,k=x.g.id+'|'+x.c.id,isOpen=cpOpenSet.has(k);
+    const w=res?(x.c.result.ok?'✅ 達標':'⚠️ 沒達標'):(left==null?'':(left<0?'<b class="warn">已過 '+(-left)+' 天</b>':(left===0?'今天':'還有 '+left+' 天')));
     return `<div class="cpl"><button type="button" class="cpl-row" data-action="cp-toggle" data-k="${esc(k)}"><span class="cpl-d">${x.c.due?md(x.c.due):'?'}</span>
-      <span class="cpl-t"><b>${esc(x.g.title)}</b>${esc(x.c.title)}</span><span class="cpl-w">${left==null?'':(left<0?'<b class="warn">已過 '+(-left)+' 天</b>':(left===0?'今天':'還有 '+left+' 天'))}</span><span>${isOpen?'▴':'▾'}</span></button>${isOpen?cpBox(x):''}</div>`;}).join('');
-  return `<div class="gcard plan-card"><div class="goal-hd"><span class="goal-title">${esc((pl&&pl.title)||'計畫總覽')}</span>
-      <span class="goal-sub muted">${goalsN} 個目標一起看・點目標名稱可以編輯</span>
-      <span class="plan-tools"><span class="seg-mini"><button type="button" data-action="tl-range" data-v="all" class="${range==='all'?'on':''}">全部</button><button type="button" data-action="tl-range" data-v="8w" class="${range==='8w'?'on':''}">接下來 8 週</button></span>
-      <button type="button" class="card-edit" data-action="plan-import" title="匯入計畫檔">⬇ 匯入計畫檔</button></span></div>
-    ${timelineHTML()}
-    ${pl?`<div class="pl-cal"><span data-cal-state="__plan" data-always="1">${calStateHTML(pl,true)}</span>
+      <span class="cpl-t"><b>${esc(x.g.title)}</b>${esc(x.c.title)}</span><span class="cpl-w">${w}</span><span>${isOpen?'▴':'▾'}</span></button>${isOpen?cpBox(x):''}</div>`;};
+  const cpHTML=open.length||done.length?`<div class="pl-sec"><div class="pl-hd">檢查日<small>${open.length} 個還沒檢查${done.length?'・'+done.length+' 個已檢查':''}</small></div>${open.slice(0,5).map(x=>cpRow(x,false)).join('')||'<div class="goal-sub muted">都檢查過了。</div>'}${open.length>5?`<div class="goal-sub muted">還有 ${open.length-5} 個在後面</div>`:''}
+    ${done.length?`<div class="pl-hd" style="margin-top:10px;"><small>已檢查</small></div>${done.slice().reverse().slice(0,6).map(x=>cpRow(x,true)).join('')}`:''}</div>`:'';
+  const body=`${pl?`<div class="pl-cal"><span data-cal-state="__plan" data-always="1">${calStateHTML(pl,true)}</span>
       <label class="pl-chk"><input type="checkbox" data-plan-c="calDetail"${pl.calDetail!==false?' checked':''}/>階段和檢查日也放進日曆</label>
-      <span class="goal-sub muted${warn?' warn':''}" title="雲端把目標資料存在一個儲存格，上限約 5 萬字">資料量 ${(size/1000).toFixed(1)}K／約 45K${warn?'　快滿了，別再塞太多文字':''}</span></div>`:''}
-    ${open.length||done.length?`<div class="pl-sec"><div class="pl-hd">接下來的檢查日<small>${open.length} 個還沒檢查${done.length?'・'+done.length+' 個已檢查':''}</small></div>${cpList||'<div class="goal-sub muted">都檢查過了。</div>'}${open.length>5?`<div class="goal-sub muted">還有 ${open.length-5} 個在後面</div>`:''}
-      ${done.length?`<div class="pl-hd" style="margin-top:10px;"><small>已檢查</small></div>${done.slice().reverse().slice(0,6).map(x=>{const k=x.g.id+'|'+x.c.id,isOpen=cpOpenSet.has(k);
-        return `<div class="cpl"><button type="button" class="cpl-row" data-action="cp-toggle" data-k="${esc(k)}"><span class="cpl-d">${x.c.due?md(x.c.due):'?'}</span><span class="cpl-t"><b>${esc(x.g.title)}</b>${esc(x.c.title)}</span><span class="cpl-w">${x.c.result.ok?'✅ 達標':'⚠️ 沒達標'}</span><span>${isOpen?'▴':'▾'}</span></button>${isOpen?cpBox(x):''}</div>`;}).join('')}`:''}</div>`:''}
-    ${pl?`<div class="pl-sec pl-folds">${planFolds(pl)}</div>`:'<div class="goal-sub muted" style="margin-top:8px;">有計畫檔的話，按右上「匯入計畫檔」，階段、檢查日、趕工週、行程會一次建好，也一起放進日曆。</div>'}
-  </div>`;
+      ${warn?'<span class="goal-sub warn" title="雲端把目標資料存在一個儲存格，上限約 5 萬字">資料快滿了，別再塞太多文字</span>':''}</div>`:''}
+    ${cpHTML}${pl?`<div class="pl-sec pl-folds">${planFolds(pl)}</div>`:''}
+    <div class="pl-sec">${expInner()}</div>
+    <div class="pl-sec"><div class="goal-chips"><button class="focus-btn" data-action="quick-goals">一次貼上多個目標</button><button class="focus-btn" data-action="more">身體目標・封存・備份</button><button class="focus-btn" data-action="plan-import" title="匯入計畫檔">⬇ 匯入計畫檔</button></div></div>`;
+  return `<div class="gcard dir-more">${plFold('more','更多','要確認的事、檢查日、行程、實驗、備份',body)}</div>`;
+}
+function dirTop(){return dirSleep()+dirGoals();}
+function openAddGoal(){
+  modal('新增目標',`
+    <input class="fm-in" id="ag-t" maxlength="60" placeholder="名字，例如：寫報告" style="width:100%;"/>
+    <input class="fm-in" id="ag-d" maxlength="12" placeholder="哪天要交（可以不填），例如 12/20" style="width:100%;margin-top:8px;"/>
+    <div class="fm-actions"><button type="button" class="focus-btn primary" id="ag-go" style="margin-left:auto;">新增</button></div>`,
+  (m,close)=>{
+    const t=m.querySelector('#ag-t'),dd=m.querySelector('#ag-d');
+    const go=()=>{
+      const title=t.value.trim();if(!title){softToast('先寫名字',2000);t.focus();return;}
+      const raw=dd.value.trim();let due='';
+      if(raw){due=parseMD(raw);if(due===null){dd.classList.add('bad');softToast('日期看不懂，打成 12/20 這樣就好',2600);dd.focus();return;}}
+      data().projects.push({id:uid(),kind:'project',title,dueDate:due||'',event:'',status:'active',group:'',note:'',milestones:[],next:{id:uid(),text:'',small:''},startOn:curDay(),createdAt:Date.now(),updatedAt:Date.now()});
+      sv(S);syncStateDebounced();close();softToast('加好了',2000);render(true);
+    };
+    m.querySelector('#ag-go').addEventListener('click',go);
+    [t,dd].forEach(x=>x.addEventListener('keydown',ev=>{if(ev.key==='Enter'){ev.preventDefault();go();}}));
+    dd.addEventListener('input',()=>dd.classList.remove('bad'));
+    t.focus();
+  });
 }
 // ── 匯入計畫檔 ──
 function openPlanImport(){
@@ -1002,7 +976,7 @@ function render(force){
    let st=document.getElementById('hero-hide');if(!st){st=document.createElement('style');st.id='hero-hide';document.head.appendChild(st);}
    st.textContent=(pg&&pg.next&&pg.next.text&&ds()===curDay())?`.list-card .sticky-item.is-goal[data-goal="${CSS.escape(pg.id)}"]{display:none;}`:'';}
   if(M.moves)M.moves.innerHTML=moveChips();
-  if(M.plan)M.plan.innerHTML=planHTML();
+  if(M.plan)M.plan.innerHTML=dirTop();
   if(M.rhythm)M.rhythm.innerHTML=rhythmCard();
   {const chip=document.getElementById('mode-chip'),per=dayPeriod(curDay());
    if(chip){chip.hidden=!per;if(per){chip.textContent=(per.mode==='pause'?'⏸ 習慣暫停 · ':per.mode==='rest'?'🌙 低能量日 · ':'🛡 趕工日 · ')+per.label;chip.className='mode-chip '+per.mode;}}}
@@ -1010,7 +984,7 @@ function render(force){
   if(M.undone)M.undone.innerHTML=undoneList();
   if(M.bring)M.bring.innerHTML=bringNext();
   updateCount();applyListTab();
-  if(M.goals)M.goals.innerHTML=`${goalListCard(gs)}${planSummaryCard()}${expOverviewCard()}`;
+  if(M.goals)M.goals.innerHTML=dirMore();
   $qa('[data-next-in]').forEach(x=>{if(keep[x.dataset.nextIn])x.value=keep[x.dataset.nextIn];});
   if(editing==='phone'||editing==='bed')$q('[data-edit]')?.focus();
   if(justDone)$q(`[data-next-in="${justDone}"]`)?.focus();
@@ -1483,10 +1457,7 @@ onMounts('click',ev=>{
   if(a==='hero-ms'){try{localStorage.setItem('grandol_hero_ms',heroOpen()?'0':'1');}catch(e){}render(true);return;}
   if(a==='edit-plan'){openPlanEditor();return;}
   if(a==='focus-goal'){focusGoalOn(el.dataset.g);render(true);return;}
-  if(a==='tl-open'){const g=data().projects.find(x=>x.id===el.dataset.g);if(g)openProjectEditor(g);return;}
   if(a==='pl-fold'){const k=el.dataset.k;if(plOpenSet.has(k))plOpenSet.delete(k);else plOpenSet.add(k);render(true);return;}
-  if(a==='tl-ev'){plOpenSet.add('events');render(true);$q('.pl-folds')?.scrollIntoView({block:'center',behavior:'smooth'});return;}
-  if(a==='tl-range'){try{localStorage.setItem('grandol_tl',el.dataset.v);}catch(e){}render(true);return;}
   if(a==='others-toggle'){try{localStorage.setItem('grandol_others_all',localStorage.getItem('grandol_others_all')==='1'?'0':'1');}catch(e){}render(true);return;}
   if(a==='cp-toggle'){const k=el.dataset.k;if(cpOpenSet.has(k))cpOpenSet.delete(k);else cpOpenSet.add(k);render(true);return;}
   if(a==='plan-import'){if(writable())openPlanImport();return;}
@@ -1527,6 +1498,7 @@ onMounts('click',ev=>{
     if(!writable())return;const pl=planOf();const it=pl&&pl.todos.find(x=>x.id===el.dataset.id);
     if(it){it.deleted=true;it.updatedAt=Date.now();savePlan();}return;
   }
+  if(a==='goal-add'){if(writable())openAddGoal();return;}
   if(a==='quick-goals'){openQuickGoals();return;}
   if(a==='stage-template'){const g=data().projects.find(x=>x.id===el.dataset.g);if(g)applyStageTemplate(g);return;}
   if(a==='tonight-toggle'){try{localStorage.setItem('grandol_tonight',tonightOpen()?'0':'1');}catch(e){}render(true);return;}
