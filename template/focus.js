@@ -633,6 +633,31 @@ function cpHeroList(){
   return allCheckpoints().filter(x=>{const c=x.c,r=c.result;if(!r)return c.due&&c.due<=d;const age=daysBetween(r.on,d);return r.ok?age<=0:age<=7;}).sort(byDue);
 }
 const cpAttr=x=>`data-g="${esc(x.g.id)}" data-c="${esc(x.c.id)}"`;
+// 實測速度：「看什麼」提到實測／速度，或這個專案填過數字，決定點上才會出現。計算在 FocusCore.speedCalc，這裡只呈現
+// 沒填就只剩幾格空白的輸入框；不扣分、不加紅字；截止日要按按鈕才會改
+const spWanted=(g,c)=>C.speedHas(g.speed)||/實測|速度/.test(c.check||'');
+function speedOpts(g){return {today:curDay(),due:g.dueDate,startOn:g.startOn};}
+function speedBox(x){
+  const {g,c}=x,sp=g.speed||{},has=C.speedHas(sp);
+  if(!spWanted(g,c)||(c.result&&!has))return '';   // 已經決定了、又沒填過數字，就不用再顯示空格子
+  const d=curDay(),opt=speedOpts(g),calc=C.speedCalc(sp,opt),t=C.speedText(calc),dy=C.speedDays(sp,opt);
+  const fld=(k,ph,w,tip)=>`<input class="cp-spi ${w}" data-cp-sp="${k}" data-g="${esc(g.id)}" value="${esc(sp[k]===undefined?'':(k==='sinceDay'?dateIn(sp[k]):sp[k]))}" placeholder="${esc(ph)}" maxlength="12"${k==='sinceDay'||k==='unit'?'':' inputmode="decimal"'} title="${esc(tip)}"/>`;
+  const out=calc
+    ?`<div class="cp-sp-res"><div>${esc(t.pace)}</div><div>${esc(t.plan)}</div>${calc.asOf!==d?`<small>以 ${md(calc.asOf)} 填的數字算；重填「已做」就會用今天重算</small>`:''}</div>`
+    :`<div class="cp-sp-hint">${has?'再填：'+esc(C.speedMissing(sp,opt).join('、'))+' 就會算':'填兩個數字就會算（已做多少、總共多少）；不填也沒關係'}</div>`;
+  // 按了才改日期；日期是現在才從資料算出來的，不是畫面上那一刻的舊數字
+  const btn=calc&&!calc.finished&&calc.eta!==(g.dueDate||'')
+    ?`<button type="button" class="focus-btn cp-sp-btn" data-action="cp-sp-due" data-g="${esc(g.id)}" title="不會自動改；按了才把截止日改掉，日曆也會跟著換">把截止日改成 ${esc(C.mdText(calc.eta,d))}</button>`:'';
+  return `<div class="cp-sp"><div class="cp-sp-hd">實測速度<small>只在這天填就好</small></div>
+    <div class="cp-sp-in"><label>已做 ${fld('doneAmt','數量','n','這段已經做了多少')}</label><label>／ 總共 ${fld('total','數量','n','全部是多少（例如影片總秒數）')}</label>${fld('unit','單位','u','單位，例如 秒、頁、張')}</div>
+    <div class="cp-sp-in"><label>從 ${fld('sinceDay',g.startOn?dateIn(g.startOn):'開始日','d','從哪天開始算；空白＝用專案的開始日')} 起</label><label>已用 ${fld('days',Number.isFinite(dy.auto)?'自動 '+dy.auto:'天數','n','空白＝從開始日算到填數字的那天')} 天</label></div>
+    ${out}${btn}</div>`;
+}
+// 匯出／回顧用的一行：沒填或算不出來就不寫（不是失敗）。數字是「填的那天」的，所以用 asOf 當基準
+function speedLine(g){
+  const calc=C.speedCalc(g.speed,speedOpts(g));if(!calc)return '';
+  return `實測速度（${md(calc.asOf)} 填）：${C.speedText(calc).full}`;
+}
 function cpBox(x){
   const {g,c}=x,d=curDay(),left=c.due?daysBetween(d,c.due):null,res=c.result;
   const when=left==null?'':(left<0?`已過 ${-left} 天`:(left===0?'今天':`還有 ${left} 天`));
@@ -640,9 +665,9 @@ function cpBox(x){
   const dueIn=`<input class="cp-due" data-cp-due="1" ${cpAttr(x)} value="${c.due?dateIn(c.due):''}" placeholder="日期" maxlength="12" title="打 12/7 這樣"/>`;
   if(res)return `<div class="cp-box ${res.ok?'ok':'no'}"><div class="cp-hd"><span>${res.ok?'✅ 達標':'⚠️ 沒達標'} · ${md(res.on)}</span><b>${esc(g.title)}：${esc(c.title)}</b>
       <button type="button" class="goal-more" data-action="cp-undo" ${cpAttr(x)}>改回還沒決定</button></div>
-    ${res.ok?'':`<div class="cp-fb"><i>就照這個走</i>${esc(c.fallback||'（當初沒寫退路，可以在下面補）')}</div>${f('fallback','退路','沒達標就…')}${f('decision','我決定','寫下你今天決定怎麼做')}`}</div>`;
+    ${res.ok?'':`<div class="cp-fb"><i>就照這個走</i>${esc(c.fallback||'（當初沒寫退路，可以在下面補）')}</div>${f('fallback','退路','沒達標就…')}${f('decision','我決定','寫下你今天決定怎麼做')}`}${speedBox(x)}</div>`;
   return `<div class="cp-box open"><div class="cp-hd"><span>◆ 決定點 · ${dueIn}${c.approx?' 暫定':''} · ${when}</span><b>${esc(g.title)}：${esc(c.title)}</b></div>
-    ${f('check','看什麼','到那天要看什麼')}${f('bar','達標門檻','')}${f('fallback','沒達標就','退路')}
+    ${f('check','看什麼','到那天要看什麼')}${f('bar','達標門檻','')}${f('fallback','沒達標就','退路')}${speedBox(x)}
     <div class="cp-act"><button type="button" class="focus-btn primary" data-action="cp-ok" ${cpAttr(x)}>達標了</button><button type="button" class="focus-btn" data-action="cp-no" ${cpAttr(x)}>沒達標</button></div></div>`;
 }
 const cpOf=el=>{const g=data().projects.find(x=>x.id===el.dataset.g);return {g,c:g&&(g.checkpoints||[]).find(x=>x.id===el.dataset.c)};};
@@ -1396,6 +1421,12 @@ onMounts('click',ev=>{
     c.updatedAt=Date.now();saveGoal(g);
     if(a==='cp-ok')softToast('記下了：達標 ✓',1800);else if(a==='cp-no')softToast('沒關係，照退路走，不用重新想',2800);return;
   }
+  if(a==='cp-sp-due'){   // 重算的日期不會自動套用；按了才改（setDue 會留改期紀錄，日曆同步會先刪舊的再建新的）
+    if(!writable())return;const g=data().projects.find(x=>x.id===el.dataset.g);if(!g)return;
+    const calc=C.speedCalc(g.speed,speedOpts(g));
+    if(!calc||calc.finished||!C.validDate(calc.eta)){softToast('先把已做、總共、開始日填好',2400);return;}
+    setDue(g,calc.eta);saveGoal(g);softToast(`截止日改成 ${md(calc.eta)} ✓（改期有留紀錄）`,2600);return;
+  }
   if(a==='plan-add'){
     if(!writable())return;const pl=ensurePlan(),kind=el.dataset.kind,id='pl-'+uid(),now=Date.now(),d=curDay();
     if(kind==='events')pl.events=[...pl.events,{id,title:'新行程',from:d,to:d,tentative:false,updatedAt:now}];
@@ -1505,7 +1536,7 @@ onMounts('click',ev=>{
 });
 document.getElementById('also-edit')?.addEventListener('click',()=>openMovesEditor());
 // 卡片上「看起來像文字、點了就能改」的欄位：Enter＝存好離開、Esc＝還原
-const FIELD_KEYS=['msTitle','msDue','stepText','smallText','goalDue','goalNote','cpF','cpDue','planF','planD','todoText','todoDue','rhyF','rhyD'];
+const FIELD_KEYS=['msTitle','msDue','stepText','smallText','goalDue','goalNote','cpF','cpDue','cpSp','planF','planD','todoText','todoDue','rhyF','rhyD'];
 const isField=t=>!!(t&&t.dataset&&FIELD_KEYS.some(k=>t.dataset[k]!==undefined));
 onMounts('keydown',ev=>{
   const t=ev.target;
@@ -1544,9 +1575,18 @@ onMounts('focusout',ev=>{
 onMounts('change',ev=>{
   const el=ev.target,dd=el.dataset||{};
   if(!isField(el)&&dd.todoDone===undefined&&dd.planC===undefined)return;
-  if(dd.cpF===undefined&&dd.cpDue===undefined&&dd.todoDone===undefined&&dd.todoText===undefined&&dd.todoDue===undefined&&dd.planF===undefined&&dd.planD===undefined&&dd.planC===undefined)return;
+  if(dd.cpF===undefined&&dd.cpDue===undefined&&dd.cpSp===undefined&&dd.todoDone===undefined&&dd.todoText===undefined&&dd.todoDue===undefined&&dd.planF===undefined&&dd.planD===undefined&&dd.planC===undefined)return;
   if(!writable()){el.value=el.defaultValue;return;}
   const now=Date.now(),v=(el.value||'').trim();
+  if(dd.cpSp!==undefined){   // 實測速度的格子：屬於專案（g.speed），不是某一個決定點
+    const g=data().projects.find(x=>x.id===el.dataset.g);if(!g)return;
+    let raw=v;
+    if(dd.cpSp==='sinceDay'&&v){raw=parseMD(v);if(raw===null){el.value=el.defaultValue;softToast('日期看不懂，打成 11/9 這樣就好',2600);return;}}
+    const r=C.speedSet(g.speed,dd.cpSp,raw,{today:curDay()});
+    if(r.error){el.value=el.defaultValue;softToast(r.error,2600);return;}
+    if(r.speed)g.speed=r.speed;else delete g.speed;   // 全部清空＝沒有實測資料，決定點上的格子也跟著收起來
+    el.defaultValue=el.value;saveQuiet(g);softToast('存好了 ✓',1200);return;
+  }
   if(dd.cpF!==undefined||dd.cpDue!==undefined){
     const {g,c}=cpOf(el);if(!g||!c)return;
     if(dd.cpDue!==undefined){const due=v?parseMD(v):'';if(due===null){el.value=el.defaultValue;softToast('日期看不懂，打成 12/7 這樣就好',2600);return;}c.due=due;el.value=dateIn(due);}
@@ -1736,6 +1776,7 @@ function copyLines(dates,label){
       if(x.g.note)L.push(`    備註：${x.g.note}`);
       if(x.ms.length)L.push('    階段：'+x.ms.map(m=>(m.done?'✓':'○')+m.title+(m.due?'〔'+(m.hard?'🚩硬期限 ':'預計 ')+md(m.due)+'〕':'')+(m.doneOn?'(完成 '+md(m.doneOn)+(m.due&&m.doneOn>m.due?'，晚 '+daysBetween(m.due,m.doneOn)+' 天':'')+')':'')).join(' → '));
       if((x.g.dueHistory||[]).length)L.push('    改期：'+x.g.dueHistory.map(h=>`${md(h.on)} 從 ${md(h.from)||'沒有日期'} 改成 ${md(h.to)||'沒有日期'}`).join('；'));
+      {const sl=speedLine(x.g);if(sl)L.push('    '+sl);}
       L.push(`    ${label}完成的階段：${x.doneIn.map(m=>m.title).join('、')||'無'}；每日一步完成 ${x.stepsDone}/${x.steps}`);
       x.stepList.forEach(s2=>L.push(`      ${s2.done?'✅':'⬜'} ${md(s2.day)} ${s2.task}`));
       L.push('    進度：'+paceText(x));
@@ -2185,7 +2226,7 @@ function planLines(dates){
   if(per.length)L.push('🛡 這段期間的地板週與暫停：'+per.map(x=>`${md(x.from)}–${md(x.to)} ${x.label}${x.mode==='pause'?'（習慣暫停，不計失敗）':''}`).join('；'));
   const cps=allCheckpoints().filter(x=>x.c.due&&((x.c.due>=first&&x.c.due<=last)||(!x.c.result&&x.c.due<first))).sort(byDue);
   if(cps.length){L.push('◆ 決定點（先寫好沒達標就怎麼做，到那天照表決定）：');
-    cps.forEach(x=>{const r=x.c.result;L.push(`  ${md(x.c.due)} ${x.g.title}：${x.c.title}｜看什麼：${x.c.check||'—'}｜門檻：${x.c.bar||'—'}｜沒達標就：${x.c.fallback||'—'}｜結果：${r?(r.ok?'達標（'+md(r.on)+'）':'沒達標（'+md(r.on)+'）'+(x.c.decision?'，我決定：'+x.c.decision:'')):(x.c.due<curDay()?'還沒決定（已過期）':'還沒到')}`);});}
+    cps.forEach(x=>{const r=x.c.result,sl=spWanted(x.g,x.c)?speedLine(x.g):'';L.push(`  ${md(x.c.due)} ${x.g.title}：${x.c.title}｜看什麼：${x.c.check||'—'}｜門檻：${x.c.bar||'—'}｜沒達標就：${x.c.fallback||'—'}${sl?'｜'+sl:''}｜結果：${r?(r.ok?'達標（'+md(r.on)+'）':'沒達標（'+md(r.on)+'）'+(x.c.decision?'，我決定：'+x.c.decision:'')):(x.c.due<curDay()?'還沒決定（已過期）':'還沒到')}`);});}
   const items=rhyItems();
   if(items.length&&past.length){
     const active=past.filter(day=>{const p=C.periodOf(pl,day);return !(p&&p.mode==='pause');});
@@ -2244,7 +2285,7 @@ window.FocusUI={
     const f=data();
     return ['','━━━ 目標與作息 ━━━',
       ...f.projects.map(p=>p.title+' · '+p.status+' · '+(p.dueDate||'無日期')+(p.event?' '+p.event:'')+
-        (p.kind==='body'?'':'\n階段：'+((p.milestones||[]).map(m=>(m.done?'✓':'○')+m.title).join(' → ')||'未設定')+'\n今天這一步：'+(p.next?.text||''))),
+        (p.kind==='body'?'':'\n階段：'+((p.milestones||[]).map(m=>(m.done?'✓':'○')+m.title).join(' → ')||'未設定')+'\n今天這一步：'+(p.next?.text||'')+(speedLine(p)?'\n'+speedLine(p):''))),
       ...f.revisions.map(p=>p.effectiveFrom+' 起：'+p.phone+' 收手機／'+p.bed+' 上床／'+p.wake+' 起床 · '+p.status),
       ...S.entries.filter(e=>e.health?.sleep?.windDown||e.health?.body?.shoulder).map(e=>e.date+'：收手機 '+(clock(e.health.sleep?.windDown?.phoneAwayAt)||'—')+'／上床 '+(clock(e.health.sleep?.windDown?.inBedAt)||'—')+(e.health.body?.shoulder?'／肩背 ✓':''))];
   }

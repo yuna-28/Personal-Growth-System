@@ -87,6 +87,74 @@ test('daily floor and target rules: wake grace, bed, exercise, habit, periods',(
   const plan=C.applyPlan({},planSrc,{now:1}).focus.plan;
   assert.equal(C.periodOf(plan,'2026-11-10').label,'交付週');assert.equal(C.periodOf(plan,'2026-11-14'),null);assert.equal(C.periodOf(plan,'2027-04-03').mode,'pause');
 });
+// ── 實測速度重算：用中性假資料（作品A，總量 3600 單位）──
+test('speed recalculation: pace, remaining days, estimated date, vs current due date',()=>{
+  const sp={unit:'秒',total:3600,doneAmt:1200,sinceDay:'2026-11-09'};
+  const c=C.speedCalc(sp,{today:'2026-12-07',due:'2026-12-21'});
+  assert.equal(c.days,28);assert.equal(c.autoDays,28);assert.equal(c.remain,2400);
+  assert.equal(c.needDays,56);                       // 2400 ÷ (1200/28) = 56
+  assert.equal(c.eta,'2027-02-01');assert.equal(c.diff,42);   // 比 12/21 晚 42 天
+  assert.equal(c.unit,'秒');assert.equal(c.finished,false);
+  const t=C.speedText(c);
+  assert.match(t.pace,/這段做了 1200 秒、用了 28 天 → 每秒 0\.023 天（平均每天 42\.9 秒）/);
+  assert.match(t.plan,/剩下 2400 秒要 56 天，預計 2027\/2\/1；比現在的截止日 12\/21 晚 42 天/);
+  // 比截止日早／剛好
+  assert.match(C.speedText(C.speedCalc(sp,{today:'2026-12-07',due:'2027-02-20'})).plan,/早 19 天/);
+  assert.match(C.speedText(C.speedCalc(sp,{today:'2026-12-07',due:'2027-02-01'})).plan,/剛好/);
+  assert.match(C.speedText(C.speedCalc(sp,{today:'2026-12-07'})).plan,/目前沒有設截止日/);
+});
+test('speed text: tiny per-unit days never show as 0',()=>{
+  const t=C.speedText(C.speedCalc({unit:'字',total:900000000,doneAmt:300000000,days:30},{today:'2026-12-07'}));
+  assert.doesNotMatch(t.pace,/每字 0 天/);assert.match(t.pace,/→ 平均每天 10000000 字$/);
+  assert.equal(C.fmtNum(0.0233),'0.023');assert.equal(C.fmtNum(42.857),'42.9');assert.equal(C.fmtNum(3600),'3600');assert.equal(C.fmtNum(NaN),'');
+  assert.equal(C.mdText('2027-01-03','2026-11-08'),'2027/1/3');assert.equal(C.mdText('2026-12-21','2026-11-08'),'12/21');
+});
+test('speed: nothing entered is not a failure; start day falls back to project start; manual days win',()=>{
+  assert.equal(C.speedCalc(undefined,{today:'2026-12-07'}),null);
+  assert.equal(C.speedCalc({},{today:'2026-12-07'}),null);
+  assert.equal(C.speedHas({}),false);assert.equal(C.speedHas({unit:'秒'}),true);
+  assert.equal(C.speedCalc({total:100,doneAmt:0,sinceDay:'2026-12-01'},{today:'2026-12-07'}),null);   // 還沒做就不推算
+  assert.equal(C.speedCalc({total:100,doneAmt:10},{today:'2026-12-07'}),null);                        // 不知道從哪天開始
+  assert.deepEqual(C.speedMissing({total:100},{today:'2026-12-07'}),['已做的量','開始日或天數']);
+  assert.deepEqual(C.speedMissing({total:100,doneAmt:10},{today:'2026-12-07',startOn:'2026-12-01'}),[]);
+  assert.equal(C.speedCalc({total:100,doneAmt:10},{today:'2026-12-07',startOn:'2026-12-01'}).days,6);   // 沿用專案開始日
+  assert.equal(C.speedCalc({total:100,doneAmt:10,sinceDay:'2026-12-05'},{today:'2026-12-07',startOn:'2026-12-01'}).days,2);
+  assert.equal(C.speedCalc({total:100,doneAmt:10,days:20,sinceDay:'2026-12-05'},{today:'2026-12-07'}).days,20);   // 手動天數優先
+  assert.equal(C.speedCalc({total:100,doneAmt:10,sinceDay:'2026-12-07'},{today:'2026-12-07'}),null);   // 同一天，算不出速度
+  assert.equal(C.speedCalc({total:100,doneAmt:10,sinceDay:'2026-12-09'},{today:'2026-12-07'}),null);   // 開始日在未來
+  assert.equal(C.speedCalc({total:100,doneAmt:10,sinceDay:'2026-12-01'},{today:'2026-12-07'}).unit,'單位');
+});
+test('speed: finished work, rounding up whole days, and numbers stay anchored to the day they were entered',()=>{
+  const done=C.speedCalc({total:100,doneAmt:120,sinceDay:'2026-12-01'},{today:'2026-12-07',due:'2026-12-20'});
+  assert.equal(done.finished,true);assert.equal(done.needDays,0);assert.match(C.speedText(done).plan,/已經做完了/);
+  assert.equal(C.speedCalc({total:100,doneAmt:30,days:3},{today:'2026-12-07'}).needDays,7);   // 70 ÷ 10 = 7，不會因浮點變 8
+  assert.equal(C.speedCalc({total:10,doneAmt:3,days:3},{today:'2026-12-07'}).needDays,7);     // 7 ÷ 1 = 7
+  assert.equal(C.speedCalc({total:10,doneAmt:3,days:2},{today:'2026-12-07'}).needDays,5);     // 7 ÷ 1.5 = 4.67 → 5
+  // 填數字那天是 12/7，一個月後再打開，推算還是以 12/7 為準
+  const sp={total:3600,doneAmt:1200,sinceDay:'2026-11-09',asOf:'2026-12-07'};
+  assert.equal(C.speedCalc(sp,{today:'2027-01-20'}).days,28);assert.equal(C.speedCalc(sp,{today:'2027-01-20'}).eta,'2027-02-01');
+  assert.equal(C.speedCalc({...sp,total:'3,600',doneAmt:'1200'},{today:'2027-01-20'}).needDays,56);   // 字串、千分位也吃得下
+});
+test('speed edits: validate, clear, remember the day the done amount was entered',()=>{
+  let r=C.speedSet(null,'doneAmt','1,200',{today:'2026-12-07'});
+  assert.deepEqual(r.speed,{doneAmt:1200,asOf:'2026-12-07'});
+  r=C.speedSet(r.speed,'total','3600',{today:'2026-12-09'});assert.equal(r.speed.asOf,'2026-12-07');assert.equal(r.speed.total,3600);   // 只有「已做」會動基準日
+  r=C.speedSet(r.speed,'unit','  秒 ');assert.equal(r.speed.unit,'秒');
+  r=C.speedSet(r.speed,'sinceDay','2026-11-09');assert.equal(r.speed.sinceDay,'2026-11-09');
+  assert.ok(C.speedSet(r.speed,'sinceDay','11/9').error);assert.ok(C.speedSet(r.speed,'total','很多').error);
+  assert.ok(C.speedSet(r.speed,'total','-5').error);assert.ok(C.speedSet(r.speed,'total','0').error);assert.ok(C.speedSet(r.speed,'days','0').error);
+  assert.equal(C.speedSet(r.speed,'doneAmt','0',{today:'2026-12-08'}).speed.doneAmt,0);
+  const cleared=C.speedSet(r.speed,'doneAmt','',{today:'2026-12-08'});assert.equal(cleared.speed.asOf,undefined);assert.equal(cleared.speed.doneAmt,undefined);
+  let all={unit:'秒'};all=C.speedSet(all,'unit','').speed;assert.equal(all,null);   // 全部清空＝這個專案沒有實測資料
+  assert.ok(C.speedSet({}, 'nope','1').error);
+});
+test('speed survives clean/merge and a plan re-import',()=>{
+  const f={projects:[{id:'a',title:'作品A',updatedAt:1,speed:{unit:'秒',total:3600,doneAmt:1200,sinceDay:'2026-11-09'}}]};
+  assert.equal(C.clean(f).projects[0].speed.total,3600);
+  const m=C.merge(f,{projects:[{id:'a',title:'作品A',updatedAt:2,speed:{unit:'秒',total:4000}}]});assert.equal(m.projects[0].speed.total,4000);
+  const r=C.applyPlan(f,{format:'grandol-plan',version:1,projects:[{key:'a',match:['作品A'],title:'作品A',due:'2026-12-21'}]},{now:5,today:'2026-11-09'});
+  assert.equal(r.focus.projects[0].speed.doneAmt,1200);
+});
 test('future night remains pending',()=>assert.equal(C.result(null,plan,'2026-09-28',new Date('2026-09-28T22:00:00+08:00')).label,'尚未到時間'));
 test('snapshot survives plan change',()=>{const w={inBedAt:'2026-09-29T01:00:00+08:00',targetSnapshot:C.snapshot(plan,'2026-09-28')};assert.equal(C.result(w,{...plan,bed:'00:00'},'2026-09-28',new Date()).kind,'onTime');});
 test('effective history and pause',()=>{const f={revisions:[plan,{...plan,id:'r2',effectiveFrom:'2026-10-01',status:'paused'}]};assert.equal(C.planFor(f,'2026-09-27'),null);assert.equal(C.planFor(f,'2026-09-28').id,'r1');assert.equal(C.snapshot(C.planFor(f,'2026-10-01'),'2026-10-01'),null);});

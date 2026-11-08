@@ -234,6 +234,89 @@
     });
     return out;
   }
-  const api={stages,dateKey,validDate,validTime,targetAt,clean,merge,planFor,snapshot,result,sleepResult,mergeWind,parseDateText,parseGoalLines,applyPlan,ruleMet,itemDay,periodOf,mergePlan,cleanPlan,toMin};
+  // ── 實測速度重算（決定點用）──────────────────────────────────────────
+  // 預估常常偏樂觀，所以到決定點時用「這段實際做了多少、花了幾天」重算剩下的要多久。
+  // speed：{unit,total,doneAmt,sinceDay,days,asOf}，都是使用者自己填的（或沿用專案開始日）。
+  // asOf＝填「已做」那天：之後再打開，推算還是以那天為準，不會因為日子過去而數字自己漂移。
+  // 只呈現「做到的」與推算：沒填就回 null（不算失敗）、不評分、不自動改日期。
+  const r6=x=>Math.round(x*1e6)/1e6;
+  const numOf=x=>{const n=typeof x==='number'?x:parseFloat(String(x==null?'':x).replace(/[,，\s]/g,''));return Number.isFinite(n)?n:NaN;};
+  function fmtNum(n){
+    if(!Number.isFinite(n))return '';
+    const a=Math.abs(n);
+    return String(+n.toFixed(a>=100?0:(a>=10?1:(a>=1?2:(a>=0.01?3:4)))));   // 太小的數字（每秒幾天）多留幾位
+  }
+  // 預估日期的顯示：跟參考日同一年就只寫月/日，不同年才加年
+  function mdText(s,ref){
+    if(!validDate(s))return '';
+    const md=(+s.slice(5,7))+'/'+(+s.slice(8,10));
+    return ref&&s.slice(0,4)!==String(ref).slice(0,4)?s.slice(0,4)+'/'+md:md;
+  }
+  const SPEED_KEYS=['unit','total','doneAmt','sinceDay','days'];
+  const speedHas=sp=>!!sp&&typeof sp==='object'&&SPEED_KEYS.some(k=>sp[k]!==undefined&&sp[k]!=='');
+  // 已花的天數：有手動填就用手動的；沒有就從開始日算到「填數字的那天」。opts：{today,startOn}
+  function speedDays(speed,opts){
+    opts=opts||{};const sp=speed&&typeof speed==='object'?speed:{};
+    const today=validDate(opts.today)?opts.today:dateKey(new Date());
+    const asOf=validDate(sp.asOf)?sp.asOf:today;
+    const since=validDate(sp.sinceDay)?sp.sinceDay:(validDate(opts.startOn)?opts.startOn:'');
+    const auto=since?daysFrom(since,asOf):NaN,manual=numOf(sp.days);
+    return {asOf,since,auto:auto>0?auto:NaN,manual:manual>0?manual:NaN,days:manual>0?manual:(auto>0?auto:NaN)};
+  }
+  // 還缺什麼才算得出來（給卡片上的提示；都有就回空陣列）
+  function speedMissing(speed,opts){
+    const sp=speed&&typeof speed==='object'?speed:{},out=[];
+    if(!(numOf(sp.total)>0))out.push('總量');
+    if(!(numOf(sp.doneAmt)>0))out.push('已做的量');
+    if(!(speedDays(sp,opts).days>0))out.push('開始日或天數');
+    return out;
+  }
+  // opts：{today,due,startOn}。算不出來（沒填、已做是 0、天數不夠）就回 null
+  function speedCalc(speed,opts){
+    opts=opts||{};
+    if(!speedHas(speed))return null;
+    const total=numOf(speed.total),done=numOf(speed.doneAmt);
+    if(!(total>0)||!(done>0))return null;
+    const t=speedDays(speed,opts),days=t.days;
+    if(!(days>0))return null;
+    const remain=Math.max(0,r6(total-done)),perDay=done/days,perUnit=days/done;
+    const needDays=remain>0?Math.ceil(r6(remain*days/done)):0;
+    const eta=addDays(t.asOf,needDays),due=validDate(opts.due)?opts.due:'';
+    return {unit:String(speed.unit||'').trim()||'單位',total,doneAmt:done,remain,days,autoDays:t.auto,manualDays:t.manual,asOf:t.asOf,
+      perDay,perUnit,needDays,eta,due,diff:due?daysFrom(due,eta):null,finished:remain<=0};
+  }
+  // 「這段做了 X、用了 Y 天 → 每單位 Z 天；剩下 W 要 N 天，預計 日期；比現在的截止日 晚／早 M 天」
+  function speedText(calc){
+    if(!calc)return null;
+    const u=calc.unit,ref=calc.asOf;
+    const pu=fmtNum(calc.perUnit),day=`平均每天 ${fmtNum(calc.perDay)} ${u}`;
+    // 單位很小（每秒、每字）時每單位只有零點零幾天，照實寫；小到顯示成 0 就只留「平均每天」
+    const pace=`這段做了 ${fmtNum(calc.doneAmt)} ${u}、用了 ${fmtNum(calc.days)} 天 → ${pu&&pu!=='0'?`每${u} ${pu} 天（${day}）`:day}`;
+    if(calc.finished)return {pace,plan:`已經做完了（${fmtNum(calc.doneAmt)} / ${fmtNum(calc.total)} ${u}）`,full:`${pace}；已經做完了`};
+    let plan=`剩下 ${fmtNum(calc.remain)} ${u}要 ${calc.needDays} 天，預計 ${mdText(calc.eta,ref)}`;
+    if(calc.due){
+      const d=calc.diff;
+      plan+=`；比現在的截止日 ${mdText(calc.due,ref)} ${d>0?'晚 '+d+' 天':(d<0?'早 '+(-d)+' 天':'剛好')}`;
+    }else plan+='（目前沒有設截止日）';
+    return {pace,plan,full:pace+'；'+plan};
+  }
+  // 卡片上改一格：回 {speed}（全部清空時 speed 是 null）或 {error}
+  // key：unit／total／doneAmt／sinceDay（要先轉成 YYYY-MM-DD）／days。填「已做」時記下那天當作推算基準
+  function speedSet(speed,key,raw,opts){
+    if(SPEED_KEYS.indexOf(key)<0)return {error:'不認得這一格'};
+    opts=opts||{};const s={...(speed&&typeof speed==='object'?speed:{})},v=String(raw==null?'':raw).trim();
+    if(!v)delete s[key];
+    else if(key==='unit')s.unit=v.slice(0,8);
+    else if(key==='sinceDay'){if(!validDate(v))return {error:'日期看不懂，打成 11/9 這樣就好'};s.sinceDay=v;}
+    else{
+      const n=numOf(v);
+      if(!Number.isFinite(n)||n<0||(key!=='doneAmt'&&n===0))return {error:key==='days'?'天數打大於 0 的數字就好':'打數字就好，例如 1200'};
+      s[key]=n;
+    }
+    if(key==='doneAmt'){if(s.doneAmt!==undefined)s.asOf=validDate(opts.today)?opts.today:dateKey(new Date());else delete s.asOf;}
+    return {speed:speedHas(s)?s:null};
+  }
+  const api={stages,dateKey,validDate,validTime,targetAt,clean,merge,planFor,snapshot,result,sleepResult,mergeWind,parseDateText,parseGoalLines,applyPlan,ruleMet,itemDay,periodOf,mergePlan,cleanPlan,toMin,
+    speedHas,speedDays,speedMissing,speedCalc,speedText,speedSet,fmtNum,mdText};
   root.FocusCore=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);

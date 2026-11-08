@@ -667,11 +667,28 @@ button.tonight-mini:hover{box-shadow:inset 0 0 0 1px var(--ds-line-2)!important;
 .cp-act{display:flex;gap:8px;margin-top:8px;}
 .cp-fb{margin:4px 0;padding:6px 8px;border-radius:6px;background:rgba(255,255,255,.6);font-size:var(--ds-fs-sm);color:var(--ds-ink);}
 .cp-fb>i{font-style:normal;font-weight:700;color:var(--ds-warn);margin-right:8px;font-size:var(--ds-fs-xs);}
+/* 決定點上的實測速度：只呈現做到的與推算，不用紅字；改日期要按按鈕 */
+.cp-sp{margin:8px 0 2px;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,.45);border:1px dashed rgba(0,0,0,.16);}
+.cp-sp-hd{font-size:var(--ds-fs-xs);font-weight:800;color:var(--ds-ink-2);margin-bottom:4px;}
+.cp-sp-hd small{font-weight:600;color:var(--ds-ink-3);margin-left:8px;}
+.cp-sp-in{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin:3px 0;font-size:var(--ds-fs-xs);font-weight:700;color:var(--ds-ink-3);}
+.cp-sp-in label{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;}
+.cp-spi{font-family:var(--ds-font);font-size:var(--ds-fs-sm);color:var(--ds-ink);background:rgba(255,255,255,.55);border:1px solid transparent;border-radius:6px;padding:4px 6px;outline:none;min-width:0;text-align:center;}
+.cp-spi.n{width:68px;}.cp-spi.u{width:56px;}.cp-spi.d{width:64px;}
+.cp-spi:hover{border-color:rgba(0,0,0,.15);}
+.cp-spi:focus{background:#fff;border-color:var(--ds-primary);box-shadow:0 0 0 3px var(--ds-primary-soft);}
+.cp-sp-res{margin-top:6px;padding:6px 8px;border-radius:6px;background:rgba(255,255,255,.6);font-size:var(--ds-fs-sm);color:var(--ds-ink);line-height:1.6;overflow-wrap:anywhere;}
+.cp-sp-res small{display:block;margin-top:2px;font-size:var(--ds-fs-xs);color:var(--ds-ink-3);}
+.cp-sp-hint{margin-top:4px;font-size:var(--ds-fs-xs);color:var(--ds-ink-3);}
+.cp-sp-btn{margin-top:6px;max-width:100%;white-space:normal;}
 :root[data-night] .cp-box{background:#3A3322;border-color:#5C4F2E;}
 :root[data-night] .cp-box.ok{background:var(--ds-good-soft);border-color:var(--ds-good-line);}
 :root[data-night] .cp-box.no{background:var(--ds-warn-soft);border-color:#6A3B2B;}
 :root[data-night] .cp-in,:root[data-night] .cp-due,:root[data-night] .cp-fb{background:rgba(255,255,255,.07);color:var(--ds-ink);}
 :root[data-night] .cp-in:focus,:root[data-night] .cp-due:focus{background:var(--ds-field);}
+:root[data-night] .cp-sp{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.18);}
+:root[data-night] .cp-spi,:root[data-night] .cp-sp-res{background:rgba(255,255,255,.07);color:var(--ds-ink);}
+:root[data-night] .cp-spi:focus{background:var(--ds-field);}
 /* 其他進行中：看全部 */
 .ho-more{display:block;margin:4px auto 0;border:none;background:none;cursor:pointer;font-family:var(--ds-font);font-size:var(--ds-fs-xs);font-weight:700;color:var(--ds-focus-ink);}
 /* 計畫卡 */
