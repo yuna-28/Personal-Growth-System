@@ -507,7 +507,7 @@ const CLOSE_LABEL={done:'完成了',letgo:'放下了',end:'結束了'};
 const CAL_STAGE_COLOR='9',CAL_HARD_COLOR='11';
 const calSync={busy:{},again:{},timer:null,state:{},err:{},retryT:{},prog:{}};
 const CAL_CP_COLOR='5',CAL_PLAN_COLOR='7',CAL_PERIOD_COLOR='8';
-// 設成「只放截止日」就不放階段與決定點（日曆太擠時用）
+// 設成「只放截止日」就不放階段與檢查日（日曆太擠時用）
 function calDetailOn(){const p=data().plan;return !p||p.calDetail!==false;}
 function goalCalItems(g){
   const out={};
@@ -520,20 +520,20 @@ function goalCalItems(g){
   if(detail)(g.checkpoints||[]).forEach(c=>{
     if(!c.due||!c.id||c.deleted)return;
     const icon=c.result?(c.result.ok?'✅':'⚠️'):'◆';
-    out['c:'+c.id]={title:`${icon} 決定點｜${g.title}：${c.title}${c.approx?'（日期暫定）':''}`,date:c.due,color:CAL_CP_COLOR,reminderMin:c.result?'':900};
+    out['c:'+c.id]={title:`${icon} 檢查日｜${g.title}：${c.title}${c.approx?'（日期暫定）':''}`,date:c.due,color:CAL_CP_COLOR,reminderMin:c.result?'':900};
   });
   // 截止日跟某個🚩硬期限階段同一天，就不重複放
   const dupHard=detail&&(g.milestones||[]).some(m=>m.hard&&m.due===g.dueDate);
   if(g.dueDate&&!dupHard)out.due={title:`🏁 ${g.title} 截止`,date:g.dueDate,color:CAL_HARD_COLOR,reminderMin:900};
   return out;
 }
-// 計畫本身的行程（出遊、年假、出國、活動日）和地板週：多天的做成橫跨的全天行程
+// 計畫本身的行程（出遊、年假、出國、活動日）和趕工週：多天的做成橫跨的全天行程
 function planCalItems(pl){
   const out={};if(!pl)return out;
   (pl.events||[]).forEach(e=>{if(e.deleted||!e.from)return;
     out['e:'+e.id]={title:`📌 ${e.title}${e.tentative?'（暫定）':''}`,date:e.from,endDate:e.to&&e.to>e.from?e.to:'',color:e.color||CAL_PLAN_COLOR,reminderMin:''};});
   (pl.periods||[]).forEach(x=>{if(x.deleted||!x.from||!x.to)return;
-    out['p:'+x.id]={title:x.mode==='pause'?`⏸ 習慣暫停：${x.label}`:`🛡 地板週：${x.label}（只守地板版）`,date:x.from,endDate:x.to>x.from?x.to:'',color:CAL_PERIOD_COLOR,reminderMin:''};});
+    out['p:'+x.id]={title:x.mode==='pause'?`⏸ 習慣暫停：${x.label}`:`🛡 趕工週：${x.label}（只守最低版）`,date:x.from,endDate:x.to>x.from?x.to:'',color:CAL_PERIOD_COLOR,reminderMin:''};});
   return out;
 }
 const calOwner=id=>id==='__plan'?(data().plan||null):(data().projects.find(x=>x.id===id)||null);
@@ -618,7 +618,7 @@ function calStateHTML(g,always){
     error:`<button type="button" class="cal-sync err" data-action="cal-retry" data-g="${esc(g.id)}" title="${esc(calSync.err[g.id]||'')}（點一下重試）">📅 日曆同步失敗 · 重試</button>`,ok:'<span class="cal-sync ok" title="有日期的階段都在 Google 日曆上">📅 已在日曆上</span>'}[st];
 }
 function paintCalState(g){$qa(`[data-cal-state="${g.id}"]`).forEach(el=>{el.innerHTML=calStateHTML(g,el.dataset.always==='1');});}
-// ══ 決定點（止損點）══════════════════════════════
+// ══ 檢查日（止損點）══════════════════════════════
 // 先寫好「到那天看什麼、達標門檻、沒達標就改做什麼」，到了那天照表決定，不用在很累的時候重新談判
 const cpOpenSet=new Set();
 function allCheckpoints(){
@@ -627,13 +627,13 @@ function allCheckpoints(){
 }
 const byDue=(a,b)=>(a.c.due||'9999').localeCompare(b.c.due||'9999');
 function cpDueNow(){const d=curDay();return allCheckpoints().filter(x=>!x.c.result&&x.c.due&&x.c.due<=d).sort(byDue);}
-// 今天卡片上要顯示的：到期還沒決定的；沒達標的留 7 天（退路要看得到、要寫下決定）；達標的只留當天（按錯可以改回）
+// 今天卡片上要顯示的：到期還沒檢查的；沒達標的留 7 天（退路要看得到、要寫下決定）；達標的只留當天（按錯可以改回）
 function cpHeroList(){
   const d=curDay();
   return allCheckpoints().filter(x=>{const c=x.c,r=c.result;if(!r)return c.due&&c.due<=d;const age=daysBetween(r.on,d);return r.ok?age<=0:age<=7;}).sort(byDue);
 }
 const cpAttr=x=>`data-g="${esc(x.g.id)}" data-c="${esc(x.c.id)}"`;
-// 實測速度：「看什麼」提到實測／速度，或這個專案填過數字，決定點上才會出現。計算在 FocusCore.speedCalc，這裡只呈現
+// 實測速度：「看什麼」提到實測／速度，或這個專案填過數字，檢查日上才會出現。計算在 FocusCore.speedCalc，這裡只呈現
 // 沒填就只剩幾格空白的輸入框；不扣分、不加紅字；截止日要按按鈕才會改
 const spWanted=(g,c)=>C.speedHas(g.speed)||/實測|速度/.test(c.check||'');
 function speedOpts(g){return {today:curDay(),due:g.dueDate,startOn:g.startOn};}
@@ -664,14 +664,14 @@ function cpBox(x){
   const f=(k,lbl,ph)=>`<div class="cp-row"><i>${lbl}</i><input class="cp-in" data-cp-f="${k}" ${cpAttr(x)} value="${esc(c[k]||'')}" placeholder="${ph}" maxlength="400"/></div>`;
   const dueIn=`<input class="cp-due" data-cp-due="1" ${cpAttr(x)} value="${c.due?dateIn(c.due):''}" placeholder="日期" maxlength="12" title="打 12/7 這樣"/>`;
   if(res)return `<div class="cp-box ${res.ok?'ok':'no'}"><div class="cp-hd"><span>${res.ok?'✅ 達標':'⚠️ 沒達標'} · ${md(res.on)}</span><b>${esc(g.title)}：${esc(c.title)}</b>
-      <button type="button" class="goal-more" data-action="cp-undo" ${cpAttr(x)}>改回還沒決定</button></div>
+      <button type="button" class="goal-more" data-action="cp-undo" ${cpAttr(x)}>改回還沒檢查</button></div>
     ${res.ok?'':`<div class="cp-fb"><i>就照這個走</i>${esc(c.fallback||'（當初沒寫退路，可以在下面補）')}</div>${f('fallback','退路','沒達標就…')}${f('decision','我決定','寫下你今天決定怎麼做')}`}${speedBox(x)}</div>`;
-  return `<div class="cp-box open"><div class="cp-hd"><span>◆ 決定點 · ${dueIn}${c.approx?' 暫定':''} · ${when}</span><b>${esc(g.title)}：${esc(c.title)}</b></div>
+  return `<div class="cp-box open"><div class="cp-hd"><span>◆ 檢查日 · ${dueIn}${c.approx?' 暫定':''} · ${when}</span><b>${esc(g.title)}：${esc(c.title)}</b></div>
     ${f('check','看什麼','到那天要看什麼')}${f('bar','達標門檻','')}${f('fallback','沒達標就','退路')}${speedBox(x)}
     <div class="cp-act"><button type="button" class="focus-btn primary" data-action="cp-ok" ${cpAttr(x)}>達標了</button><button type="button" class="focus-btn" data-action="cp-no" ${cpAttr(x)}>沒達標</button></div></div>`;
 }
 const cpOf=el=>{const g=data().projects.find(x=>x.id===el.dataset.g);return {g,c:g&&(g.checkpoints||[]).find(x=>x.id===el.dataset.c)};};
-// ══ 每天的底線：地板版一定要做到，目標版有餘力再做 ══════════════
+// ══ 每天的最低標準：最低版一定要做到，理想版有餘力再做 ══════════════
 const rhyItems=()=>live(planOf()&&planOf().items);
 const habitOn=(day,key)=>!!key&&dayRec(day).checked.indexOf(key)>=0;
 function rhyCtx(it,day){
@@ -687,10 +687,10 @@ function rhyWeek(it,d){
   for(let i=0;i<7;i++){const day=shiftDay(mon,i);if(day>d)break;const per=dayPeriod(day);if(per&&per.mode==='pause')continue;const r=rhyDay(it,day);if(r.floor)floor++;if(r.target)target++;}
   return {floor,target};
 }
-// 紅線：連續幾天沒守到地板（只算有記錄起床時間的日子）
+// 紅線：連續幾天沒守到最低（只算有記錄起床時間的日子）
 function redlineHit(it,d){
   const rl=it.redline;if(!rl||!rl.days||!it.floorRule||it.floorRule.type!=='wake')return false;
-  const lateBed=rl.lateBed&&C.validTime(rl.lateBed)?rl.lateBed:'';   // 有填：連續幾晚「入睡」晚於這個時間；沒填：連續幾天沒守到地板
+  const lateBed=rl.lateBed&&C.validTime(rl.lateBed)?rl.lateBed:'';   // 有填：連續幾晚「入睡」晚於這個時間；沒填：連續幾天沒守到最低
   let n=0;
   for(let i=1;i<=14;i++){
     const day=shiftDay(d,-i),per=dayPeriod(day);if(per&&per.mode==='pause')continue;
@@ -704,20 +704,20 @@ function redlineHit(it,d){
 function rhythmCard(){
   const pl=planOf(),items=rhyItems();if(!pl||!items.length)return '';
   const d=ds(),per=C.periodOf(pl,d);
-  if(per&&per.mode==='pause')return `<div class="gcard rhy-card pause"><div class="rhy-hd"><span class="goal-title">每天的底線</span><span class="rhy-mode pause">⏸ 習慣暫停 · ${esc(per.label)}</span></div><div class="goal-sub muted">這段時間不計失敗，好好休息。</div></div>`;
+  if(per&&per.mode==='pause')return `<div class="gcard rhy-card pause"><div class="rhy-hd"><span class="goal-title">每天的最低標準</span><span class="rhy-mode pause">⏸ 習慣暫停 · ${esc(per.label)}</span></div><div class="goal-sub muted">這段時間不計失敗，好好休息。</div></div>`;
   const floorDay=!!per;
-  const red=items.filter(it=>redlineHit(it,d)).map(it=>`<div class="rhy-red">🚨 ${esc(it.redline.lateBed?`睡眠紅線：連續 ${it.redline.days} 晚 ${it.redline.lateBed} 後才睡，今天只做必要交付項，其他先暫停`:(it.redline.msg||it.label+'連續沒守到地板'))}</div>`).join('');
+  const red=items.filter(it=>redlineHit(it,d)).map(it=>`<div class="rhy-red">🚨 ${esc(it.redline.lateBed?`睡眠紅線：連續 ${it.redline.days} 晚 ${it.redline.lateBed} 後才睡，今天只做必要交付項，其他先暫停`:(it.redline.msg||it.label+'連續沒守到最低'))}</div>`).join('');
   const rows=items.map(it=>{
     const st=rhyDay(it,d),man=rhyManual(it,d),wk=rhyWeek(it,d);
     const pill=(lv,txt,on)=>{
       const auto=on&&man!==lv&&!(lv==='floor'&&man==='target');
       return `<button type="button" class="rhy-pill${on?' on':''}${auto?' auto':''}" data-action="rhy-tap" data-id="${esc(it.id)}" data-lv="${lv}" title="${auto?'從紀錄自動算到的':'點一下標記'}">${on?'✓ ':''}${txt}</button>`;};
     const showT=!floorDay&&it.target;
-    const dots=it.weekly?` · 目標 ${'●'.repeat(Math.min(wk.target,Math.max(it.weekly,wk.target)))}${'○'.repeat(Math.max(0,it.weekly-wk.target))}`:'';
-    return `<div class="rhy-row"><div class="rhy-l"><b>${esc(it.label)}</b><span>${esc(it.floor||'')}</span>${showT?`<span class="rhy-t">目標：${esc(it.target)}</span>`:''}</div>
-      <div class="rhy-s">${pill('floor','地板',st.floor)}${showT?pill('target','目標',st.target):''}<small>本週 ${wk.floor} 天${showT||it.weekly?dots:''}</small></div></div>`;
+    const dots=it.weekly?` · 理想 ${'●'.repeat(Math.min(wk.target,Math.max(it.weekly,wk.target)))}${'○'.repeat(Math.max(0,it.weekly-wk.target))}`:'';
+    return `<div class="rhy-row"><div class="rhy-l"><b>${esc(it.label)}</b><span>${esc(it.floor||'')}</span>${showT?`<span class="rhy-t">理想：${esc(it.target)}</span>`:''}</div>
+      <div class="rhy-s">${pill('floor','最低',st.floor)}${showT?pill('target','理想',st.target):''}<small>本週 ${wk.floor} 天${showT||it.weekly?dots:''}</small></div></div>`;
   }).join('');
-  return `<div class="gcard rhy-card"><div class="rhy-hd"><span class="goal-title">每天的底線</span>${per?`<span class="rhy-mode floor">🛡 地板日 · ${esc(per.label)}</span>`:'<span class="rhy-mode">目標日</span>'}
+  return `<div class="gcard rhy-card"><div class="rhy-hd"><span class="goal-title">每天的最低標準</span>${per?`<span class="rhy-mode floor">🛡 趕工日 · ${esc(per.label)}</span>`:'<span class="rhy-mode">平常日</span>'}
       <button type="button" class="card-edit" data-action="rhy-edit" title="改文字、時間、每週次數">✏️ 編輯</button></div>${red}${rows}</div>`;
 }
 function openRhythmEditor(){
@@ -726,13 +726,13 @@ function openRhythmEditor(){
     const fr=it.floorRule||{},tr=it.targetRule||{};
     const num=(lbl,k,v,w)=>`<label class="rhy-ed-n">${lbl}<input class="fm-in" data-k="${k}" value="${esc(v)}" maxlength="6" style="width:${w||70}px"/></label>`;
     return `<div class="rhy-ed" data-item="${esc(it.id)}">
-      <div class="qg-1"><input class="fm-in" data-k="label" value="${esc(it.label)}" maxlength="12" placeholder="名稱"/><input class="fm-in" data-k="weekly" value="${it.weekly||''}" maxlength="2" placeholder="每週目標次數" title="目標版每週要做到幾次；不用就留空"/><button type="button" class="fm-del" data-del title="刪除">✕</button></div>
-      <input class="fm-in" data-k="floor" value="${esc(it.floor||'')}" maxlength="80" placeholder="地板版：最少要做到什麼" style="margin-bottom:6px;"/>
-      <input class="fm-in" data-k="target" value="${esc(it.target||'')}" maxlength="80" placeholder="目標版：有餘力做到什麼（選填）" style="margin-bottom:6px;"/>
-      <div class="rhy-ed-r">${fr.max?num('地板：最晚',"fmax",fr.max):''}${fr.minHours!==undefined?num('且至少睡（小時）','fhrs',fr.minHours,56):''}${fr.grace?num('前晚太晚睡可放寬到','gmax',fr.grace.max,70):''}${tr.max?num('目標：最晚','tmax',tr.max):''}${fr.minutes!==undefined&&fr.type==='exercise'?num('地板：分鐘','fmin',fr.minutes,56):''}${tr.minutes!==undefined&&tr.type==='exercise'?num('目標：分鐘','tmin',tr.minutes,56):''}${it.redline&&it.redline.lateBed?num('紅線：連續幾晚','rdays',it.redline.days||3,40)+num('入睡晚於','rbed',it.redline.lateBed,70):''}</div></div>`;
+      <div class="qg-1"><input class="fm-in" data-k="label" value="${esc(it.label)}" maxlength="12" placeholder="名稱"/><input class="fm-in" data-k="weekly" value="${it.weekly||''}" maxlength="2" placeholder="每週理想次數" title="理想版每週要做到幾次；不用就留空"/><button type="button" class="fm-del" data-del title="刪除">✕</button></div>
+      <input class="fm-in" data-k="floor" value="${esc(it.floor||'')}" maxlength="80" placeholder="最低版：最少要做到什麼" style="margin-bottom:6px;"/>
+      <input class="fm-in" data-k="target" value="${esc(it.target||'')}" maxlength="80" placeholder="理想版：有餘力做到什麼（選填）" style="margin-bottom:6px;"/>
+      <div class="rhy-ed-r">${fr.max?num('最低：最晚',"fmax",fr.max):''}${fr.minHours!==undefined?num('且至少睡（小時）','fhrs',fr.minHours,56):''}${fr.grace?num('前晚太晚睡可放寬到','gmax',fr.grace.max,70):''}${tr.max?num('理想：最晚','tmax',tr.max):''}${fr.minutes!==undefined&&fr.type==='exercise'?num('最低：分鐘','fmin',fr.minutes,56):''}${tr.minutes!==undefined&&tr.type==='exercise'?num('理想：分鐘','tmin',tr.minutes,56):''}${it.redline&&it.redline.lateBed?num('紅線：連續幾晚','rdays',it.redline.days||3,40)+num('入睡晚於','rbed',it.redline.lateBed,70):''}</div></div>`;
   };
-  modal('每天的底線',`
-    <div class="fm-hint">地板版是再忙再累也要守的；目標版有餘力再做。睡眠、運動會從紀錄自動算，其他的點一下標記。</div>
+  modal('每天的最低標準',`
+    <div class="fm-hint">最低版是再忙再累也要守的；理想版有餘力再做。睡眠、運動會從紀錄自動算，其他的點一下標記。</div>
     <div id="rhy-list">${live(pl.items).map(rowHTML).join('')}</div>
     <button type="button" class="focus-btn" id="rhy-add">＋ 新增一項（自己打勾）</button>
     <div class="fm-actions"><button class="focus-btn primary" id="rhy-save" style="margin-left:auto;">儲存</button></div>`,
@@ -767,7 +767,7 @@ function openRhythmEditor(){
     };
   });
 }
-// ══ 計畫：時間軸、決定點、待確認、行程與地板週 ══════════════
+// ══ 計畫：時間軸、檢查日、待確認、行程與趕工週 ══════════════
 const planOf=()=>data().plan||null;
 const live=arr=>(arr||[]).filter(x=>!x.deleted);
 const dateIn=v=>v?((v.slice(0,4)!==curDay().slice(0,4)?v.slice(0,4)+'/':'')+md(v)):'';
@@ -797,7 +797,7 @@ function timelineHTML(){
   const ticks=[];for(let x=lo.slice(0,8)+'01';x<=hi;){const dt=new Date(x+'T12:00:00');if(x>=lo)ticks.push(x);dt.setMonth(dt.getMonth()+1);x=C.dateKey(dt);}
   const axis=ticks.map(x=>`<span class="tl-tick" style="left:${pct(x)}%">${+x.slice(5,7)===1||x===ticks[0]?x.slice(2,4)+'/':''}${+x.slice(5,7)}月</span>`).join('');
   const grid=ticks.map(x=>`<i class="tl-grid" style="left:${pct(x)}%"></i>`).join('');
-  const bands=per.filter(x=>vis(x.from,x.to)).map(x=>`<i class="tl-band ${x.mode}" style="${span(x.from,x.to)}" title="${esc((x.mode==='pause'?'習慣暫停：':'地板週：')+x.label+' '+md(x.from)+'–'+md(x.to))}"></i>`).join('');
+  const bands=per.filter(x=>vis(x.from,x.to)).map(x=>`<i class="tl-band ${x.mode}" style="${span(x.from,x.to)}" title="${esc((x.mode==='pause'?'習慣暫停：':'趕工週：')+x.label+' '+md(x.from)+'–'+md(x.to))}"></i>`).join('');
   const today=d>=lo&&d<=hi?`<i class="tl-today" style="left:${pct(d)}%" title="今天"></i>`:'';
   // 同時進行幾個：每週算一次，顏色越深越擠
   let busy='',maxN=1;const weeks=[];for(let w=lo;w<=hi;w=shiftDay(w,7)){const we=shiftDay(w,6),n=rows.filter(r=>r.start<=we&&r.end>=w).length;weeks.push([w,n]);maxN=Math.max(maxN,n);}
@@ -807,19 +807,19 @@ function timelineHTML(){
     const bars=r.ph.length?r.ph.filter(x=>vis(x.from,x.to)).map((x,k)=>`<i class="tl-seg ${col} s${k%3}" style="${span(x.from,x.to)}" title="${esc(x.label+' '+md(x.from)+'–'+md(x.to))}"></i>`).join('')
       :`<i class="tl-seg ${col}" style="${span(r.start,r.end)}" title="${esc(g.title+' '+md(r.start)+'–'+md(r.end))}"></i>`;
     const flag=g.dueDate&&vis(g.dueDate,g.dueDate)?`<i class="tl-flag" style="left:${pct(g.dueDate)}%" title="截止 ${md(g.dueDate)}">🏁</i>`:'';
-    const cps=(g.checkpoints||[]).filter(c=>!c.deleted&&c.due&&vis(c.due,c.due)).map(c=>`<i class="tl-cp ${c.result?(c.result.ok?'ok':'no'):''}" style="left:${pct(c.due)}%" title="${esc('決定點 '+md(c.due)+'：'+c.title)}"></i>`).join('');
-    return {lab:`<button type="button" class="tl-lab" data-action="tl-open" data-g="${esc(g.id)}" title="${esc(g.title)}">${g.group?`<i class="ho-g">${esc(g.group)}</i>`:''}<span>${esc(g.title)}</span><small>${left==null?'':(left<0?'已過':left+'天')}</small></button>`,
+    const cps=(g.checkpoints||[]).filter(c=>!c.deleted&&c.due&&vis(c.due,c.due)).map(c=>`<i class="tl-cp ${c.result?(c.result.ok?'ok':'no'):''}" style="left:${pct(c.due)}%" title="${esc('檢查日 '+md(c.due)+'：'+c.title)}"></i>`).join('');
+    return {lab:`<button type="button" class="tl-lab" data-action="tl-open" data-g="${esc(g.id)}" title="點一下編輯：${esc(g.title)}">${g.group?`<i class="ho-g">${esc(g.group)}</i>`:''}<span>${esc(g.title)}</span><small>${left==null?'':(left<0?'已過':left+'天')}</small></button>`,
       track:`<div class="tl-row">${bars}${flag}${cps}</div>`};
   });
   const evHTML=evs.filter(e=>vis(e.from,e.to||e.from)).map(e=>{const one=!e.to||e.to===e.from;
-    return {lab:`<div class="tl-lab ev"><span>${esc(e.title)}${e.tentative?'（暫定）':''}</span><small>${md(e.from)}${one?'':'–'+md(e.to)}</small></div>`,
+    return {lab:`<button type="button" class="tl-lab ev" data-action="tl-ev" title="點一下看行程清單"><span>${esc(e.title)}${e.tentative?'（暫定）':''}</span><small>${md(e.from)}${one?'':'–'+md(e.to)}</small></button>`,
       track:`<div class="tl-row">${one?`<i class="tl-dia" style="left:${pct(e.from)}%" title="${esc(e.title+' '+md(e.from))}"></i>`:`<i class="tl-ev" style="${span(e.from,e.to)}" title="${esc(e.title)}"></i>`}</div>`};});
   const all=[...rowHTML,...evHTML];
   return `<div class="tl-wrap"><div class="tl-chart">
     <div class="tl-axisrow"><div></div><div class="tl-axis">${axis}</div></div>
     <div class="tl-bodyrow"><div class="tl-labels"><div class="tl-lab busy"><span>同時進行</span></div>${all.map(x=>x.lab).join('')}</div>
       <div class="tl-tracks"><div class="tl-overlay">${grid}${bands}${today}</div><div class="tl-row busy">${busy}</div>${all.map(x=>x.track).join('')}</div></div></div></div>
-    <div class="tl-legend"><span><i class="tl-cp"></i>決定點</span><span>🏁 截止</span><span><i class="tl-band floor"></i>地板週</span><span><i class="tl-band pause"></i>習慣暫停</span><span><i class="tl-today"></i>今天</span></div>`;
+    <div class="tl-legend"><span><i class="tl-cp"></i>檢查日</span><span>🏁 截止</span><span><i class="tl-band floor"></i>趕工週</span><span><i class="tl-band pause"></i>習慣暫停</span><span><i class="tl-today"></i>今天</span></div>`;
 }
 function todoRows(){
   const pl=planOf(),list=live(pl&&pl.todos).slice().sort((a,b)=>(a.done?1:0)-(b.done?1:0)||(a.due||'9999').localeCompare(b.due||'9999'));
@@ -832,7 +832,7 @@ function todoRows(){
     +`<div class="td-row add"><span class="td-plus">＋</span><input class="td-text" data-todo-add="1" placeholder="新增要確認的事，按 Enter" maxlength="200"/></div>`;
 }
 function planRows(){
-  const pl=planOf();if(!pl)return '';
+  const pl=planOf();if(!pl)return {ev:'',pe:''};
   const ev=live(pl.events).slice().sort((a,b)=>(a.from||'').localeCompare(b.from||'')).map(e=>`<div class="pl-row">
       <input class="pl-t" data-plan-f="title" data-kind="events" data-id="${esc(e.id)}" value="${esc(e.title)}" maxlength="40"/>
       <input class="pl-d" data-plan-d="from" data-kind="events" data-id="${esc(e.id)}" value="${dateIn(e.from)}" placeholder="開始" maxlength="12"/>
@@ -845,38 +845,51 @@ function planRows(){
       <input class="pl-d" data-plan-d="to" data-kind="periods" data-id="${esc(x.id)}" value="${dateIn(x.to)}" placeholder="結束" maxlength="12"/>
       <label class="pl-chk"><input type="checkbox" data-plan-c="pause" data-kind="periods" data-id="${esc(x.id)}"${x.mode==='pause'?' checked':''}/>暫停</label>
       <button type="button" class="fm-del" data-action="plan-del" data-kind="periods" data-id="${esc(x.id)}" title="刪除">✕</button></div>`).join('');
-  return `<div class="pl-sec"><div class="pl-hd">行程限制<small>會放進日曆</small></div>${ev||'<div class="goal-sub muted">還沒有。</div>'}
-      <button type="button" class="focus-btn" data-action="plan-add" data-kind="events">＋ 新增行程</button></div>
-    <div class="pl-sec"><div class="pl-hd">地板週<small>這段時間只守地板版；勾「暫停」＝習慣暫停、不計失敗</small></div>${pe||'<div class="goal-sub muted">還沒有。</div>'}
-      <button type="button" class="focus-btn" data-action="plan-add" data-kind="periods">＋ 新增地板週</button></div>`;
+  return {
+    ev:`${ev||'<div class="goal-sub muted">還沒有。</div>'}<button type="button" class="focus-btn" data-action="plan-add" data-kind="events">＋ 新增行程</button>`,
+    pe:`<div class="goal-sub muted" style="margin-bottom:6px;">這段時間每天只要做到「最低版」就算過關；勾「暫停」＝習慣暫停、不計失敗。</div>${pe||'<div class="goal-sub muted">還沒有。</div>'}<button type="button" class="focus-btn" data-action="plan-add" data-kind="periods">＋ 新增趕工週</button>`};
+}
+// 下面的細項預設收起來：只看一行摘要，要改才點開（展開狀態在重畫時保留）
+const plOpenSet=new Set();
+function plFold(key,title,sum,body){
+  const o=plOpenSet.has(key);
+  return `<div class="pl-fold${o?' open':''}"><button type="button" class="pl-fold-h" data-action="pl-fold" data-k="${key}"><b>${title}</b><small>${sum}</small><span>${o?'▴':'▾'}</span></button>${o?`<div class="pl-fold-b">${body}</div>`:''}</div>`;
+}
+function planFolds(pl){
+  const d=curDay(),todos=live(pl.todos).filter(t=>!t.done),late=todos.filter(t=>t.due&&t.due<d).length;
+  const evs=live(pl.events).filter(e=>e.from),next=evs.filter(e=>(e.to||e.from)>=d).sort((a,b)=>a.from.localeCompare(b.from))[0];
+  const per=live(pl.periods),r=planRows();
+  return plFold('todos','還沒確定的事',`${todos.length} 項${late?`・<b class="warn">${late} 項過期</b>`:''}`,`<div class="goal-sub muted" style="margin-bottom:6px;">有期限的，過期會變橘色。</div>${todoRows()}`)
+    +plFold('events','行程（出遊、年假、活動日）',`${evs.length} 個${next?'・下一個 '+esc(next.title)+' '+md(next.from):''}`,r.ev)
+    +plFold('periods','趕工週（只做最低版的時期）',`${per.length} 段`,r.pe);
 }
 function planHTML(){
   const pl=planOf(),f=data(),goalsN=projectGoals().length;
   const size=JSON.stringify(f).length,warn=size>40000;
   const cps=allCheckpoints(),open=cps.filter(x=>!x.c.result).sort(byDue),done=cps.filter(x=>x.c.result).sort(byDue);
   const range=tlRange();
-  const cpList=open.slice(0,8).map(x=>{
+  const cpList=open.slice(0,5).map(x=>{
     const left=x.c.due?daysBetween(curDay(),x.c.due):null,k=x.g.id+'|'+x.c.id,isOpen=cpOpenSet.has(k);
     return `<div class="cpl"><button type="button" class="cpl-row" data-action="cp-toggle" data-k="${esc(k)}"><span class="cpl-d">${x.c.due?md(x.c.due):'?'}</span>
       <span class="cpl-t"><b>${esc(x.g.title)}</b>${esc(x.c.title)}</span><span class="cpl-w">${left==null?'':(left<0?'<b class="warn">已過 '+(-left)+' 天</b>':(left===0?'今天':'還有 '+left+' 天'))}</span><span>${isOpen?'▴':'▾'}</span></button>${isOpen?cpBox(x):''}</div>`;}).join('');
   return `<div class="gcard plan-card"><div class="goal-hd"><span class="goal-title">${esc((pl&&pl.title)||'計畫總覽')}</span>
-      <span class="goal-sub muted">${goalsN} 個目標一起看</span>
+      <span class="goal-sub muted">${goalsN} 個目標一起看・點目標名稱可以編輯</span>
       <span class="plan-tools"><span class="seg-mini"><button type="button" data-action="tl-range" data-v="all" class="${range==='all'?'on':''}">全部</button><button type="button" data-action="tl-range" data-v="8w" class="${range==='8w'?'on':''}">接下來 8 週</button></span>
       <button type="button" class="card-edit" data-action="plan-import" title="匯入計畫檔">⬇ 匯入計畫檔</button></span></div>
     ${timelineHTML()}
     ${pl?`<div class="pl-cal"><span data-cal-state="__plan" data-always="1">${calStateHTML(pl,true)}</span>
-      <label class="pl-chk"><input type="checkbox" data-plan-c="calDetail"${pl.calDetail!==false?' checked':''}/>階段和決定點也放進日曆</label>
+      <label class="pl-chk"><input type="checkbox" data-plan-c="calDetail"${pl.calDetail!==false?' checked':''}/>階段和檢查日也放進日曆</label>
       <span class="goal-sub muted${warn?' warn':''}" title="雲端把目標資料存在一個儲存格，上限約 5 萬字">資料量 ${(size/1000).toFixed(1)}K／約 45K${warn?'　快滿了，別再塞太多文字':''}</span></div>`:''}
-    ${open.length||done.length?`<div class="pl-sec"><div class="pl-hd">接下來的決定點<small>${open.length} 個還沒決定${done.length?'・'+done.length+' 個已決定':''}</small></div>${cpList||'<div class="goal-sub muted">都決定了。</div>'}${open.length>8?`<div class="goal-sub muted">還有 ${open.length-8} 個在後面</div>`:''}
-      ${done.length?`<div class="pl-hd" style="margin-top:10px;"><small>已決定</small></div>${done.slice().reverse().slice(0,6).map(x=>{const k=x.g.id+'|'+x.c.id,isOpen=cpOpenSet.has(k);
+    ${open.length||done.length?`<div class="pl-sec"><div class="pl-hd">接下來的檢查日<small>${open.length} 個還沒檢查${done.length?'・'+done.length+' 個已檢查':''}</small></div>${cpList||'<div class="goal-sub muted">都檢查過了。</div>'}${open.length>5?`<div class="goal-sub muted">還有 ${open.length-5} 個在後面</div>`:''}
+      ${done.length?`<div class="pl-hd" style="margin-top:10px;"><small>已檢查</small></div>${done.slice().reverse().slice(0,6).map(x=>{const k=x.g.id+'|'+x.c.id,isOpen=cpOpenSet.has(k);
         return `<div class="cpl"><button type="button" class="cpl-row" data-action="cp-toggle" data-k="${esc(k)}"><span class="cpl-d">${x.c.due?md(x.c.due):'?'}</span><span class="cpl-t"><b>${esc(x.g.title)}</b>${esc(x.c.title)}</span><span class="cpl-w">${x.c.result.ok?'✅ 達標':'⚠️ 沒達標'}</span><span>${isOpen?'▴':'▾'}</span></button>${isOpen?cpBox(x):''}</div>`;}).join('')}`:''}</div>`:''}
-    ${pl?`<div class="pl-sec"><div class="pl-hd">待確認<small>有期限的會在過期時變橘色</small></div>${todoRows()}</div>${planRows()}`:'<div class="goal-sub muted" style="margin-top:8px;">有計畫檔的話，按右上「匯入計畫檔」，階段、決定點、地板週、行程會一次建好，也一起放進日曆。</div>'}
+    ${pl?`<div class="pl-sec pl-folds">${planFolds(pl)}</div>`:'<div class="goal-sub muted" style="margin-top:8px;">有計畫檔的話，按右上「匯入計畫檔」，階段、檢查日、趕工週、行程會一次建好，也一起放進日曆。</div>'}
   </div>`;
 }
 // ── 匯入計畫檔 ──
 function openPlanImport(){
   modal('匯入計畫檔',`
-    <div class="fm-hint">貼上計畫的 JSON，或選擇檔案。同一份重複匯入只會更新，不會多一份；你已經勾掉的階段、做過的決定、勾掉的待確認都會保留。名字有對到的目標（例如「作品A」）會直接接上去，不會另外多一個。</div>
+    <div class="fm-hint">貼上計畫的 JSON，或選擇檔案。同一份重複匯入只會更新，不會多一份；你已經勾掉的階段、做過的檢查、勾掉的待確認都會保留。名字有對到的目標（例如「作品A」）會直接接上去，不會另外多一個。</div>
     <textarea class="fm-in" id="pi-text" rows="7" style="width:100%;resize:vertical;font-size:12px;" placeholder='{"format":"grandol-plan", ...}'></textarea>
     <div class="goal-chips" style="align-items:center;"><label class="fm-hint">或選檔案 <input id="pi-file" type="file" accept="application/json,.json,text/plain"/></label>
       <button type="button" class="focus-btn primary" id="pi-check" style="margin-left:auto;">看看會變成什麼</button></div>
@@ -891,11 +904,11 @@ function openPlanImport(){
       const rp=r.report,tooBig=r.size>46000;
       box.innerHTML=`<div class="pi-sum"><b>${esc(src.title||'計畫')}</b>
         <div>新增 ${rp.added} 個目標，更新 ${rp.updated} 個${rp.matched.length?`（接上你原本的：${rp.matched.map(esc).join('、')}）`:''}</div>
-        <div>階段 ${rp.stages}・決定點 ${rp.checkpoints}・行程 ${rp.events}・地板週 ${rp.periods}・每天的底線 ${rp.items}・待確認 ${rp.todos}</div>
+        <div>階段 ${rp.stages}・檢查日 ${rp.checkpoints}・行程 ${rp.events}・趕工週 ${rp.periods}・每天的最低標準 ${rp.items}・待確認 ${rp.todos}</div>
         <div class="goal-sub muted">資料量會變成 ${(r.size/1000).toFixed(1)}K（雲端上限約 45K）</div>
         ${rp.warnings.map(w=>`<div class="fm-hint" style="color:#B0502A;">${esc(w)}</div>`).join('')}
         ${tooBig?'<div class="fm-hint" style="color:#B0502A;">太大了，雲端存不下。請先把備註縮短再匯入。</div>':''}</div>
-        <div class="fm-actions"><label class="fm-hint"><input type="checkbox" id="pi-cal" checked/> 階段、決定點、行程、地板週也放進 Google 日曆</label>
+        <div class="fm-actions"><label class="fm-hint"><input type="checkbox" id="pi-cal" checked/> 階段、檢查日、行程、趕工週也放進 Google 日曆</label>
           <button type="button" class="focus-btn primary" id="pi-go" style="margin-left:auto;"${tooBig?' disabled':''}>匯入</button></div>`;
       box.querySelector('#pi-go')?.addEventListener('click',()=>{
         S.focus=r.focus;const pl=S.focus.plan;pl.calDetail=box.querySelector('#pi-cal').checked;
@@ -925,7 +938,7 @@ function render(force){
   if(M.plan)M.plan.innerHTML=planHTML();
   if(M.rhythm)M.rhythm.innerHTML=rhythmCard();
   {const chip=document.getElementById('mode-chip'),per=dayPeriod(curDay());
-   if(chip){chip.hidden=!per;if(per){chip.textContent=(per.mode==='pause'?'⏸ 習慣暫停 · ':'🛡 地板日 · ')+per.label;chip.className='mode-chip '+per.mode;}}}
+   if(chip){chip.hidden=!per;if(per){chip.textContent=(per.mode==='pause'?'⏸ 習慣暫停 · ':'🛡 趕工日 · ')+per.label;chip.className='mode-chip '+per.mode;}}}
   if(M.tags)M.tags.innerHTML=tagChips();
   if(M.undone)M.undone.innerHTML=undoneList();
   if(M.bring)M.bring.innerHTML=bringNext();
@@ -1400,7 +1413,9 @@ onMounts('click',ev=>{
   if(a==='hero-ms'){try{localStorage.setItem('grandol_hero_ms',heroOpen()?'0':'1');}catch(e){}render(true);return;}
   if(a==='edit-plan'){openPlanEditor();return;}
   if(a==='focus-goal'){focusGoalOn(el.dataset.g);render(true);return;}
-  if(a==='tl-open'){focusGoalOn(el.dataset.g);document.querySelector('.nav-btn[data-page="home"]')?.click();render(true);return;}
+  if(a==='tl-open'){const g=data().projects.find(x=>x.id===el.dataset.g);if(g)openProjectEditor(g);return;}
+  if(a==='pl-fold'){const k=el.dataset.k;if(plOpenSet.has(k))plOpenSet.delete(k);else plOpenSet.add(k);render(true);return;}
+  if(a==='tl-ev'){plOpenSet.add('events');render(true);$q('.pl-folds')?.scrollIntoView({block:'center',behavior:'smooth'});return;}
   if(a==='tl-range'){try{localStorage.setItem('grandol_tl',el.dataset.v);}catch(e){}render(true);return;}
   if(a==='others-toggle'){try{localStorage.setItem('grandol_others_all',localStorage.getItem('grandol_others_all')==='1'?'0':'1');}catch(e){}render(true);return;}
   if(a==='cp-toggle'){const k=el.dataset.k;if(cpOpenSet.has(k))cpOpenSet.delete(k);else cpOpenSet.add(k);render(true);return;}
@@ -1430,7 +1445,7 @@ onMounts('click',ev=>{
   if(a==='plan-add'){
     if(!writable())return;const pl=ensurePlan(),kind=el.dataset.kind,id='pl-'+uid(),now=Date.now(),d=curDay();
     if(kind==='events')pl.events=[...pl.events,{id,title:'新行程',from:d,to:d,tentative:false,updatedAt:now}];
-    else pl.periods=[...pl.periods,{id,label:'新地板週',from:d,to:shiftDay(d,6),mode:'floor',updatedAt:now}];
+    else pl.periods=[...pl.periods,{id,label:'新趕工週',from:d,to:shiftDay(d,6),mode:'floor',updatedAt:now}];
     savePlan();setTimeout(()=>$q(`[data-plan-f][data-id="${id}"]`)?.select(),80);return;
   }
   if(a==='plan-del'){
@@ -1571,20 +1586,20 @@ onMounts('focusout',ev=>{
   if(!inp||inp.value.trim())return;
   setTimeout(()=>{if(justDone&&!inMounts(document.activeElement)){justDone='';render(true);}},150);
 });
-// ── 計畫、決定點、待確認：欄位改完就存 ──
+// ── 計畫、檢查日、待確認：欄位改完就存 ──
 onMounts('change',ev=>{
   const el=ev.target,dd=el.dataset||{};
   if(!isField(el)&&dd.todoDone===undefined&&dd.planC===undefined)return;
   if(dd.cpF===undefined&&dd.cpDue===undefined&&dd.cpSp===undefined&&dd.todoDone===undefined&&dd.todoText===undefined&&dd.todoDue===undefined&&dd.planF===undefined&&dd.planD===undefined&&dd.planC===undefined)return;
   if(!writable()){el.value=el.defaultValue;return;}
   const now=Date.now(),v=(el.value||'').trim();
-  if(dd.cpSp!==undefined){   // 實測速度的格子：屬於專案（g.speed），不是某一個決定點
+  if(dd.cpSp!==undefined){   // 實測速度的格子：屬於專案（g.speed），不是某一個檢查日
     const g=data().projects.find(x=>x.id===el.dataset.g);if(!g)return;
     let raw=v;
     if(dd.cpSp==='sinceDay'&&v){raw=parseMD(v);if(raw===null){el.value=el.defaultValue;softToast('日期看不懂，打成 11/9 這樣就好',2600);return;}}
     const r=C.speedSet(g.speed,dd.cpSp,raw,{today:curDay()});
     if(r.error){el.value=el.defaultValue;softToast(r.error,2600);return;}
-    if(r.speed)g.speed=r.speed;else delete g.speed;   // 全部清空＝沒有實測資料，決定點上的格子也跟著收起來
+    if(r.speed)g.speed=r.speed;else delete g.speed;   // 全部清空＝沒有實測資料，檢查日上的格子也跟著收起來
     el.defaultValue=el.value;saveQuiet(g);softToast('存好了 ✓',1200);return;
   }
   if(dd.cpF!==undefined||dd.cpDue!==undefined){
@@ -1601,7 +1616,7 @@ onMounts('change',ev=>{
     else{const due=v?parseMD(v):'';if(due===null){el.value=el.defaultValue;softToast('日期看不懂，打成 12/7 這樣就好',2600);return;}t.due=due;el.value=dateIn(due);}
     t.updatedAt=now;el.defaultValue=el.value;savePlan();return;
   }
-  if(dd.planC==='calDetail'){pl.calDetail=el.checked;savePlan();softToast(el.checked?'階段和決定點會放進日曆':'日曆只留截止日，其他的會被拿掉',2600);return;}
+  if(dd.planC==='calDetail'){pl.calDetail=el.checked;savePlan();softToast(el.checked?'階段和檢查日會放進日曆':'日曆只留截止日，其他的會被拿掉',2600);return;}
   const it=(pl[dd.kind]||[]).find(x=>x.id===dd.id);if(!it)return;
   if(dd.planF!==undefined){if(!v){el.value=el.defaultValue;return;}it[dd.planF]=v;}
   else if(dd.planD!==undefined){
@@ -2211,31 +2226,31 @@ function nightLine(day){
     return `${t} ${x.label} ${x.done?'✓':(x.skipped?'跳過':'沒做')}`;
   }).join('｜');
 }
-// 這一天的底線狀況（給每日明細用）
+// 這一天的最低標準狀況（給每日明細用）
 function rhythmLine(day){
   const pl=planOf(),items=rhyItems();if(!pl||!items.length)return '';
-  const per=C.periodOf(pl,day);if(per&&per.mode==='pause')return `🧭 底線：習慣暫停（${per.label}）`;
-  const parts=items.map(it=>{const r=rhyDay(it,day);return `${it.label} ${r.target?'目標✓':(r.floor?'地板✓':'—')}`;});   // 沒做到或沒記錄都用「—」，不寫叉叉
-  return `🧭 底線（${per?'地板日·'+per.label:'目標日'}）：${parts.join('｜')}`;
+  const per=C.periodOf(pl,day);if(per&&per.mode==='pause')return `🧭 最低標準：習慣暫停（${per.label}）`;
+  const parts=items.map(it=>{const r=rhyDay(it,day);return `${it.label} ${r.target?'理想✓':(r.floor?'最低✓':'—')}`;});   // 沒做到或沒記錄都用「—」，不寫叉叉
+  return `🧭 最低標準（${per?'趕工日·'+per.label:'平常日'}）：${parts.join('｜')}`;
 }
-// 計畫的期間摘要：地板週、決定點、底線統計、待確認
+// 計畫的期間摘要：趕工週、檢查日、最低標準統計、待確認
 function planLines(dates){
   const pl=planOf(),L=[];if(!pl)return L;
   const first=dates[0],last=dates[dates.length-1],past=dates.filter(x=>x<=curDay());
   const per=live(pl.periods).filter(x=>x.from<=last&&x.to>=first);
-  if(per.length)L.push('🛡 這段期間的地板週與暫停：'+per.map(x=>`${md(x.from)}–${md(x.to)} ${x.label}${x.mode==='pause'?'（習慣暫停，不計失敗）':''}`).join('；'));
+  if(per.length)L.push('🛡 這段期間的趕工週與暫停：'+per.map(x=>`${md(x.from)}–${md(x.to)} ${x.label}${x.mode==='pause'?'（習慣暫停，不計失敗）':''}`).join('；'));
   const cps=allCheckpoints().filter(x=>x.c.due&&((x.c.due>=first&&x.c.due<=last)||(!x.c.result&&x.c.due<first))).sort(byDue);
-  if(cps.length){L.push('◆ 決定點（先寫好沒達標就怎麼做，到那天照表決定）：');
-    cps.forEach(x=>{const r=x.c.result,sl=spWanted(x.g,x.c)?speedLine(x.g):'';L.push(`  ${md(x.c.due)} ${x.g.title}：${x.c.title}｜看什麼：${x.c.check||'—'}｜門檻：${x.c.bar||'—'}｜沒達標就：${x.c.fallback||'—'}${sl?'｜'+sl:''}｜結果：${r?(r.ok?'達標（'+md(r.on)+'）':'沒達標（'+md(r.on)+'）'+(x.c.decision?'，我決定：'+x.c.decision:'')):(x.c.due<curDay()?'還沒決定（已過期）':'還沒到')}`);});}
+  if(cps.length){L.push('◆ 檢查日（先寫好沒達標就怎麼做，到那天照表決定）：');
+    cps.forEach(x=>{const r=x.c.result,sl=spWanted(x.g,x.c)?speedLine(x.g):'';L.push(`  ${md(x.c.due)} ${x.g.title}：${x.c.title}｜看什麼：${x.c.check||'—'}｜門檻：${x.c.bar||'—'}｜沒達標就：${x.c.fallback||'—'}${sl?'｜'+sl:''}｜結果：${r?(r.ok?'達標（'+md(r.on)+'）':'沒達標（'+md(r.on)+'）'+(x.c.decision?'，我決定：'+x.c.decision:'')):(x.c.due<curDay()?'還沒檢查（已過期）':'還沒到')}`);});}
   const items=rhyItems();
   if(items.length&&past.length){
     const active=past.filter(day=>{const p=C.periodOf(pl,day);return !(p&&p.mode==='pause');});
     const rec=active.filter(day=>{const x=dayRec(day);return x.checked.length||x.items.length||Object.values(x.diary).some(Boolean)||healthAny(x.health);});
-    L.push(`🧭 每天的底線（有記錄的 ${rec.length} 天；沒記錄的日子不算沒做到；習慣暫停的日子不算）：`);
+    L.push(`🧭 每天的最低標準（有記錄的 ${rec.length} 天；沒記錄的日子不算沒做到；習慣暫停的日子不算）：`);
     items.forEach(it=>{
       let f=0,t=0,ff=0,fn=0,tf=0,tn=0;
       rec.forEach(day=>{const r=rhyDay(it,day),floorDay=!!C.periodOf(pl,day);if(floorDay){fn++;if(r.floor)ff++;}else{tn++;if(r.floor)tf++;}if(r.floor)f++;if(r.target)t++;});
-      L.push(`  ${it.label}：地板版 ${f}/${rec.length} 天（地板日 ${ff}/${fn}、目標日 ${tf}/${tn}）｜目標版做到 ${t} 天${it.weekly?`（每週目標 ${it.weekly} 次）`:''}｜地板：${it.floor||'—'}${it.target?'｜目標：'+it.target:''}`);
+      L.push(`  ${it.label}：最低版 ${f}/${rec.length} 天（趕工日 ${ff}/${fn}、平常日 ${tf}/${tn}）｜理想版做到 ${t} 天${it.weekly?`（每週理想 ${it.weekly} 次）`:''}｜最低：${it.floor||'—'}${it.target?'｜理想：'+it.target:''}`);
     });
   }
   const td=live(pl.todos).filter(x=>!x.done);
