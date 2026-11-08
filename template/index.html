@@ -1069,8 +1069,8 @@ button{-webkit-tap-highlight-color:transparent;}
 @keyframes pageIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
 .page.active{animation:pageIn .22s ease;}
 </style>
-<link rel="stylesheet" href="focus.css?v=149">
-<script src="focus-core.js?v=149"></script>
+<link rel="stylesheet" href="focus.css?v=150">
+<script src="focus-core.js?v=150"></script>
 <style>
 /* ═══ v127 改版：迴圈主軸（今天／回顧／方向／我）═══ */
 .ui2-zone{font-family:'Baloo 2',sans-serif;font-size:13px;font-weight:800;color:var(--tc2);margin:18px 4px 8px;letter-spacing:.5px;}
@@ -1204,7 +1204,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 .sleep-scene.night .ss-panel{background:rgba(28,36,64,.88)!important;}
 @media(min-width:1300px){.wrap{max-width:1256px;}}
 </style>
-<link rel="stylesheet" href="ds.css?v=149">
+<link rel="stylesheet" href="ds.css?v=150">
 </head>
 <body>
 <!-- 這四個彈窗特意放在 <body> 最前面、所有 <script> 之前：
@@ -1416,7 +1416,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 <!-- ══════ 回顧（週／月）══════ -->
 <div class="page" id="page-review">
 <div class="pg-head"><h1>回顧</h1><div class="ui2-seg" id="rv-seg"><button data-rv="week">這週</button><button data-rv="month">這個月</button></div>
-  <div class="ui2-seg" id="rv-sec"><button data-sec="overview">總覽</button><button data-sec="body">身體</button><button data-sec="records">紀錄</button></div>
+  <div class="ui2-seg" id="rv-sec"><button data-sec="overview">總覽</button><button data-sec="body">身體</button><button data-sec="records">日記</button></div>
   <div class="pg-act"><input class="ds-search" id="rv-search" type="search" placeholder="搜尋全部紀錄：人名、影片、想法…" aria-label="搜尋全部紀錄" autocomplete="off"/></div></div>
 <div id="rv-search-results" hidden></div>
 <!-- ══════ WEEK ══════ -->
@@ -1915,7 +1915,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v149';
+const APP_VER='v150';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // ── 注音／中文輸入法保護 ──────────────────────────────
@@ -5169,7 +5169,9 @@ function renderWeekly(){
   {const lEl=document.getElementById('wk-loop');if(lEl&&!(isTyping()&&lEl.contains(document.activeElement)))lEl.innerHTML=window.FocusUI?FocusUI.loopReviewHTML(dates,'week'):'';}
   fixRdPairs('page-week');
 
-  if(cur.days===0){document.getElementById('week-entries').innerHTML=`<div class="empty-state">${fi('1f331',32)}<br/>這週還沒有紀錄</div>`;return;}
+  // 種下的天數是 0 也要看日記：只存草稿、沒按「種下」的日記以前整張表都被藏起來
+  const hasText=dates.some(ds=>{const e=S.entries.find(x=>x.date===ds);const d=(ds===curDay()?S.diary:e&&e.diary)||{};return d.hl||d.rf||d.gr;});
+  if(cur.days===0&&!hasText){document.getElementById('week-entries').innerHTML=`<div class="empty-state">${fi('1f331',32)}<br/>這週還沒有日記${weekOffset===0?'<br/><span style="font-size:12px;">之前的日記：按上面的 ‹ 往前翻</span>':''}</div>`;return;}
   document.getElementById('week-entries').innerHTML=dayTableHTML(dates,{all:true});
 }
 document.getElementById('wk-prev').addEventListener('click',()=>{weekOffset--;renderWeekly();});
@@ -6195,7 +6197,7 @@ function rvSecEmpty(){
   const any=[...pane.querySelectorAll('.gcard')].some(x=>x.getBoundingClientRect().height>0);
   if(any)return;
   const d=document.createElement('div');d.className='gcard rv-sec-empty';
-  d.textContent=document.getElementById('page-review').dataset.sec==='body'?'這段期間還沒有身體紀錄。':'這段期間還沒有紀錄。';
+  d.textContent=document.getElementById('page-review').dataset.sec==='body'?'這段期間還沒有身體紀錄。':'這段期間還沒有日記。';
   pane.appendChild(d);
 }
 document.getElementById('page-review').addEventListener('click',e=>{if(e.target.closest('.period-arrow,.jump-today-btn,#rv-sec,#rv-seg'))setTimeout(rvSecEmpty,80);});
@@ -8057,6 +8059,6 @@ document.addEventListener('visibilitychange',()=>{
 
 
 
-<script src="focus.js?v=149"></script>
+<script src="focus.js?v=150"></script>
 </body>
 </html>
