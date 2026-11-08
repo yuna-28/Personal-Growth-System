@@ -71,6 +71,15 @@ test('daily floor and target rules: wake grace, bed, exercise, habit, periods',(
   assert.deepEqual(C.itemDay(it,{wake:'10:00',bed:'05:30'}),{floor:true,target:false});   // 前晚 04:00 後才睡，起床放寬到 10:30
   assert.deepEqual(C.itemDay(it,{wake:'10:40',bed:'05:30'}),{floor:false,target:false});
   assert.equal(C.itemDay(it,{wake:'',bed:''}).floor,false);                                // 沒紀錄不算做到
+  // 地板改成「起床 ≤ 10:30 且睡滿 6.5 小時」：睡 5 小時不算，睡 10 小時補眠也不被當成失敗
+  const sl={floorRule:{type:'wake',max:'10:30',minHours:6.5},targetRule:{type:'bed',max:'02:00'}};
+  assert.equal(C.itemDay(sl,{wake:'09:30',bed:'04:30'}).floor,false);   // 5 小時
+  assert.equal(C.itemDay(sl,{wake:'10:00',bed:'02:00'}).floor,true);    // 8 小時
+  assert.equal(C.itemDay(sl,{wake:'10:00',bed:'03:30'}).floor,true);    // 6.5 小時剛好
+  assert.equal(C.itemDay(sl,{wake:'09:30',bed:'03:10'}).floor,false);   // 6 小時 20 分
+  assert.equal(C.itemDay(sl,{wake:'11:00',bed:'02:00'}).floor,false);   // 睡夠但起太晚
+  assert.equal(C.itemDay(sl,{wake:'08:30',bed:'23:30'}).floor,true);    // 跨午夜前就睡
+  assert.equal(C.itemDay(sl,{wake:'09:00',bed:''}).floor,true);         // 沒入睡紀錄就只看起床
   const ex={floorRule:{type:'exercise',minutes:10,orShoulder:true},targetRule:{type:'exercise',minutes:30}};
   assert.deepEqual(C.itemDay(ex,{minutes:0,shoulder:true}),{floor:true,target:false});
   assert.deepEqual(C.itemDay(ex,{minutes:35}),{floor:true,target:true});

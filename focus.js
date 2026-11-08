@@ -665,11 +665,14 @@ function rhyWeek(it,d){
 // 紅線：連續幾天沒守到地板（只算有記錄起床時間的日子）
 function redlineHit(it,d){
   const rl=it.redline;if(!rl||!rl.days||!it.floorRule||it.floorRule.type!=='wake')return false;
+  const lateBed=rl.lateBed&&C.validTime(rl.lateBed)?rl.lateBed:'';   // 有填：連續幾晚「入睡」晚於這個時間；沒填：連續幾天沒守到地板
   let n=0;
   for(let i=1;i<=14;i++){
     const day=shiftDay(d,-i),per=dayPeriod(day);if(per&&per.mode==='pause')continue;
-    const ctx=rhyCtx(it,day);if(!C.validTime(ctx.wake))break;       // 沒記錄就不猜
-    if(C.ruleMet(it.floorRule,ctx))break;n++;if(n>=rl.days)break;
+    const ctx=rhyCtx(it,day);
+    if(lateBed){if(!C.validTime(ctx.bed))break;if(C.toMin(ctx.bed,true)<C.toMin(lateBed,true))break;}
+    else{if(!C.validTime(ctx.wake))break;if(C.ruleMet(it.floorRule,ctx))break;}   // 沒記錄就不猜
+    n++;if(n>=rl.days)break;
   }
   return n>=rl.days;
 }
@@ -678,7 +681,7 @@ function rhythmCard(){
   const d=ds(),per=C.periodOf(pl,d);
   if(per&&per.mode==='pause')return `<div class="gcard rhy-card pause"><div class="rhy-hd"><span class="goal-title">每天的底線</span><span class="rhy-mode pause">⏸ 習慣暫停 · ${esc(per.label)}</span></div><div class="goal-sub muted">這段時間不計失敗，好好休息。</div></div>`;
   const floorDay=!!per;
-  const red=items.filter(it=>redlineHit(it,d)).map(it=>`<div class="rhy-red">🚨 ${esc(it.redline.msg||it.label+'連續沒守到地板')}</div>`).join('');
+  const red=items.filter(it=>redlineHit(it,d)).map(it=>`<div class="rhy-red">🚨 ${esc(it.redline.lateBed?`睡眠紅線：連續 ${it.redline.days} 晚 ${it.redline.lateBed} 後才睡，今天只做必要交付項，其他先暫停`:(it.redline.msg||it.label+'連續沒守到地板'))}</div>`).join('');
   const rows=items.map(it=>{
     const st=rhyDay(it,d),man=rhyManual(it,d),wk=rhyWeek(it,d);
     const pill=(lv,txt,on)=>{
@@ -701,7 +704,7 @@ function openRhythmEditor(){
       <div class="qg-1"><input class="fm-in" data-k="label" value="${esc(it.label)}" maxlength="12" placeholder="名稱"/><input class="fm-in" data-k="weekly" value="${it.weekly||''}" maxlength="2" placeholder="每週目標次數" title="目標版每週要做到幾次；不用就留空"/><button type="button" class="fm-del" data-del title="刪除">✕</button></div>
       <input class="fm-in" data-k="floor" value="${esc(it.floor||'')}" maxlength="80" placeholder="地板版：最少要做到什麼" style="margin-bottom:6px;"/>
       <input class="fm-in" data-k="target" value="${esc(it.target||'')}" maxlength="80" placeholder="目標版：有餘力做到什麼（選填）" style="margin-bottom:6px;"/>
-      <div class="rhy-ed-r">${fr.max?num('地板：最晚',"fmax",fr.max):''}${fr.grace?num('前晚太晚睡可放寬到','gmax',fr.grace.max,70):''}${tr.max?num('目標：最晚','tmax',tr.max):''}${fr.minutes!==undefined&&fr.type==='exercise'?num('地板：分鐘','fmin',fr.minutes,56):''}${tr.minutes!==undefined&&tr.type==='exercise'?num('目標：分鐘','tmin',tr.minutes,56):''}</div></div>`;
+      <div class="rhy-ed-r">${fr.max?num('地板：最晚',"fmax",fr.max):''}${fr.minHours!==undefined?num('且至少睡（小時）','fhrs',fr.minHours,56):''}${fr.grace?num('前晚太晚睡可放寬到','gmax',fr.grace.max,70):''}${tr.max?num('目標：最晚','tmax',tr.max):''}${fr.minutes!==undefined&&fr.type==='exercise'?num('地板：分鐘','fmin',fr.minutes,56):''}${tr.minutes!==undefined&&tr.type==='exercise'?num('目標：分鐘','tmin',tr.minutes,56):''}${it.redline&&it.redline.lateBed?num('紅線：連續幾晚','rdays',it.redline.days||3,40)+num('入睡晚於','rbed',it.redline.lateBed,70):''}</div></div>`;
   };
   modal('每天的底線',`
     <div class="fm-hint">地板版是再忙再累也要守的；目標版有餘力再做。睡眠、運動會從紀錄自動算，其他的點一下標記。</div>
@@ -727,6 +730,10 @@ function openRhythmEditor(){
         if(has('fmax')){const t=time('fmax');if(t)it.floorRule.max=t;}
         if(has('gmax')){const t=time('gmax');if(t)it.floorRule.grace.max=t;}
         if(has('tmax')){const t=time('tmax');if(t)it.targetRule.max=t;}
+        if(has('fhrs'))it.floorRule.minHours=Math.min(12,Math.max(0,parseFloat(v('fhrs'))||0));
+        if(it.redline)it.redline={...it.redline};
+        if(has('rdays'))it.redline.days=Math.min(14,Math.max(1,Math.round(+v('rdays'))||3));
+        if(has('rbed')){const t=time('rbed');if(t)it.redline.lateBed=t;}
         if(has('fmin'))it.floorRule.minutes=Math.max(0,+v('fmin')||0);
         if(has('tmin'))it.targetRule.minutes=Math.max(0,+v('tmin')||0);
       });

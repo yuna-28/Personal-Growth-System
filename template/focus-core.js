@@ -151,7 +151,10 @@
       if(!validTime(ctx.wake))return false;
       let max=rule.max;   // 前一晚太晚睡，起床時間放寬
       if(rule.grace&&validTime(ctx.bed)&&toMin(ctx.bed,true)>=toMin(rule.grace.bedAfter,true))max=rule.grace.max;
-      return toMin(ctx.wake)<=toMin(max);
+      if(toMin(ctx.wake)>toMin(max))return false;
+      // 睡滿幾小時才算：起床晚一點沒關係，但睡太少不行（有入睡紀錄才算，沒有就只看起床時間）
+      if(rule.minHours&&validTime(ctx.bed)){const mins=((toMin(ctx.wake)-toMin(ctx.bed))%1440+1440)%1440;if(mins<rule.minHours*60)return false;}
+      return true;
     }
     if(rule.type==='bed')return validTime(ctx.bed)&&toMin(ctx.bed,true)<=toMin(rule.max,true);
     if(rule.type==='exercise')return (+ctx.minutes||0)>=(+rule.minutes||0)&&(+rule.minutes>0)||(!!rule.orShoulder&&!!ctx.shoulder);
@@ -231,6 +234,6 @@
     });
     return out;
   }
-  const api={stages,dateKey,validDate,validTime,targetAt,clean,merge,planFor,snapshot,result,sleepResult,mergeWind,parseDateText,parseGoalLines,applyPlan,ruleMet,itemDay,periodOf,mergePlan,cleanPlan};
+  const api={stages,dateKey,validDate,validTime,targetAt,clean,merge,planFor,snapshot,result,sleepResult,mergeWind,parseDateText,parseGoalLines,applyPlan,ruleMet,itemDay,periodOf,mergePlan,cleanPlan,toMin};
   root.FocusCore=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);

@@ -1069,8 +1069,8 @@ button{-webkit-tap-highlight-color:transparent;}
 @keyframes pageIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
 .page.active{animation:pageIn .22s ease;}
 </style>
-<link rel="stylesheet" href="focus.css?v=144">
-<script src="focus-core.js?v=144"></script>
+<link rel="stylesheet" href="focus.css?v=145">
+<script src="focus-core.js?v=145"></script>
 <style>
 /* ═══ v127 改版：迴圈主軸（今天／回顧／方向／我）═══ */
 .ui2-zone{font-family:'Baloo 2',sans-serif;font-size:13px;font-weight:800;color:var(--tc2);margin:18px 4px 8px;letter-spacing:.5px;}
@@ -1204,7 +1204,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 .sleep-scene.night .ss-panel{background:rgba(28,36,64,.88)!important;}
 @media(min-width:1300px){.wrap{max-width:1256px;}}
 </style>
-<link rel="stylesheet" href="ds.css?v=144">
+<link rel="stylesheet" href="ds.css?v=145">
 </head>
 <body>
 <!-- 這四個彈窗特意放在 <body> 最前面、所有 <script> 之前：
@@ -1915,7 +1915,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v144';
+const APP_VER='v145';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // ── 注音／中文輸入法保護 ──────────────────────────────
@@ -3072,11 +3072,12 @@ function remapDoneAfterDelete(doneMap,idx,len){
   }
   return nd;
 }
-// 一直順延的事，問一次原因（點一下就好，不答 12 秒後自己消失）
+// 一直順延的事，問一次原因（點一下就好；不會自己消失，答了或按 × 才關）
 function askCarryWhy(key,label,fromDay){
   document.getElementById('why-toast')?.remove();
   const t=document.createElement('div');t.id='why-toast';t.className='why-toast';
-  t.innerHTML=`<div class="wt-q"></div><div class="wt-a"></div>`;
+  t.innerHTML=`<div class="wt-q"></div><div class="wt-a"></div><button type="button" class="wt-x" aria-label="先不回答">×</button>`;
+  t.querySelector('.wt-x').onclick=()=>t.remove();
   t.querySelector('.wt-q').textContent=`「${label}」一直往後，是因為？`;
   const save=why=>{
     const set=r=>{if(r&&tdlKey(r)===key)r.why=why;};
@@ -3091,7 +3092,6 @@ function askCarryWhy(key,label,fromDay){
   const other=document.createElement('button');other.type='button';other.textContent='其他…';
   other.onclick=()=>{const v=prompt('原因：','');if(v&&v.trim())save(v.trim());};t.querySelector('.wt-a').appendChild(other);
   document.body.appendChild(t);
-  setTimeout(()=>t.remove(),12000);
 }
 // ⏩ 順延到明天：從今天的清單移走，加進明天的 TDL，順延次數 +1。
 // 由使用者自己決定哪幾項要延，沒按的就留在今天。
@@ -8052,6 +8052,6 @@ document.addEventListener('visibilitychange',()=>{
 
 
 
-<script src="focus.js?v=144"></script>
+<script src="focus.js?v=145"></script>
 </body>
 </html>
