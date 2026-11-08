@@ -1069,8 +1069,8 @@ button{-webkit-tap-highlight-color:transparent;}
 @keyframes pageIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
 .page.active{animation:pageIn .22s ease;}
 </style>
-<link rel="stylesheet" href="focus.css?v=148">
-<script src="focus-core.js?v=148"></script>
+<link rel="stylesheet" href="focus.css?v=149">
+<script src="focus-core.js?v=149"></script>
 <style>
 /* ═══ v127 改版：迴圈主軸（今天／回顧／方向／我）═══ */
 .ui2-zone{font-family:'Baloo 2',sans-serif;font-size:13px;font-weight:800;color:var(--tc2);margin:18px 4px 8px;letter-spacing:.5px;}
@@ -1204,7 +1204,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 .sleep-scene.night .ss-panel{background:rgba(28,36,64,.88)!important;}
 @media(min-width:1300px){.wrap{max-width:1256px;}}
 </style>
-<link rel="stylesheet" href="ds.css?v=148">
+<link rel="stylesheet" href="ds.css?v=149">
 </head>
 <body>
 <!-- 這四個彈窗特意放在 <body> 最前面、所有 <script> 之前：
@@ -1915,7 +1915,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v148';
+const APP_VER='v149';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // ── 注音／中文輸入法保護 ──────────────────────────────
@@ -3094,6 +3094,7 @@ function askCarryWhy(key,label,fromDay){
   });
   const other=document.createElement('button');other.type='button';other.textContent='其他…';
   other.onclick=()=>{const v=prompt('原因：','');if(v&&v.trim())save(v.trim());};t.querySelector('.wt-a').appendChild(other);
+  if(window.FocusUI&&FocusUI.isLowEnergy&&FocusUI.isLowEnergy(today())){save('低能量日');return;}   // 低能量日已經知道原因，不用再問
   document.body.appendChild(t);
 }
 // ⏩ 順延到明天：從今天的清單移走，加進明天的 TDL，順延次數 +1。
@@ -7687,6 +7688,7 @@ function calRefreshViews(){
   const popup=document.getElementById('cal-popup');
   if(popup&&popup.style.display!=='none')renderPopCal();
   renderTodayEvents();
+  if(window.FocusUI&&FocusUI.render)FocusUI.render();   // 日曆載入後，「月經」才會讓今天變成低能量日
 }
 function calEvRow(ev,delBtn){
   const _c=(ev.color&&CAL_COLORS[ev.color])?'<span style="width:8px;height:8px;border-radius:50%;background:'+CAL_COLORS[ev.color]+';flex-shrink:0;"></span>':'';
@@ -8055,6 +8057,6 @@ document.addEventListener('visibilitychange',()=>{
 
 
 
-<script src="focus.js?v=148"></script>
+<script src="focus.js?v=149"></script>
 </body>
 </html>

@@ -130,7 +130,7 @@
     };
     into('events',src.events,x=>({title:String(x.title||''),from:D(x.from),to:D(x.to||x.from),tentative:!!x.tentative,color:x.color||''}),'events');
     into('periods',src.periods,x=>({label:String(x.label||''),from:D(x.from),to:D(x.to),mode:x.mode==='pause'?'pause':'floor'}),'periods');
-    into('items',src.items,x=>({label:String(x.label||''),floor:x.floor||'',target:x.target||'',weekly:+x.weekly||0,floorRule:x.floorRule||null,targetRule:x.targetRule||null,redline:x.redline||null,note:x.note||''}),'items');
+    into('items',src.items,x=>({label:String(x.label||''),floor:x.floor||'',target:x.target||'',weekly:+x.weekly||0,floorRule:x.floorRule||null,targetRule:x.targetRule||null,redline:x.redline||null,note:x.note||'',later:!!x.later}),'items');
     (src.todos||[]).forEach(x=>{
       if(!x||!x.key)return;
       const r=keep(pl.todos,x.key,(old)=>({...(old||{id:'pl-'+x.key,done:!!x.done}),text:String(x.text||''),due:D(x.due),project:x.project||'',planKey:x.key,deleted:false,updatedAt:now}));
@@ -335,7 +335,31 @@
       delta:ready&&recent!=null?r1(recent-start):null,
       expect:ready&&pm>0?r1(-pm*(days-6)/30.4):null};
   }
+  // ── 入睡時間：看趨勢，和「哪一晚最晚」，不看單一晚 ─────────────────────
+  // list：[{day,bed:'HH:MM'}]，day＝紀錄日期（那一晚的隔天早上）。凌晨的時間算同一晚（toMin 的第二個參數）。
+  const m2t=m=>{m=((Math.round(m)%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');};
+  const shiftD=(d,n)=>{const x=new Date(d+'T12:00:00');x.setDate(x.getDate()+n);return dateKey(x);};
+  const bedPts=(list,today)=>(list||[]).filter(x=>x&&validDate(x.day)&&validTime(x.bed)&&x.day<=today);
+  // 近 7 晚平均入睡，跟前 7 晚比（diff＞0＝這 7 晚比較早）。兩邊都要有 4 晚以上才比，不然只給平均。
+  function sleepTrend(list,today){
+    const pts=bedPts(list,today),win=(a,b)=>pts.filter(x=>x.day>=a&&x.day<=b).map(x=>toMin(x.bed,true));
+    const avg=a=>a.length?a.reduce((t,v)=>t+v,0)/a.length:null;
+    const cur=win(shiftD(today,-6),today),prev=win(shiftD(today,-13),shiftD(today,-7)),a=avg(cur),b=avg(prev);
+    return {n:cur.length,prevN:prev.length,avg:a==null?null:m2t(a),diff:(cur.length>=4&&prev.length>=4)?Math.round(b-a):null};
+  }
+  // 過去 days 天裡，哪個星期幾的「晚上」平均最晚睡。每個星期幾要有 minN 晚以上，而且比整體平均晚 gap 分鐘以上才算。
+  // 回傳 dow（0＝週日…6＝週六，指「那天晚上」，也就是紀錄日期的前一天）。
+  function worstNight(list,today,opt){
+    const days=(opt&&opt.days)||90,minN=(opt&&opt.minN)||4,gap=(opt&&opt.gap)||20,lo=shiftD(today,-days);
+    const pts=bedPts(list,today).filter(x=>x.day>=lo);if(!pts.length)return null;
+    const by={};pts.forEach(x=>{const dow=new Date(shiftD(x.day,-1)+'T12:00:00').getDay();(by[dow]=by[dow]||[]).push(toMin(x.bed,true));});
+    const all=pts.map(x=>toMin(x.bed,true)),overall=all.reduce((t,v)=>t+v,0)/all.length;
+    let best=null;
+    Object.keys(by).forEach(k=>{const v=by[k];if(v.length<minN)return;const a=v.reduce((t,x)=>t+x,0)/v.length;if(!best||a>best.a)best={dow:+k,a,n:v.length};});
+    if(!best||best.a-overall<gap)return null;
+    return {dow:best.dow,avg:m2t(best.a),n:best.n,overall:m2t(overall)};
+  }
   const api={stages,dateKey,validDate,validTime,targetAt,clean,merge,planFor,snapshot,result,sleepResult,mergeWind,parseDateText,parseGoalLines,applyPlan,ruleMet,itemDay,periodOf,mergePlan,cleanPlan,toMin,
-    speedHas,speedDays,speedMissing,speedCalc,speedText,speedSet,fmtNum,mdText,weightTrend};
+    speedHas,speedDays,speedMissing,speedCalc,speedText,speedSet,fmtNum,mdText,weightTrend,sleepTrend,worstNight};
   root.FocusCore=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);

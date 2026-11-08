@@ -203,4 +203,22 @@ test('weight: bad values ignored, no data is null, perMonth 0 means no expectati
   const r=C.weightTrend(L,'2026-12-08',0);assert.equal(r.start,62.5);assert.equal(r.expect,null);assert.equal(r.delta,0);
   const gap=C.weightTrend([{day:'2026-11-19',kg:63},{day:'2026-11-20',kg:63}],'2026-12-20',1);assert.equal(gap.recent,null);assert.equal(gap.delta,null);
 });
+test('plan item "later" survives import',()=>{
+  const r=C.applyPlan({},{format:'grandol-plan',version:1,items:[{key:'a',label:'睡眠',floorRule:{type:'manual'}},{key:'b',label:'英文',later:true,floorRule:{type:'manual'}}]},{now:1,today:'2026-11-08'});
+  const it=r.focus.plan.items;assert.equal(it.find(i=>i.planKey==='a').later,false);assert.equal(it.find(i=>i.planKey==='b').later,true);
+  assert.equal(C.clean(r.focus).plan.items.find(i=>i.planKey==='b').later,true);
+});
+test('sleepTrend: this 7 nights vs previous 7, after-midnight bedtimes stay on the same night',()=>{
+  const L=[];for(let i=0;i<14;i++){const d=new Date('2026-11-08T12:00:00');d.setDate(d.getDate()-i);L.push({day:C.dateKey(d),bed:i<7?'03:00':'03:30'});}
+  const r=C.sleepTrend(L,'2026-11-08');assert.equal(r.avg,'03:00');assert.equal(r.diff,30);assert.equal(r.n,7);assert.equal(r.prevN,7);
+  const mix=C.sleepTrend([{day:'2026-11-08',bed:'23:30'},{day:'2026-11-07',bed:'01:30'}],'2026-11-08');assert.equal(mix.avg,'00:30');assert.equal(mix.diff,null);
+  assert.equal(C.sleepTrend([],'2026-11-08').avg,null);
+});
+test('worstNight: finds the latest night of the week; needs enough samples and a real gap',()=>{
+  const L=[];for(let i=0;i<56;i++){const d=new Date('2026-11-08T12:00:00');d.setDate(d.getDate()-i);const day=C.dateKey(d);
+    const nightDow=new Date(C.dateKey(new Date(d.getTime()-86400000))+'T12:00:00').getDay();L.push({day,bed:nightDow===6?'04:00':'02:30'});}
+  const w=C.worstNight(L,'2026-11-08');assert.equal(w.dow,6);assert.equal(w.avg,'04:00');assert.ok(w.n>=4);
+  const flat=L.map(x=>({day:x.day,bed:'02:30'}));assert.equal(C.worstNight(flat,'2026-11-08'),null);
+  assert.equal(C.worstNight(L.slice(0,10),'2026-11-08'),null);   // 每個星期幾不到 4 晚
+});
 console.log(`${n} tests passed`);

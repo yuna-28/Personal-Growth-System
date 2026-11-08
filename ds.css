@@ -788,6 +788,15 @@ button.tl-lab:hover>span{color:var(--ds-primary);text-decoration:underline;}
 .rhy-mode{font-size:var(--ds-fs-xs);font-weight:700;color:var(--ds-ink-3);}
 .rhy-mode.floor{color:var(--ds-focus-ink);background:var(--ds-focus-soft);border-radius:999px;padding:1px 10px;}
 .rhy-mode.pause{color:var(--ds-ink-2);background:var(--ds-sunken);border-radius:999px;padding:1px 10px;}
+.rhy-mode.rest{color:var(--ds-ink-2);background:var(--ds-primary-soft);border-radius:999px;padding:1px 10px;}
+.rhy-cap{margin:2px 0 6px;line-height:1.7;}
+.rhy-l .rhy-i{color:var(--ds-ink-3);}
+.rhy-l .rhy-i.nudge{color:var(--ds-ink);font-weight:700;background:var(--ds-focus-soft);border-radius:var(--ds-r-sm);padding:4px 8px;margin-top:3px;}
+.rhy-later{border-top:1px solid var(--ds-line);margin-top:2px;}
+.rhy-later-h{display:flex;align-items:baseline;gap:8px;width:100%;padding:10px 2px;border:none;background:none;text-align:left;cursor:pointer;font-family:var(--ds-font);font-size:var(--ds-fs-sm);color:var(--ds-ink);}
+.rhy-later-h:hover{background:var(--ds-sunken);}
+.rhy-later-h b{font-weight:800;white-space:nowrap;}
+.rhy-later-h small{flex:1;min-width:0;font-size:var(--ds-fs-xs);color:var(--ds-ink-3);}
 .rhy-red{margin:6px 0;padding:7px 10px;border-radius:var(--ds-r-sm);background:var(--ds-warn-soft);color:var(--ds-warn);font-size:var(--ds-fs-sm);font-weight:700;}
 .rhy-row{display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:9px 0;border-top:1px solid var(--ds-line);}
 .rhy-l{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;}
@@ -806,6 +815,7 @@ button.tl-lab:hover>span{color:var(--ds-primary);text-decoration:underline;}
 .mode-chip{font-size:var(--ds-fs-xs);font-weight:700;border-radius:999px;padding:3px 12px;white-space:nowrap;}
 .mode-chip.floor{background:var(--ds-focus-soft);color:var(--ds-focus-ink);border:1px solid #EBD28A;}
 .mode-chip.pause{background:var(--ds-sunken);color:var(--ds-ink-2);border:1px solid var(--ds-line-2);}
+.mode-chip.rest{background:var(--ds-primary-soft);color:var(--ds-ink-2);border:1px solid var(--ds-line-2);}
 .mode-chip[hidden]{display:none!important;}
 /* 匯入 */
 .pi-sum{margin-top:10px;padding:10px 12px;border-radius:var(--ds-r-sm);background:var(--ds-sunken);font-size:var(--ds-fs-sm);line-height:1.8;}

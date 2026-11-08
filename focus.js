@@ -361,7 +361,7 @@ function bodyCard(g){
     return `<div class="dots-row${n>=goal?' hit':''}"><span class="dl">${esc(m.l)}</span><span class="dd">${Array.from({length:goal},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</span><span class="dn">${n}/${goal}</span>${tick}</div>${hint}`;
   }).join('');
   const pgNow=projectGoal();
-  return `<div class="gcard goal-card">${pgNow&&closeBanner(pgNow)?'':closeBanner(g)}<div class="goal-hd"><span class="goal-title">${esc(g.title)}</span><span class="goal-sub muted">本週${restN?` · 不舒服 ${restN} 天不算`:''}</span>
+  return `<div class="gcard goal-card">${pgNow&&closeBanner(pgNow)?'':closeBanner(g)}<div class="goal-hd"><span class="goal-title">${esc(g.title)}</span><span class="goal-sub muted">本週${restN?` · 休息 ${restN} 天不算`:''}</span>
       <span class="goal-sub" style="margin-left:auto;">${dueTxt(g)}</span><button class="card-edit" data-edit-goal="${esc(g.id)}" title="編輯">✏️ 編輯</button></div>
     ${rows?`<div style="display:flex;flex-direction:column;gap:7px;margin-top:8px;" title="本週，週一重新開始">${rows}</div>`:'<div class="goal-sub muted">還沒設每週目標，點 ✏️ 設定</div>'}
     ${weightRow(g)}
@@ -382,11 +382,17 @@ function expRows(){
 // 今天狀況：一鍵標記。rest＝這天身體不舒服，不算進每週目標
 const DEF_TAGS=[{l:'經期',rest:true},{l:'不舒服',rest:true},{l:'趕工'},{l:'上課'}];
 function tagsOf(g){return g&&Array.isArray(g.dayTags)?g.dayTags.filter(x=>x&&x.l):DEF_TAGS;}
-function isRestDay(day){
+// 日曆上有「月經／經期／生理期」的行程＝低能量日（不用另外記）；或今天狀況勾了「不計目標」的標籤
+const PERIOD_RE=/月經|經期|生理期/;
+function periodCal(day){
+  try{const a=(typeof calEvents!=='undefined'&&calEvents[day])||[];const e=a.find(ev=>PERIOD_RE.test(ev.title||''));return e?String(e.title).match(PERIOD_RE)[0]:'';}catch(e){return '';}
+}
+function tagRest(day){
   const on=(health(day)||{}).dayTags||[];if(!on.length)return false;
   const rest=tagsOf(movesGoal()).filter(x=>x.rest).map(x=>x.l);
   return on.some(x=>rest.indexOf(x)>=0);
 }
+function isRestDay(day){return !!periodCal(day)||tagRest(day);}
 function tagChips(){
   const on=(health(ds())||{}).dayTags||[],list=tagsOf(movesGoal());
   const extra=on.filter(x=>!list.some(t=>t.l===x)).map(l=>({l}));   // 標過但已從清單刪掉的也要看得到
@@ -710,10 +716,16 @@ function rhyCtx(it,day){
 }
 const rhyManual=(it,day)=>((health(day)||{}).rhythm||{})[it.id];
 const rhyDay=(it,day)=>C.itemDay(it,rhyCtx(it,day),rhyManual(it,day));
-const dayPeriod=day=>planOf()?C.periodOf(planOf(),day):null;
+const dayPeriod=day=>{
+  const p=planOf()?C.periodOf(planOf(),day):null;
+  if(p&&p.mode==='pause')return p;
+  if(isRestDay(day))return {mode:'rest',label:periodCal(day)||'不舒服'};   // 低能量日：只求睡飽，不計失敗
+  return p;
+};
+const skipDay=per=>!!per&&(per.mode==='pause'||per.mode==='rest');
 function rhyWeek(it,d){
   const mon=mondayOfDs(d);let floor=0,target=0;
-  for(let i=0;i<7;i++){const day=shiftDay(mon,i);if(day>d)break;const per=dayPeriod(day);if(per&&per.mode==='pause')continue;const r=rhyDay(it,day);if(r.floor)floor++;if(r.target)target++;}
+  for(let i=0;i<7;i++){const day=shiftDay(mon,i);if(day>d)break;const per=dayPeriod(day);if(skipDay(per))continue;const r=rhyDay(it,day);if(r.floor)floor++;if(r.target)target++;}
   return {floor,target};
 }
 // 紅線：連續幾天沒守到最低（只算有記錄起床時間的日子）
@@ -722,7 +734,7 @@ function redlineHit(it,d){
   const lateBed=rl.lateBed&&C.validTime(rl.lateBed)?rl.lateBed:'';   // 有填：連續幾晚「入睡」晚於這個時間；沒填：連續幾天沒守到最低
   let n=0;
   for(let i=1;i<=14;i++){
-    const day=shiftDay(d,-i),per=dayPeriod(day);if(per&&per.mode==='pause')continue;
+    const day=shiftDay(d,-i),per=dayPeriod(day);if(skipDay(per))continue;
     const ctx=rhyCtx(it,day);
     if(lateBed){if(!C.validTime(ctx.bed))break;if(C.toMin(ctx.bed,true)<C.toMin(lateBed,true))break;}
     else{if(!C.validTime(ctx.wake))break;if(C.ruleMet(it.floorRule,ctx))break;}   // 沒記錄就不猜
@@ -730,24 +742,49 @@ function redlineHit(it,d){
   }
   return n>=rl.days;
 }
+const rhyLaterOpen=new Set();
+// 入睡時間的趨勢（跟前 7 晚比）與「這一晚通常最晚睡」：都從已記的睡眠算，不用另外輸入
+function sleepBedList(){
+  const out=[],t=curDay();
+  (S.entries||[]).forEach(e=>{const s=e.health&&e.health.sleep;if(s&&s.sleepTime&&e.date!==t)out.push({day:e.date,bed:s.sleepTime});});
+  const ts=(S.health||{}).sleep;if(ts&&ts.sleepTime)out.push({day:t,bed:ts.sleepTime});
+  return out;
+}
+function sleepNotes(it,d,rest){
+  if(!it.floorRule||it.floorRule.type!=='wake')return '';
+  const list=sleepBedList(),tr=C.sleepTrend(list,curDay());let h='';
+  if(tr.avg){
+    const dif=tr.diff==null?'':(tr.diff>0?`，比前 7 晚早 ${tr.diff} 分`:(tr.diff<0?`，比前 7 晚晚 ${-tr.diff} 分`:'，跟前 7 晚一樣'));
+    h+=`<span class="rhy-i">近 7 天平均 ${tr.avg} 入睡${dif}</span>`;
+  }
+  const w=!rest&&d===curDay()?C.worstNight(list,curDay()):null;
+  if(w&&new Date(d+'T12:00:00').getDay()===w.dow)h+=`<span class="rhy-i nudge">週${'日一二三四五六'[w.dow]}晚上通常是你最晚睡的（過去平均 ${w.avg}），今晚先比平常早 30 分就好。</span>`;
+  return h;
+}
 function rhythmCard(){
   const pl=planOf(),items=rhyItems();if(!pl||!items.length)return '';
-  const d=ds(),per=C.periodOf(pl,d);
+  const d=ds(),per=dayPeriod(d),rest=!!per&&per.mode==='rest';
   if(per&&per.mode==='pause')return `<div class="gcard rhy-card pause"><div class="rhy-hd"><span class="goal-title">每天的最低標準</span><span class="rhy-mode pause">⏸ 習慣暫停 · ${esc(per.label)}</span></div><div class="goal-sub muted">這段時間不計失敗，好好休息。</div></div>`;
   const floorDay=!!per;
-  const red=items.filter(it=>redlineHit(it,d)).map(it=>`<div class="rhy-red">🚨 ${esc(it.redline.lateBed?`睡眠紅線：連續 ${it.redline.days} 晚 ${it.redline.lateBed} 後才睡，今天只做必要交付項，其他先暫停`:(it.redline.msg||it.label+'連續沒守到最低'))}</div>`).join('');
-  const rows=items.map(it=>{
+  const red=rest?'':items.filter(it=>redlineHit(it,d)).map(it=>`<div class="rhy-red">🚨 ${esc(it.redline.lateBed?`睡眠紅線：連續 ${it.redline.days} 晚 ${it.redline.lateBed} 後才睡，今天只做必要交付項，其他先暫停`:(it.redline.msg||it.label+'連續沒守到最低'))}</div>`).join('');
+  const rowOf=it=>{
     const st=rhyDay(it,d),man=rhyManual(it,d),wk=rhyWeek(it,d);
     const pill=(lv,txt,on)=>{
       const auto=on&&man!==lv&&!(lv==='floor'&&man==='target');
       return `<button type="button" class="rhy-pill${on?' on':''}${auto?' auto':''}" data-action="rhy-tap" data-id="${esc(it.id)}" data-lv="${lv}" title="${auto?'從紀錄自動算到的':'點一下標記'}">${on?'✓ ':''}${txt}</button>`;};
     const showT=!floorDay&&it.target;
     const dots=it.weekly?` · 理想 ${'●'.repeat(Math.min(wk.target,Math.max(it.weekly,wk.target)))}${'○'.repeat(Math.max(0,it.weekly-wk.target))}`:'';
-    return `<div class="rhy-row"><div class="rhy-l"><b>${esc(it.label)}</b><span>${esc(it.floor||'')}</span>${showT?`<span class="rhy-t">理想：${esc(it.target)}</span>`:''}</div>
+    return `<div class="rhy-row"><div class="rhy-l"><b>${esc(it.label)}</b><span>${esc(it.floor||'')}</span>${showT?`<span class="rhy-t">理想：${esc(it.target)}</span>`:''}${sleepNotes(it,d,rest)}</div>
       <div class="rhy-s">${pill('floor','最低',st.floor)}${showT?pill('target','理想',st.target):''}<small>本週 ${wk.floor} 天${showT||it.weekly?dots:''}</small></div></div>`;
-  }).join('');
-  return `<div class="gcard rhy-card"><div class="rhy-hd"><span class="goal-title">每天的最低標準</span>${per?`<span class="rhy-mode floor">🛡 趕工日 · ${esc(per.label)}</span>`:'<span class="rhy-mode">平常日</span>'}
-      <button type="button" class="card-edit" data-action="rhy-edit" title="改文字、時間、每週次數">✏️ 編輯</button></div>${red}${rows}</div>`;
+  };
+  const main=items.filter(it=>!it.later),later=items.filter(it=>it.later);
+  const shown=main.length?main:later;   // 全部都先放著的話，不要讓卡片空掉
+  const lo=main.length&&later.length,open=rhyLaterOpen.has('later');
+  const laterBox=lo?`<div class="rhy-later"><button type="button" class="rhy-later-h" data-action="rhy-later"><b>其他 ${later.length} 項先放著</b><small>${later.map(i=>esc(i.label)).join('、')}</small><span>${open?'▴':'▾'}</span></button>${open?later.map(rowOf).join(''):''}</div>`:'';
+  const chip=rest?`<span class="rhy-mode rest">🌙 低能量日 · ${esc(per.label)}</span>`:(per?`<span class="rhy-mode floor">🛡 趕工日 · ${esc(per.label)}</span>`:'<span class="rhy-mode">平常日</span>');
+  const cap=rest?'<div class="goal-sub muted rhy-cap">今天能量低：只留最小的 1–2 件事，睡飽最重要，其他先放著，睡晚一點也沒關係，都不算失敗。</div>':'';
+  return `<div class="gcard rhy-card"><div class="rhy-hd"><span class="goal-title">每天的最低標準</span>${chip}
+      <button type="button" class="card-edit" data-action="rhy-edit" title="改文字、時間、每週次數">✏️ 編輯</button></div>${cap}${red}${shown.map(rowOf).join('')}${laterBox}</div>`;
 }
 function openRhythmEditor(){
   const pl=ensurePlan();
@@ -757,6 +794,7 @@ function openRhythmEditor(){
     return `<div class="rhy-ed" data-item="${esc(it.id)}">
       <div class="qg-1"><input class="fm-in" data-k="label" value="${esc(it.label)}" maxlength="12" placeholder="名稱"/><input class="fm-in" data-k="weekly" value="${it.weekly||''}" maxlength="2" placeholder="每週理想次數" title="理想版每週要做到幾次；不用就留空"/><button type="button" class="fm-del" data-del title="刪除">✕</button></div>
       <input class="fm-in" data-k="floor" value="${esc(it.floor||'')}" maxlength="80" placeholder="最低版：最少要做到什麼" style="margin-bottom:6px;"/>
+      <label class="pl-chk" style="margin-bottom:6px;"><input type="checkbox" data-k="later"${it.later?' checked':''}/>先放著（收進「其他」，先專心做上面的）</label>
       <input class="fm-in" data-k="target" value="${esc(it.target||'')}" maxlength="80" placeholder="理想版：有餘力做到什麼（選填）" style="margin-bottom:6px;"/>
       <div class="rhy-ed-r">${fr.max?num('最低：最晚',"fmax",fr.max):''}${fr.minHours!==undefined?num('且至少睡（小時）','fhrs',fr.minHours,56):''}${fr.grace?num('前晚太晚睡可放寬到','gmax',fr.grace.max,70):''}${tr.max?num('理想：最晚','tmax',tr.max):''}${fr.minutes!==undefined&&fr.type==='exercise'?num('最低：分鐘','fmin',fr.minutes,56):''}${tr.minutes!==undefined&&tr.type==='exercise'?num('理想：分鐘','tmin',tr.minutes,56):''}${it.redline&&it.redline.lateBed?num('紅線：連續幾晚','rdays',it.redline.days||3,40)+num('入睡晚於','rbed',it.redline.lateBed,70):''}</div></div>`;
   };
@@ -778,7 +816,7 @@ function openRhythmEditor(){
         if(r.dataset.gone){if(it){it.deleted=true;it.updatedAt=now;}return;}
         if(!(v('label')||'').trim())return;
         if(!it){it={id,floorRule:{type:'manual'},targetRule:null};pl.items.push(it);}
-        it.label=v('label').trim();it.floor=(v('floor')||'').trim();it.target=(v('target')||'').trim();it.weekly=Math.max(0,+v('weekly')||0);it.deleted=false;it.updatedAt=now;
+        it.label=v('label').trim();it.floor=(v('floor')||'').trim();it.target=(v('target')||'').trim();it.weekly=Math.max(0,+v('weekly')||0);it.deleted=false;it.updatedAt=now;{const lc=r.querySelector('[data-k="later"]');if(lc)it.later=lc.checked;}
         const time=k=>{const t=(v(k)||'').trim().padStart(5,'0');if(!C.validTime(t)){bad.push(t||k);return null;}return t;};
         it.floorRule=it.floorRule?{...it.floorRule,...(it.floorRule.grace?{grace:{...it.floorRule.grace}}:{})}:it.floorRule;it.targetRule=it.targetRule?{...it.targetRule}:it.targetRule;
         if(has('fmax')){const t=time('fmax');if(t)it.floorRule.max=t;}
@@ -967,7 +1005,7 @@ function render(force){
   if(M.plan)M.plan.innerHTML=planHTML();
   if(M.rhythm)M.rhythm.innerHTML=rhythmCard();
   {const chip=document.getElementById('mode-chip'),per=dayPeriod(curDay());
-   if(chip){chip.hidden=!per;if(per){chip.textContent=(per.mode==='pause'?'⏸ 習慣暫停 · ':'🛡 趕工日 · ')+per.label;chip.className='mode-chip '+per.mode;}}}
+   if(chip){chip.hidden=!per;if(per){chip.textContent=(per.mode==='pause'?'⏸ 習慣暫停 · ':per.mode==='rest'?'🌙 低能量日 · ':'🛡 趕工日 · ')+per.label;chip.className='mode-chip '+per.mode;}}}
   if(M.tags)M.tags.innerHTML=tagChips();
   if(M.undone)M.undone.innerHTML=undoneList();
   if(M.bring)M.bring.innerHTML=bringNext();
@@ -1453,6 +1491,7 @@ onMounts('click',ev=>{
   if(a==='cp-toggle'){const k=el.dataset.k;if(cpOpenSet.has(k))cpOpenSet.delete(k);else cpOpenSet.add(k);render(true);return;}
   if(a==='plan-import'){if(writable())openPlanImport();return;}
   if(a==='rhy-edit'){if(writable())openRhythmEditor();return;}
+  if(a==='rhy-later'){if(rhyLaterOpen.has('later'))rhyLaterOpen.delete('later');else rhyLaterOpen.add('later');render(true);return;}
   if(a==='rhy-tap'){
     if(!writable())return;const pl=planOf(),it=pl&&pl.items.find(x=>x.id===el.dataset.id);if(!it)return;
     const day=ds(),h=health(day),cur=(h.rhythm||{})[it.id],lv=el.dataset.lv;
@@ -2271,9 +2310,9 @@ function nightLine(day){
 // 這一天的最低標準狀況（給每日明細用）
 function rhythmLine(day){
   const pl=planOf(),items=rhyItems();if(!pl||!items.length)return '';
-  const per=C.periodOf(pl,day);if(per&&per.mode==='pause')return `🧭 最低標準：習慣暫停（${per.label}）`;
+  const per=dayPeriod(day);if(per&&per.mode==='pause')return `🧭 最低標準：習慣暫停（${per.label}）`;
   const parts=items.map(it=>{const r=rhyDay(it,day);return `${it.label} ${r.target?'理想✓':(r.floor?'最低✓':'—')}`;});   // 沒做到或沒記錄都用「—」，不寫叉叉
-  return `🧭 最低標準（${per?'趕工日·'+per.label:'平常日'}）：${parts.join('｜')}`;
+  return `🧭 最低標準（${per?(per.mode==='rest'?'低能量日·':'趕工日·')+per.label:'平常日'}）：${parts.join('｜')}`;
 }
 // 計畫的期間摘要：趕工週、檢查日、最低標準統計、待確認
 function planLines(dates){
@@ -2282,6 +2321,8 @@ function planLines(dates){
    if(t&&t.recent!=null){
      const inRange=weightList().filter(x=>x.day>=dates[0]&&x.day<=dates[dates.length-1]);
      L.push(`⚖️ 體重（看平均，一天的數字會跳）：這段期間記了 ${inRange.length} 天；近 7 天平均 ${t.recent} kg`+(t.ready?`，起點 ${t.start}（${md(t.first)} 起），比起點 ${wSign(t.delta)}`+(t.expect!=null?`；每月 −${pm} 的速度現在約 ${wSign(t.expect)}`:''):'（記滿兩週才開始跟起點比）'));}}
+  {const lows=dates.filter(x=>x<=curDay()&&isRestDay(x));
+   if(lows.length)L.push(`🌙 低能量日 ${lows.length} 天（月經或不舒服；這幾天只要求睡飽，不計失敗）：${lows.slice(0,12).map(md).join('、')}${lows.length>12?'…':''}`);}
   if(!pl)return L;
   const first=dates[0],last=dates[dates.length-1],past=dates.filter(x=>x<=curDay());
   const per=live(pl.periods).filter(x=>x.from<=last&&x.to>=first);
@@ -2338,7 +2379,7 @@ function onStepToggle(item,done,day){
   else if(!done&&m.done&&m.doneOn===day){m.done=false;delete m.doneOn;saveGoal(g);}
 }
 window.FocusUI={
-  onStepToggle,trendLines,renderTrend,nightLine,periodExtraLines,rhythmLine,
+  onStepToggle,trendLines,renderTrend,nightLine,periodExtraLines,rhythmLine,isLowEnergy:isRestDay,
   updateCount,
   periodGoals,reviewHTML,copyLines,loopReviewHTML,loopCopyLines,loopRequestLines,renderInsights,
   render(){render(false);},
