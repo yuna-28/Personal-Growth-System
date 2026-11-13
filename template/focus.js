@@ -930,7 +930,7 @@ function dirMore(){
       ${warn?'<span class="goal-sub warn" title="雲端把目標資料存在一個儲存格，上限約 5 萬字">資料快滿了，別再塞太多文字</span>':''}</div>`:''}
     ${cpHTML}${pl?`<div class="pl-sec pl-folds">${planFolds(pl)}</div>`:''}
     <div class="pl-sec">${expInner()}</div>
-    <div class="pl-sec"><div class="goal-chips"><button class="focus-btn" data-action="quick-goals">一次貼上多個目標</button><button class="focus-btn" data-action="more">身體目標・封存・備份</button><button class="focus-btn" data-action="plan-import" title="匯入計畫檔">⬇ 匯入計畫檔</button></div></div>`;
+    <div class="pl-sec"><div class="goal-chips"><button class="focus-btn" data-action="quick-goals">一次貼上多個目標</button><button class="focus-btn" data-action="backup">⬇ 下載完整備份</button><button class="focus-btn" data-action="more">身體目標・封存・還原</button><button class="focus-btn" data-action="plan-import" title="匯入計畫檔">⬇ 匯入計畫檔</button></div></div>`;
   return `<div class="gcard dir-more">${plFold('more','更多','要確認的事、檢查日、行程、實驗、備份',body)}</div>`;
 }
 function dirTop(){return dirSleep()+dirGoals()+dirTrophies();}
@@ -1371,6 +1371,16 @@ function applyStageTemplate(g){
   g.milestones=names.map((t,i)=>({id:uid(),title:t,done:false,due:shiftDay(d,Math.round(total*(i+1)/names.length)),hard:i===names.length-1}));
   saveGoal(g);softToast('排好了，日期可以直接改。日曆也會放上去',3200);
 }
+// 下載完整備份：這台裝置上的全部資料（日記、習慣、TDL、健康、目標、計畫、收藏…）存成一個 .json
+function downloadFullBackup(){
+  if(typeof flushAutoDraft==='function')flushAutoDraft();
+  const n=(S.entries||[]).length;
+  const blob=new Blob([JSON.stringify({format:'grandol-focus-backup',version:1,exportedAt:new Date().toISOString(),app:typeof APP_VER!=='undefined'?APP_VER:'',days:n,state:S},null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob),link=document.createElement('a');
+  link.href=url;link.download='forest-backup-'+today()+'.json';document.body.appendChild(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  softToast(`⬇ 已下載完整備份（${n} 天的紀錄）`,2600);
+}
 function openMore(){
   const f=data(),archived=f.projects.filter(x=>x.status==='archived'||x.status==='complete');
   const cloud=!GAS_URL?'目前只存在這台裝置。':(cloudSupported===false?'⚠️ 後端還是舊版，目標還沒同步到雲端。':'');
@@ -1395,12 +1405,7 @@ function openMore(){
     m.querySelectorAll('[data-restore]').forEach(b=>b.addEventListener('click',()=>{
       const g=data().projects.find(x=>x.id===b.dataset.restore);if(g){g.status='active';delete g.closure;g.updatedAt=Date.now();sv(S);syncStateDebounced();}close();
     }));
-    m.querySelector('#gm-export').addEventListener('click',()=>{
-      if(typeof flushAutoDraft==='function')flushAutoDraft();
-      const blob=new Blob([JSON.stringify({format:'grandol-focus-backup',version:1,exportedAt:new Date().toISOString(),state:S},null,2)],{type:'application/json'});
-      const url=URL.createObjectURL(blob),link=document.createElement('a');
-      link.href=url;link.download='forest-backup-'+today()+'.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
-    });
+    m.querySelector('#gm-export').addEventListener('click',downloadFullBackup);
     m.querySelector('#focus-import').addEventListener('change',async ev=>{
       const el=ev.target;if(!el.files[0])return;
       try{
@@ -1537,6 +1542,7 @@ onMounts('click',ev=>{
   if(el.dataset.postpone!==undefined){if(writable()){postponeTdlItem(+el.dataset.postpone);render(true);}return;}
   if(a==='bring-next'){const g=data().projects.find(x=>x.id===el.dataset.g);if(g&&writable()){addStepTomorrow(g);render(true);softToast('排到明天了 🌙',2000);}return;}
   if(a==='more'){openMore();return;}
+  if(a==='backup'){downloadFullBackup();return;}
   if(!writable())return;
   const d=ds();
   if(el.dataset.skip){
@@ -2379,6 +2385,7 @@ function onStepToggle(item,done,day){
   else if(!done&&m.done&&m.doneOn===day){m.done=false;delete m.doneOn;saveGoal(g);}
 }
 window.FocusUI={
+  downloadFullBackup,
   onStepToggle,trendLines,renderTrend,nightLine,periodExtraLines,rhythmLine,isLowEnergy:isRestDay,
   updateCount,
   periodGoals,reviewHTML,copyLines,loopReviewHTML,loopCopyLines,loopRequestLines,renderInsights,
