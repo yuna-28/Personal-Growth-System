@@ -202,18 +202,44 @@ function closeBanner(g){
     ${allDone?'':`<button class="focus-btn" data-action="goal-redate" data-g="${id}">改日期</button>
     <button class="focus-btn" data-action="goal-close" data-kind="letgo" data-g="${id}">放下</button>`}</div>`;
 }
+// 完成了：全螢幕慶祝＋這個作品用了幾天，收進「完成的作品」
+function goalStart(g){return g.startOn||(g.createdAt?new Date(g.createdAt).toISOString().slice(0,10):'');}
+function doneGoals(){return data().projects.filter(g=>g.status==='complete'&&g.closure&&g.closure.kind==='done').sort((a,b)=>(b.closure.on||'').localeCompare(a.closure.on||''));}
+function celebrate(g){
+  const on=g.closure.on,st=goalStart(g),days=st?Math.max(1,daysBetween(st,on)+1):0,n=(g.milestones||[]).length;
+  const early=g.dueDate?daysBetween(on,g.dueDate):null,nth=doneGoals().length;
+  const facts=[days?`用了 ${days} 天`:'',n?`做完 ${n} 個階段`:'',early>0?`比預定早 ${early} 天`:(early===0?'剛好準時':'')].filter(Boolean);
+  const cf=Array.from({length:44},(_,i)=>`<i style="left:${Math.round(Math.random()*100)}%;background:${['#4B7BEC','#F7B731','#FF6B81','#2ECC71','#A55EEA'][i%5]};animation-delay:${(Math.random()*.9).toFixed(2)}s;animation-duration:${(2.2+Math.random()*1.6).toFixed(2)}s;"></i>`).join('');
+  const m=document.createElement('div');m.className='pd-mask cele';m.id='cele';
+  m.innerHTML=`<div class="cele-cf">${cf}</div><div class="pd-box cele-box"><div class="cele-ic">🏆</div>
+    <div class="cele-t">${esc(g.title)}</div><div class="cele-s">完成了！你做到了</div>
+    ${facts.length?`<div class="cele-f">${facts.map(x=>`<span>${x}</span>`).join('')}</div>`:''}
+    <div class="cele-n">這是你完成的第 ${nth} 個作品</div>
+    <input class="fm-in" id="cele-note" maxlength="200" placeholder="這次最棒的是…（選填）" style="width:100%;margin-top:10px;"/>
+    <button type="button" class="focus-btn primary" id="cele-ok" style="margin-top:12px;width:100%;">收進我的作品 🏆</button></div>`;
+  document.body.appendChild(m);
+  const ok=()=>{const v=m.querySelector('#cele-note').value.trim();if(v){g.closure.note=v;g.updatedAt=Date.now();sv(S);syncStateDebounced();}m.remove();render(true);};
+  m.querySelector('#cele-ok').addEventListener('click',ok);
+  m.querySelector('#cele-note').addEventListener('keydown',e=>{if(e.key==='Enter'&&!isImeEnter(e)){e.preventDefault();ok();}});
+}
+function dirTrophies(){
+  const L=doneGoals();if(!L.length)return '';
+  return `<div class="gcard dir-trophy"><div class="goal-hd"><span class="goal-title">🏆 完成的作品 ${L.length}</span></div>
+    ${L.map(g=>{const st=goalStart(g),days=st?Math.max(1,daysBetween(st,g.closure.on)+1):0;
+      return `<div class="tr-row"><span class="tr-t">${esc(g.title)}</span><span class="tr-d muted">${md(g.closure.on)}${days?' · '+days+' 天':''}</span>${g.closure.note?`<div class="tr-n">${esc(g.closure.note)}</div>`:''}</div>`;}).join('')}</div>`;
+}
 function openCloseGoal(g,kind){
   const label=CLOSE_LABEL[kind]||'結束';
   modal(`${esc(g.title)}：${label}`,`
     <div class="fm-lbl">一句話小結（選填）</div>
     <input class="fm-in" id="gc-note" maxlength="200" placeholder="${kind==='letgo'?'為什麼先放下？':'這次學到什麼？下次想怎麼做？'}"/>
-    <div class="fm-hint">之後在「方向 → 新增目標・封存・備份」可以恢復。${kind==='letgo'?'日曆上這個目標的行程會拿掉。':'日曆上的行程會留著當紀錄。'}</div>
+    <div class="fm-hint">${kind==='letgo'?'日曆上這個目標的行程會拿掉。':'日曆上的行程會留著當紀錄。'}</div>
     <div class="fm-actions"><button class="focus-btn primary" id="gc-save" style="margin-left:auto;">${label}</button></div>`,
   (m,close)=>{
     const save=()=>{
       g.closure={kind,on:curDay(),note:m.querySelector('#gc-note').value.trim()};
       g.status=kind==='letgo'?'archived':'complete';
-      g.updatedAt=Date.now();sv(S);syncStateDebounced();close();softToast(kind==='letgo'?'放下了，沒關係 🌿':'🎉 '+g.title+' 結案',2400);
+      g.updatedAt=Date.now();sv(S);syncStateDebounced();if(kind==='done'){m.remove();celebrate(g);}else{close();softToast('放下了，沒關係 🌿',2400);}
     };
     m.querySelector('#gc-save').addEventListener('click',save);
     m.querySelector('#gc-note').addEventListener('keydown',e=>{if(e.key==='Enter'&&!isImeEnter(e)){e.preventDefault();save();}});
@@ -907,7 +933,7 @@ function dirMore(){
     <div class="pl-sec"><div class="goal-chips"><button class="focus-btn" data-action="quick-goals">一次貼上多個目標</button><button class="focus-btn" data-action="more">身體目標・封存・備份</button><button class="focus-btn" data-action="plan-import" title="匯入計畫檔">⬇ 匯入計畫檔</button></div></div>`;
   return `<div class="gcard dir-more">${plFold('more','更多','要確認的事、檢查日、行程、實驗、備份',body)}</div>`;
 }
-function dirTop(){return dirSleep()+dirGoals();}
+function dirTop(){return dirSleep()+dirGoals()+dirTrophies();}
 function openAddGoal(){
   modal('新增目標',`
     <input class="fm-in" id="ag-t" maxlength="60" placeholder="名字，例如：寫報告" style="width:100%;"/>
@@ -1530,7 +1556,7 @@ onMounts('click',ev=>{
     g.metrics=list;g.targets={move:0,shoulder:0,bed:0};list.forEach(x=>{if(x.src in g.targets)g.targets[x.src]=x.target;});
     saveGoal(g);return;
   }
-  if(a==='goal-finish'){const g=data().projects.find(x=>x.id===el.dataset.g);if(g){g.closure={kind:'done',on:curDay(),note:''};g.status='complete';g.updatedAt=Date.now();sv(S);syncStateDebounced();softToast('🎉 '+g.title+' 完成',2600);render(true);}return;}
+  if(a==='goal-finish'){const g=data().projects.find(x=>x.id===el.dataset.g);if(g){g.closure={kind:'done',on:curDay(),note:''};g.status='complete';g.updatedAt=Date.now();sv(S);syncStateDebounced();celebrate(g);}return;}
   if(a==='goal-close'){const g=data().projects.find(x=>x.id===el.dataset.g);if(g)openCloseGoal(g,el.dataset.kind);return;}
   if(a==='goal-redate'){$q(`[data-goal-due="${el.dataset.g}"]`)?.focus();return;}
   if(a==='goal-nodate'){const g=data().projects.find(x=>x.id===el.dataset.g);if(g){setDue(g,'');g.event='';saveGoal(g);softToast('繼續做，不倒數了 🌿',2200);}return;}

@@ -858,3 +858,22 @@ details.dir-habits[open]>summary{margin-bottom:var(--ds-3)!important;}
   .dir-bar,.dir-bs{grid-row:2;grid-column:1/-1;}
   .dir-axis{margin-left:6px;margin-right:6px;}
 }
+
+/* 完成慶祝＋完成的作品 */
+.cele{flex-direction:column;overflow:hidden;}
+.cele-cf{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+.cele-cf i{position:absolute;top:-14px;width:9px;height:14px;border-radius:2px;opacity:.9;animation:cele-fall linear forwards;}
+@keyframes cele-fall{to{transform:translateY(105vh) rotate(720deg);}}
+.cele-box{text-align:center;position:relative;animation:cele-pop .5s cubic-bezier(.2,1.4,.4,1);}
+@keyframes cele-pop{from{transform:scale(.7);opacity:0;}to{transform:none;opacity:1;}}
+.cele-ic{font-size:64px;line-height:1.1;}
+.cele-t{font-family:var(--ds-serif,inherit);font-size:22px;font-weight:800;margin-top:4px;}
+.cele-s{font-size:15px;margin-top:4px;color:var(--ds-ink-2,inherit);}
+.cele-f{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:12px;}
+.cele-f span{background:var(--ds-primary-soft,rgba(75,123,236,.12));color:var(--ds-primary,#4B7BEC);border-radius:999px;padding:4px 12px;font-size:13px;font-weight:700;}
+.cele-n{font-size:12px;margin-top:10px;opacity:.65;}
+@media(prefers-reduced-motion:reduce){.cele-cf i,.cele-box{animation:none;}.cele-cf{display:none;}}
+.dir-trophy .tr-row{padding:8px 0;border-top:1px solid var(--ds-line);display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;}
+.dir-trophy .tr-t{font-weight:700;flex:1;min-width:0;}
+.dir-trophy .tr-d{font-size:12px;}
+.dir-trophy .tr-n{flex-basis:100%;font-size:13px;opacity:.8;}
