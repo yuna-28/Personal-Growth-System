@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """格蘭朵本機伺服器：提供 App 的檔案，並用跟 GAS 一樣的 API 把資料存在這台電腦。
 
-  python3 tools/local_server.py                       # 資料夾預設 ~/Documents/Personal-Growth-System/data
+  python3 tools/local_server.py                       # 資料夾預設 ~/PGS/data
   python3 tools/local_server.py --data DIR --port 8768
   python3 tools/local_server.py --data DIR --restore DIR/backups/2026-11-13.zip
 
@@ -17,7 +17,7 @@ import urllib.parse, urllib.request, zipfile
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 
 APP_ROOT = pathlib.Path(__file__).resolve().parent.parent
-DEFAULT_DATA = pathlib.Path.home() / 'Documents' / 'Personal-Growth-System' / 'data'
+DEFAULT_DATA = pathlib.Path.home() / 'PGS' / 'data'
 DEFAULT_PORT = 8768
 LOCAL_FLAG = b'<script>window.GRANDOL_LOCAL=1</script>'
 VER = 'local-2'
