@@ -4,15 +4,15 @@
 // 更新版本時把 CACHE_NAME 的數字 +1，舊快取會自動清掉
 // ═══════════════════════════════════════════════════════
 const CACHE_PREFIX = 'grandol-cache-';
-const CACHE_NAME = CACHE_PREFIX + 'v154';
+const CACHE_NAME = CACHE_PREFIX + 'v155';
 
 const PRECACHE = [
   './',
   './index.html',
-  './focus-core.js?v=154',
-  './focus.js?v=154',
-  './focus.css?v=154',
-  './ds.css?v=154',
+  './focus-core.js?v=155',
+  './focus.js?v=155',
+  './focus.css?v=155',
+  './ds.css?v=155',
   './manifest.json',
   './puppy.png',
   './puppy_icon.png',
@@ -48,6 +48,8 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
   // GAS API（含重新導向的 googleusercontent）永遠走網路、不快取
   if (url.hostname.includes('script.google.com') || url.hostname.includes('googleusercontent.com')) return;
+  // 本機版的資料 API 也一樣：伺服器沒開時寧可失敗，也不能拿快取裡的舊資料當成最新的
+  if (url.origin === self.location.origin && url.pathname === '/api') return;
 
   // network first → 成功就更新快取；失敗用快取；導覽請求最後退回 index.html
   e.respondWith(

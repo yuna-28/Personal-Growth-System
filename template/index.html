@@ -1069,8 +1069,8 @@ button{-webkit-tap-highlight-color:transparent;}
 @keyframes pageIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
 .page.active{animation:pageIn .22s ease;}
 </style>
-<link rel="stylesheet" href="focus.css?v=154">
-<script src="focus-core.js?v=154"></script>
+<link rel="stylesheet" href="focus.css?v=155">
+<script src="focus-core.js?v=155"></script>
 <style>
 /* ═══ v127 改版：迴圈主軸（今天／回顧／方向／我）═══ */
 .ui2-zone{font-family:'Baloo 2',sans-serif;font-size:13px;font-weight:800;color:var(--tc2);margin:18px 4px 8px;letter-spacing:.5px;}
@@ -1204,7 +1204,7 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 .sleep-scene.night .ss-panel{background:rgba(28,36,64,.88)!important;}
 @media(min-width:1300px){.wrap{max-width:1256px;}}
 </style>
-<link rel="stylesheet" href="ds.css?v=154">
+<link rel="stylesheet" href="ds.css?v=155">
 </head>
 <body>
 <!-- 這四個彈窗特意放在 <body> 最前面、所有 <script> 之前：
@@ -1881,7 +1881,9 @@ details.ui2-more[open]>summary::before{content:'▾ ';}
 
 <script>
 const DEFAULT_GAS_URL='';
-let GAS_URL=localStorage.getItem('grandol_gas_url')||DEFAULT_GAS_URL;
+// 本機版（tools/local_server.py 提供的頁面會先設 GRANDOL_LOCAL）：資料一律存這台電腦，
+// 不看 localStorage 也不退回雲端預設，換到新網址時才不會寫回 Google Sheet
+let GAS_URL=window.GRANDOL_LOCAL?'/api':(localStorage.getItem('grandol_gas_url')||DEFAULT_GAS_URL);
 // 監督模式（唯讀）：用 VIEW_CODE 登入時後端會回 role:'viewer'，
 // 前端進入唯讀（隱藏編輯 UI＋不發任何寫入）。真正的防線在 GAS：
 // viewer 的任何寫入都會被後端拒絕，這裡只是讓畫面誠實。
@@ -1916,7 +1918,7 @@ function grFallback(el,code,size){
   el.replaceWith(img);
 }
 const SK='grandol_v7';
-const APP_VER='v154';
+const APP_VER='v155';
 const wdArr=['日','一','二','三','四','五','六'];
 let viewDate=null; // null=今天；'YYYY-MM-DD'=補記模式看的那一天
 // ── 注音／中文輸入法保護 ──────────────────────────────
@@ -8061,6 +8063,6 @@ document.addEventListener('visibilitychange',()=>{
 
 
 
-<script src="focus.js?v=154"></script>
+<script src="focus.js?v=155"></script>
 </body>
 </html>
