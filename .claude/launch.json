@@ -24,6 +24,16 @@
         "8769"
       ],
       "port": 8769
+    },
+    {
+      "name": "grandol-local",
+      "runtimeExecutable": "/usr/bin/python3",
+      "runtimeArgs": [
+        "tools/local_server.py",
+        "--port",
+        "8768"
+      ],
+      "port": 8768
     }
   ]
 }

@@ -3,7 +3,7 @@
 
   python3 tests/local_server_test.py
 """
-import json, pathlib, sys, tempfile, threading, unittest, urllib.error, urllib.parse, urllib.request, zipfile
+import json, pathlib, re, sys, tempfile, threading, unittest, urllib.error, urllib.parse, urllib.request, zipfile
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -75,9 +75,13 @@ class LocalServerTest(unittest.TestCase):
         self.assertEqual(code, 200, raw)
         return json.loads(raw)
 
+    def clear_state(self):
+        for f in LS.STATE_FILES:
+            (self.data / f).unlink(missing_ok=True)
+
     # ── 資料 ──
     def test_state_round_trip_matches_gas_shape(self):
-        (self.data / 'state.json').unlink(missing_ok=True)
+        self.clear_state()
         payload = {'updatedAt': 100, 'baseUpdatedAt': 0, 'flowers': '[{"d":"2026-11-01"}]', 'streak': 3,
                    'lastPlant': '2026-11-01', 'focus': '{"version":1,"projects":[]}', 'quotes': '[]'}
         self.assertEqual(self.api('saveState', payload), {'ok': True, 'focusVersion': 1})
@@ -87,11 +91,13 @@ class LocalServerTest(unittest.TestCase):
         del want['baseUpdatedAt']
         self.assertEqual(st['data'], want)
         # 檔案裡是解開的，人讀得懂
-        disk = json.loads((self.data / 'state.json').read_text(encoding='utf-8'))
-        self.assertEqual(disk['flowers'], [{'d': '2026-11-01'}])
+        garden = json.loads((self.data / 'garden.json').read_text(encoding='utf-8'))
+        self.assertEqual(garden['flowers'], [{'d': '2026-11-01'}])
+        goals = json.loads((self.data / 'goals.json').read_text(encoding='utf-8'))
+        self.assertEqual(goals['focus'], {'version': 1, 'projects': []})
 
     def test_state_conflict_and_focus_kept(self):
-        (self.data / 'state.json').unlink(missing_ok=True)
+        self.clear_state()
         self.api('saveState', {'updatedAt': 200, 'baseUpdatedAt': 0, 'focus': '{"version":1}'})
         self.assertEqual(self.api('saveState', {'updatedAt': 300, 'baseUpdatedAt': 150, 'focus': '{}'}),
                          {'ok': False, 'conflict': True})
@@ -106,8 +112,30 @@ class LocalServerTest(unittest.TestCase):
         self.assertEqual(got['hl'], '[1, 2] 像 JSON 的日記')
         self.assertEqual(got['rf'], '{x}')
         self.assertEqual(got['health'], '{"sleep":{}}')
-        self.assertEqual(got['checked'], ['a'])
-        self.assertTrue((self.data / 'entries' / '2026-10-02.json').exists())
+        self.assertEqual(json.loads(got['checked']), ['a'])
+        day = json.loads((self.data / 'days' / '2026-10-02.json').read_text(encoding='utf-8'))
+        self.assertEqual(day['diary']['highlight'], '[1, 2] 像 JSON 的日記')
+        self.assertEqual((day['habitsDone'], day['health'], day['app']['exp']), (['a'], {'sleep': {}}, 5))
+        self.assertEqual(LS.app_entry(got), LS.app_entry(dict(e, date='2026-10-02')))
+
+    def test_unknown_fields_are_kept(self):
+        self.api('saveEntry', {'date': '2026-10-03', 'newThing': {'x': 1}})
+        got = [x for x in self.api('getEntries')['data'] if x['date'] == '2026-10-03'][0]
+        self.assertEqual(got['newThing'], {'x': 1})
+        self.clear_state()
+        self.api('saveState', {'updatedAt': 1, 'baseUpdatedAt': 0, 'newSetting': 'y', 'gardenPos': ''})
+        self.assertEqual(self.api('getState')['data'], {'updatedAt': 1, 'newSetting': 'y'})
+
+    def test_every_field_the_app_sends_has_a_name(self):
+        html = (ROOT / 'index.html').read_text(encoding='utf-8')
+        a = html.index("gasPost('saveState',{")
+        seg = html[a:html.index('},opts);', a)]
+        seg = seg[:seg.index('todaySession:')] + seg[seg.index('expLog:'):]
+        sent = set(re.findall(r'(\w+):', seg)) - {'saveState', 'baseUpdatedAt'}
+        self.assertEqual(sent - set(LS.STATE_MAP), set())
+        a = html.index('function entryPayload')
+        sent = set(re.findall(r'(\w+):', html[a:html.index('savedAt', a)])) | {'savedAt'}
+        self.assertEqual(sent - set(LS.DAY_DIARY) - set(LS.DAY_JSON) - set(LS.DAY_APP) - {'date'}, set())
 
     def test_entry_keeps_sleep_events_from_both_devices(self):
         h1 = {'sleep': {'windDown': {'phoneAwayAt': '2026-09-28T17:30:00Z', 'updatedAt': 1}}}
@@ -143,7 +171,7 @@ class LocalServerTest(unittest.TestCase):
         got = [x for x in self.api('getEntries')['data'] if x['date'] == '2026-08-01'][0]
         self.assertEqual(got['hl'], 'after')
         with zipfile.ZipFile(before) as z:
-            self.assertIn('entries/2026-08-01.json', z.namelist())
+            self.assertIn('days/2026-08-01.json', z.namelist())
 
     # ── 日曆轉給 GAS ──
     def test_calendar_proxy_adds_code_and_follows_redirect(self):
