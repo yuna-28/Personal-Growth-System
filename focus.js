@@ -197,8 +197,8 @@ function closeBanner(g){
     <button class="focus-btn" data-action="goal-nodate" data-g="${id}">繼續，不設日期</button>
     <button class="focus-btn" data-edit-goal="${id}">改日期</button>
     <button class="focus-btn" data-action="goal-close" data-kind="end" data-g="${id}">結束</button></div>`;
-  return `<div class="close-banner"><span>${allDone?'階段都做完了':'截止日過了'}，這個目標現在是？</span>
-    <button class="focus-btn primary" data-action="goal-close" data-kind="done" data-g="${id}">完成了</button>
+  return `<div class="close-banner"><span>${allDone?'階段都做完了，辛苦了':'截止日過了，這個目標現在是？'}</span>
+    <button class="focus-btn primary" data-action="${allDone?'goal-finish':'goal-close'}" data-kind="done" data-g="${id}">${allDone?'🎉 完成了':'完成了'}</button>
     ${allDone?'':`<button class="focus-btn" data-action="goal-redate" data-g="${id}">改日期</button>
     <button class="focus-btn" data-action="goal-close" data-kind="letgo" data-g="${id}">放下</button>`}</div>`;
 }
@@ -265,6 +265,7 @@ function nowCard(){
       <button class="focus-btn${isDone?' done':' primary'}" data-action="step-done" data-g="${esc(pg.id)}">${isDone?'✓ 完成了':'完成'}</button></div>
       ${!isDone&&(n.small||heroOpen())?`<div class="hero-sub"><span>沒電時：</span><input class="hero-small" data-small-text="${esc(pg.id)}" value="${esc(n.small||'')}" placeholder="寫一個最小版本（選填）" maxlength="200"/></div>`:''}`;
   }
+  const allMsDone=ds()===curDay()&&pg.kind!=='body'&&ms.length>0&&ms.every(m=>m.done);
   const segs=`<div class="hero-segs">${ms.map((m,k)=>`<span class="goal-seg${m.done?' done':(k===curI?' cur':'')}" title="${esc(m.title)}${m.due?' · '+md(m.due):''}"></span>`).join('')}
       <span data-cal-state="${esc(pg.id)}">${calStateHTML(pg)}</span><button class="hero-toggle" data-action="hero-ms" title="展開可以改階段、日期">${ms.length?`階段 ${done}/${ms.length}${cur?' · '+esc(cur.title):''}`:'拆階段'} ${heroOpen()?'▴':'▾'}</button></div>`;
   const list=heroOpen()?`<div class="ms-list">${msEditRows(pg)}</div>`:'';
@@ -278,7 +279,7 @@ function nowCard(){
         <span class="ho-d">${o.dueDate?md(o.dueDate)+' · ':''}${daysLeftTxt(d,o.dueDate)||'沒有日期'}</span></button>`;}).join('')}${othersAll.length>5?`<button type="button" class="ho-more" data-action="others-toggle">${showAll?'收起來':`看全部 ${othersAll.length} 個`}</button>`:''}</div>`:'';
   return `<div class="gcard hero day"><div class="hero-top"><span>${pg.group?`<i class="ho-g">${esc(pg.group)}</i>`:''}${esc(pg.title)} · 今天這一步</span>
       <span class="hero-meta">${meta}</span><button class="card-edit" data-edit-goal="${esc(pg.id)}" title="名稱、截止日、狀態">✏️ 編輯</button></div>
-    ${closeBanner(pg)}${cpHeroList().map(cpBox).join('')}${main}${segs}${noteRow}${list}${otherRows}</div>`;
+    ${closeBanner(pg)}${cpHeroList().map(cpBox).join('')}${allMsDone?'':main+segs+noteRow+list}${otherRows}</div>`;
 }
 // 階段清單：每一列都是可以直接改的欄位
 function msEditRows(g){
@@ -1529,6 +1530,7 @@ onMounts('click',ev=>{
     g.metrics=list;g.targets={move:0,shoulder:0,bed:0};list.forEach(x=>{if(x.src in g.targets)g.targets[x.src]=x.target;});
     saveGoal(g);return;
   }
+  if(a==='goal-finish'){const g=data().projects.find(x=>x.id===el.dataset.g);if(g){g.closure={kind:'done',on:curDay(),note:''};g.status='complete';g.updatedAt=Date.now();sv(S);syncStateDebounced();softToast('🎉 '+g.title+' 完成',2600);render(true);}return;}
   if(a==='goal-close'){const g=data().projects.find(x=>x.id===el.dataset.g);if(g)openCloseGoal(g,el.dataset.kind);return;}
   if(a==='goal-redate'){$q(`[data-goal-due="${el.dataset.g}"]`)?.focus();return;}
   if(a==='goal-nodate'){const g=data().projects.find(x=>x.id===el.dataset.g);if(g){setDue(g,'');g.event='';saveGoal(g);softToast('繼續做，不倒數了 🌿',2200);}return;}
