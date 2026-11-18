@@ -877,3 +877,13 @@ details.dir-habits[open]>summary{margin-bottom:var(--ds-3)!important;}
 .dir-trophy .tr-t{font-weight:700;flex:1;min-width:0;}
 .dir-trophy .tr-d{font-size:12px;}
 .dir-trophy .tr-n{flex-basis:100%;font-size:13px;opacity:.8;}
+
+/* 雲端版的樣子：森林背景固定不動、便利貼是黃紙＋紅膠帶 */
+:root:not([data-night]) body{background:#D4EEFF!important;}
+:root:not([data-night]) body::before{background:#D4EEFF url('background_web.png') center/cover no-repeat!important;background-image:url('background_web.png')!important;}
+@media(max-width:768px){:root:not([data-night]) body::before{background-image:url('background.png')!important;}}
+@media(display-mode:standalone){:root:not([data-night]) body::before{background-image:url('background.png')!important;}}
+:root:not([data-night]) body::after{display:none!important;}
+.list-card{background:rgba(255,250,200,.97)!important;border:1.5px solid rgba(255,220,80,.6)!important;border-radius:6px!important;box-shadow:3px 6px 18px rgba(180,140,40,.28)!important;transform:rotate(-.6deg);margin-top:10px;}
+.list-card::before{content:''!important;position:absolute;top:-8px!important;left:50%!important;right:auto!important;transform:translateX(-50%) rotate(-1.5deg);width:44px!important;height:15px!important;background:rgba(230,80,90,.75)!important;border:none!important;border-radius:2px;box-shadow:0 1px 3px rgba(150,30,40,.3);}
+@media(prefers-reduced-motion:reduce){.list-card{transform:none;}}

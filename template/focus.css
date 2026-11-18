@@ -104,7 +104,7 @@
 .tl-step.done{background:rgba(var(--tertiary-rgb),.42);color:var(--ok);}
 .tl-step.done .t{color:var(--ok);}
 .tl-step.next{border-color:var(--secondary);background:rgba(var(--secondary-rgb),.18);color:var(--tc);}
-.fm-row{display:grid;grid-template-columns:minmax(0,1fr) 76px 30px 26px 26px;gap:6px;align-items:center;margin-bottom:6px;}
+.fm-row{display:grid;grid-template-columns:14px minmax(0,1fr) 76px 30px 26px;gap:6px;align-items:center;margin-bottom:6px;}
 .fm-in{width:100%;border:1.5px solid rgba(var(--secondary-rgb),.3);border-radius:10px;padding:7px 9px;font-family:'Quicksand',sans-serif;
   font-size:13px;color:var(--tc);background:rgba(255,255,255,.8);outline:none;min-width:0;}
 .fm-in:focus{border-color:var(--secondary);}
@@ -126,5 +126,3 @@
 .sticky-item.is-goal{background:rgba(var(--gold-rgb),.28);border-radius:10px;padding-left:4px;padding-right:4px;}
 .sticky-item.is-goal .sticky-txt b{color:#6B420A;}
 
-.fm-mv{display:flex;flex-direction:column;gap:2px;}
-.fm-mv button{border:0;background:var(--ds-field,#eef1f8);border-radius:6px;font-size:9px;line-height:1;height:19px;padding:0;color:inherit;cursor:pointer;}

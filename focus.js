@@ -294,7 +294,7 @@ function nowCard(){
   const allMsDone=ds()===curDay()&&pg.kind!=='body'&&ms.length>0&&ms.every(m=>m.done);
   const segs=`<div class="hero-segs">${ms.map((m,k)=>`<span class="goal-seg${m.done?' done':(k===curI?' cur':'')}" title="${esc(m.title)}${m.due?' · '+md(m.due):''}"></span>`).join('')}
       <span data-cal-state="${esc(pg.id)}">${calStateHTML(pg)}</span><button class="hero-toggle" data-action="hero-ms" title="展開可以改階段、日期">${ms.length?`階段 ${done}/${ms.length}${cur?' · '+esc(cur.title):''}`:'拆階段'} ${heroOpen()?'▴':'▾'}</button></div>`;
-  const list=heroOpen()?`<div class="ms-list">${msEditRows(pg)}</div>`:'';
+  const list=heroOpen()?`<div class="ms-list" id="ms-list" data-g="${esc(pg.id)}">${msEditRows(pg)}</div>`:'';
   const othersAll=projectGoals().filter(x=>x.id!==pg.id),showAll=(()=>{try{return localStorage.getItem('grandol_others_all')==='1';}catch(e){return false;}})();
   const others=showAll?othersAll:othersAll.slice(0,5);
   const noteRow=heroOpen()?`<div class="hero-sub"><span>備註：</span><input class="hero-small" data-goal-note="${esc(pg.id)}" value="${esc(pg.note||'')}" placeholder="例如：這個很花時間、要先問對方（選填）" maxlength="200"/></div>`:'';
@@ -313,11 +313,11 @@ function msEditRows(g){
   return ms.map((m,i)=>{
     let cls=m.done?' done':(i===cur?' cur':''),left='';
     if(m.due&&!m.done){const l=daysBetween(d,m.due);if(l<0){cls+=' over';left=`晚了 ${-l} 天`;}else if(i===cur)left=l===0?'今天':`還有 ${l} 天`;}
-    return `<div class="ms-row${cls}"><button class="ms-dot" data-ms="${i}" data-g="${gid}" title="${m.done?'點一下取消完成':'點一下標成完成'}">${m.done?'✅':(i===cur?'🟡':'⚪')}</button>
+    return `<div class="ms-row${cls}" data-idx="${i}"><span class="row-grip" title="拖曳調整順序">⠿</span><button class="ms-dot" data-ms="${i}" data-g="${gid}" title="${m.done?'點一下取消完成':'點一下標成完成'}">${m.done?'✅':(i===cur?'🟡':'⚪')}</button>
       <input class="ms-title" data-ms-title="${i}" data-g="${gid}" value="${esc(m.title)}" maxlength="60" title="點一下就可以改"/>
       ${left?`<span class="ms-left">${left}</span>`:''}
       <input class="ms-due" data-ms-due="${i}" data-g="${gid}" value="${m.due?md(m.due):''}" placeholder="日期" maxlength="10" title="打 10/8 這樣；清空＝沒有日期"/>
-      <button class="ms-flag${m.hard?' on':''}" data-ms-flag="${i}" data-g="${gid}" title="${m.hard?'硬期限（點一下取消）':'設成硬期限（例如送印）'}">🚩</button>
+      ${m.hard?`<button class="ms-flag on" data-ms-flag="${i}" data-g="${gid}" title="硬期限（點一下取消）">🚩</button>`:''}
       <button class="ms-del" data-ms-del="${i}" data-g="${gid}" title="刪除這段">✕</button></div>`;
   }).join('')+(ms.length||!g.dueDate?'':`<button type="button" class="focus-btn ms-tpl" data-action="stage-template" data-g="${gid}">套用常見四階段（準備素材→初稿→修改→完成輸出）</button>`)+`<div class="ms-row ms-add"><span class="ms-dot">＋</span><input class="ms-title" data-ms-add="${gid}" placeholder="新增階段，可以順便打日期：送印 10/8" maxlength="70"/></div>`;
 }
@@ -994,7 +994,12 @@ function render(force){
   if(typing&&!force)return;
   const keep={};$qa('[data-next-in]').forEach(x=>{if(x.value)keep[x.dataset.nextIn]=x.value;});
   const gs=goals();
-  if(M.now)M.now.innerHTML=nowCard();
+  if(M.now){M.now.innerHTML=nowCard();
+    const ml=document.getElementById('ms-list');
+    if(ml&&typeof initRowDrag==='function')initRowDrag('ms-list','.ms-row[data-idx]','.row-grip',order=>{
+      const g=data().projects.find(x=>x.id===ml.dataset.g);if(!g)return;
+      const old=g.milestones||[];g.milestones=order.map(i=>old[i]).filter(Boolean);saveGoal(g);
+    });}
   if(M.today)M.today.innerHTML=expRows();
   if(M.tonight)M.tonight.innerHTML=tonightCard();
   // 短期目標卡放在「今天」：每天打開就看得到；「方向」只放一行一個的清單，用來調整
@@ -1053,11 +1058,10 @@ function modal(title,body,onMount){
   onMount(m,close);
 }
 function stageRowHTML(ms){
-  return `<div class="fm-row" data-row>
+  return `<div class="fm-row" data-row data-idx="0"><span class="row-grip" title="拖曳調整順序">⠿</span>
     <input class="fm-in" data-f="title" value="${esc(ms.title||'')}" placeholder="階段名稱" maxlength="60"/>
     <input class="fm-in" data-f="due" value="${esc(ms.due?md(ms.due):'')}" placeholder="10/8" maxlength="10"/>
-    <button type="button" class="fm-flag${ms.hard?' on':''}" data-flag title="硬期限（例如送印）">🚩</button>
-    <span class="fm-mv"><button type="button" data-mv="-1" title="往上移">▲</button><button type="button" data-mv="1" title="往下移">▼</button></span>
+    ${ms.hard?`<button type="button" class="fm-flag on" data-flag title="硬期限（點一下取消）">🚩</button>`:'<span></span>'}
     <button type="button" class="fm-del" data-del title="刪除這段">✕</button>
     <input type="hidden" data-f="id" value="${esc(ms.id||'')}"/></div>`;
 }
@@ -1072,7 +1076,7 @@ function openProjectEditor(g){
     <div style="display:grid;grid-template-columns:110px minmax(0,1fr);gap:6px;">
       <input class="fm-in" id="ge-group" value="${esc(g.group||'')}" placeholder="例如：生活影片" maxlength="12"/>
       <input class="fm-in" id="ge-note" value="${esc(g.note||'')}" placeholder="例如：這個很花時間" maxlength="200"/></div>
-    <div class="fm-lbl">階段（日期可以不填 · 🚩＝硬期限，例如送印）</div>
+    <div class="fm-lbl">階段（日期可以不填，左邊 ⠿ 拖曳換順序）</div>
     <div id="ge-rows">${ms.map(stageRowHTML).join('')}</div>
     <button type="button" class="focus-btn" id="ge-add" style="margin-top:2px;">＋ 新增一段</button>
     <button type="button" class="focus-btn" id="ge-spread" style="margin-top:2px;">沒填日期的平均分配</button>
@@ -1086,13 +1090,8 @@ function openProjectEditor(g){
   (m,close)=>{
     const rowsBox=m.querySelector('#ge-rows');
     const bindRow=r=>{
-      r.querySelector('[data-flag]').addEventListener('click',e=>e.currentTarget.classList.toggle('on'));
+      r.querySelector('[data-flag]')?.addEventListener('click',e=>e.currentTarget.classList.toggle('on'));
       r.querySelector('[data-del]').addEventListener('click',()=>r.remove());
-      r.querySelectorAll('[data-mv]').forEach(b=>b.addEventListener('click',()=>{
-        if(b.dataset.mv==='-1'){const p=r.previousElementSibling;if(p)rowsBox.insertBefore(r,p);}
-        else{const n=r.nextElementSibling;if(n)rowsBox.insertBefore(n,r);}
-        b.focus();
-      }));
       // 名稱後面打日期 → 自動搬到日期欄
       r.querySelector('[data-f="title"]').addEventListener('blur',e=>{
         const mm=e.target.value.match(/^(.*?)[\s　]+(\d{1,2}\s*[\/\-.月]\s*\d{1,2}\s*日?)$/);
@@ -1100,8 +1099,9 @@ function openProjectEditor(g){
       });
     };
     rowsBox.querySelectorAll('[data-row]').forEach(bindRow);
+    const dragRows=()=>{if(typeof initRowDrag==='function')initRowDrag('ge-rows','[data-row]','.row-grip',()=>{});};dragRows();
     m.querySelector('#ge-add').addEventListener('click',()=>{
-      rowsBox.insertAdjacentHTML('beforeend',stageRowHTML({}));const r=rowsBox.lastElementChild;bindRow(r);r.querySelector('input').focus();
+      rowsBox.insertAdjacentHTML('beforeend',stageRowHTML({}));const r=rowsBox.lastElementChild;bindRow(r);dragRows();r.querySelector('input').focus();
     });
     m.querySelector('#ge-spread').addEventListener('click',()=>{
       const due=parseMD(m.querySelector('#ge-due').value);
@@ -1132,7 +1132,7 @@ function openProjectEditor(g){
         if(dv===null){dr.classList.add('bad');bad=true;return;}
         const id=r.querySelector('[data-f="id"]').value;
         const o=old.find(x=>x.id&&x.id===id)||old.find(x=>x.title===t);
-        list.push({...(o||{id:uid(),done:false}),title:t,due:dv||'',hard:r.querySelector('[data-flag]').classList.contains('on')});
+        list.push({...(o||{id:uid(),done:false}),title:t,due:dv||'',hard:!!r.querySelector('[data-flag].on')});
       });
       if(bad){softToast('有日期看不懂（紅框），打成 10/8 這樣就好',2800);return;}
       g.title=title;setDue(g,due);g.milestones=list;g.status=m.querySelector('#ge-status').value;
