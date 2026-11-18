@@ -1057,6 +1057,7 @@ function stageRowHTML(ms){
     <input class="fm-in" data-f="title" value="${esc(ms.title||'')}" placeholder="階段名稱" maxlength="60"/>
     <input class="fm-in" data-f="due" value="${esc(ms.due?md(ms.due):'')}" placeholder="10/8" maxlength="10"/>
     <button type="button" class="fm-flag${ms.hard?' on':''}" data-flag title="硬期限（例如送印）">🚩</button>
+    <span class="fm-mv"><button type="button" data-mv="-1" title="往上移">▲</button><button type="button" data-mv="1" title="往下移">▼</button></span>
     <button type="button" class="fm-del" data-del title="刪除這段">✕</button>
     <input type="hidden" data-f="id" value="${esc(ms.id||'')}"/></div>`;
 }
@@ -1087,6 +1088,11 @@ function openProjectEditor(g){
     const bindRow=r=>{
       r.querySelector('[data-flag]').addEventListener('click',e=>e.currentTarget.classList.toggle('on'));
       r.querySelector('[data-del]').addEventListener('click',()=>r.remove());
+      r.querySelectorAll('[data-mv]').forEach(b=>b.addEventListener('click',()=>{
+        if(b.dataset.mv==='-1'){const p=r.previousElementSibling;if(p)rowsBox.insertBefore(r,p);}
+        else{const n=r.nextElementSibling;if(n)rowsBox.insertBefore(n,r);}
+        b.focus();
+      }));
       // 名稱後面打日期 → 自動搬到日期欄
       r.querySelector('[data-f="title"]').addEventListener('blur',e=>{
         const mm=e.target.value.match(/^(.*?)[\s　]+(\d{1,2}\s*[\/\-.月]\s*\d{1,2}\s*日?)$/);
